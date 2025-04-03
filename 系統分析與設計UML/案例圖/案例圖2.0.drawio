@@ -1,0 +1,360 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" version="26.1.1">
+  <diagram name="第 1 页" id="yu2tWXFXeaHOywA1KfY7">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="nbge5_wym4CEe-gpuRpA-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-2" target="nbge5_wym4CEe-gpuRpA-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-2" value="一般使用者" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="3266" width="125" height="237" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-4" target="nbge5_wym4CEe-gpuRpA-93">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="770" y="3900" />
+              <mxPoint x="770" y="4230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-4" value="寵物主人" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="3800" width="100" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-7" target="nbge5_wym4CEe-gpuRpA-93">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="3760" />
+              <mxPoint x="1240" y="4260" />
+              <mxPoint x="850" y="4260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-7" target="nbge5_wym4CEe-gpuRpA-104">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1200" y="3680" />
+              <mxPoint x="1200" y="4150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-7" value="獸醫" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1261" y="3550" width="130" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-8" value="健康管理平台" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=110;height=30;" vertex="1" parent="1">
+          <mxGeometry x="350" y="3570" width="810" height="850" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-9" value="寵物服務地點" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="380" y="3344.5" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-11" target="nbge5_wym4CEe-gpuRpA-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-11" value="聯絡資訊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="3467" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-25" target="nbge5_wym4CEe-gpuRpA-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-14" value="" style="line;strokeWidth=1;html=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="3392" width="80" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-15" value="&lt;span style=&quot;font-size: 10px;&quot;&gt;擴充點：地點類型&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="395" y="3392" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-16" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="525" y="3372" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-24" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="610" y="3292" width="80" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-25" value="&lt;div style=&quot;line-height: 130%;&quot;&gt;地點類型&lt;/div&gt;&lt;div style=&quot;line-height: 130%;&quot;&gt;&lt;br&gt;&lt;div&gt;美容&lt;/div&gt;&lt;div&gt;醫院&lt;/div&gt;&lt;div&gt;24小時急診&lt;/div&gt;&lt;div&gt;寄宿&lt;/div&gt;&lt;div&gt;住宿&lt;/div&gt;&lt;div&gt;餐廳&lt;/div&gt;&lt;div&gt;公園&lt;/div&gt;&lt;div&gt;用品專賣店&lt;/div&gt;&lt;div&gt;葬儀&lt;/div&gt;&lt;div&gt;領養&lt;/div&gt;&lt;div&gt;購買寵物&lt;/div&gt;&lt;div&gt;整骨&lt;/div&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=13;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-24">
+          <mxGeometry width="80" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-26" value="" style="line;strokeWidth=1;html=1;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-24">
+          <mxGeometry y="24" width="80" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-29" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.044;entryY=0.741;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-4" target="nbge5_wym4CEe-gpuRpA-9">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="290" y="3390" as="sourcePoint" />
+            <mxPoint x="340" y="3340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-31" value="查詢地圖" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="3260" width="360" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-32" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="360" y="3910" width="340" height="450" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-33" value="寵物名字" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-32">
+          <mxGeometry x="37" y="30" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-34" value="寵物檔案中心" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=140;height=20;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-32">
+          <mxGeometry width="330" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-35" value="上傳寵物照片" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-32">
+          <mxGeometry x="185" y="30" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-36" value="聯絡資訊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-32">
+          <mxGeometry x="37" y="100" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-37" value="添加寵物" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-32">
+          <mxGeometry x="185" y="100" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-38" value="" style="group" connectable="0" vertex="1" parent="nbge5_wym4CEe-gpuRpA-32">
+          <mxGeometry x="40" y="170" width="300" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-39" value="寵物重要資料" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=95;height=30;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry width="260" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-40" value="品種" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="16" y="89.99745564892626" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-41" value="動物" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="16" y="36.995014005602236" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-42" value="性別" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="139" y="36.995014005602236" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-43" value="出生日期" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="139" y="89.99745564892626" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-44" value="特徵" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="14" y="144.00240273887346" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-45" value="晶片" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="139" y="144.0024027388734" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-46" value="體重" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="14" y="201.03240273887354" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-47" value="絕育狀態" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-38">
+          <mxGeometry x="139" y="201.03240273887354" width="100" height="48.96358543417367" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-48" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="725" y="3600" width="390" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-49" value="獸醫專業功能" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=110;height=30;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry width="390" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-50" value="確認重要資料" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="40" y="60" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-52" value="記錄看診資訊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="150" y="60" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-53" value="更新/登記疫苗" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="260" y="210" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-54" value="紀錄驅蟲資訊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="260" y="136" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-55" value="管理獸醫資料" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="40" y="200" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-57" value="登記晶片資訊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="150" y="136" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-58" value="查看寵物資料" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="40" y="132" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="RxPXbBbXNVkTdx2NAGs2-3" value="查看看診資訊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="260" y="60" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="RxPXbBbXNVkTdx2NAGs2-14" value="建立健康報告" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-48">
+          <mxGeometry x="150" y="210" width="100" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-59" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="370" y="3610" width="257" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-60" value="查看疫苗記錄" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-59">
+          <mxGeometry x="27" y="50" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-62" value="查看健康報告" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-59">
+          <mxGeometry x="146" y="100" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-63" value="查看驅蟲紀錄" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-59">
+          <mxGeometry x="27" y="100" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-64" value="查看紀錄" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-59">
+          <mxGeometry width="257" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-65" value="查看看診紀錄" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-59">
+          <mxGeometry x="27" y="150" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="nbge5_wym4CEe-gpuRpA-59" source="nbge5_wym4CEe-gpuRpA-62" target="nbge5_wym4CEe-gpuRpA-62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-67" value="體重變化追蹤" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-59">
+          <mxGeometry x="143" y="150" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-68" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="740" y="4281" width="360" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-69" value="帳號管理" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=80;height=30;container=0;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-68">
+          <mxGeometry width="310" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="nbge5_wym4CEe-gpuRpA-68">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="196" y="140" as="sourcePoint" />
+            <mxPoint x="196" y="140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-71" value="登入" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-68">
+          <mxGeometry x="20" y="40" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-72" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;" edge="1" parent="nbge5_wym4CEe-gpuRpA-68" source="nbge5_wym4CEe-gpuRpA-73" target="nbge5_wym4CEe-gpuRpA-71">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-73" value="修改密碼" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-68">
+          <mxGeometry x="190" y="40" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-74" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="4052.5" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-75" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="524" y="3830" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.623;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-34" target="nbge5_wym4CEe-gpuRpA-64">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="530" y="3890" />
+              <mxPoint x="530" y="3890" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-77" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=-0.002;entryY=0.627;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-4" target="nbge5_wym4CEe-gpuRpA-64">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="275" y="3880" />
+              <mxPoint x="275" y="3742" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-78" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.005;entryY=0.354;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-4" target="nbge5_wym4CEe-gpuRpA-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="4059" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-79" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="563" y="4430" width="360" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-80" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="nbge5_wym4CEe-gpuRpA-79">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="196" y="140" as="sourcePoint" />
+            <mxPoint x="196" y="140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-81" value="行事曆管理" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=80;height=30;container=0;" vertex="1" parent="1">
+          <mxGeometry x="780" y="3910" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-82" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="793" y="3960" width="130" height="111" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-83" value="行事曆" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-82">
+          <mxGeometry y="-10" width="120" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-84" value="&lt;span style=&quot;font-size: 10px;&quot;&gt;擴充點：提醒類型&lt;/span&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-82">
+          <mxGeometry x="15" y="44" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-85" value="" style="line;strokeWidth=1;html=1;" vertex="1" parent="nbge5_wym4CEe-gpuRpA-82">
+          <mxGeometry x="20" y="44" width="80" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-86" value="&lt;div style=&quot;line-height: 130%;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;line-height: 130%;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;line-height: 130%;&quot;&gt;提醒類型&lt;/div&gt;&lt;div style=&quot;line-height: 140%;&quot;&gt;&lt;br&gt;&lt;div&gt;定期體檢&lt;/div&gt;&lt;div&gt;定期驅蟲&lt;/div&gt;&lt;div&gt;疫苗接種到期&lt;/div&gt;&lt;div&gt;生日通知&lt;/div&gt;&lt;div&gt;預約通知&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=13;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="977" y="3917.5" width="80" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-87" value="" style="line;strokeWidth=1;html=1;" vertex="1" parent="1">
+          <mxGeometry x="977" y="3939" width="80" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-88" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="910" y="3960" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-89" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.974;entryY=0.386;entryDx=0;entryDy=0;entryPerimeter=0;dashed=1;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-86" target="nbge5_wym4CEe-gpuRpA-83">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-90" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.994;entryY=0.52;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-7" target="nbge5_wym4CEe-gpuRpA-49">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-91" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.243;entryY=0.002;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-4" target="nbge5_wym4CEe-gpuRpA-81">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-92" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.552;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-50" target="nbge5_wym4CEe-gpuRpA-39">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="3692" />
+              <mxPoint x="680" y="4218" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-93" value="註冊" style="ellipse;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="800" y="4210" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-94" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="3980" as="sourcePoint" />
+            <mxPoint x="749" y="4280" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="749" y="3980" />
+              <mxPoint x="750" y="4140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-95" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.999;entryY=0.472;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-7" target="nbge5_wym4CEe-gpuRpA-69">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1210" y="3710" />
+              <mxPoint x="1210" y="4323" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-96" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="864" y="4309" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.071;entryY=0.026;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-81" target="nbge5_wym4CEe-gpuRpA-69">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="790" y="4171" />
+              <mxPoint x="762" y="4171" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-98" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="784" y="4100" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-99" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.999;entryY=0.23;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-49" target="nbge5_wym4CEe-gpuRpA-69">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1130" y="3800" />
+              <mxPoint x="1130" y="4302" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-100" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="3780" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-101" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="670" y="4361" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-102" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=-0.009;entryY=0.929;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nbge5_wym4CEe-gpuRpA-64" target="nbge5_wym4CEe-gpuRpA-69">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="3760" />
+              <mxPoint x="710" y="4365" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-103" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&amp;lt;&amp;lt;include&amp;gt;&amp;gt;&lt;/font&gt;" style="text;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="660" y="3660" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="nbge5_wym4CEe-gpuRpA-104" value="獸醫申請" style="ellipse;whiteSpace=wrap;html=1;align=center;container=0;" vertex="1" parent="1">
+          <mxGeometry x="944" y="4130" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="RxPXbBbXNVkTdx2NAGs2-15" value="寵物健康管理與地圖服務平台" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;width=210;height=30;" vertex="1" parent="1">
+          <mxGeometry x="290" y="3220" width="940" height="1250" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
