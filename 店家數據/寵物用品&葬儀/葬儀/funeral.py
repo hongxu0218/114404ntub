@@ -275,7 +275,7 @@ def main():
     output_dir = r"C:\Users\susan\OneDrive - ntub.edu.tw\畢業專題\爬蟲\寵物用品&葬儀"
     
     # 直接提供你的 API 金鑰
-    api_key = "AIzaSyD6bvzxlm0cOmyfR0md43t0qixgXEupMpY"  # 把這裡替換成你的實際 API 金鑰
+    api_key = "你的實際 API 金鑰"  # 把這裡替換成你的實際 API 金鑰
     maps_api = GoogleMapsAPI(api_key)
     
     try:
