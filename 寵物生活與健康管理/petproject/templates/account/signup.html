@@ -1,0 +1,112 @@
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>註冊｜寵物生活管理系統</title>
+    <style>
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .signup-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            color: #6c63ff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        form {
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #6c63ff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #574fd6;
+        }
+        .extra-links {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: left;
+        }
+        .extra-links a {
+            text-decoration: none;
+            color: #6c63ff;
+        }
+        .google-login {
+            background-color: #db4437;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .google-login:hover {
+            background-color: #c1351d;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-box">
+        <h2>註冊帳號</h2>
+        <form method="POST" action="{% url 'account_signup' %}">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            {% for field in form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+            {% endfor %}
+
+            <button type="submit">註冊</button>
+        </form>
+
+        <!-- 使用 Google 登入 -->
+        <div>
+            <a href="{% provider_login_url 'google' %}">
+                <button type="button" class="google-login">使用 Google 帳號註冊</button>
+            </a>
+        </div>
+
+        <div class="extra-links">
+            <p>已經有帳號了？<a href="{% url 'account_login' %}">登入</a></p>
+        </div>
+    </div>
+</body>
+</html>
