@@ -1,0 +1,145 @@
+<!-- templates/account/edit.html -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>修改帳號資料</title>
+    <style>
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .edit-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            color: #6c63ff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        form {
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        select, input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .hint {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 16px;
+        }
+        .btn {
+            background-color: #6c63ff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #574fd6;
+        }
+        .back {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .back a {
+            text-decoration: none;
+            color: #6c63ff;
+        }
+        #vet-fields {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="edit-box">
+        <h2>修改帳號資料</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+        
+            <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+        
+            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+            {{ form.last_name }}
+            {{ form.last_name.errors }}
+            
+            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+            {{ form.first_name }}
+            {{ form.first_name.errors }}
+        
+            <label for="{{ form.account_type.id_for_label }}">{{ form.account_type.label }}</label>
+            {{ form.account_type }}
+            {{ form.account_type.errors }}
+        
+            <label for="{{ form.phone_number.id_for_label }}">{{ form.phone_number.label }}</label>
+            {{ form.phone_number }}
+            {{ form.phone_number.errors }}
+        
+            <div id="vet-fields" style="display: none;">
+                <label for="{{ form.vet_license_city.id_for_label }}">{{ form.vet_license_city.label }}</label>
+                {{ form.vet_license_city }}
+                {{ form.vet_license_city.errors }}
+        
+                <label for="{{ form.vet_license.id_for_label }}">{{ form.vet_license.label }}</label>
+                
+                {% if form.instance.vet_license %}
+                    <p class="hint">目前檔案：<a href="{{ form.instance.vet_license.url }}" target="_blank">{{ form.instance.vet_license.name }}</a></p>
+                {% else %}
+                    <p class="hint">目前尚未上傳檔案。</p>
+                {% endif %}
+
+                {{ form.vet_license }}
+                <p class="hint">僅限 PDF、JPG、JPEG 或 PNG，最大 5MB。</p>
+                {{ form.vet_license.errors }}
+            </div>
+            <button type="submit" class="btn">儲存</button>
+
+            <script>
+                const accountTypeField = document.getElementById("id_account_type");
+                const vetFields = document.getElementById("vet-fields");
+            
+                function toggleVetFields() {
+                    if (accountTypeField.value === "vet") {
+                        vetFields.style.display = "block";
+                    } else {
+                        vetFields.style.display = "none";
+                    }
+                }
+            
+                toggleVetFields();
+                accountTypeField.addEventListener("change", toggleVetFields);
+            </script>
+        </form>
+
+        <div class="back">
+            <a href="{% url 'home' %}">← 回首頁</a>
+        </div>
+    </div>
+</body>
+</html>
