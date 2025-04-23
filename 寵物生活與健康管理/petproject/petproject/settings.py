@@ -104,6 +104,9 @@ DATABASES = {
     }
 }
 
+ACCOUNT_FORMS = {
+    'signup': 'petapp.forms.CustomSignupForm',
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -132,6 +135,9 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # 原生 Django 認證系統
     'allauth.account.auth_backends.AuthenticationBackend',  # 加入 allauth 的登入方式
 )
+
+SOCIALACCOUNT_ADAPTER = 'petapp.adapter.MySocialAccountAdapter'
+
 
 # 註冊成功後導向頁面
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -174,9 +180,19 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static' # 加入 static 路徑
 ]
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # ===== 社群登入（Google）設定，使用 .env 檔儲存憑證資訊 =====
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
+        'SCOPE': [
+            'profile',
+            'email'
+        ],
+        'AUTH_PARAMS': {
+            'prompt': 'select_account'
+        },
         'APP': {
             'client_id': config('GOOGLE_CLIENT_ID'),  # 從 .env 讀取 Google Client ID
             'secret': config('GOOGLE_CLIENT_SECRET'),  # 從 .env 讀取 Google Client Secret

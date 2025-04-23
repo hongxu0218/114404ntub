@@ -1,3 +1,4 @@
+<!-- templates/account/signup.html -->
 {% load socialaccount %}
 
 <!DOCTYPE html>
@@ -15,7 +16,7 @@
             height: 100vh;
             margin: 0;
         }
-        .signup-box {
+        .login-box {
             background-color: white;
             padding: 40px;
             border-radius: 12px;
@@ -37,7 +38,9 @@
             font-weight: bold;
         }
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"],
+        select {
             width: 100%;
             padding: 12px;
             margin-bottom: 20px;
@@ -69,21 +72,27 @@
         }
         .google-login {
             background-color: #db4437;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            width: 100%;
-            cursor: pointer;
+            margin-top: 15px;
         }
         .google-login:hover {
             background-color: #c1351d;
         }
+        .alert {
+            color: red;
+            text-align: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="signup-box">
+    <div class="login-box">
         <h2>註冊帳號</h2>
+
+        {% if request.session.signup_redirect_message %}
+            <div class="alert">{{ request.session.signup_redirect_message }}</div>
+        {% endif %}
+
+
         <form method="POST" action="{% url 'account_signup' %}">
             {% csrf_token %}
             {{ form.non_field_errors }}
@@ -97,12 +106,10 @@
             <button type="submit">註冊</button>
         </form>
 
-        <!-- 使用 Google 登入 -->
-        <div>
-            <a href="{% provider_login_url 'google' %}">
-                <button type="button" class="google-login">使用 Google 帳號註冊</button>
-            </a>
-        </div>
+        <a href="{% url 'select_type_then_social' %}">
+            <button type="button" class="google-login">使用 Google 帳號註冊</button>
+        </a>          
+          
 
         <div class="extra-links">
             <p>已經有帳號了？<a href="{% url 'account_login' %}">登入</a></p>
