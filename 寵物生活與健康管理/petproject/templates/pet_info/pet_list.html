@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>飼主主頁</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        h2 {
+            color: #333;
+        }
+        .pet-list {
+            margin-top: 20px;
+        }
+        .pet-list li {
+            background-color: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .pet-details {
+            display: none;
+            margin-top: 10px;
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-pet {
+            color: #007bff;
+            background-color: #fff;
+            border: 1px solid #007bff;
+        }
+        .btn-pet:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+
+        .btn-edit {
+            background-color: #ffc107;
+            color: white;
+        }
+        .btn-edit:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+
+        .btn-close {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-close:hover {
+            background-color: #5a6268;
+        }
+
+        .action-buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+    <script>
+        function togglePetDetails(petId) {
+            var details = document.getElementById("details-" + petId);
+            if (details.style.display === "none" || details.style.display === "") {
+                details.style.display = "block";
+            } else {
+                details.style.display = "none";
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <h2>歡迎來到飼主主頁</h2>
+
+    <p>在這裡你可以新增寵物資料或查看已填過的寵物資料。</p>
+
+    <a href="{% url 'add_pet' %}" class="btn btn-primary">➕ 新增寵物資料</a>
+
+    <div class="pet-list">
+        <h3>已填過的寵物資料</h3>
+        <ul>
+          {% for pet in pets %}
+            <li>
+                <button class="btn btn-pet" onclick="togglePetDetails({{ pet.id }})">
+                    {{ pet.name }}（{{ pet.get_species_display }}）
+                </button>
+                <div id="details-{{ pet.id }}" class="pet-details">
+                    <p><strong>品種：</strong>{{ pet.breed }}</p>
+                    <p><strong>絕育狀態：</strong>{{ pet.get_sterilization_status_display }}</p>
+                    <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
+                    <p><strong>出生日期：</strong>{{ pet.date_of_birth }}</p>
+                    <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
+                    <p><strong>特徵：</strong>{{ pet.feature }}</p>
+                    <p><strong>性別：</strong>{{ pet.get_gender_display }}</p>
+                    <p><strong>圖片：</strong> </p>
+                    <p><strong></strong><img src="{{ pet.picture.url }}" alt="pet image" style="max-width: 200px;"></p>
+
+                    <div class="action-buttons">
+                        <a href="{% url 'edit_pet' pet.id %}" class="btn btn-edit">✏️ 修改</a>
+                        <a href="{% url 'delete_pet' pet.id %}" class="btn btn-delete">🗑️ 刪除</a>
+                        <button class="btn btn-close" onclick="togglePetDetails({{ pet.id }})">❌ 關閉</button>
+                    </div>
+                </div>
+            </li>
+          {% empty %}
+            <li>尚無寵物資料，快來新增你的寵物吧！</li>
+          {% endfor %}
+        </ul>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+{% load form_tags %}
+
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>編輯寵物資料</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2em;
+            background-color: #f7f7f7;
+        }
+        form {
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-top: 1em;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin-top: 0.5em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 1.5em;
+            padding: 0.7em 1.5em;
+            background-color: #ffc107;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #e0a800;
+        }
+        .current-image {
+            margin-top: 1em;
+            text-align: center;
+        }
+        .current-image img {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+        }
+        .form-group {
+            margin-bottom: 1.5em;
+        }
+        .remove-image-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+        }
+        .remove-image-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center;">編輯寵物資料</h2>
+
+    <form method="post" enctype="multipart/form-data" id="edit-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="id_species">種類</label>
+            {{ form.species }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_breed">品種</label>
+            {{ form.breed }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_name">名字</label>
+            {{ form.name }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_sterilization_status">絕育狀態</label>
+            {{ form.sterilization_status }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_chip">晶片號碼</label>
+            {{ form.chip }}
+        </div>
+
+        <!-- 出生日期 -->
+        <div class="form-group">
+            <label for="id_date_of_birth" class="form-label">出生日期</label>
+            {{ form.date_of_birth|add_class:"form-control" }}
+            {% if pet.date_of_birth %}
+                <p>目前日期：{{ pet.date_of_birth }}</p>
+            {% endif %}
+            {% if form.date_of_birth.errors %}
+                <div class="text-danger">
+                    {% for error in form.date_of_birth.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_gender">性別</label>
+            {{ form.gender }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_weight">體重（公斤）</label>
+            {{ form.weight }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_feature">特徵</label>
+            {{ form.feature }}
+        </div>
+
+        <!-- 圖片欄位 -->
+        <div class="form-group">
+            <label for="id_picture">圖片</label>
+            {% if pet.picture %}
+                <div class="current-image">
+                    <img src="{{ pet.picture.url }}" alt="目前圖片">
+                    <p>目前圖片：{{ pet.picture.name }}</p>
+                    <button type="button" class="remove-image-btn" onclick="removeImage()">移除圖片</button>
+                </div>
+            {% else %}
+                <p>尚未上傳圖片。</p>
+            {% endif %}
+            <input type="file" name="picture" class="form-control" id="id_picture" required>
+        </div>
+
+        <button type="submit">更新</button>
+    </form>
+
+    <script>
+        function removeImage() {
+            // 移除圖片功能
+            if (confirm("確定要刪除圖片嗎？")) {
+                // 清除圖片的邏輯
+                document.querySelector('input[name="picture"]').required = true;  // 標記圖片為必填
+                document.querySelector('input[name="picture"]').value = "";  // 清除文件輸入框的值
+                document.querySelector('.current-image').remove();  // 刪除顯示圖片的區塊
+            }
+        }
+
+        // 驗證表單提交
+        document.getElementById('edit-form').onsubmit = function(event) {
+            if (!document.querySelector('input[name="picture"]').files.length) {
+                alert("圖片為必填欄位，請選擇一張圖片！");
+                event.preventDefault();  // 阻止表單提交
+            }
+        };
+    </script>
+</body>
+</html>

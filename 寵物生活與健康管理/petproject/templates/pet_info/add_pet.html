@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+{% load form_tags %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新增寵物資料</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2em;
+            background-color: #f7f7f7;
+        }
+        form {
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-top: 1em;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin-top: 0.5em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 1.5em;
+            padding: 0.7em 1.5em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center;">新增寵物資料</h2>
+       <form method="post" enctype="multipart/form-data">
+           {% csrf_token %}
+
+           <label for="id_species">種類</label>
+           {{ form.species }}
+
+           <label for="id_breed">品種</label>
+           {{ form.breed }}
+
+           <label for="id_name">名字</label>
+           {{ form.name }}
+
+           <label for="id_sterilization_status">絕育狀態</label>
+           {{ form.sterilization_status }}
+
+           <label for="id_chip">晶片號碼</label>
+           {{ form.chip }}
+
+           <!-- 出生日期 -->
+            <div class="mb-3">
+              <label for="id_date_of_birth" class="form-label">出生日期</label>
+              {{ form.date_of_birth|add_class:"form-control" }}
+              {% if form.date_of_birth.errors %}
+                  <div class="text-danger">
+                    {% for error in form.date_of_birth.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+            </div>
+
+
+           <label for="id_gender">性別</label>
+           {{ form.gender }}
+
+           <label for="id_weight">體重（公斤）</label>
+           {{ form.weight }}
+
+           <label for="id_feature">特徵</label>
+           {{ form.feature }}
+
+           <label for="id_picture">圖片</label>
+           {{ form.picture }}
+
+           <button type="submit">送出</button>
+       </form>
+    </body>>
+</html>
