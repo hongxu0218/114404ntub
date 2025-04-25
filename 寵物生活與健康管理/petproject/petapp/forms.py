@@ -1,101 +1,79 @@
-# petapp/forms.py
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
-from .models import Profile
-from allauth.account.forms import SignupForm
-import re
+from .models import Pet
+from datetime import date
 
-class CustomSignupForm(SignupForm):
-    ACCOUNT_TYPE_CHOICES = [
-        ('owner', '飼主'),
-        ('vet', '獸醫'),
-    ]
-    account_type = forms.ChoiceField(choices=ACCOUNT_TYPE_CHOICES, label="帳號類型")
-
-    def save(self, request):
-        user = super().save(request)
-        account_type = self.cleaned_data['account_type']
-        Profile.objects.create(user=user, account_type=account_type)
-        login(request, user)    # 自動登入
-        return user
-
-class EditProfileForm(forms.ModelForm):
-    username = forms.CharField(max_length=150, label='使用者名稱')
-    first_name = forms.CharField(max_length=30, label='名字', required=False)
-    last_name = forms.CharField(max_length=30, label='姓氏', required=False)
-
-    CITY_CHOICES = [
-        ('台北市', '台北市'),
-        ('新北市', '新北市'),
-        ('桃園市', '桃園市'),
-        ('台中市', '台中市'),
-        ('台南市', '台南市'),
-        ('高雄市', '高雄市'),
-        ('基隆市', '基隆市'),
-        ('新竹市', '新竹市'),
-        ('嘉義市', '嘉義市'),
-        ('新竹縣', '新竹縣'),
-        ('苗栗縣', '苗栗縣'),
-        ('彰化縣', '彰化縣'),
-        ('南投縣', '南投縣'),
-        ('雲林縣', '雲林縣'),
-        ('嘉義縣', '嘉義縣'),
-        ('屏東縣', '屏東縣'),
-        ('宜蘭縣', '宜蘭縣'),
-        ('花蓮縣', '花蓮縣'),
-        ('台東縣', '台東縣'),
-        ('澎湖縣', '澎湖縣'),
-        ('金門縣', '金門縣'),
-        ('連江縣', '連江縣'),
-    ]
-
-    vet_license_city = forms.ChoiceField(choices=CITY_CHOICES, label='執業執照縣市', required=False)
-    vet_license = forms.FileField(label='獸醫證照', required=False, widget=forms.FileInput)
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True)
 
     class Meta:
-        model = Profile
-        fields = ['account_type', 'phone_number', 'vet_license_city', 'vet_license']
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+class PetForm(forms.ModelForm):
+    class Meta:
+        model = Pet
+        fields = [
+                    'species', 'breed', 'name', 'sterilization_status', 'chip',
+                    'date_of_birth', 'gender', 'weight', 'feature', 'picture'
+                ]
+
         labels = {
-            'account_type': '帳號類型',
-            'phone_number': '手機號碼',
-            'vet_license': '獸醫證照',
-            'vet_license_city': '執業執照縣市',
+            'species': '種類',
+            'breed': '品種',
+            'name': '名字',
+            'sterilization_status': '絕育狀態',
+            'chip': '晶片號碼',
+            'date_of_birth': '出生日期',
+            'gender': '性別',
+            'weight': '體重（公斤）',
+            'feature': '特徵',
+            'picture': '圖片',
+
+
         }
+        widgets = {
+            'date_of_birth': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'max': date.today().strftime('%Y-%m-%d'),
+                'required': 'required',
+                'placeholder': '年/月/日'
+            }),
+            'chip': forms.NumberInput(attrs={'class': 'form-control', 'required': 'required'}),
+            'weight': forms.NumberInput(attrs={'class': 'form-control', 'required': 'required'}),
+            'feature': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': 'required'}),
+            'picture': forms.ClearableFileInput(attrs={'class': 'form-control'})
+            }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if self.user:
-            self.fields['username'].initial = self.user.username
-            self.fields['first_name'].initial = self.user.first_name
-            self.fields['last_name'].initial = self.user.last_name
+        # 確保圖片欄位為必填
+        self.fields['picture'].required = True
 
-    def clean_phone_number(self):
-        phone = self.cleaned_data.get('phone_number')
-        if phone:
-            if not re.match(r'^09\d{8}$', phone):
-                raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
-        return phone
+        def clean_picture(self):
+            picture = self.cleaned_data.get('picture')
+            if not picture and self.instance.picture is None:
+                raise forms.ValidationError("請選擇圖片")
+            return picture
 
-    def clean_vet_license(self):
-        file = self.cleaned_data.get('vet_license')
-        if file:
-            ext = file.name.split('.')[-1].lower()
-            if ext not in ['pdf', 'jpg', 'jpeg', 'png']:
-                raise forms.ValidationError("請上傳 PDF、JPG、JPEG 或 PNG 格式的檔案")
-            if file.size > 5 * 1024 * 1024:
-                raise forms.ValidationError("檔案大小不得超過 5MB")
-        return file
+        for field_name in ['breed', 'name', 'chip', 'weight', 'feature']:
+            self.fields[field_name].required = True
+            self.fields[field_name].widget.attrs.update({'required': 'required'})
 
-    def save(self, commit=True):
-        profile = super().save(commit=False)
-        if commit:
-            profile.save()
-            if self.user:
-                self.user.username = self.cleaned_data['username']
-                self.user.first_name = self.cleaned_data['first_name']
-                self.user.last_name = self.cleaned_data['last_name']
-                self.user.save()
-        return profile
+    def clean_date_of_birth(self):
+        dob = self.cleaned_data.get('date_of_birth')
+        if dob and dob > date.today():
+            raise forms.ValidationError("不能選擇未來日期")
+        return dob
+
+    def clean_weight(self):
+        weight = self.cleaned_data.get('weight')
+        if weight is None:
+            raise forms.ValidationError("請輸入體重")
+        if weight <= 0:
+            raise forms.ValidationError("數字過小，請重新輸入（1000公斤以內）")
+        if weight > 1000:
+            raise forms.ValidationError("數字過大，請重新輸入（1000公斤以內）")
+        return weight
