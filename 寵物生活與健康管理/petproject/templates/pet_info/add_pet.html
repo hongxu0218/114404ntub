@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新增寵物資料</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2em;
+            background-color: #f7f7f7;
+        }
+        form {
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-top: 1em;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin-top: 0.5em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 1.5em;
+            padding: 0.7em 1.5em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .text-danger {
+            color: red;
+            font-size: 0.9em;
+        }
+        #image-preview {
+            display: none;
+            margin-top: 1em;
+            max-width: 100%;
+            max-height: 300px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+
+    <script>
+    function previewImage(event) {
+        const input = event.target;
+        const preview = document.getElementById('image-preview');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <h2 style="text-align: center;">新增寵物資料</h2>
+
+    <form method="post" enctype="multipart/form-data" id="add-form">
+        {% csrf_token %}
+
+        <label for="id_species">種類</label>
+        {{ form.species }}
+        {% if form.species.errors %}
+            <div class="text-danger">
+                {% for error in form.species.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_breed">品種</label>
+        {{ form.breed }}
+        {% if form.breed.errors %}
+            <div class="text-danger">
+                {% for error in form.breed.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_name">名字</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+            <div class="text-danger">
+                {% for error in form.name.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_sterilization_status">絕育狀態</label>
+        {{ form.sterilization_status }}
+        {% if form.sterilization_status.errors %}
+            <div class="text-danger">
+                {% for error in form.sterilization_status.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_chip">晶片號碼</label>
+        {{ form.chip }}
+        {% if form.chip.errors %}
+            <div class="text-danger">
+                {% for error in form.chip.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_date_of_birth">出生日期</label>
+        <div style="display: flex; gap: 1em; margin-top: 0.5em;">
+            <div style="flex: 1;">
+                {{ form.year_of_birth }}
+                {% if form.year_of_birth.errors %}
+                    <div class="text-danger">
+                        {% for error in form.year_of_birth.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div style="flex: 1;">
+                {{ form.month_of_birth }}
+                {% if form.month_of_birth.errors %}
+                    <div class="text-danger">
+                        {% for error in form.month_of_birth.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            <div style="flex: 1;">
+                {{ form.day_of_birth }}
+                {% if form.day_of_birth.errors %}
+                    <div class="text-danger">
+                        {% for error in form.day_of_birth.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <label for="id_gender">性別</label>
+        {{ form.gender }}
+        {% if form.gender.errors %}
+            <div class="text-danger">
+                {% for error in form.gender.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_weight">體重（公斤）</label>
+        {{ form.weight }}
+        {% if form.weight.errors %}
+            <div class="text-danger">
+                {% for error in form.weight.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_feature">特徵</label>
+        {{ form.feature }}
+        {% if form.feature.errors %}
+            <div class="text-danger">
+                {% for error in form.feature.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <label for="id_picture">圖片</label>
+        <input type="file" name="picture" id="id_picture" onchange="previewImage(event)" required>
+        {% if form.picture.errors %}
+            <div class="text-danger">
+                {% for error in form.picture.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <img id="image-preview" src="#" alt="預覽圖片">
+
+        <button type="submit">送出</button>
+    </form>
+</body>
+</html>
