@@ -1,101 +1,107 @@
-# petapp/forms.py
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
-from .models import Profile
-from allauth.account.forms import SignupForm
-import re
+from .models import Pet
+import datetime
+from datetime import date
 
-class CustomSignupForm(SignupForm):
-    ACCOUNT_TYPE_CHOICES = [
-        ('owner', '飼主'),
-        ('vet', '獸醫'),
-    ]
-    account_type = forms.ChoiceField(choices=ACCOUNT_TYPE_CHOICES, label="帳號類型")
-
-    def save(self, request):
-        user = super().save(request)
-        account_type = self.cleaned_data['account_type']
-        Profile.objects.create(user=user, account_type=account_type)
-        login(request, user)    # 自動登入
-        return user
-
-class EditProfileForm(forms.ModelForm):
-    username = forms.CharField(max_length=150, label='使用者名稱')
-    first_name = forms.CharField(max_length=30, label='名字', required=False)
-    last_name = forms.CharField(max_length=30, label='姓氏', required=False)
-
-    CITY_CHOICES = [
-        ('台北市', '台北市'),
-        ('新北市', '新北市'),
-        ('桃園市', '桃園市'),
-        ('台中市', '台中市'),
-        ('台南市', '台南市'),
-        ('高雄市', '高雄市'),
-        ('基隆市', '基隆市'),
-        ('新竹市', '新竹市'),
-        ('嘉義市', '嘉義市'),
-        ('新竹縣', '新竹縣'),
-        ('苗栗縣', '苗栗縣'),
-        ('彰化縣', '彰化縣'),
-        ('南投縣', '南投縣'),
-        ('雲林縣', '雲林縣'),
-        ('嘉義縣', '嘉義縣'),
-        ('屏東縣', '屏東縣'),
-        ('宜蘭縣', '宜蘭縣'),
-        ('花蓮縣', '花蓮縣'),
-        ('台東縣', '台東縣'),
-        ('澎湖縣', '澎湖縣'),
-        ('金門縣', '金門縣'),
-        ('連江縣', '連江縣'),
-    ]
-
-    vet_license_city = forms.ChoiceField(choices=CITY_CHOICES, label='執業執照縣市', required=False)
-    vet_license = forms.FileField(label='獸醫證照', required=False, widget=forms.FileInput)
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True)
 
     class Meta:
-        model = Profile
-        fields = ['account_type', 'phone_number', 'vet_license_city', 'vet_license']
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+
+class PetForm(forms.ModelForm):
+    year_of_birth = forms.IntegerField(required=True, label='出生年')
+    month_of_birth = forms.IntegerField(required=True, label='出生月')
+    day_of_birth = forms.IntegerField(required=True, label='出生日')
+
+    class Meta:
+        model = Pet
+        fields = [
+            'species', 'breed', 'name', 'sterilization_status', 'chip',
+            'gender', 'weight', 'feature', 'picture',
+            'year_of_birth', 'month_of_birth', 'day_of_birth'
+        ]
         labels = {
-            'account_type': '帳號類型',
-            'phone_number': '手機號碼',
-            'vet_license': '獸醫證照',
-            'vet_license_city': '執業執照縣市',
+            'species': '種類',
+            'breed': '品種',
+            'name': '名字',
+            'sterilization_status': '絕育狀態',
+            'chip': '晶片號碼',
+            'gender': '性別',
+            'weight': '體重（公斤）',
+            'feature': '特徵',
+            'picture': '圖片',
+            'year_of_birth': '年',
+            'month_of_birth': '月',
+            'day_of_birth': '日'
+        }
+        widgets = {
+            'chip': forms.NumberInput(attrs={'class': 'form-control'}),
+            'weight': forms.NumberInput(attrs={'class': 'form-control'}),
+            'feature': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'picture': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'year_of_birth': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '年'}),
+            'month_of_birth': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '月'}),
+            'day_of_birth': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '日'}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if self.user:
-            self.fields['username'].initial = self.user.username
-            self.fields['first_name'].initial = self.user.first_name
-            self.fields['last_name'].initial = self.user.last_name
+        self.fields['picture'].required = True
+        for field_name in ['breed', 'name', 'chip', 'weight', 'feature']:
+            self.fields[field_name].required = True
 
-    def clean_phone_number(self):
-        phone = self.cleaned_data.get('phone_number')
-        if phone:
-            if not re.match(r'^09\d{8}$', phone):
-                raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
-        return phone
+    def clean_weight(self):
+        weight = self.cleaned_data.get('weight')
+        if weight is None:
+            raise forms.ValidationError("請輸入體重")
+        if weight <= 0:
+            raise forms.ValidationError("數字過小，請重新輸入（1000公斤以內）")
+        if weight > 1000:
+            raise forms.ValidationError("數字過大，請重新輸入（1000公斤以內）")
+        return weight
 
-    def clean_vet_license(self):
-        file = self.cleaned_data.get('vet_license')
-        if file:
-            ext = file.name.split('.')[-1].lower()
-            if ext not in ['pdf', 'jpg', 'jpeg', 'png']:
-                raise forms.ValidationError("請上傳 PDF、JPG、JPEG 或 PNG 格式的檔案")
-            if file.size > 5 * 1024 * 1024:
-                raise forms.ValidationError("檔案大小不得超過 5MB")
-        return file
+    def clean_year_of_birth(self):
+        year = self.cleaned_data.get('year_of_birth')
+        if year is None:
+            raise forms.ValidationError("請輸入出生年份")
+        if year < 1900 or year > date.today().year:
+            raise forms.ValidationError("請輸入有效年份")
+        return year
 
-    def save(self, commit=True):
-        profile = super().save(commit=False)
-        if commit:
-            profile.save()
-            if self.user:
-                self.user.username = self.cleaned_data['username']
-                self.user.first_name = self.cleaned_data['first_name']
-                self.user.last_name = self.cleaned_data['last_name']
-                self.user.save()
-        return profile
+    def clean_month_of_birth(self):
+        month = self.cleaned_data.get('month_of_birth')
+        if month is None:
+            raise forms.ValidationError("請輸入出生月份")
+        if month < 1 or month > 12:
+            raise forms.ValidationError("請輸入有效月份")
+        return month
+
+    def clean_day_of_birth(self):
+        day = self.cleaned_data.get('day_of_birth')
+        if day is None:
+            raise forms.ValidationError("請輸入出生日期")
+        if day < 1 or day > 31:
+            raise forms.ValidationError("請輸入有效日期")
+        return day
+
+    def clean(self):
+        cleaned_data = super().clean()
+        year = cleaned_data.get('year_of_birth')
+        month = cleaned_data.get('month_of_birth')
+        day = cleaned_data.get('day_of_birth')
+
+        # 如果三個都填了，再驗證組合起來是否為合法的日期
+        if year and month and day:
+            try:
+                dob = date(year, month, day)
+            except ValueError:
+                raise forms.ValidationError('請輸入正確的出生日期')
+            if dob > date.today():
+                raise forms.ValidationError('出生日期不能是未來')
+
+        return cleaned_data
