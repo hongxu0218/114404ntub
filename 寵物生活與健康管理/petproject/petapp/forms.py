@@ -9,6 +9,19 @@ from .models import Profile  # 匯入自定義的使用者 Profile 模型
 from allauth.account.forms import SignupForm  # allauth 的註冊表單基底
 import re  # 正規表示式模組，用來驗證手機與檔案格式等
 
+# 可選的縣市選單（用於獸醫執照所在地）
+CITY_CHOICES = [
+    ('台北市', '台北市'), ('新北市', '新北市'), ('桃園市', '桃園市'),
+    ('台中市', '台中市'), ('台南市', '台南市'), ('高雄市', '高雄市'),
+    ('基隆市', '基隆市'), ('新竹市', '新竹市'), ('嘉義市', '嘉義市'),
+    ('新竹縣', '新竹縣'), ('苗栗縣', '苗栗縣'), ('彰化縣', '彰化縣'),
+    ('南投縣', '南投縣'), ('雲林縣', '雲林縣'), ('嘉義縣', '嘉義縣'),
+    ('屏東縣', '屏東縣'), ('宜蘭縣', '宜蘭縣'), ('花蓮縣', '花蓮縣'),
+    ('台東縣', '台東縣'), ('澎湖縣', '澎湖縣'), ('金門縣', '金門縣'),
+    ('連江縣', '連江縣'),
+]
+
+
 class CustomSignupForm(SignupForm):
     # 帳號類型選項（飼主或獸醫）
     ACCOUNT_TYPE_CHOICES = [
@@ -19,6 +32,18 @@ class CustomSignupForm(SignupForm):
     # 帳號類型與手機號碼欄位
     account_type = forms.ChoiceField(choices=ACCOUNT_TYPE_CHOICES, label="帳號類型")
     phone_number = forms.CharField(max_length=20, label="手機號碼", required=True)
+    last_name = forms.CharField(label="姓氏", max_length=30, required=False)
+    first_name = forms.CharField(label="名字", max_length=30, required=False)
+    vet_license_city = forms.ChoiceField(
+        choices=[('', '請選擇縣市')] + CITY_CHOICES,
+        label='執業執照縣市',
+        required=False
+    )
+    vet_license = forms.FileField(
+        label='獸醫證照',
+        required=False,
+        widget=forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png'})
+    )
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')
@@ -28,37 +53,39 @@ class CustomSignupForm(SignupForm):
 
     def save(self, request):
         user = super().save(request)
+    
         account_type = self.cleaned_data['account_type']
         phone_number = self.cleaned_data['phone_number']
+        first_name = self.cleaned_data['first_name']
+        last_name = self.cleaned_data['last_name']
+        vet_license_city = self.cleaned_data.get('vet_license_city')
+        vet_license = self.cleaned_data.get('vet_license')
+
 
         # 建立對應的 Profile
         Profile.objects.create(
-            user=user,
-            account_type=account_type,
-            phone_number=phone_number,
-        )
+        user=user,
+        account_type=account_type,
+        phone_number=phone_number,
+        vet_license_city=vet_license_city,
+        vet_license=vet_license,
+    )
 
+        # 將名字與姓氏寫入 User 模型
+        user.first_name = first_name
+        user.last_name = last_name
         user.backend = 'django.contrib.auth.backends.ModelBackend'
+        user.save()
+
         login(request, user)
         return user
+
 
 class EditProfileForm(forms.ModelForm):
     # 顯示基本資料欄位：使用者名稱、名字、姓氏
     username = forms.CharField(max_length=150, label='使用者名稱')
     first_name = forms.CharField(max_length=30, label='名字', required=False)
     last_name = forms.CharField(max_length=30, label='姓氏', required=False)
-
-    # 可選的縣市選單（用於獸醫執照所在地）
-    CITY_CHOICES = [
-        ('台北市', '台北市'), ('新北市', '新北市'), ('桃園市', '桃園市'),
-        ('台中市', '台中市'), ('台南市', '台南市'), ('高雄市', '高雄市'),
-        ('基隆市', '基隆市'), ('新竹市', '新竹市'), ('嘉義市', '嘉義市'),
-        ('新竹縣', '新竹縣'), ('苗栗縣', '苗栗縣'), ('彰化縣', '彰化縣'),
-        ('南投縣', '南投縣'), ('雲林縣', '雲林縣'), ('嘉義縣', '嘉義縣'),
-        ('屏東縣', '屏東縣'), ('宜蘭縣', '宜蘭縣'), ('花蓮縣', '花蓮縣'),
-        ('台東縣', '台東縣'), ('澎湖縣', '澎湖縣'), ('金門縣', '金門縣'),
-        ('連江縣', '連江縣'),
-    ]
 
     # 執業執照縣市（可選填）
     vet_license_city = forms.ChoiceField(choices=CITY_CHOICES, label='執業執照縣市', required=False)
@@ -128,13 +155,19 @@ class SocialSignupExtraForm(forms.Form):
         choices=[('owner', '飼主'), ('vet', '獸醫')],
         label='帳號類型'
     )
+    username = forms.CharField(
+        label='使用者名稱',
+        max_length=150,
+        required=True
+    )
+    
     phone_number = forms.CharField(
         label='手機號碼',
         required=True,
         max_length=20
     )
     vet_license_city = forms.ChoiceField(
-        choices=[('', '請選擇縣市')] + EditProfileForm.CITY_CHOICES,
+        choices=[('', '請選擇縣市')] + CITY_CHOICES,
         label='執業執照縣市',
         required=False
     )

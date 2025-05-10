@@ -121,58 +121,45 @@
             {% csrf_token %}
             {{ form.non_field_errors }}
 
-            <label for="account_type">帳號類型</label>
-            <select id="account_type" name="account_type" required>
-                <option value="">請選擇</option>
-                <option value="owner">飼主</option>
-                <option value="vet">獸醫</option>
-            </select>
+            <label for="{{ form.account_type.id_for_label }}">{{ form.account_type.label }}</label>
+            {{ form.account_type }}
+            {{ form.account_type.errors }}
+            
 
             {% for field in form %}
-                {% if field.name == 'email' %}
+            {% if field.name != 'account_type' and field.name != 'phone_number' and field.name != 'email' and field.name != 'first_name' and field.name != 'last_name' and field.name != 'vet_license_city' and field.name != 'vet_license' %}
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {{ field.errors }}
-
-                    <label for="phone_number">手機號碼</label>
-                    <input type="text" name="phone_number" id="phone_number" required>
-                {% elif field.name != 'account_type' and field.name != 'phone_number' %}
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {{ field.errors }}
+        
+                    {% if field.name == 'username' %}
+                        <label for="{{ form.last_name.id_for_label }}">姓氏</label>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+        
+                        <label for="{{ form.first_name.id_for_label }}">名字</label>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+        
+                        <label for="{{ form.email.id_for_label }}">電子信箱</label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+        
+                        <label for="phone_number">手機號碼</label>
+                        <input type="text" name="phone_number" id="phone_number" required>
+                    {% endif %}
                 {% endif %}
-            {% endfor %}
+            {% endfor %}        
 
             <div id="vet-fields" style="display: none;">
-                <label for="vet_license_city">執業執照縣市</label>
-                <select name="vet_license_city" id="vet_license_city">
-                    <option value="">請選擇縣市</option>
-                    <option value="台北市">台北市</option>
-                    <option value="新北市">新北市</option>
-                    <option value="桃園市">桃園市</option>
-                    <option value="台中市">台中市</option>
-                    <option value="台南市">台南市</option>
-                    <option value="高雄市">高雄市</option>
-                    <option value="基隆市">基隆市</option>
-                    <option value="新竹市">新竹市</option>
-                    <option value="嘉義市">嘉義市</option>
-                    <option value="新竹縣">新竹縣</option>
-                    <option value="苗栗縣">苗栗縣</option>
-                    <option value="彰化縣">彰化縣</option>
-                    <option value="南投縣">南投縣</option>
-                    <option value="雲林縣">雲林縣</option>
-                    <option value="嘉義縣">嘉義縣</option>
-                    <option value="屏東縣">屏東縣</option>
-                    <option value="宜蘭縣">宜蘭縣</option>
-                    <option value="花蓮縣">花蓮縣</option>
-                    <option value="台東縣">台東縣</option>
-                    <option value="澎湖縣">澎湖縣</option>
-                    <option value="金門縣">金門縣</option>
-                    <option value="連江縣">連江縣</option>
-                </select>
+                <label for="{{ form.vet_license_city.id_for_label }}">執業執照縣市</label>
+                {{ form.vet_license_city }}
+                {{ form.vet_license_city.errors }}
 
-                <label for="vet_license">獸醫證照</label>
-                <input type="file" name="vet_license" id="vet_license" accept=".pdf,.jpg,.jpeg,.png">
+                <label for="{{ form.vet_license.id_for_label }}">獸醫證照</label>
+                {{ form.vet_license }}
+                {{ form.vet_license.errors }}
+
                 <p class="hint">僅限 PDF、JPG、JPEG 或 PNG，最大 5MB。</p>
             </div>
 
@@ -189,28 +176,27 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const accountType = document.getElementById('account_type');
-            const vetFields = document.getElementById('vet-fields');
-            const phoneInput = document.getElementById('phone_number');
-            const cityInput = document.getElementById('vet_license_city');
-            const licenseInput = document.getElementById('vet_license');
+    document.addEventListener('DOMContentLoaded', function () {
+        const accountType = document.getElementById('id_account_type');
+        const vetFields = document.getElementById('vet-fields');
+        const cityInput = document.getElementById('vet_license_city');
+        const licenseInput = document.getElementById('vet_license');
 
-            function toggleVetFields() {
-                if (accountType.value === 'vet') {
-                    vetFields.style.display = 'block';
-                    cityInput.required = true;
-                    licenseInput.required = true;
-                } else {
-                    vetFields.style.display = 'none';
-                    cityInput.required = false;
-                    licenseInput.required = false;
-                }
+        function toggleVetFields() {
+            if (accountType.value === 'vet') {
+                vetFields.style.display = 'block';
+                cityInput.required = true;
+                licenseInput.required = true;
+            } else {
+                vetFields.style.display = 'none';
+                cityInput.required = false;
+                licenseInput.required = false;
             }
+        }
 
-            accountType.addEventListener('change', toggleVetFields);
-            toggleVetFields();
-        });
+        accountType.addEventListener('change', toggleVetFields);
+        toggleVetFields();  // 初始化載入時執行一次
+    });
     </script>
 </body>
 </html>

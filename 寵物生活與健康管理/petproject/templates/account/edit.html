@@ -208,14 +208,6 @@
             </script>            
         </form>
 
-        {% if not request.user.socialaccount_set.all %}
-        <div style="margin-top: 20px;">
-            <a href="{% provider_login_url 'google' process='connect' %}" class="btn">
-                綁定 Google 帳號
-            </a>            
-        </div>
-        {% endif %}
-
         <div class="back">
             <a href="{% url 'home' %}">← 回首頁</a>
         </div>

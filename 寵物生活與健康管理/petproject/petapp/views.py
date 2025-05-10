@@ -95,6 +95,7 @@ def social_signup_extra(request):
 
             sociallogin = SocialLogin.deserialize(request.session.pop('socialaccount_sociallogin'))
             user = sociallogin.user
+            user.username = form.cleaned_data['username']
             user.save()
 
             Profile.objects.create(
