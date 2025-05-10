@@ -50,27 +50,13 @@ class EditProfileForm(forms.ModelForm):
 
     # 可選的縣市選單（用於獸醫執照所在地）
     CITY_CHOICES = [
-        ('台北市', '台北市'),
-        ('新北市', '新北市'),
-        ('桃園市', '桃園市'),
-        ('台中市', '台中市'),
-        ('台南市', '台南市'),
-        ('高雄市', '高雄市'),
-        ('基隆市', '基隆市'),
-        ('新竹市', '新竹市'),
-        ('嘉義市', '嘉義市'),
-        ('新竹縣', '新竹縣'),
-        ('苗栗縣', '苗栗縣'),
-        ('彰化縣', '彰化縣'),
-        ('南投縣', '南投縣'),
-        ('雲林縣', '雲林縣'),
-        ('嘉義縣', '嘉義縣'),
-        ('屏東縣', '屏東縣'),
-        ('宜蘭縣', '宜蘭縣'),
-        ('花蓮縣', '花蓮縣'),
-        ('台東縣', '台東縣'),
-        ('澎湖縣', '澎湖縣'),
-        ('金門縣', '金門縣'),
+        ('台北市', '台北市'), ('新北市', '新北市'), ('桃園市', '桃園市'),
+        ('台中市', '台中市'), ('台南市', '台南市'), ('高雄市', '高雄市'),
+        ('基隆市', '基隆市'), ('新竹市', '新竹市'), ('嘉義市', '嘉義市'),
+        ('新竹縣', '新竹縣'), ('苗栗縣', '苗栗縣'), ('彰化縣', '彰化縣'),
+        ('南投縣', '南投縣'), ('雲林縣', '雲林縣'), ('嘉義縣', '嘉義縣'),
+        ('屏東縣', '屏東縣'), ('宜蘭縣', '宜蘭縣'), ('花蓮縣', '花蓮縣'),
+        ('台東縣', '台東縣'), ('澎湖縣', '澎湖縣'), ('金門縣', '金門縣'),
         ('連江縣', '連江縣'),
     ]
 
@@ -135,3 +121,31 @@ class EditProfileForm(forms.ModelForm):
                 self.user.last_name = self.cleaned_data['last_name']
                 self.user.save()
         return profile
+
+
+class SocialSignupExtraForm(forms.Form):
+    account_type = forms.ChoiceField(
+        choices=[('owner', '飼主'), ('vet', '獸醫')],
+        label='帳號類型'
+    )
+    phone_number = forms.CharField(
+        label='手機號碼',
+        required=True,
+        max_length=20
+    )
+    vet_license_city = forms.ChoiceField(
+        choices=[('', '請選擇縣市')] + EditProfileForm.CITY_CHOICES,
+        label='執業執照縣市',
+        required=False
+    )
+    vet_license = forms.FileField(
+        label='獸醫證照',
+        required=False,
+        widget=forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png'})
+    )
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number')
+        if not re.match(r'^09\d{8}$', phone):
+            raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
+        return phone

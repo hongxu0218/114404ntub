@@ -8,5 +8,6 @@ urlpatterns = [
     path('dashboard/vet/', views.vet_dashboard, name='vet_dashboard'),
     path('select-account-type/', views.select_account_type, name='select_account_type'),
     path('account/edit/', views.edit_profile, name='edit_profile'),
+    path('accounts/mark-signup/', views.mark_from_signup_and_redirect, name='mark_from_signup_and_redirect'),
 
 ]
