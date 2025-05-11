@@ -133,19 +133,32 @@ def select_account_type(request):
 
 @login_required
 def edit_profile(request):
-    profile = request.user.profile
-    if request.method == 'POST':
-        form = EditProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
-        if form.is_valid():
-            form.save()
-            request.user.refresh_from_db()
-            messages.success(request, '帳號資料已更新')
-            return redirect('home')
-    else:
-        form = EditProfileForm(instance=profile, user=request.user)
-        form.user = request.user
-    return render(request, 'account/edit.html', {'form': form})
+    user = request.user
+    profile = user.profile
 
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, request.FILES, instance=profile, user=user)
+
+        if form.is_valid():
+            new_username = form.cleaned_data.get('username')
+            if new_username != user.username:
+                from django.contrib.auth.models import User
+                if User.objects.exclude(pk=user.pk).filter(username=new_username).exists():
+                    form.add_error('username', '此使用者名稱已被使用')
+                else:
+                    form.save()
+                    messages.success(request, '帳號資料已成功更新')
+                    return redirect('home')
+            else:
+                form.save()
+                messages.success(request, '帳號資料已成功更新')
+                return redirect('home')
+    else:
+        form = EditProfileForm(instance=profile, user=user)
+
+    return render(request, 'account/edit.html', {
+        'form': form,
+    })
 
 @login_required
 def owner_dashboard(request):
