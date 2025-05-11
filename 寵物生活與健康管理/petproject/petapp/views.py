@@ -10,7 +10,8 @@ from django import forms
 from .forms import EditProfileForm, SocialSignupExtraForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.providers.google.views import OAuth2LoginView
-from allauth.socialaccount.views import SignupView as SocialSignupView  # 新增
+from allauth.socialaccount.views import SignupView as SocialSignupView  
+from django.http import JsonResponse
 
 
 def home(request):
@@ -18,8 +19,6 @@ def home(request):
 
 class CustomSignupView(SignupView):
     def get(self, request, *args, **kwargs):
-        if 'signup_redirect_message' in request.session:
-            del request.session['signup_redirect_message']
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -182,3 +181,7 @@ def dashboard_redirect(request):
 def mark_from_signup_and_redirect(request):
     request.session['from_signup'] = True
     return redirect('/accounts/google/login/?next=/accounts/social/signup/extra/')
+
+def clear_signup_message(request):
+    request.session.pop('signup_redirect_message', None)
+    return JsonResponse({'cleared': True})

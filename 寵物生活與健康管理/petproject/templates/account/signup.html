@@ -115,7 +115,11 @@
 
         {% if request.session.signup_redirect_message %}
             <div class="alert">{{ request.session.signup_redirect_message }}</div>
+            <script>
+                fetch("{% url 'clear_signup_message' %}");
+            </script>
         {% endif %}
+    
 
         <form method="POST" action="{% url 'account_signup' %}" enctype="multipart/form-data">
             {% csrf_token %}
