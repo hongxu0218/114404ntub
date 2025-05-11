@@ -15,10 +15,9 @@ DEBUG=True  # 開發階段請設為 True，部署時建議設為 False
 GOOGLE_CLIENT_ID=your-google-client-id  # 從 Google Cloud Console 取得
 GOOGLE_CLIENT_SECRET=your-google-client-secret  # 從 Google Cloud Console 取得
 
-# ======== Database 設定（SQLite 可略）========
-# ======== 這部分還沒設定 ========
-DB_NAME=your_db_name  # 資料庫名稱
-DB_USER=your_db_user  # 資料庫使用者名稱
+# ======== Database 設定（MySQL）========
+DB_NAME=your_db_name  # 資料庫名稱(pawday_db)
+DB_USER=your_db_user  # 資料庫使用者名稱(root)
 DB_PASSWORD=your_db_password  # 資料庫密碼
 DB_HOST=localhost  # 通常為 localhost，除非是遠端資料庫
 DB_PORT=5432  # PostgreSQL 預設為 5432
