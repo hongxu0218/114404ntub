@@ -29,11 +29,8 @@ DEFAULT_FROM_EMAIL=your-default-from@example.com  # 發信人 email。系統管�
 ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系統管理員
 ```
 ### ✅ 步驟二：從 Google Cloud Console 取得 ID 和 金鑰
-### ✅ 步驟三：下載 MySQL
 
-★注意：
- `settings.py` 裡15、16、196、197 有金鑰
-金鑰放在 `.env`
+★注意： `settings.py` 裡15、16、196、197 有金鑰，金鑰放在 `.env`
 
 到 Google Cloud Console 申請 OAuth 憑證
 👉 前往：Google Cloud Console
@@ -46,18 +43,52 @@ ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系�
 3. 建立 OAuth 同意畫面
 
     • 使用者類型：External（外部）
+   
     • Email、應用名稱等資料填寫即可
 
-4. 建立憑證 → OAuth client ID
+5. 建立憑證 → OAuth client ID
 
     • 應用類型選：Web application
+   
     • 授權的 redirect URI 請填入：
+   
     • 複製程式碼
+   
    ```bash
    http://127.0.0.1:8000/accounts/google/login/callback/
    ```
 
-5. 記下 Client ID 與 Client Secret
+7. 記下 Client ID 與 Client Secret
+
+### ✅ 步驟三：下載 MySQL
+
+下載MySQL `https://dev.mysql.com/downloads/file/?id=539682`
+
+點藍色字 "No thanks, just start my download."
+
+參考教學影片： `https://www.youtube.com/watch?v=3zzszKQ8Kk4`
+
+#### 使用 MySQL Workbench 建立資料庫
+
+#### 📌 安裝
+- 下載：<https://dev.mysql.com/downloads/workbench/>
+
+#### 📌 建立資料庫步驟
+
+1. 開啟 **MySQL Workbench**
+2. 連接你的資料庫（預設為：
+   - Host: `localhost`
+   - User: `root`
+3. 在左邊點選 **Schemas（資料庫）**
+4. 在空白處點右鍵，選擇 **Create Schema**
+5. 在彈出視窗中輸入以下資訊：
+   - **Schema Name**：輸入你想要的資料庫名稱（例如：`pawday_db`）
+   - **Default Collation**：選擇 `utf8mb4_general_ci`
+6. 點選 **Apply**
+7. 再次點選 **Apply**
+8. 點選 **Finish**
+
+🎉 這樣就建立完成囉 🎉
 
 ### ✅ 步驟四：設定（使用 SMTP 發信）
 ★注意： `settings.py` 裡 91~96
