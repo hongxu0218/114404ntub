@@ -24,8 +24,8 @@ DB_HOST=localhost  # 通常為 localhost，除非是遠端資料庫
 DB_PORT=5432  # PostgreSQL 預設為 5432
 
 # ======== Email 設定（使用 SMTP 發信）========
-EMAIL_HOST_USER=your-email@example.com  # SMTP 登入帳號，例如 Gmail
-EMAIL_HOST_PASSWORD=your-email-password  # SMTP 密碼（如應用程式密碼）
-DEFAULT_FROM_EMAIL=your-default-from@example.com  # 發信人 email
-ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途
+EMAIL_HOST_USER=your-email@example.com  # SMTP 登入帳號，例如 Gmail。發信方
+EMAIL_HOST_PASSWORD=your-email-password  # SMTP 密碼（如應用程式密碼）。發信方
+DEFAULT_FROM_EMAIL=your-default-from@example.com  # 發信人 email。系統管理員
+ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系統管理員
 
