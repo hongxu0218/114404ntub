@@ -1,0 +1,102 @@
+<!-- templates/home.html -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>首頁｜寵物生活管理系統</title>
+    <style>
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+        header {
+            background-color: #6c63ff;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+        }
+        main {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .message-box {
+            background-color: #fdecea;
+            color: #d93025;
+            border: 1px solid #f5c2c7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 600px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🐾 寵物生活管理系統</h1>
+        <nav>
+            {% if user.is_authenticated %}
+                <span>歡迎，{{ user.username }}！</span>
+                <a href="{% url 'account_logout' %}">登出</a>
+            {% else %}
+                <a href="{% url 'account_login' %}">登入</a>
+                <a href="{% url 'account_signup' %}">註冊</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message-box">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+
+        <h2>打造您與毛孩的健康生活</h2>
+        <p>管理疫苗記錄、找尋友善店家、與獸醫保持聯繫，一站完成！</p>
+        
+        {% if user.is_authenticated and not user.is_staff %}
+            <a href="{% url 'edit_profile' %}" class="btn">修改帳號資料</a>
+        {% endif %}
+
+
+        {% if user.is_authenticated %}
+            {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="btn">進入後台管理</a>
+            {% elif user.profile.account_type == 'vet' %}
+                <a href="{% url 'vet_dashboard' %}" class="btn">進入獸醫主控台</a>
+            {% elif user.profile.account_type == 'owner' %}
+                <a href="{% url 'owner_dashboard' %}" class="btn">進入飼主主控台</a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'account_signup' %}" class="btn">立即開始</a>
+        {% endif %}
+    </main>
+</body>
+</html>
