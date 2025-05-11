@@ -27,4 +27,38 @@ EMAIL_HOST_USER=your-email@example.com  # SMTP 登入帳號，例如 Gmail。發
 EMAIL_HOST_PASSWORD=your-email-password  # SMTP 密碼（如應用程式密碼）。發信方
 DEFAULT_FROM_EMAIL=your-default-from@example.com  # 發信人 email。系統管理員
 ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系統管理員
+```
+### ✅ 步驟二：從 Google Cloud Console 取得 ID 和 金鑰
+### ✅ 步驟三：下載 MySQL
 
+★注意：
+ `settings.py` 裡15、16、196、197 有金鑰
+金鑰放在 `.env`
+
+到 Google Cloud Console 申請 OAuth 憑證
+👉 前往：Google Cloud Console
+
+步驟：
+1. 創建專案
+
+2. 啟用 API：搜尋並啟用「Google+ API」與「OAuth 2.0 API」
+
+3. 建立 OAuth 同意畫面
+
+    • 使用者類型：External（外部）
+    • Email、應用名稱等資料填寫即可
+
+4. 建立憑證 → OAuth client ID
+
+    • 應用類型選：Web application
+    • 授權的 redirect URI 請填入：
+    • 複製程式碼
+   ```bash
+   http://127.0.0.1:8000/accounts/google/login/callback/
+   ```
+
+5. 記下 Client ID 與 Client Secret
+
+### ✅ 步驟四：設定（使用 SMTP 發信）
+★注意： `settings.py` 裡 91~96
+相關帳號密碼在 LINE 群組 記事本
