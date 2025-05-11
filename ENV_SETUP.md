@@ -53,8 +53,6 @@ ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系�
    
     • 授權的 redirect URI 請填入：
    
-    • 複製程式碼
-   
    ```bash
    http://127.0.0.1:8000/accounts/google/login/callback/
    ```
@@ -90,6 +88,18 @@ ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系�
 8. 點選 **Finish**
 
 🎉 這樣就建立完成囉 🎉
+> 建好之後記得 **同步資料表** 、 **新增 admin 帳號**
+> ```bash
+> python manage.py makemigrations
+> ```
+> ```bash
+> python manage.py migrate
+> ```
+> 如果是第一次換資料庫（例如從 SQLite 換成 MySQL），那原本 admin 帳號就不會跟著過去，你要重新建立一次：
+> ```bash
+> python manage.py createsuperuser
+> ```
+
 
 ### ✅ 步驟四：設定（使用 SMTP 發信）
 ★注意： `settings.py` 裡 91~96
