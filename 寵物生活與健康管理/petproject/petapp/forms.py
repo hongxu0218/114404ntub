@@ -53,7 +53,7 @@ class CustomSignupForm(SignupForm):
 
     def save(self, request):
         user = super().save(request)
-    
+
         account_type = self.cleaned_data['account_type']
         phone_number = self.cleaned_data['phone_number']
         first_name = self.cleaned_data['first_name']
@@ -61,15 +61,42 @@ class CustomSignupForm(SignupForm):
         vet_license_city = self.cleaned_data.get('vet_license_city')
         vet_license = self.cleaned_data.get('vet_license')
 
-
         # 建立對應的 Profile
-        Profile.objects.create(
-        user=user,
-        account_type=account_type,
-        phone_number=phone_number,
-        vet_license_city=vet_license_city,
-        vet_license=vet_license,
-    )
+        profile = Profile.objects.create(
+            user=user,
+            account_type=account_type,
+            phone_number=phone_number,
+            vet_license_city=vet_license_city,
+            vet_license=vet_license,
+        )
+
+        # 寄信通知管理員（若選擇獸醫）
+        if account_type == 'vet':
+            from django.core.mail import send_mail
+            from django.conf import settings
+
+            subject = "[系統通知] 有新獸醫帳號註冊待審核"
+            message = f"""
+您好，系統管理員：
+
+有使用者完成一般註冊並選擇了「獸醫帳號」。
+
+🔹 使用者名稱：{user.username}
+🔹 Email：{user.email}
+
+請盡快登入後台進行審核：
+http://127.0.0.1:8000/admin/petapp/profile/
+
+— 寵物生活與健康管理 系統
+"""
+            send_mail(
+                subject,
+                message,
+                '"寵物生活與健康管理" <{}>'.format(settings.DEFAULT_FROM_EMAIL),
+                [settings.ADMIN_EMAIL],
+                fail_silently=False
+            )
+            print("✅ 表單內已寄出獸醫通知信")
 
         # 將名字與姓氏寫入 User 模型
         user.first_name = first_name
@@ -79,7 +106,6 @@ class CustomSignupForm(SignupForm):
 
         login(request, user)
         return user
-
 
 class EditProfileForm(forms.ModelForm):
     # 顯示基本資料欄位：使用者名稱、名字、姓氏

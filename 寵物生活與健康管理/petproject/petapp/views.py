@@ -24,35 +24,6 @@ class CustomSignupView(SignupView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        user = form.user
-
-        print("[DEBUG] session account_type =", self.request.session.get('account_type'))
-        print("[DEBUG] session phone_number =", self.request.session.get('phone_number'))
-
-        account_type = self.request.session.pop('account_type', None)
-        phone_number = self.request.session.pop('phone_number', None)
-        vet_license_city = self.request.session.pop('vet_license_city', '')
-        vet_license_name = self.request.session.pop('vet_license_name', None)
-        vet_license_content = self.request.session.pop('vet_license_content', None)
-
-        profile, created = Profile.objects.update_or_create(
-            user=user,
-            defaults={
-                'account_type': account_type or self.request.POST.get('account_type'),
-                'phone_number': phone_number,
-                'vet_license_city': vet_license_city,
-            }
-        )
-        print("[DEBUG] 建立或更新 Profile：", profile, "建立狀態：", created)
-
-        if vet_license_name and vet_license_content:
-            from django.core.files.base import ContentFile
-            profile.vet_license.save(
-                vet_license_name,
-                ContentFile(vet_license_content.encode('ISO-8859-1'))
-            )
-            print("[DEBUG] 已上傳檔案到 profile.vet_license：", vet_license_name)
-
         return redirect('/')
 
 
@@ -82,7 +53,6 @@ class CustomSocialSignupView(SocialSignupView):
                 vet_license_name,
                 ContentFile(vet_license_content.encode('ISO-8859-1'))
             )
-
         return redirect('home')
 
 def social_signup_extra(request):
@@ -98,7 +68,8 @@ def social_signup_extra(request):
             user.username = form.cleaned_data['username']
             user.save()
 
-            Profile.objects.create(
+            # 建立 Profile
+            profile = Profile.objects.create(
                 user=user,
                 account_type=form.cleaned_data['account_type'],
                 phone_number=form.cleaned_data['phone_number'],
@@ -106,7 +77,35 @@ def social_signup_extra(request):
                 vet_license=form.cleaned_data.get('vet_license'),
             )
 
-            # 加上 success_url
+            # 寄信給管理員
+            if profile.account_type == 'vet':
+                from django.core.mail import send_mail
+                from django.conf import settings
+
+                subject = "[系統通知] 有新獸醫帳號註冊待審核"
+                message = f"""
+您好，系統管理員：
+
+有使用者完成 Google 註冊並選擇了「獸醫帳號」。
+
+🔹 使用者名稱：{user.username}
+🔹 Email：{user.email}
+
+請盡快登入後台進行審核：
+http://127.0.0.1:8000/admin/petapp/profile/
+
+— 寵物生活與健康管理 系統
+"""
+                send_mail(
+                    subject,
+                    message,
+                    '"寵物生活與健康管理" <{}>'.format(settings.DEFAULT_FROM_EMAIL),
+                    [settings.ADMIN_EMAIL],
+                    fail_silently=False
+                )
+                print("✅ 已寄出獸醫帳號通知信")
+
+            # 🔚 Allauth 內建的完成註冊方法
             from allauth.account.utils import complete_signup
             from allauth.account import app_settings
             from django.conf import settings
@@ -117,7 +116,9 @@ def social_signup_extra(request):
 
     else:
         form = SocialSignupExtraForm()
+
     return render(request, 'account/social_signup_extra.html', {'form': form})
+
 
 
 @login_required
