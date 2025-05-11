@@ -62,11 +62,11 @@ ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系�
 
 ### ✅ 步驟三：下載 MySQL
 
-下載MySQL `https://dev.mysql.com/downloads/file/?id=539682`
+下載MySQL：<https://dev.mysql.com/downloads/file/?id=539682>
 
-點藍色字 "No thanks, just start my download."
+> 點藍色字 "No thanks, just start my download."
 
-參考教學影片： `https://www.youtube.com/watch?v=3zzszKQ8Kk4`
+參考教學影片：<https://www.youtube.com/watch?v=3zzszKQ8Kk4>
 
 #### 使用 MySQL Workbench 建立資料庫
 
