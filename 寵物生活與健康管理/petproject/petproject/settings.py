@@ -2,6 +2,8 @@
 from pathlib import Path    # 匯入 Path 類別，用來處理路徑相關操作
 from decouple import config # 匯入 decouple 的 config 方法，用來安全讀取 .env 檔中的機密資訊
 import os                   # 匯入 os 模組，用於處理目錄路徑等功能
+from dotenv import load_dotenv
+load_dotenv()  # 載入 .env 檔案
 
 # 專案根目錄路徑（BASE_DIR 表示 manage.py 所在的資料夾）
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -83,11 +85,18 @@ TEMPLATES = [
 
 
 
-# ===== 資料庫設定（預設使用 SQLite）=====
+# ===== 資料庫設定（使用 MySQL）=====
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # 使用 SQLite 資料庫
-        'NAME': BASE_DIR / 'db.sqlite3',        # 資料庫檔案路徑
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),   # 如果在本機使用
+        'PORT': os.getenv('DB_PORT'),        # MySQL 預設 port
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
