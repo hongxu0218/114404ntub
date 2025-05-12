@@ -87,12 +87,12 @@ class CustomSignupForm(SignupForm):
 請盡快登入後台進行審核：
 http://127.0.0.1:8000/admin/petapp/profile/
 
-— 寵物生活與健康管理 系統
+— 毛日好(Paw&Day) 系統
 """
             send_mail(
                 subject,
                 message,
-                '"寵物生活與健康管理" <{}>'.format(settings.DEFAULT_FROM_EMAIL),
+                '"毛日好(Paw&Day)" <{}>'.format(settings.DEFAULT_FROM_EMAIL),
                 [settings.ADMIN_EMAIL],
                 fail_silently=False
             )
