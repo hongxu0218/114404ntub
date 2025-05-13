@@ -1,17 +1,17 @@
 # petapp/views.py
-from django.shortcuts import render
-
-# Create your views here.
-from django.shortcuts import redirect
+from django.http import HttpResponseBadRequest
+from django.shortcuts import render, redirect
 from .models import Profile
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django import forms
-from .forms import EditProfileForm
+from .forms import EditProfileForm, SocialSignupExtraForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.providers.google.views import OAuth2LoginView
+from allauth.socialaccount.views import SignupView as SocialSignupView  
+from django.http import JsonResponse
 
 
 def home(request):
@@ -19,34 +19,105 @@ def home(request):
 
 class CustomSignupView(SignupView):
     def get(self, request, *args, **kwargs):
-        if 'signup_redirect_message' in request.session:
-            del request.session['signup_redirect_message']
         return super().get(request, *args, **kwargs)
+
     def form_valid(self, form):
-        # 呼叫原本的邏輯完成註冊 + 自動登入
         response = super().form_valid(form)
-        # 取得 account_type 並建立 Profile
-        account_type = self.request.POST.get('account_type')
-        Profile.objects.update_or_create(user=self.user, defaults={'account_type': account_type})
+        return redirect('/')
+
+
+class CustomSocialSignupView(SocialSignupView):
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user = form.user
+
+        account_type = self.request.session.pop('account_type', None)
+        phone_number = self.request.session.pop('phone_number', None)
+        vet_license_city = self.request.session.pop('vet_license_city', '')
+        vet_license_name = self.request.session.pop('vet_license_name', None)
+        vet_license_content = self.request.session.pop('vet_license_content', None)
+
+        profile, created = Profile.objects.update_or_create(
+            user=user,
+            defaults={
+                'account_type': account_type,
+                'phone_number': phone_number,
+                'vet_license_city': vet_license_city,
+            }
+        )
+
+        if vet_license_name and vet_license_content:
+            from django.core.files.base import ContentFile
+            profile.vet_license.save(
+                vet_license_name,
+                ContentFile(vet_license_content.encode('ISO-8859-1'))
+            )
         return redirect('home')
 
-@login_required
-def dashboard_redirect(request):
-    try:
-        if request.user.is_staff:
-            return redirect('admin:index')  # 管理員導向 admin
-        profile = request.user.profile
-        if not profile.account_type:
-            return redirect('select_account_type')
-        elif profile.account_type == 'vet':
-            if not profile.is_verified_vet:
-                return render(request, 'pages/pending_verification.html')
-            return redirect('vet_dashboard')
-        else:
-            return redirect('owner_dashboard')
-    except ObjectDoesNotExist:
-        messages.error(request, "此帳號尚未設定身分資料，請聯繫管理員。")
-        return redirect('home')
+def social_signup_extra(request):
+    if request.method == 'POST':
+        form = SocialSignupExtraForm(request.POST, request.FILES)
+        if form.is_valid():
+            from allauth.socialaccount.models import SocialLogin
+            if 'socialaccount_sociallogin' not in request.session:
+                return HttpResponseBadRequest("找不到登入資訊，請重新操作")
+
+            sociallogin = SocialLogin.deserialize(request.session.pop('socialaccount_sociallogin'))
+            user = sociallogin.user
+            user.username = form.cleaned_data['username']
+            user.save()
+
+            # 建立 Profile
+            profile = Profile.objects.create(
+                user=user,
+                account_type=form.cleaned_data['account_type'],
+                phone_number=form.cleaned_data['phone_number'],
+                vet_license_city=form.cleaned_data.get('vet_license_city'),
+                vet_license=form.cleaned_data.get('vet_license'),
+            )
+
+            # 寄信給管理員
+            if profile.account_type == 'vet':
+                from django.core.mail import send_mail
+                from django.conf import settings
+
+                subject = "[系統通知] 有新獸醫帳號註冊待審核"
+                message = f"""
+您好，系統管理員：
+
+有使用者完成 Google 註冊並選擇了「獸醫帳號」。
+
+🔹 使用者名稱：{user.username}
+🔹 Email：{user.email}
+
+請盡快登入後台進行審核：
+http://127.0.0.1:8000/admin/petapp/profile/
+
+— 毛日好(Paw&Day) 系統
+"""
+                send_mail(
+                    subject,
+                    message,
+                    '毛日好(Paw&Day)" <{}>'.format(settings.DEFAULT_FROM_EMAIL),
+                    [settings.ADMIN_EMAIL],
+                    fail_silently=False
+                )
+                print("✅ 已寄出獸醫帳號通知信")
+
+            # 🔚 Allauth 內建的完成註冊方法
+            from allauth.account.utils import complete_signup
+            from allauth.account import app_settings
+            from django.conf import settings
+
+            return complete_signup(
+                request, user, app_settings.EMAIL_VERIFICATION, success_url=settings.LOGIN_REDIRECT_URL
+            )
+
+    else:
+        form = SocialSignupExtraForm()
+
+    return render(request, 'account/social_signup_extra.html', {'form': form})
+
 
 
 @login_required
@@ -62,19 +133,32 @@ def select_account_type(request):
 
 @login_required
 def edit_profile(request):
-    profile = request.user.profile
-    if request.method == 'POST':
-        form = EditProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
-        if form.is_valid():
-            form.save()
-            request.user.refresh_from_db()
-            messages.success(request, '帳號資料已更新')
-            return redirect('home')
-    else:
-        form = EditProfileForm(instance=profile, user=request.user)
-        form.user = request.user
-    return render(request, 'account/edit.html', {'form': form})
+    user = request.user
+    profile = user.profile
 
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, request.FILES, instance=profile, user=user)
+
+        if form.is_valid():
+            new_username = form.cleaned_data.get('username')
+            if new_username != user.username:
+                from django.contrib.auth.models import User
+                if User.objects.exclude(pk=user.pk).filter(username=new_username).exists():
+                    form.add_error('username', '此使用者名稱已被使用')
+                else:
+                    form.save()
+                    messages.success(request, '帳號資料已成功更新')
+                    return redirect('home')
+            else:
+                form.save()
+                messages.success(request, '帳號資料已成功更新')
+                return redirect('home')
+    else:
+        form = EditProfileForm(instance=profile, user=user)
+
+    return render(request, 'account/edit.html', {
+        'form': form,
+    })
 
 @login_required
 def owner_dashboard(request):
@@ -95,5 +179,22 @@ def logout_success(request):
 def select_type_then_social_login(request):
     if request.method == 'POST':
         request.session['pending_account_type'] = request.POST.get('account_type')
-        return redirect('/accounts/google/login/?next=/accounts/signup/')  # Allauth 內建 Google 起始點
+        return redirect('/accounts/google/login/?next=/accounts/social/signup/extra/')
     return render(request, 'pages/select_account_type.html')
+
+def dashboard_redirect(request):
+    profile = request.user.profile
+    if profile.account_type == 'owner':
+        return redirect('owner_dashboard')
+    elif profile.account_type == 'vet':
+        return redirect('vet_dashboard')
+    else:
+        return redirect('home')
+    
+def mark_from_signup_and_redirect(request):
+    request.session['from_signup'] = True
+    return redirect('/accounts/google/login/?next=/accounts/social/signup/extra/')
+
+def clear_signup_message(request):
+    request.session.pop('signup_redirect_message', None)
+    return JsonResponse({'cleared': True})
