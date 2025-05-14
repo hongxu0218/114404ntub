@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>刪除寵物資料</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #d9534f;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c9302c;
+        }
+        a {
+            color: #007bff;
+            font-size: 14px;
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>確認刪除</h2>
+
+    <div class="container">
+        <div class="form-group">
+            <p>你確定要刪除 <strong>{{ pet.name }}</strong> 的資料嗎？</p>
+
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit">刪除</button>
+            </form>
+
+            <a href="{% url 'pet_list' %}">返回寵物列表</a>
+        </div>
+    </div>
+
+</body>
+</html>

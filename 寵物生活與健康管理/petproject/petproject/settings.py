@@ -145,9 +145,10 @@ LOGOUT_REDIRECT_URL = '/accounts/logout-success/'  # 自訂登出成功頁面
 SOCIALACCOUNT_LOGIN_REDIRECT_URL = '/'  # Google 登入後導向首頁
 
 # 設定登入方式為 email，email 為必填
-ACCOUNT_AUTHENTICATION_METHOD = 'email'     # 使用 email 作為帳號登入依據
-ACCOUNT_EMAIL_REQUIRED = True               # 必填 email
-ACCOUNT_USERNAME_REQUIRED = True            # 必填 使用者名稱
+
+
+ACCOUNT_LOGIN_METHODS = {'email'}     # 使用 email 作為帳號登入依據
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']# 必填欄位
 ACCOUNT_EMAIL_VERIFICATION = 'none'         # 關閉 email 驗證（開發階段建議關），上線時請改為 'mandatory'
 
 # 註冊成功後立即導向登入頁（GET 請求立即登入）

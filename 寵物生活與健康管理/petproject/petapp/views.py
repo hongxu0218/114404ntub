@@ -13,6 +13,10 @@ from allauth.socialaccount.providers.google.views import OAuth2LoginView
 from allauth.socialaccount.views import SignupView as SocialSignupView  
 from django.http import JsonResponse
 
+from django.shortcuts import get_object_or_404
+from .models import Profile, Pet
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm
+
 
 def home(request):
     return render(request, 'pages/home.html')
@@ -198,3 +202,44 @@ def mark_from_signup_and_redirect(request):
 def clear_signup_message(request):
     request.session.pop('signup_redirect_message', None)
     return JsonResponse({'cleared': True})
+
+# 新增寵物資料
+def add_pet(request):
+    if request.method == 'POST':
+        form = PetForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('pet_list')
+    else:
+        form = PetForm()
+    return render(request, 'pet_info/add_pet.html', {'form': form})
+
+
+# 顯示寵物列表
+def pet_list(request):
+    pets = Pet.objects.all()
+    return render(request, 'pet_info/pet_list.html', {'pets': pets})
+
+# 編輯寵物資料（圖片更新時，自動刪除舊圖由 django-cleanup 處理）
+def edit_pet(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+
+    if request.method == 'POST':
+        form = PetForm(request.POST, request.FILES, instance=pet)
+        if form.is_valid():
+            form.save()
+            return redirect('pet_list')
+    else:
+        form = PetForm(instance=pet)
+
+    return render(request, 'pet_info/edit_pet.html', {'form': form, 'pet': pet})
+
+# 刪除寵物資料（圖片由 django-cleanup 自動刪除）
+def delete_pet(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+
+    if request.method == 'POST':
+        pet.delete()
+        return redirect('pet_list')
+
+    return render(request, 'pet_info/delete_pet.html', {'pet': pet})
