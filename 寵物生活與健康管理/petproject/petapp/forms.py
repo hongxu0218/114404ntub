@@ -5,10 +5,9 @@ from django import forms
 from django.contrib.auth.models import User  # 使用者模型
 from django.contrib.auth.forms import UserCreationForm  # 使用者註冊表單
 from django.contrib.auth import login  # 登入函式
-from .models import Profile  # 匯入自定義的使用者 Profile 模型
+from .models import Profile, Pet, DailyRecord  # 匯入自定義的使用者 Profile 模型
 from allauth.account.forms import SignupForm  # allauth 的註冊表單基底
 import re  # 正規表示式模組，用來驗證手機與檔案格式等
-from .models import Pet
 import datetime
 from datetime import date
 
@@ -312,3 +311,42 @@ class PetForm(forms.ModelForm):
                 raise forms.ValidationError('出生日期不能是未來')
 
         return cleaned_data
+    
+
+class DailyRecordForm(forms.ModelForm):
+    class Meta:
+        model = DailyRecord
+        fields = ['date', 'category', 'content']
+        labels = {
+            'date': '日期',
+            'category': '類別',
+            'content': '內容',
+            #'created_at': '建立時間'
+        }
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            #'created_at': forms.DateTimeInput(attrs={
+            #    'class': 'form-control',
+            #    'readonly': 'readonly'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 設定 date 預設為今天（僅在初次載入表單時）
+        if not self.initial.get('date'):
+            self.initial['date'] = date.today()
+
+    def clean_date(self):
+        record_date = self.cleaned_data.get('date')
+        if record_date and record_date > date.today():
+            raise forms.ValidationError("日期不能是未來")
+        return record_date
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        if not content:
+            raise forms.ValidationError("請填寫內容")
+        return content
+

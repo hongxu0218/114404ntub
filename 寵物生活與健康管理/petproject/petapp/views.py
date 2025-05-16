@@ -1,23 +1,27 @@
 # petapp/views.py
+from collections import defaultdict
 from django.http import HttpResponseBadRequest
-from django.shortcuts import render, redirect
-from .models import Profile
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Profile, Pet, DailyRecord
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django import forms
-from .forms import EditProfileForm, SocialSignupExtraForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.providers.google.views import OAuth2LoginView
 from allauth.socialaccount.views import SignupView as SocialSignupView  
 from django.http import JsonResponse
 
-from django.shortcuts import get_object_or_404
-from .models import Profile, Pet
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST, require_http_methods
+from django.utils.dateparse import parse_date
+from datetime import date
 
-
+# 首頁
 def home(request):
     return render(request, 'pages/home.html')
 
@@ -243,3 +247,103 @@ def delete_pet(request, pet_id):
         return redirect('pet_list')
 
     return render(request, 'pet_info/delete_pet.html', {'pet': pet})
+
+# 健康記錄
+def health_rec(request):
+    # 取得所有生活紀錄，並關聯 pet，依照日期排序
+    records = DailyRecord.objects.select_related('pet').order_by('date')
+
+    # 將資料依照寵物分類
+    grouped_records = []
+    pet_map = defaultdict(list)  # {pet: [record, record, ...]}
+
+    for record in records:
+        pet_map[record.pet].append(record)
+
+    for pet, recs in pet_map.items():
+        grouped_records.append({
+            'pet': pet,
+            'records': recs,  # 每筆 record 都保留完整欄位：id, date, diet, etc.
+        })
+
+    return render(request, 'health_records/health_rec.html', {
+        'grouped_records': grouped_records
+    })
+
+@require_POST
+@csrf_exempt
+def add_daily_record(request, pet_id):
+    data = json.loads(request.body)
+    category = data.get('category')
+    content = data.get('content')
+
+    if not category or not content:
+        return JsonResponse({'success': False, 'message': '缺少欄位'})
+
+    pet = get_object_or_404(Pet, id=pet_id)
+
+    record = DailyRecord.objects.create(
+        pet=pet,
+        category=category,
+        content=content,
+        date=date.today()
+    )
+
+    return JsonResponse({
+        'success': True,
+        'record_id': record.id,
+        'category': category,
+        'content': content,
+        'date': record.date.isoformat()
+    })
+
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_daily_record(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'})
+
+    pet_id = data.get('pet_id')
+    category = data.get('category')
+    content = data.get('content')
+
+    if not pet_id or not category or not content:
+        return JsonResponse({'status': 'error', 'message': 'Missing required fields'})
+
+    try:
+        pet = Pet.objects.get(id=pet_id)
+    except Pet.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Pet not found'})
+
+    # 正確做法：儲存 category 與 content
+    record = DailyRecord.objects.create(
+        pet=pet,
+        category=category,
+        content=content,
+        date=date.today()
+    )
+
+    return JsonResponse({
+        'success': True,
+        'record_id': record.id,
+        'category': category,
+        'content': content,
+        'date': record.date.isoformat()
+    })
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def delete_daily_record(request, pet_id):
+    try:
+        data = json.loads(request.body)
+        record_id = data['record_id']
+        record = DailyRecord.objects.get(id=record_id, pet_id=pet_id)
+        record.delete()
+        return JsonResponse({'success': True})
+    except DailyRecord.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Record not found'}, status=404)

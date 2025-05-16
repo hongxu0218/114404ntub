@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+
     # 本地 App
     'petapp',
     
@@ -39,6 +40,9 @@ INSTALLED_APPS = [
     'allauth.account',          # 帳號系統
     'allauth.socialaccount',    # 社群帳號登入系統
     'allauth.socialaccount.providers.google',   # 啟用 Google 登入
+
+    #換圖片就刪舊圖(寵物資料）
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>新增生活記錄</title>
+</head>
+<body>
+    <h2>新增 {{ pet.name }} 的生活記錄</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">儲存</button>
+    </form>
+    <a href="{% url 'health_rec' pet.id %}">返回健康紀錄</a>
+</body>
+</html>

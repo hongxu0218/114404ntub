@@ -60,3 +60,21 @@ class Pet(models.Model):
 
     def __str__(self):
         return self.name
+    
+class DailyRecord(models.Model):
+    CATEGORY_CHOICES = [
+        ('diet', '飲食習慣'),
+        ('exercise', '運動習慣'),
+        ('allergen', '過敏源'),
+        ('other', '其他'),
+        ('temperature', '體溫'),
+        ('weight', '體重'),
+    ]
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)  # 實際填寫的時間戳
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    content = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.pet.name} 的生活記錄（{self.date}）"

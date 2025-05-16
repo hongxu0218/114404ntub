@@ -9,6 +9,28 @@
             padding: 20px;
             background-color: #f7f7f7;
         }
+
+        .navbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .nav-btn {
+            background-color: #ffffff;
+            border: 1px solid #007bff;
+            color: #007bff;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .nav-btn:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
         h2 {
             color: #333;
         }
@@ -28,7 +50,6 @@
             background-color: #f1f1f1;
             padding: 15px;
             border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
         }
 
         .btn {
@@ -53,14 +74,6 @@
             color: white;
         }
 
-        .btn-primary {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #218838;
-        }
-
         .btn-edit {
             background-color: #ffc107;
             color: white;
@@ -77,6 +90,14 @@
             background-color: #c82333;
         }
 
+        .btn-daily {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .btn-daily:hover {
+            background-color: #138496;
+        }
+
         .btn-close {
             background-color: #6c757d;
             color: white;
@@ -85,27 +106,66 @@
             background-color: #5a6268;
         }
 
+        .btn-primary {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+
         .action-buttons {
             margin-top: 10px;
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
+        /* 避免段落文字太長破壞版面 */
+        .pet-details p {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+            white-space: normal;
+        }
+
+        /* 限制特定文字欄位（例如特徵）最多顯示 3 行，太多會裁切 */
+        .pet-details .feature-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;        /* 顯示最多 3 行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .feature-text {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: max-height 0.3s ease;
+    }
+
+    .feature-text.collapsed {
+        -webkit-line-clamp: 3;
+    }
+
+    .feature-text.expanded {
+        -webkit-line-clamp: unset;
+    }
+
     </style>
-    <script>
-        function togglePetDetails(petId) {
-            var details = document.getElementById("details-" + petId);
-            if (details.style.display === "none" || details.style.display === "") {
-                details.style.display = "block";
-            } else {
-                details.style.display = "none";
-            }
-        }
-    </script>
+
 </head>
 <body>
 
-    <h2>歡迎來到飼主主頁</h2>
+    <!-- 導覽列 -->
+    <div class="navbar">
+        <a href="{% url 'pet_list' %}" class="nav-btn">🐾 寵物</a>
+        <a href="{% url 'health_rec' %}" class="nav-btn">🩺 健康記錄</a>
+        <a href="#" class="nav-btn">🔔 通知</a>
+        <a href="#" class="nav-btn">🔑 登入</a>
+    </div>
 
+    <h2>歡迎來到飼主主頁</h2>
     <p>在這裡你可以新增寵物資料或查看已填過的寵物資料。</p>
 
     <a href="{% url 'add_pet' %}" class="btn btn-primary">➕ 新增寵物資料</a>
@@ -116,7 +176,7 @@
           {% for pet in pets %}
             <li>
                 <button class="btn btn-pet" onclick="togglePetDetails({{ pet.id }})">
-                    {{ pet.name }}（{{ pet.get_species_display }}）
+                    {{ pet.name }}
                 </button>
                 <div id="details-{{ pet.id }}" class="pet-details">
                     <p><strong>品種：</strong>{{ pet.breed }}</p>
@@ -124,9 +184,12 @@
                     <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
                     <p><strong>出生日期：</strong>{{ pet.year_of_birth }} 年 {{ pet.month_of_birth }} 月 {{ pet.day_of_birth }} 日</p>
                     <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
-                    <p><strong>特徵：</strong>{{ pet.feature }}</p>
+                    <p><strong>特徵：</strong>
+                      <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
+                      <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">展開</button>
+                    </p>
                     <p><strong>性別：</strong>{{ pet.get_gender_display }}</p>
-                    <p><strong>圖片：</strong> </p>
+                    <p><strong>圖片：</strong></p>
                     {% if pet.picture %}
                         <p><img src="{{ pet.picture.url }}" alt="pet image" style="max-width: 200px;"></p>
                     {% else %}
@@ -145,6 +208,28 @@
           {% endfor %}
         </ul>
     </div>
+    <script>
+        function togglePetDetails(petId) {
+            var details = document.getElementById("details-" + petId);
+            details.style.display = (details.style.display === "none" || details.style.display === "") ? "block" : "none";
+        }
+
+        function toggleFeature(petId) {
+            const span = document.getElementById("feature-" + petId);
+            const btn = span.nextElementSibling;
+
+            if (span.classList.contains("collapsed")) {
+                span.classList.remove("collapsed");
+                span.classList.add("expanded");
+                btn.innerText = "收合";
+            } else {
+                span.classList.remove("expanded");
+                span.classList.add("collapsed");
+                btn.innerText = "展開";
+            }
+        }
+    </script>
+
 
 </body>
 </html>

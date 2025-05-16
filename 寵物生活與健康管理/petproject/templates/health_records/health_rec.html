@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>健康記錄</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background-color: #ffffff;
+            border: 1px solid #007bff;
+            color: #007bff;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .nav-btn:hover {
+            background-color: #007bff;
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+
+        .btn-vaccine { background-color: #6f42c1; color: white; }
+        .btn-report { background-color: #20c997; color: white; }
+        .btn-daily { background-color: #17a2b8; color: white; }
+        .btn-reminder { background-color: #ffc107; color: black; }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .record-block {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            position: relative; /* For positioning the 'Add' button */
+        }
+
+        .add-record-btn {
+            display: block;
+            margin-top: 10px;
+            background-color: #ffc107;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .input-block {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .input-block input, .input-block textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .input-block .btn-save, .input-block .btn-close {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .input-block .btn-close {
+            background-color: #dc3545;
+        }
+
+        /* 針對圖表調整 */
+        .chart-container {
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            max-width: 90%; /* 調整圖表寬度 */
+            height: 200px; /* 調整圖表高度 */
+            margin-bottom: 10px;
+        }
+
+        .chart-label {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* 修改按鈕樣式 */
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-info:hover {
+            background-color: #138496;
+        }
+
+        /* 寵物名字按鈕樣式 */
+        .pet-name-btn {
+            margin-top: 10px;
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .record-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .record-details .left-col, .record-details .right-col {
+            width: 48%;  /* 左右兩側各佔 48% 寬度 */
+        }
+
+        .record-category {
+            margin-top: 20px;
+        }
+
+        .record-category h5 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .record-category ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .record-category ul li {
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        /* 新增按鈕 */
+        .add-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+            .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="{% url 'pet_list' %}" class="nav-btn">🐾 寵物</a>
+    <a href="{% url 'health_rec' %}" class="nav-btn">🩺 健康記錄</a>
+    <a href="#" class="nav-btn">🔔 通知</a>
+    <a href="#" class="nav-btn">🔑 登入</a>
+</div>
+
+<h2>健康記錄</h2>
+
+<div class="tab-buttons">
+    <button class="tab-btn btn-vaccine" onclick="showTab('vaccine')">💉 疫苗</button>
+    <button class="tab-btn btn-report" onclick="showTab('report')">📄 報告</button>
+    <button class="tab-btn btn-daily" onclick="showTab('daily')">📘 生活記錄</button>
+    </div>
+
+<!-- 疫苗區塊 -->
+<div id="vaccine" class="tab-content active">
+    <h3>💉 疫苗</h3>
+    <p>這裡是所有寵物的疫苗記錄清單。</p>
+</div>
+
+<!-- 報告區塊 -->
+<div id="report" class="tab-content">
+    <h3>📄 報告</h3>
+    <p>這裡是所有寵物的醫療報告。</p>
+</div>
+
+<!-- 生活記錄區塊 -->
+<div id="daily" class="tab-content">
+    <h3>📘 生活記錄</h3>
+
+    {% if grouped_records %}
+        <p>已載入 {{ grouped_records|length }} 筆寵物的生活記錄。</p>
+        {% for group in grouped_records %}
+            <h4>
+                <button class="pet-name-btn" onclick="toggleRecordVisibility('records-{{ group.pet.id }}')">
+                    🐶 {{ group.pet.name }}
+                </button>
+            </h4>
+
+            <div id="records-{{ group.pet.id }}" class="record-block" style="display: none;">
+                <div class="record-details">
+                    <!-- 左側：體溫、飲食、過敏原 -->
+                    <div class="left-col">
+                        <!-- 體溫趨勢圖 -->
+                        <div class="chart-container">
+                                <div class="record-header">體溫
+                                    <button class="add-btn">＋ 新增</button>
+                                </div>
+                            <canvas id="tempChart-{{ group.pet.id }}"></canvas>
+                        </div>
+
+                       <!-- 飲食紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                <h5>飲食習慣</h5>
+                                <button class="add-btn" onclick="toggleInputBlock(this)">＋ 新增 </button>
+                            </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'diet' and record.content %}
+                                        <li id="diet-record-{{ record.id }}">
+                                            {{ record.content }}
+                                                <button onclick="deleteRecord('{{ record.id }}', '{{ group.pet.id }}')">刪除</button>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="diet" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                <button class="btn-close" onclick="closeInputBlock(this)">刪除</button>
+                            </div>
+                        </div>
+
+
+                        <!-- 過敏原紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                <h5>過敏原</h5>
+                                <button class="add-btn" onclick="toggleInputBlock(this)">
+                                    ＋ 新增</button>
+                                </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'allergen' and record.content  %}
+                                        <li id="allergen-record-{{ record.id }}">
+                                            {{ record.content }}
+                                            <button onclick="deleteRecord('{{ record.id }}', '{{ group.pet.id }}')">刪除</button>
+                                        </li>
+
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="allergen" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                <button class="btn-close" onclick="closeInputBlock(this)">刪除</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：體重、運動、其他 -->
+                    <div class="right-col">
+                        <!-- 體重趨勢圖 -->
+                        <div class="chart-container">
+                            <div class="record-header">體重
+                            <button class="add-btn">＋ 新增</button>
+                            </div>
+                            <canvas id="weightChart-{{ group.pet.id }}"></canvas>
+                        </div>
+
+                        <!-- 運動紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                 <h5>運動習慣</h5>
+                                 <button class="add-btn" onclick="toggleInputBlock(this)">
+                                     ＋ 新增</button>
+                                </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'exercise' and record.content  %}
+                                        <li id="exercise-record-{{ record.id }}">
+                                            {{ record.content }}
+                                            <button onclick="deleteRecord('{{ record.id }}', '{{ group.pet.id }}')">刪除</button>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="exercise" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                <button class="btn-close" onclick="closeInputBlock(this)">刪除</button>
+                            </div>
+                        </div>
+
+                        <!-- 其他紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                <h5>其他</h5>
+                                <button class="add-btn" onclick="toggleInputBlock(this)">
+                                    ＋ 新增</button>
+                                </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'other' and record.content  %}
+                                        <li id="other-record-{{ record.id }}">
+                                            {{ record.content }}
+                                            <button onclick="deleteRecord('{{ record.id }}', '{{ group.pet.id }}')">刪除</button>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                                <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="other" style="display:none;">
+                                    <textarea placeholder="輸入內容..."></textarea><br>
+                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                    <button class="btn-close" onclick="closeInputBlock(this)">刪除</button>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <script>
+                    const labels{{ group.pet.id }} = [{% for r in group.records %}'{{ r.date }} ',{% endfor %}];
+                    const tempData{{ group.pet.id }} = [{% for r in group.records %}{{ r.temperature|default:"null" }},{% endfor %}];
+                    const weightData{{ group.pet.id }} = [{% for r in group.records %}{{ r.weight|default:"null" }},{% endfor %}];
+
+                    // 體溫圖表
+                    new Chart(document.getElementById('tempChart-{{ group.pet.id }}'), {
+                        type: 'line',
+                        data: {
+                            labels: labels{{ group.pet.id }},
+                            datasets: [{
+                                label: '體溫 (°C)',
+                                data: tempData{{ group.pet.id }},
+                                borderColor: 'red',
+                                backgroundColor: 'rgba(255,0,0,0.1)',
+                                tension: 0.2
+                            }]
+                        }
+                    });
+
+                    // 體重圖表
+                    new Chart(document.getElementById('weightChart-{{ group.pet.id }}'), {
+                        type: 'line',
+                        data: {
+                            labels: labels{{ group.pet.id }},
+                            datasets: [{
+                                label: '體重 (kg)',
+                                data: weightData{{ group.pet.id }},
+                                borderColor: 'blue',
+                                backgroundColor: 'rgba(0,0,255,0.1)',
+                                tension: 0.2
+                            }]
+                        }
+                    });
+                </script>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>先到寵物資料新增生活記錄喔。</p>
+    {% endif %}
+</div>
+
+
+<script>
+    // 切換顯示與隱藏生活記錄
+    function toggleRecordVisibility(recordId) {
+        const recordDiv = document.getElementById(recordId);
+        recordDiv.style.display = recordDiv.style.display === "none" ? "block" : "none";
+    }
+</script>
+
+<!-- 提醒區塊 -->
+<div id="reminder" class="tab-content">
+    <h3>⏰ 提醒</h3>
+    <p>這裡是使用者設定的提醒清單。</p>
+</div>
+
+<script>
+    function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const c = cookies[i].trim();
+        if (c.startsWith(name + '=')) {
+            return decodeURIComponent(c.substring(name.length + 1));
+        }
+    }
+    return '';
+}
+
+    function showTab(tabId) {
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+    }
+        // 顯示或隱藏輸入框
+        function toggleInputBlock(button) {
+            const block = button.closest('.record-category').querySelector('.input-block');
+            block.style.display = block.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function closeInputBlock(button) {
+            const block = button.closest('.input-block');
+            block.style.display = 'none';
+            block.querySelector('textarea').value = '';
+        }
+
+        // 儲存生活記錄資料
+        function saveRecord(button) {
+        const inputBlock = button.closest('.input-block');
+        const textarea = inputBlock.querySelector('textarea');
+        const content = textarea.value.trim();
+        const petId = inputBlock.getAttribute('data-pet-id');
+        const category = inputBlock.getAttribute('data-category');
+
+        if (!content) {
+            alert('請輸入內容');
+            return;
+        }
+
+        // 建立資料物件
+        const data = {
+            pet_id: petId,
+            category: category,
+            content: content
+        };
+
+        // 發送 POST 請求
+        fetch('/save_daily_record/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('儲存失敗');
+            }
+            return response.json();
+        })
+        .then(json => {
+            if (json.success) {
+                const ul = inputBlock.previousElementSibling; // UL 在 input-block 前
+                const li = document.createElement('li');
+                li.id = `${category}-record-${json.record_id}`;
+                li.innerHTML = `
+                    ${content}
+                    <button onclick="deleteRecord('${json.record_id}', '${petId}')">刪除</button>
+                `;
+                ul.appendChild(li);
+                textarea.value = '';
+                inputBlock.style.display = 'none';
+            } else {
+                alert(json.message || '儲存失敗');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('儲存過程中發生錯誤');
+        });
+    }
+
+
+
+
+
+
+// 取得 CSRF Token 的函式
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+    // 刪除生活記錄的資料
+    function deleteRecord(recordId, petId) {
+    if (!confirm('確定要刪除這筆紀錄嗎？')) {
+        return;
+    }
+    // 發送 DELETE 請求到後端
+    fetch(`/pet/${petId}/health/delete_record/`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            'record_id': recordId,
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 刪除成功，移除該記錄的元素
+            document.getElementById(`diet-record-${recordId}`)?.remove();
+            document.getElementById(`allergen-record-${recordId}`)?.remove();
+            document.getElementById(`exercise-record-${recordId}`)?.remove();
+            document.getElementById(`other-record-${recordId}`)?.remove();
+
+            alert('紀錄已刪除');
+        } else {
+            alert('刪除失敗');
+        }
+    });
+}
+
+
+</script>
+
+</body>
+</html>
