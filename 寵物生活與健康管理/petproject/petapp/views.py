@@ -3,6 +3,7 @@
 from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
 from .models import Profile, Pet, DailyRecord
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -88,7 +89,6 @@ def social_signup_extra(request):
             # 寄信通知管理員（若為獸醫帳號）
             if profile.account_type == 'vet':
                 from django.core.mail import send_mail
-                from django.conf import settings
 
                 subject = "[系統通知] 有新獸醫帳號註冊待審核"
                 message = f"""
