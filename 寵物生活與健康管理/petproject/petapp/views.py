@@ -207,17 +207,28 @@ def clear_signup_message(request):
     request.session.pop('signup_redirect_message', None)
     return JsonResponse({'cleared': True})
 
-# 新增寵物
-
+# 新增寵物資料
 def add_pet(request):
     if request.method == 'POST':
         form = PetForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            pet = form.save()
+
+            # 🔽 初始化 6 筆分類 DailyRecord（日期可為 today，content 可為空）
+            categories = ['temperature', 'weight', 'diet', 'exercise', 'allergen', 'other']
+
+            for cat in categories:
+                DailyRecord.objects.create(
+                    pet=pet,
+                    category=cat,
+                    content='',
+                    date=date.today()
+                )
             return redirect('pet_list')
     else:
         form = PetForm()
     return render(request, 'pet_info/add_pet.html', {'form': form})
+
 
 # 寵物列表
 
