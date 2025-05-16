@@ -6,7 +6,6 @@ class PetappConfig(AppConfig):
     name = 'petapp'
 
     def ready(self):
-        import petapp.signals
 
         # 延遲取消註冊 Allauth 模型（等所有 admin 註冊完成後再處理）
         from django.contrib import admin
