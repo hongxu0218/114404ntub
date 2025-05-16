@@ -84,6 +84,8 @@ def social_signup_extra(request):
                 phone_number=form.cleaned_data['phone_number'],
                 vet_license_city=form.cleaned_data.get('vet_license_city'),
                 vet_license=form.cleaned_data.get('vet_license'),
+                clinic_name=form.cleaned_data.get('clinic_name'),
+                clinic_address=form.cleaned_data.get('clinic_address'),
             )
 
             # 寄信通知管理員（若為獸醫帳號）

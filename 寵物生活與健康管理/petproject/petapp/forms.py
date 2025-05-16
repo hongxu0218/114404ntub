@@ -30,7 +30,10 @@ class CustomSignupForm(SignupForm):
     first_name = forms.CharField(label="名字", max_length=30, required=False)
     vet_license_city = forms.ChoiceField(choices=[('', '請選擇縣市')] + CITY_CHOICES, label='執業執照縣市', required=False)
     vet_license = forms.FileField(label='獸醫證照', required=False,
-        widget=forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png'}))
+        widget = forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png'}))
+    clinic_name = forms.CharField(label="醫院／診所名稱", max_length=100, required=False)
+    clinic_address = forms.CharField(label="醫院／診所地址", max_length=255, required=False)
+
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')
@@ -46,6 +49,8 @@ class CustomSignupForm(SignupForm):
         last_name = self.cleaned_data['last_name']
         vet_license_city = self.cleaned_data.get('vet_license_city')
         vet_license = self.cleaned_data.get('vet_license')
+        clinic_name = self.cleaned_data.get('clinic_name')
+        clinic_address = self.cleaned_data.get('clinic_address')
 
         profile = Profile.objects.create(
             user=user,
@@ -53,6 +58,8 @@ class CustomSignupForm(SignupForm):
             phone_number=phone_number,
             vet_license_city=vet_license_city,
             vet_license=vet_license,
+            clinic_name=clinic_name,
+            clinic_address=clinic_address,
         )
 
         if account_type == 'vet':
@@ -87,10 +94,12 @@ class EditProfileForm(forms.ModelForm):
     last_name = forms.CharField(max_length=30, label='姓氏', required=False)
     vet_license_city = forms.ChoiceField(choices=CITY_CHOICES, label='執業執照縣市', required=False)
     vet_license = forms.FileField(label='獸醫證照', required=False, widget=forms.FileInput)
+    clinic_name = forms.CharField(label='醫院／診所名稱', max_length=100, required=False)
+    clinic_address = forms.CharField(label='醫院／診所地址', max_length=255, required=False)
 
     class Meta:
         model = Profile
-        fields = ['account_type', 'phone_number', 'vet_license_city', 'vet_license']
+        fields = ['account_type', 'phone_number', 'vet_license_city', 'vet_license', 'clinic_name', 'clinic_address']
         labels = {
             'account_type': '帳號類型',
             'phone_number': '手機號碼',
@@ -105,6 +114,9 @@ class EditProfileForm(forms.ModelForm):
             self.fields['username'].initial = self.user.username
             self.fields['first_name'].initial = self.user.first_name
             self.fields['last_name'].initial = self.user.last_name
+        if self.instance:
+            self.fields['clinic_name'].initial = self.instance.clinic_name
+            self.fields['clinic_address'].initial = self.instance.clinic_address
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')
@@ -121,6 +133,16 @@ class EditProfileForm(forms.ModelForm):
             if file.size > 5 * 1024 * 1024:
                 raise forms.ValidationError("檔案大小不得超過 5MB")
         return file
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('account_type') == 'vet':
+            if not cleaned_data.get('clinic_name'):
+                self.add_error('clinic_name', '請填寫醫院／診所名稱')
+            if not cleaned_data.get('clinic_address'):
+                self.add_error('clinic_address', '請填寫醫院／診所地址')
+        return cleaned_data
+
 
     def save(self, commit=True):
         profile = super().save(commit=False)
@@ -140,13 +162,26 @@ class SocialSignupExtraForm(forms.Form):
     phone_number = forms.CharField(label='手機號碼', required=True, max_length=20)
     vet_license_city = forms.ChoiceField(choices=[('', '請選擇縣市')] + CITY_CHOICES, label='執業執照縣市', required=False)
     vet_license = forms.FileField(label='獸醫證照', required=False,
-        widget=forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png'}))
+    widget = forms.FileInput(attrs={'accept': '.pdf,.jpg,.jpeg,.png'}))
+    clinic_name = forms.CharField(label="醫院／診所名稱", max_length=100, required=False)
+    clinic_address = forms.CharField(label="醫院／診所地址", max_length=255, required=False)
+
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')
         if not re.match(r'^09\d{8}$', phone):
             raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
         return phone
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('account_type') == 'vet':
+            if not cleaned_data.get('clinic_name'):
+                self.add_error('clinic_name', '請填寫醫院／診所名稱')
+            if not cleaned_data.get('clinic_address'):
+                self.add_error('clinic_address', '請填寫醫院／診所地址')
+        return cleaned_data
+
 
 # 一般註冊表單（含 email）
 class RegisterForm(UserCreationForm):

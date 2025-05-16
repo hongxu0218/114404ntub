@@ -18,6 +18,8 @@ class Profile(models.Model):
     vet_license = models.FileField(upload_to='vet_licenses/', blank=True, null=True, verbose_name='獸醫證照')
     vet_license_city = models.CharField(max_length=20, blank=True, null=True, verbose_name='執業執照縣市')
     is_verified_vet = models.BooleanField(default=False, verbose_name='獸醫身分已驗證')
+    clinic_name = models.CharField(max_length=100, blank=True, null=True, verbose_name='醫院／診所名稱')
+    clinic_address = models.CharField(max_length=255, blank=True, null=True, verbose_name='醫院／診所地址')
 
     def __str__(self):
         return f"{self.user.username} ({self.get_account_type_display()})"
