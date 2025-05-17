@@ -1,0 +1,542 @@
+[
+  {
+    "name": "福林公園寵物溜放區",
+    "address": "330桃園市桃園區介壽路281號",
+    "city": "桃園市",
+    "district": "桃園區",
+    "latitude": 24.980986,
+    "Longitude": 121.3067044,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "仁德公園",
+    "address": "桃園市中壢區崁頂路崁頂路",
+    "city": "桃園市",
+    "district": "中壢區",
+    "latitude": 24.953442,
+    "Longitude": 121.2663442,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "平鎮運動公園",
+    "address": "324桃園市平鎮區快速路三段",
+    "city": "桃園市",
+    "district": "平鎮區",
+    "latitude": 24.935887,
+    "Longitude": 121.1883352,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "大湖紀念公園",
+    "address": "333桃園市龜山區忠義路二段638巷",
+    "city": "桃園市",
+    "district": "龜山區",
+    "latitude": 25.0570894,
+    "Longitude": 121.357678,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "甡甡寵物公園",
+    "address": "326桃園市楊梅區甡甡路625號",
+    "city": "桃園市",
+    "district": "楊梅區",
+    "latitude": 24.8931442,
+    "Longitude": 121.1257133,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "中正狗狗運動園區",
+    "address": "802高雄市苓雅區中正一路",
+    "city": "高雄市",
+    "district": "苓雅區",
+    "latitude": 22.62495,
+    "Longitude": 120.1967483,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "岡山寵物公園",
+    "address": "820高雄市岡山區介壽路",
+    "city": "高雄市",
+    "district": "岡山區",
+    "latitude": 22.7846498,
+    "Longitude": 120.2919729,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "創新寵物活動區",
+    "address": "811高雄市楠梓區",
+    "city": "高雄市",
+    "district": "楠梓區",
+    "latitude": 22.7421504,
+    "Longitude": 120.3257951,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "楠梓寵物公園",
+    "address": "811高雄市楠梓區創新路93號之一",
+    "city": "高雄市",
+    "district": "楠梓區",
+    "latitude": 22.7347844,
+    "Longitude": 120.3168869,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "中山公園寵物活動區",
+    "address": "830高雄市鳳山區誠義里鳳頂路",
+    "city": "高雄市",
+    "district": "鳳山區",
+    "latitude": 23.8447167,
+    "Longitude": 120.957955,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "前鎮寵物公園",
+    "address": "806高雄市前鎮區擴建路及新生路",
+    "city": "高雄市",
+    "district": "前鎮區",
+    "latitude": 22.5912216,
+    "Longitude": 120.2944083,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "迎風狗運動公園",
+    "address": "105臺北市松山區",
+    "city": "臺北市",
+    "district": "松山區",
+    "latitude": 25.071923,
+    "Longitude": 121.5632733,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "三重寵物公園",
+    "address": "251新北市三重區淡水河畔",
+    "city": "新北市",
+    "district": "三重區",
+    "latitude": 25.0723146,
+    "Longitude": 121.5044838,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "寵物運動公園",
+    "address": "236新北市土城區",
+    "city": "新北市",
+    "district": "土城區",
+    "latitude": 24.9859996,
+    "Longitude": 121.4566483,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "四號公園(八二三紀念公園)遛狗專區",
+    "address": "235新北市中和區中安街102號",
+    "city": "新北市",
+    "district": "中和區",
+    "latitude": 25.0002272,
+    "Longitude": 121.5116854,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "泉源公園寵物專區",
+    "address": "401臺中市東區樂業一路79號",
+    "city": "臺中市",
+    "district": "東區",
+    "latitude": 24.1367355,
+    "Longitude": 120.6930102,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "新竹寵物公園",
+    "address": "300新竹市東區中華路一段1巷",
+    "city": "新竹市",
+    "district": "東區",
+    "latitude": 24.8206782,
+    "Longitude": 120.9969708,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "頭前溪河濱公園",
+    "address": "300新竹市東區Zhonghua Road",
+    "city": "新竹市",
+    "district": "東區",
+    "latitude": 24.8191367,
+    "Longitude": 121.0000736,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "力行寵物公園",
+    "address": "244新北市林口區民族路與號文化北路526巷口",
+    "city": "新北市",
+    "district": "林口區",
+    "latitude": 25.0779813,
+    "Longitude": 121.368961,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "蘆堤寵物公園",
+    "address": "248新北市五股區環提大道",
+    "city": "新北市",
+    "district": "蘆洲區",
+    "latitude": 25.0869905,
+    "Longitude": 121.4546778,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "綠寶石寵物公園",
+    "address": "234新北市永和區綠寶石運動公園",
+    "city": "新北市",
+    "district": "永和區",
+    "latitude": 25.0156419,
+    "Longitude": 121.5056083,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "新莊西盛環保河濱公園",
+    "address": "242新北市新莊區新樹路平行之大漢溪溪畔",
+    "city": "新北市",
+    "district": "新莊區",
+    "latitude": 25.023685,
+    "Longitude": 121.444059,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "后里環保公園",
+    "address": "421臺中市后里區",
+    "city": "臺中市",
+    "district": "后里區",
+    "latitude": 24.2872313,
+    "Longitude": 120.7024047,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "新平公園",
+    "address": "406臺中市北屯區中平路783號",
+    "city": "臺中市",
+    "district": "北屯區",
+    "latitude": 24.1854561,
+    "Longitude": 120.6631412,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "文心森林公園",
+    "address": "408臺中市南屯區文心路一段289號",
+    "city": "臺中市",
+    "district": "南屯區",
+    "latitude": 24.145031,
+    "Longitude": 120.645156,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "竹東狗狗公園",
+    "address": "310新竹縣竹東鎮",
+    "city": "新竹市",
+    "district": "竹東鎮",
+    "latitude": 24.7352112,
+    "Longitude": 121.0994773,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "新莊寵物公園",
+    "address": "242新北市新莊區",
+    "city": "新北市",
+    "district": "新莊區",
+    "latitude": 25.0336676,
+    "Longitude": 121.4343408,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "信義區信義廣場狗活動區",
+    "address": "110臺北市信義區信義路五段11號",
+    "city": "臺北市",
+    "district": "信義區",
+    "latitude": 25.0335581,
+    "Longitude": 121.5660529,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "新平公園寵物專區",
+    "address": "406臺中市北屯區中平路789巷76號",
+    "city": "臺中市",
+    "district": "北屯區",
+    "latitude": 24.185864,
+    "Longitude": 120.661947,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "興學公園寵物專區",
+    "address": "300新竹市東區興竹街122號",
+    "city": "新竹市",
+    "district": "東區",
+    "latitude": 24.7976756,
+    "Longitude": 120.9659113,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "福順狗運動公園",
+    "address": "111臺北市士林區通河西街一段24號",
+    "city": "臺北市",
+    "district": "士林區",
+    "latitude": 25.081672,
+    "Longitude": 121.5143966,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "內湖區週美狗活動區",
+    "address": "114臺北市內湖區成美右岸河濱公園網球場旁",
+    "city": "臺北市",
+    "district": "內湖區",
+    "latitude": 25.0558903,
+    "Longitude": 121.5513873,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "萬華華江狗活動區",
+    "address": "108臺北市萬華區華江狗公園",
+    "city": "臺北市",
+    "district": "萬華區",
+    "latitude": 25.0327002,
+    "Longitude": 121.4866357,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "信義區景勤狗活動區",
+    "address": "110臺北市信義區信安街67巷",
+    "city": "臺北市",
+    "district": "信義區",
+    "latitude": 25.0257954,
+    "Longitude": 121.558601,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "中山區美堤狗活動區",
+    "address": "10491臺北市中山區",
+    "city": "臺北市",
+    "district": "中山區",
+    "latitude": 25.0765628,
+    "Longitude": 121.5542663,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "浮洲寵物公園",
+    "address": "220新北市板橋區機車專用道23號",
+    "city": "新北市",
+    "district": "板橋區",
+    "latitude": 24.9932918,
+    "Longitude": 121.4397709,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "親情河濱公園",
+    "address": "231新北市新店區110",
+    "city": "新北市",
+    "district": "新店區",
+    "latitude": 24.965461,
+    "Longitude": 121.535255,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "東興河濱公園",
+    "address": "351苗栗縣頭份市東興河濱公園",
+    "city": "苗栗縣",
+    "district": "頭份市",
+    "latitude": 24.6781473,
+    "Longitude": 120.9083008,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "員林寵物公園",
+    "address": "510彰化縣員林市員南路",
+    "city": "彰化縣",
+    "district": "員林市",
+    "latitude": 23.9505809,
+    "Longitude": 120.595857,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "安平寵物運動公園",
+    "address": "708臺南市安平區洲平路",
+    "city": "臺南市",
+    "district": "安平區",
+    "latitude": 23.001,
+    "Longitude": 120.1475638,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "高屏溪河濱寵物運動公園",
+    "address": "900屏東縣屏東市",
+    "city": "屏東縣",
+    "district": "高屏溪",
+    "latitude": 22.6475967,
+    "Longitude": 120.4395341,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "潭美毛寶貝快樂公園",
+    "address": "114臺北市內湖區潭美街852號",
+    "city": "臺北市",
+    "district": "內湖區",
+    "latitude": 25.0627667,
+    "Longitude": 121.6052838,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "萬興狗活動區",
+    "address": "臺北市文山區116",
+    "city": "臺北市",
+    "district": "文山區",
+    "latitude": 24.997414,
+    "Longitude": 121.5733964,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "至善公園",
+    "address": "111臺北市士林區至善路一段",
+    "city": "臺北市",
+    "district": "士林區至善路一段",
+    "latitude": 25.098593,
+    "Longitude": 121.5349944,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "北勢湖公園狗活動區",
+    "address": "114臺北市內湖區文湖國小",
+    "city": "臺北市",
+    "district": "內湖區",
+    "latitude": 25.0838967,
+    "Longitude": 121.5588554,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "玉成公園狗活動區",
+    "address": "110臺北市信義區中坡南路58號",
+    "city": "臺北市",
+    "district": "南港區",
+    "latitude": 25.0423024,
+    "Longitude": 121.5818464,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "大同狗活動區",
+    "address": "112臺北市北投區北投路二段4號",
+    "city": "臺北市",
+    "district": "北投區",
+    "latitude": 25.1335894,
+    "Longitude": 121.494638,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "洲美狗活動區",
+    "address": "112臺北市北投區福美路",
+    "city": "臺北市",
+    "district": "北投區",
+    "latitude": 25.099846,
+    "Longitude": 121.5038601,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "葫東狗狗活動區",
+    "address": "111臺北市士林區中正路589號",
+    "city": "臺北市",
+    "district": "士林區",
+    "latitude": 25.0866374,
+    "Longitude": 121.5079729,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "三腳渡狗狗活動區",
+    "address": "111臺北市士林區通河東街一段7號",
+    "city": "臺北市",
+    "district": "士林區",
+    "latitude": 25.0815275,
+    "Longitude": 121.5141546,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "古亭狗活動區",
+    "address": "100臺北市中正區同安街109巷10號",
+    "city": "臺北市",
+    "district": "中正區",
+    "latitude": 25.0205659,
+    "Longitude": 121.5170814,
+    "type": "狗狗公園"
+  },
+  {
+    "name": " 延平狗活動區",
+    "address": "103臺北市大同區 103",
+    "city": "臺北市",
+    "district": "大同區",
+    "latitude": 25.0739177,
+    "Longitude": 121.5060951,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "青峰狗活動區",
+    "address": "106臺北市大安區辛亥路三段",
+    "city": "臺北市",
+    "district": "大安區",
+    "latitude": 25.0156702,
+    "Longitude": 121.5488068,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "中和民有公園",
+    "address": "235新北市中和區中山路三段122號",
+    "city": "新北市",
+    "district": "中和區",
+    "latitude": 25.008366,
+    "Longitude": 121.4717544,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "土城寵物公園",
+    "address": "236新北市土城區",
+    "city": "新北市",
+    "district": "土城區",
+    "latitude": 25.0083603,
+    "Longitude": 121.4332097,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "淡水新市鎮寵物公園",
+    "address": "251新北市淡水區新市二路二段",
+    "city": "新北市",
+    "district": "淡水區",
+    "latitude": 25.1946176,
+    "Longitude": 121.4269065,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "林口松柏滯洪池公園",
+    "address": "244新北市林口區松柏路18號",
+    "city": "新北市",
+    "district": "林口區",
+    "latitude": 25.0911529,
+    "Longitude": 121.3768173,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "福林公園",
+    "address": "111臺北市士林區福林路中山北路五段",
+    "city": "桃園市",
+    "district": "桃園區",
+    "latitude": 25.0948074,
+    "Longitude": 121.5264661,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "中成寵物公園",
+    "address": "330桃園市桃園區國際路二段475巷",
+    "city": "桃園市",
+    "district": "桃園區",
+    "latitude": 25.0013659,
+    "Longitude": 121.2792182,
+    "type": "狗狗公園"
+  },
+  {
+    "name": "蘆竹寵物公園",
+    "address": "338桃園市蘆竹區忠孝西路59號",
+    "city": "桃園市",
+    "district": "桃園區",
+    "latitude": 25.0462786,
+    "Longitude": 121.2858755,
+    "type": "狗狗公園"
+  }
+]
