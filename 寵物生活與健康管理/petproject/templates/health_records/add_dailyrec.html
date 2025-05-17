@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新增生活記錄</title>
+</head>
+<body>
+    <h1>{{ pet.name }} 生活記錄</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">儲存</button>
+    </form>
+</body>
+</html>

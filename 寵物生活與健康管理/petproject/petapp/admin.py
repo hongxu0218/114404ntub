@@ -34,7 +34,7 @@ class ProfileAdmin(admin.ModelAdmin):
                     'fields': ('user', 'account_type', 'phone_number')
                 }),
                 ('獸醫資料', {
-                    'fields': ('vet_license_preview', 'vet_license_city', 'is_verified_vet')
+                    'fields': ('vet_license_preview', 'vet_license_city', 'clinic_name', 'clinic_address','is_verified_vet')
                 }),
             )
 
