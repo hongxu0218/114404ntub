@@ -131,7 +131,7 @@
             
 
             {% for field in form %}
-            {% if field.name != 'account_type' and field.name != 'phone_number' and field.name != 'email' and field.name != 'first_name' and field.name != 'last_name' and field.name != 'vet_license_city' and field.name != 'vet_license' %}
+            {% if field.name != 'account_type' and field.name != 'phone_number' and field.name != 'email' and field.name != 'first_name' and field.name != 'last_name' and field.name != 'vet_license_city' and field.name != 'vet_license' and field.name != 'clinic_name' and field.name != 'clinic_address' %}
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {{ field.errors }}
@@ -163,8 +163,15 @@
                 <label for="{{ form.vet_license.id_for_label }}">獸醫證照</label>
                 {{ form.vet_license }}
                 {{ form.vet_license.errors }}
-
                 <p class="hint">僅限 PDF、JPG、JPEG 或 PNG，最大 5MB。</p>
+
+                <label for="{{ form.clinic_name.id_for_label }}">醫院／診所名稱</label>
+                {{ form.clinic_name }}
+                {{ form.clinic_name.errors }}
+
+                <label for="{{ form.clinic_address.id_for_label }}">醫院／診所地址</label>
+                {{ form.clinic_address }}
+                {{ form.clinic_address.errors }}
             </div>
 
             <button type="submit">註冊</button>
@@ -185,21 +192,24 @@
         const vetFields = document.getElementById('vet-fields');
         const cityInput = document.getElementById('vet_license_city');
         const licenseInput = document.getElementById('vet_license');
+        const clinicNameInput = document.getElementById('id_clinic_name');
+        const clinicAddressInput = document.getElementById('id_clinic_address');
+
+        // 預先隱藏所有獸醫欄位，避免一開始畫面出現
+        vetFields.style.display = 'none';
 
         function toggleVetFields() {
-            if (accountType.value === 'vet') {
-                vetFields.style.display = 'block';
-                cityInput.required = true;
-                licenseInput.required = true;
-            } else {
-                vetFields.style.display = 'none';
-                cityInput.required = false;
-                licenseInput.required = false;
-            }
+            const isVet = accountType.value === 'vet';
+            vetFields.style.display = isVet ? 'block' : 'none';
+
+            cityInput.required = isVet;
+            licenseInput.required = isVet;
+            clinicNameInput.required = isVet;
+            clinicAddressInput.required = isVet;
         }
 
         accountType.addEventListener('change', toggleVetFields);
-        toggleVetFields();  // 初始化載入時執行一次
+        toggleVetFields(); // 初始化時判斷一次
     });
     </script>
 </body>

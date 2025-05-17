@@ -182,6 +182,15 @@
                 {{ form.vet_license }}
                 <p class="hint">僅限 PDF、JPG、JPEG 或 PNG，最大 5MB。</p>
                 {{ form.vet_license.errors }}
+
+                <label for="{{ form.clinic_name.id_for_label }}">{{ form.clinic_name.label }}</label>
+                {{ form.clinic_name }}
+                {{ form.clinic_name.errors }}
+
+                <label for="{{ form.clinic_address.id_for_label }}">{{ form.clinic_address.label }}</label>
+                {{ form.clinic_address }}
+                {{ form.clinic_address.errors }}
+
             </div>
             <button type="submit" class="btn">儲存</button>
 
