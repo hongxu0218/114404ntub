@@ -1,0 +1,8 @@
+<h2>🐾 預約成功！</h2>
+<p><strong>寵物：</strong>{{ appointment.pet.name }}</p>
+<p><strong>獸醫：</strong>{{ appointment.vet.clinic_name }}（{{ appointment.vet.user.get_full_name }}）</p>
+<p><strong>日期：</strong>{{ appointment.date }}</p>
+<p><strong>時間：</strong>{{ appointment.time }}</p>
+<p><strong>原因：</strong>{{ appointment.reason }}</p>
+
+<a href="{% url 'pet_list' %}">回到寵物列表</a>

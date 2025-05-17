@@ -30,6 +30,11 @@ urlpatterns = [
     path('pet/<int:pet_id>/add_daily_record/', views.add_daily_record, name='add_daily_record'),  # 新增每日健康紀錄
     path('save_daily_record/', views.save_daily_record, name='save_daily_record'),  # 儲存每日健康紀錄
     path('pet/<int:pet_id>/health/delete_record/', views.delete_daily_record, name='delete_daily_record'),  # 刪除每日健康紀錄
+
+    # 預約相關
+    path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
+    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 取消預約
+
 ]
 
 # 靜態檔案處理（僅在開發模式下啟用）

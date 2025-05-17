@@ -25,12 +25,14 @@
             text-decoration: none;
             font-weight: bold;
             transition: 0.3s;
+            position: relative;
         }
         .nav-btn:hover {
             background-color: #007bff;
+        }
+        .nav-btn:hover .nav-label {
             color: white;
         }
-
         h2 {
             color: #333;
         }
@@ -137,31 +139,133 @@
             text-overflow: ellipsis;
         }
         .feature-text {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: max-height 0.3s ease;
-    }
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: max-height 0.3s ease;
+        }
 
-    .feature-text.collapsed {
-        -webkit-line-clamp: 3;
-    }
+        .feature-text.collapsed {
+            -webkit-line-clamp: 3;
+        }   
 
-    .feature-text.expanded {
-        -webkit-line-clamp: unset;
-    }
+        .feature-text.expanded {
+            -webkit-line-clamp: unset;
+        }
+        #notification-box,
+        #notification-box {
+            background-color: white !important;
+        }
+        #notification-box li {
+            transition: none;
+        }
+        #notification-box li:hover {
+            background-color: transparent;
+            color: inherit;
+            cursor: default;
+        }
+        #notification-box:hover {
+            background-color: inherit !important;
+        }
+        #notif-count {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 6px;
+            line-height: 1;
+            display: inline-block;
+            z-index: 1000; /* ✅ 可選擇加強強制顯示 */
+        }
+        .notification-box.unread {
+            background-color: white !important;
+        }
+
+        .notification-box.read {
+            background-color: #f2f2f2 !important;
+        }
+        #mark-read-btn:hover {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+        .mark-read-btn {
+            all: unset; /* 重設 button 預設行為 */
+            display: block;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: black;
+            background-color: transparent !important;
+        }
+        .mark-read-btn:hover,
+        .mark-read-btn:focus,
+        .mark-read-btn:active,
+        .mark-read-btn:focus-visible {
+            background-color: transparent !important;
+            color: black !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
 
     </style>
 
 </head>
 <body>
+    <input type="hidden" id="appointment-digest" value="{{ appointment_digest }}">
 
     <!-- 導覽列 -->
     <div class="navbar">
         <a href="{% url 'pet_list' %}" class="nav-btn">🐾 寵物</a>
         <a href="{% url 'health_rec' %}" class="nav-btn">🩺 健康記錄</a>
-        <a href="#" class="nav-btn">🔔 通知</a>
+        <div style="position: relative;">
+            <div class="nav-btn" onclick="toggleNotice()" style="cursor: pointer;">
+                <span class="nav-label">🔔 通知</span>
+                    {% if notif_count > 0 %}
+                        <span id="notif-count" style="
+                            position: absolute;
+                            top: -5px;
+                            right: -10px;
+                            background-color: red;
+                            color: white;
+                            font-size: 12px;
+                            font-weight: bold;
+                            border-radius: 50%;
+                            padding: 2px 6px;
+                            line-height: 1;
+                            display: inline-block;
+                        ">
+                            {{ notif_count }}
+                        </span>
+                    {% endif %}
+            </div>
+
+            <div id="notification-box" class="notification-box unread" style="display: none; position: absolute; top: 100%; right: 0; border: 1px solid #ccc; padding: 10px; z-index: 99; min-width: 280px;">
+                {% if tomorrow_appointments %}
+                    <button id="mark-read-btn" type="button" class="mark-read-btn" onclick="markAsRead()">
+                        明日預約提醒
+                    </button>
+
+                    <ul style="list-style: disc; padding-left: 20px; margin: 5px 0;">
+                        {% for appt in tomorrow_appointments %}
+                        <li onclick="markAsRead()" style="cursor: pointer;">
+                            {{ appt.pet.name }}｜{{ appt.time }}<br>
+                            {{ appt.vet.clinic_name }}（{{ appt.vet.user.last_name }}{{ appt.vet.user.first_name }}）
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <em style="color: #888;">無即將到來的預約</em>
+                {% endif %}
+            </div>
+        </div>
+
         <a href="#" class="nav-btn">🔑 登入</a>
     </div>
 
@@ -196,9 +300,34 @@
                         <p>尚未上傳圖片</p>
                     {% endif %}
 
+                    {% if pet.future_appointments %}
+                        <div style="margin-top: 10px; background-color: #f1f9ff; padding: 10px; border-left: 4px solid #007bff;">
+                            <strong>📅 預約資訊：</strong>
+                            <ul style="margin-top: 5px;">
+                                {% for appt in pet.future_appointments %}
+                                <li>
+                                    {{ appt.date }} {{ appt.time }}｜
+                                    {{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
+                                    （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
+                                    <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" style="background:none; border:none; color:#dc3545; font-weight:bold; cursor:pointer;" title="取消預約">
+                                            ❌
+                                        </button>
+                                    </form>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p style="color: #888; font-style: italic;">尚無預約紀錄</p>
+                    {% endif %}
+
+
                     <div class="action-buttons">
                         <a href="{% url 'edit_pet' pet.id %}" class="btn btn-edit">✏️ 修改</a>
                         <a href="{% url 'delete_pet' pet.id %}" class="btn btn-delete">🗑️ 刪除</a>
+                        <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="btn btn-daily">📅 預約獸醫</a>
                         <button class="btn btn-close" onclick="togglePetDetails({{ pet.id }})">❌ 關閉</button>
                     </div>
                 </div>
@@ -228,6 +357,48 @@
                 btn.innerText = "展開";
             }
         }
+        function toggleNotice() {
+            const box = document.getElementById("notification-box");
+            const isVisible = box.style.display === "block";
+            box.style.display = isVisible ? "none" : "block";
+        }
+
+        // 點擊「明日預約提醒」時標記為已讀
+        function markAsRead() {
+            const box = document.getElementById("notification-box");
+            const count = document.getElementById("notif-count");
+            const digest = document.getElementById("appointment-digest")?.value || "";
+
+            box.classList.remove("unread");
+            box.classList.add("read");
+            if (count) count.style.display = "none";
+            localStorage.setItem("last_read_digest", digest);
+        }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            const box = document.getElementById("notification-box");
+            const count = document.getElementById("notif-count");
+            const digest = document.getElementById("appointment-digest")?.value || "";
+            const lastDigest = localStorage.getItem("last_read_digest");
+
+            const isRead = digest && digest === lastDigest;
+
+            if (isRead) {
+                box.classList.remove("unread");
+                box.classList.add("read");
+                if (count) count.style.display = "none";
+            } else if (digest) {
+                box.classList.remove("read");
+                box.classList.add("unread");
+                if (count) count.style.display = "inline-block";  // 這是你看不到紅點的關鍵
+            }
+
+            const markReadBtn = document.getElementById("mark-read-btn");
+            if (markReadBtn) {
+                markReadBtn.addEventListener("click", markAsRead);
+            }
+        });
+
     </script>
 
 

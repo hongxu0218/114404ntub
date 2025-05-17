@@ -4,16 +4,17 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord
+from .models import Profile, Pet, DailyRecord, VetAppointment
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, VetAppointmentForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
-from datetime import date
+from datetime import date, datetime, timedelta, time
 import json
+
 
 # 首頁
 
@@ -222,10 +223,41 @@ def add_pet(request):
     return render(request, 'pet_info/add_pet.html', {'form': form})
 
 # 寵物列表
-
 def pet_list(request):
     pets = Pet.objects.all()
-    return render(request, 'pet_info/pet_list.html', {'pets': pets})
+    today = date.today()
+    now = datetime.now()
+
+    # 預約資料
+    for pet in pets:
+        pet.future_appointments = VetAppointment.objects.filter(pet=pet, date__gte=today).order_by('date', 'time')
+
+    # 明天內尚未過時的預約
+    tomorrow = today + timedelta(days=1)
+    if request.user.is_authenticated:
+        tomorrow_appointments = VetAppointment.objects.filter(
+            owner=request.user,
+            date=tomorrow,
+        ).filter(
+            time__gt=now.time() if tomorrow == today else time(0, 0)
+        ).order_by('time')
+    else:
+        tomorrow_appointments = []
+    
+    appointment_digest = "|".join([
+        f"{appt.date.isoformat()}_{appt.time.strftime('%H:%M')}_{appt.vet_id}_{appt.pet_id}"
+        for appt in tomorrow_appointments
+    ])
+
+    notif_count = len(tomorrow_appointments)
+
+    return render(request, 'pet_info/pet_list.html', {
+        'pets': pets,
+        'tomorrow_appointments': tomorrow_appointments,
+        'notif_count': notif_count,
+        'appointment_digest': appointment_digest,
+    })
+
 
 # 編輯寵物
 
@@ -331,3 +363,36 @@ def delete_daily_record(request, pet_id):
         return JsonResponse({'success': True})
     except DailyRecord.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Record not found'}, status=404)
+
+
+# 新增預約
+@login_required
+def create_vet_appointment(request):
+    pet_id = request.GET.get('pet_id')
+    if not pet_id:
+        return HttpResponseBadRequest("缺少寵物 ID")
+    
+    pet = get_object_or_404(Pet, id=pet_id)
+
+    if request.method == 'POST':
+        form = VetAppointmentForm(request.POST)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+            appointment.owner = request.user
+            appointment.pet = pet
+            appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
+            appointment.save()
+            return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
+    else:
+        form = VetAppointmentForm()
+
+    return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
+
+# 取消預約
+@require_POST
+@login_required
+def cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(VetAppointment, id=appointment_id, owner=request.user)
+    appointment.delete()
+    messages.success(request, "預約已取消")
+    return redirect('pet_list')
