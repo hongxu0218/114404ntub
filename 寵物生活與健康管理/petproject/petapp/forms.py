@@ -269,15 +269,24 @@ class DailyRecordForm(forms.ModelForm):
     class Meta:
         model = DailyRecord
         fields = ['date', 'category', 'content']
-        labels = {'date': '日期', 'category': '類別', 'content': '內容'}
+        labels = {
+            'date': '日期',
+            'category': '類別',
+            'content': '內容',
+            #'created_at': '建立時間'
+        }
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'category': forms.Select(attrs={'class': 'form-control'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            #'created_at': forms.DateTimeInput(attrs={
+            #    'class': 'form-control',
+            #    'readonly': 'readonly'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # 設定 date 預設為今天（僅在初次載入表單時）
         if not self.initial.get('date'):
             self.initial['date'] = date.today()
 
@@ -292,3 +301,13 @@ class DailyRecordForm(forms.ModelForm):
         if not content:
             raise forms.ValidationError("請填寫內容")
         return content
+
+class TemperatureEditForm(forms.Form):
+    date = forms.DateField(label='紀錄時間',
+            widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
+    temperature = forms.FloatField(label='體溫 (°C)')
+
+class WeightEditForm(forms.Form):
+    date = forms.DateField(label='紀錄時間',
+            widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
+    weight = forms.FloatField(label='體重 (公斤)')
