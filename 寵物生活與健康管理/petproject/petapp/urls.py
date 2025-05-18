@@ -10,7 +10,7 @@ urlpatterns = [
     # 導向不同使用者主控台的路由設定
     path('dashboard/', views.dashboard_redirect, name='dashboard'),  # 導向主控台（根據帳號角色判斷導向）
     path('dashboard/owner/', views.owner_dashboard, name='owner_dashboard'),  # 飼主主控台
-    path('dashboard/vet/', views.vet_dashboard, name='vet_dashboard'),  # 獸醫主控台
+    path('vet/', views.vet_dashboard, name='vet_home'),  # 獸醫主控台
 
     # 註冊與帳號管理相關路由
     path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
@@ -34,6 +34,10 @@ urlpatterns = [
     # 預約相關
     path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
     path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 取消預約
+
+    # 獸醫相關
+    path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
+    path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
 
 ]
 

@@ -254,9 +254,11 @@
 
                     <ul style="list-style: disc; padding-left: 20px; margin: 5px 0;">
                         {% for appt in tomorrow_appointments %}
-                        <li onclick="markAsRead()" style="cursor: pointer;">
-                            {{ appt.pet.name }}｜{{ appt.time }}<br>
-                            {{ appt.vet.clinic_name }}（{{ appt.vet.user.last_name }}{{ appt.vet.user.first_name }}）
+                        <li style="cursor: pointer;">
+                            <span onclick="markAsRead()">
+                                {{ appt.pet.name }}｜{{ appt.time }}<br>
+                                {{ appt.vet.clinic_name }}（{{ appt.vet.user.last_name }}{{ appt.vet.user.first_name }}）
+                            </span>
                         </li>
                         {% endfor %}
                     </ul>

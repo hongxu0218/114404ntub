@@ -6,8 +6,7 @@ from django.contrib.auth import login
 from .models import Profile, Pet, DailyRecord, VetAppointment
 from allauth.account.forms import SignupForm
 import re
-from datetime import date
-from datetime import time
+from datetime import date, time, datetime 
 
 # 縣市選項常數
 CITY_CHOICES = [
@@ -359,3 +358,34 @@ class VetAppointmentForm(forms.ModelForm):
         self.fields['vet'].label_from_instance = lambda obj: f"{obj.clinic_name or '未填診所'}（{obj.user.last_name}{obj.user.first_name}）"
         self.fields['vet'].widget.attrs.update({'class': 'form-control searchable-select'})
         self.fields['vet'].queryset = Profile.objects.filter(account_type='vet', is_verified_vet=True)
+
+        # 根據前端提交值即時過濾已被預約的時段
+        vet_id = self.data.get('vet') or self.initial.get('vet')
+        date_val = self.data.get('date') or self.initial.get('date')
+
+        try:
+            if vet_id and date_val:
+                # 轉為 date 物件
+                parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
+                
+                booked_times = VetAppointment.objects.filter(
+                    vet_id=vet_id,
+                    date=parsed_date
+                ).values_list('time', flat=True)
+
+                self.fields['time'].choices = [
+                    (t.strftime("%H:%M:%S"), label)
+                    for t, label in AVAILABLE_TIME_CHOICES
+                    if t not in booked_times
+                ]
+            else:
+                self.fields['time'].choices = [
+                    (t.strftime("%H:%M:%S"), label)
+                    for t, label in AVAILABLE_TIME_CHOICES
+                ]
+        except Exception as e:
+            print("預約時段載入錯誤：", e)
+            self.fields['time'].choices = [
+                (t.strftime("%H:%M:%S"), label)
+                for t, label in AVAILABLE_TIME_CHOICES
+            ]

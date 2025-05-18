@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>已被預約時段</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f8f9fa;
+    }
+    h1 {
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #dee2e6;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+    <a href="{% url 'vet_home' %}" style="
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+    ">← 返回主控台</a>
+
+    <h1>📅 已被預約的時段</h1>
+
+    <table>
+        <thead>
+        <tr>
+            <th>日期</th>
+            <th>時間</th>
+            <th>寵物名稱</th>
+            <th>飼主</th>
+            <th>預約原因</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for appt in appointments %}
+            <tr>
+                <td>{{ appt.date }}</td>
+                <td>{{ appt.time }}</td>
+                <td>{{ appt.pet.name }}</td>
+                <td>
+                    {% if appt.owner.last_name or appt.owner.first_name %}
+                        {{ appt.owner.last_name }}{{ appt.owner.first_name }}
+                    {% else %}
+                        {{ appt.owner.username }}
+                    {% endif %}
+                </td>
+                <td>{{ appt.reason }}</td>
+            </tr>
+                {% empty %}
+            <tr>
+                <td colspan="5">目前尚無預約</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -163,7 +163,7 @@ def edit_profile(request):
 # 飼主主控台
 @login_required
 def owner_dashboard(request):
-    return render(request, 'dashboards/owner_dashboard.html')
+    return render(request, 'pet_info/pet_list.html')
 
 # 獸醫主控台（需審核通過）
 @login_required
@@ -172,7 +172,7 @@ def vet_dashboard(request):
     if not profile.is_verified_vet:
         messages.warning(request, "您的獸醫帳號尚未通過管理員驗證。請稍後再試。")
         return redirect('home')
-    return render(request, 'dashboards/vet_dashboard.html')
+    return render(request, 'vet_pages/vet_home.html')
 
 # 登出成功頁面
 
@@ -192,9 +192,9 @@ def select_type_then_social_login(request):
 def dashboard_redirect(request):
     profile = request.user.profile
     if profile.account_type == 'owner':
-        return redirect('owner_dashboard')
+        return redirect('pet_list.html')
     elif profile.account_type == 'vet':
-        return redirect('vet_dashboard')
+        return redirect('vet_home.html')
     else:
         return redirect('home')
 
@@ -381,8 +381,19 @@ def create_vet_appointment(request):
             appointment.owner = request.user
             appointment.pet = pet
             appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
-            appointment.save()
-            return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
+            
+            # 檢查是否該時段已被預約
+            already_booked = VetAppointment.objects.filter(
+                vet=appointment.vet,
+                date=appointment.date,
+                time=appointment.time
+            ).exists()
+
+            if already_booked:
+                form.add_error('time', '此時段已被其他飼主預約，請選擇其他時間')
+            else:
+                appointment.save()
+                return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
     else:
         form = VetAppointmentForm()
 
@@ -396,3 +407,19 @@ def cancel_appointment(request, appointment_id):
     appointment.delete()
     messages.success(request, "預約已取消")
     return redirect('pet_list')
+
+# 獸醫查看預約狀況
+@login_required
+def vet_appointments(request):
+    # 確保是獸醫帳號
+    profile = request.user.profile
+    if not profile.is_verified_vet:
+        return render(request, '403.html', status=403)
+
+    # 取得該獸醫的所有預約
+    appointments = VetAppointment.objects.filter(vet=profile).order_by('date', 'time')
+    return render(request, 'vet_pages/vet_appointments.html', {'appointments': appointments})
+
+@login_required
+def vet_availability_settings(request):
+    return render(request, 'vet_pages/vet_availability_settings.html')
