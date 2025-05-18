@@ -53,6 +53,7 @@
             <th>寵物名稱</th>
             <th>飼主</th>
             <th>預約原因</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +61,7 @@
 
             {% for group in date_groups %}
                 <tr>
-                    <td colspan="5" style="background-color: #d1ecf1; font-weight: bold;">
+                    <td colspan="6" style="background-color: #d1ecf1; font-weight: bold;">
                         📅 {{ group.grouper }}（{{ group.grouper|date:"l" }}）
                     </td>
                 </tr>
@@ -78,6 +79,15 @@
                         {% endif %}
                     </td>
                     <td>{{ appt.reason }}</td>
+                    <td>
+                      <form method="POST" action="{% url 'cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');">
+                        {% csrf_token %}
+                        <input type="text" name="cancel_reason" placeholder="取消原因" required
+                            style="width: 120px; padding: 4px; margin-bottom: 6px; font-size: 14px;">
+                        <br>
+                        <button type="submit" style="padding: 6px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px;">取消</button>
+                      </form>
+                    </td>
                 </tr>
                 {% endfor %}
             {% empty %}

@@ -186,7 +186,6 @@
         localStorage.setItem("last_read_digest", digest);
     }
 
-
     window.addEventListener("DOMContentLoaded", function () {
         const box = document.getElementById("notification-box");
         const count = document.getElementById("notif-count");
@@ -212,22 +211,3 @@
     });
 </script>
 {% endblock %}
-
-        function toggleFeature(petId) {
-            const span = document.getElementById("feature-" + petId);
-            const btn = span.nextElementSibling;
-
-            if (span.classList.contains("collapsed")) {
-                span.classList.remove("collapsed");
-                span.classList.add("expanded");
-                btn.innerText = "收合";
-            } else {
-                span.classList.remove("expanded");
-                span.classList.add("collapsed");
-                btn.innerText = "展開";
-            }
-        }
-    </script>
-</body>
-</html>
-
