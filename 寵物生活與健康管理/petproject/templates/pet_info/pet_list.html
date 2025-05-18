@@ -1,408 +1,213 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>飼主主頁</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f7f7f7;
-        }
+<!-- templates/pet_info/pet_list.html -->
+{% extends "pet_info/base.html" %}
+{% block title %}飼主主頁{% endblock %}
 
-        .navbar {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .nav-btn {
-            background-color: #ffffff;
-            border: 1px solid #007bff;
-            color: #007bff;
-            padding: 8px 16px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: 0.3s;
-            position: relative;
-        }
-        .nav-btn:hover {
-            background-color: #007bff;
-        }
-        .nav-btn:hover .nav-label {
-            color: white;
-        }
-        h2 {
-            color: #333;
-        }
-        .pet-list {
-            margin-top: 20px;
-        }
-        .pet-list li {
-            background-color: #fff;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        }
-        .pet-details {
-            display: none;
-            margin-top: 10px;
-            background-color: #f1f1f1;
-            padding: 15px;
-            border-radius: 5px;
-        }
+{% block extra_head %}
+<style>
+    h2 {
+        color: #333;
+    }
+    .pet-list {
+        margin-top: 20px;
+    }
+    .pet-list li {
+        background-color: #fff;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .pet-details {
+        display: none;
+        margin-top: 10px;
+        background-color: #f1f1f1;
+        padding: 15px;
+        border-radius: 5px;
+    }
 
-        .btn {
-            padding: 8px 16px;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            border: none;
-            transition: all 0.3s ease;
-        }
+    .btn {
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        border: none;
+        transition: all 0.3s ease;
+    }
 
-        .btn-pet {
-            color: #007bff;
-            background-color: #fff;
-            border: 1px solid #007bff;
-        }
-        .btn-pet:hover {
-            background-color: #007bff;
-            color: white;
-        }
+    .btn-pet { color: #007bff; background-color: #fff; border: 1px solid #007bff; }
+    .btn-pet:hover { background-color: #007bff; color: white; }
 
-        .btn-edit {
-            background-color: #ffc107;
-            color: white;
-        }
-        .btn-edit:hover {
-            background-color: #e0a800;
-        }
+    .btn-edit { background-color: #ffc107; color: white; }
+    .btn-edit:hover { background-color: #e0a800; }
 
-        .btn-delete {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-delete:hover {
-            background-color: #c82333;
-        }
+    .btn-delete { background-color: #dc3545; color: white; }
+    .btn-delete:hover { background-color: #c82333; }
 
-        .btn-daily {
-            background-color: #17a2b8;
-            color: white;
-        }
-        .btn-daily:hover {
-            background-color: #138496;
-        }
+    .btn-daily { background-color: #17a2b8; color: white; }
+    .btn-daily:hover { background-color: #138496; }
 
-        .btn-close {
-            background-color: #6c757d;
-            color: white;
-        }
-        .btn-close:hover {
-            background-color: #5a6268;
-        }
+    .btn-close { background-color: #6c757d; color: white; }
+    .btn-close:hover { background-color: #5a6268; }
 
-        .btn-primary {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #218838;
-        }
+    .btn-primary { background-color: #28a745; color: white; }
+    .btn-primary:hover { background-color: #218838; }
 
-        .action-buttons {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        /* 避免段落文字太長破壞版面 */
-        .pet-details p {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            max-width: 100%;
-            white-space: normal;
-        }
+    .action-buttons {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 
-        /* 限制特定文字欄位（例如特徵）最多顯示 3 行，太多會裁切 */
-        .pet-details .feature-text {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;        /* 顯示最多 3 行 */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .feature-text {
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: max-height 0.3s ease;
-        }
+    .pet-details p {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        white-space: normal;
+    }
 
-        .feature-text.collapsed {
-            -webkit-line-clamp: 3;
-        }   
+    .feature-text {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: max-height 0.3s ease;
+    }
+    .feature-text.collapsed { -webkit-line-clamp: 3; }
+    .feature-text.expanded { -webkit-line-clamp: unset; }
+</style>
+{% endblock %}
 
-        .feature-text.expanded {
-            -webkit-line-clamp: unset;
-        }
-        #notification-box,
-        #notification-box {
-            background-color: white !important;
-        }
-        #notification-box li {
-            transition: none;
-        }
-        #notification-box li:hover {
-            background-color: transparent;
-            color: inherit;
-            cursor: default;
-        }
-        #notification-box:hover {
-            background-color: inherit !important;
-        }
-        #notif-count {
-            position: absolute;
-            top: -5px;
-            right: -10px;
-            background-color: red;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            border-radius: 50%;
-            padding: 2px 6px;
-            line-height: 1;
-            display: inline-block;
-            z-index: 1000; /* ✅ 可選擇加強強制顯示 */
-        }
-        .notification-box.unread {
-            background-color: white !important;
-        }
+{% block content %}
+<input type="hidden" id="appointment-digest" value="{{ appointment_digest }}">
 
-        .notification-box.read {
-            background-color: #f2f2f2 !important;
-        }
-        #mark-read-btn:hover {
-            background-color: transparent !important;
-            color: inherit !important;
-        }
-        .mark-read-btn {
-            all: unset; /* 重設 button 預設行為 */
-            display: block;
-            cursor: pointer;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: black;
-            background-color: transparent !important;
-        }
-        .mark-read-btn:hover,
-        .mark-read-btn:focus,
-        .mark-read-btn:active,
-        .mark-read-btn:focus-visible {
-            background-color: transparent !important;
-            color: black !important;
-            outline: none !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
+<h2>歡迎來到飼主主頁</h2>
+<p>在這裡你可以新增寵物資料或查看已填過的寵物資料。</p>
 
+<a href="{% url 'add_pet' %}" class="btn btn-primary">➕ 新增寵物資料</a>
 
-    </style>
-
-</head>
-<body>
-    <input type="hidden" id="appointment-digest" value="{{ appointment_digest }}">
-
-    <!-- 導覽列 -->
-    <div class="navbar">
-        <a href="{% url 'pet_list' %}" class="nav-btn">🐾 寵物</a>
-        <a href="{% url 'health_rec' %}" class="nav-btn">🩺 健康記錄</a>
-        <div style="position: relative;">
-            <div class="nav-btn" onclick="toggleNotice()" style="cursor: pointer;">
-                <span class="nav-label">🔔 通知</span>
-                    {% if notif_count > 0 %}
-                        <span id="notif-count" style="
-                            position: absolute;
-                            top: -5px;
-                            right: -10px;
-                            background-color: red;
-                            color: white;
-                            font-size: 12px;
-                            font-weight: bold;
-                            border-radius: 50%;
-                            padding: 2px 6px;
-                            line-height: 1;
-                            display: inline-block;
-                        ">
-                            {{ notif_count }}
-                        </span>
-                    {% endif %}
-            </div>
-
-            <div id="notification-box" class="notification-box unread" style="display: none; position: absolute; top: 100%; right: 0; border: 1px solid #ccc; padding: 10px; z-index: 99; min-width: 280px;">
-                {% if tomorrow_appointments %}
-                    <button id="mark-read-btn" type="button" class="mark-read-btn" onclick="markAsRead()">
-                        明日預約提醒
-                    </button>
-
-                    <ul style="list-style: disc; padding-left: 20px; margin: 5px 0;">
-                        {% for appt in tomorrow_appointments %}
-                        <li style="cursor: pointer;">
-                            <span onclick="markAsRead()">
-                                {{ appt.pet.name }}｜{{ appt.time }}<br>
-                                {{ appt.vet.clinic_name }}（{{ appt.vet.user.last_name }}{{ appt.vet.user.first_name }}）
-                            </span>
-                        </li>
-                        {% endfor %}
-                    </ul>
+<div class="pet-list">
+    <h3>已填過的寵物資料</h3>
+    <ul>
+      {% for pet in pets %}
+        <li>
+            <button class="btn btn-pet" onclick="togglePetDetails({{ pet.id }})">{{ pet.name }}</button>
+            <div id="details-{{ pet.id }}" class="pet-details">
+                <p><strong>品種：</strong>{{ pet.breed }}</p>
+                <p><strong>絕育狀態：</strong>{{ pet.get_sterilization_status_display }}</p>
+                <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
+                <p><strong>出生日期：</strong>{{ pet.year_of_birth }} 年 {{ pet.month_of_birth }} 月 {{ pet.day_of_birth }} 日</p>
+                <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
+                <p><strong>特徵：</strong>
+                  <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
+                  <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">展開</button>
+                </p>
+                <p><strong>性別：</strong>{{ pet.get_gender_display }}</p>
+                <p><strong>圖片：</strong></p>
+                {% if pet.picture %}
+                    <p><img src="{{ pet.picture.url }}" alt="pet image" style="max-width: 200px;"></p>
                 {% else %}
-                    <em style="color: #888;">無即將到來的預約</em>
+                    <p>尚未上傳圖片</p>
                 {% endif %}
-            </div>
-        </div>
 
-        <a href="#" class="nav-btn">🔑 登入</a>
-    </div>
-
-    <h2>歡迎來到飼主主頁</h2>
-    <p>在這裡你可以新增寵物資料或查看已填過的寵物資料。</p>
-
-    <a href="{% url 'add_pet' %}" class="btn btn-primary">➕ 新增寵物資料</a>
-
-    <div class="pet-list">
-        <h3>已填過的寵物資料</h3>
-        <ul>
-          {% for pet in pets %}
-            <li>
-                <button class="btn btn-pet" onclick="togglePetDetails({{ pet.id }})">
-                    {{ pet.name }}
-                </button>
-                <div id="details-{{ pet.id }}" class="pet-details">
-                    <p><strong>品種：</strong>{{ pet.breed }}</p>
-                    <p><strong>絕育狀態：</strong>{{ pet.get_sterilization_status_display }}</p>
-                    <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
-                    <p><strong>出生日期：</strong>{{ pet.year_of_birth }} 年 {{ pet.month_of_birth }} 月 {{ pet.day_of_birth }} 日</p>
-                    <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
-                    <p><strong>特徵：</strong>
-                      <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
-                      <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">展開</button>
-                    </p>
-                    <p><strong>性別：</strong>{{ pet.get_gender_display }}</p>
-                    <p><strong>圖片：</strong></p>
-                    {% if pet.picture %}
-                        <p><img src="{{ pet.picture.url }}" alt="pet image" style="max-width: 200px;"></p>
-                    {% else %}
-                        <p>尚未上傳圖片</p>
-                    {% endif %}
-
-                    {% if pet.future_appointments %}
-                        <div style="margin-top: 10px; background-color: #f1f9ff; padding: 10px; border-left: 4px solid #007bff;">
-                            <strong>📅 預約資訊：</strong>
-                            <ul style="margin-top: 5px;">
-                                {% for appt in pet.future_appointments %}
-                                <li>
-                                    {{ appt.date }} {{ appt.time }}｜
-                                    {{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
-                                    （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
-                                    <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" style="background:none; border:none; color:#dc3545; font-weight:bold; cursor:pointer;" title="取消預約">
-                                            ❌
-                                        </button>
-                                    </form>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% else %}
-                        <p style="color: #888; font-style: italic;">尚無預約紀錄</p>
-                    {% endif %}
-
-
-                    <div class="action-buttons">
-                        <a href="{% url 'edit_pet' pet.id %}" class="btn btn-edit">✏️ 修改</a>
-                        <a href="{% url 'delete_pet' pet.id %}" class="btn btn-delete">🗑️ 刪除</a>
-                        <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="btn btn-daily">📅 預約獸醫</a>
-                        <button class="btn btn-close" onclick="togglePetDetails({{ pet.id }})">❌ 關閉</button>
+                {% if pet.future_appointments %}
+                    <div style="margin-top: 10px; background-color: #f1f9ff; padding: 10px; border-left: 4px solid #007bff;">
+                        <strong>📅 預約資訊：</strong>
+                        <ul style="margin-top: 5px;">
+                            {% for appt in pet.future_appointments %}
+                            <li>
+                                {{ appt.date }} {{ appt.time }}｜{{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
+                                （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
+                                <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background:none; border:none; color:#dc3545; font-weight:bold; cursor:pointer;" title="取消預約">
+                                        ❌
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                        </ul>
                     </div>
+                {% else %}
+                    <p style="color: #888; font-style: italic;">尚無預約紀錄</p>
+                {% endif %}
+
+                <div class="action-buttons">
+                    <a href="{% url 'edit_pet' pet.id %}" class="btn btn-edit">✏️ 修改</a>
+                    <a href="{% url 'delete_pet' pet.id %}" class="btn btn-delete">🗑️ 刪除</a>
+                    <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="btn btn-daily">📅 預約獸醫</a>
+                    <button class="btn btn-close" onclick="togglePetDetails({{ pet.id }})">❌ 關閉</button>
                 </div>
-            </li>
-          {% empty %}
-            <li>尚無寵物資料，快來新增你的寵物吧！</li>
-          {% endfor %}
-        </ul>
-    </div>
-    <script>
-        function togglePetDetails(petId) {
-            var details = document.getElementById("details-" + petId);
-            details.style.display = (details.style.display === "none" || details.style.display === "") ? "block" : "none";
+            </div>
+        </li>
+      {% empty %}
+        <li>尚無寵物資料，快來新增你的寵物吧！</li>
+      {% endfor %}
+    </ul>
+</div>
+
+<script>
+    function togglePetDetails(petId) {
+        var details = document.getElementById("details-" + petId);
+        details.style.display = (details.style.display === "none" || details.style.display === "") ? "block" : "none";
+    }
+
+    function toggleFeature(petId) {
+        const span = document.getElementById("feature-" + petId);
+        const btn = span.nextElementSibling;
+
+        if (span.classList.contains("collapsed")) {
+            span.classList.remove("collapsed");
+            span.classList.add("expanded");
+            btn.innerText = "收合";
+        } else {
+            span.classList.remove("expanded");
+            span.classList.add("collapsed");
+            btn.innerText = "展開";
         }
+    }
 
-        function toggleFeature(petId) {
-            const span = document.getElementById("feature-" + petId);
-            const btn = span.nextElementSibling;
+    function toggleNotice() {
+        const box = document.getElementById("notification-box");
+        const isVisible = box.style.display === "block";
+        box.style.display = isVisible ? "none" : "block";
+    }
 
-            if (span.classList.contains("collapsed")) {
-                span.classList.remove("collapsed");
-                span.classList.add("expanded");
-                btn.innerText = "收合";
-            } else {
-                span.classList.remove("expanded");
-                span.classList.add("collapsed");
-                btn.innerText = "展開";
-            }
-        }
-        function toggleNotice() {
-            const box = document.getElementById("notification-box");
-            const isVisible = box.style.display === "block";
-            box.style.display = isVisible ? "none" : "block";
-        }
+    function markAsRead() {
+        const box = document.getElementById("notification-box");
+        const count = document.getElementById("notif-count");
+        const digest = document.getElementById("appointment-digest")?.value || "";
+        box.classList.remove("unread");
+        box.classList.add("read");
+        if (count) count.style.display = "none";
+        localStorage.setItem("last_read_digest", digest);
+    }
 
-        // 點擊「明日預約提醒」時標記為已讀
-        function markAsRead() {
-            const box = document.getElementById("notification-box");
-            const count = document.getElementById("notif-count");
-            const digest = document.getElementById("appointment-digest")?.value || "";
+    window.addEventListener("DOMContentLoaded", function () {
+        const box = document.getElementById("notification-box");
+        const count = document.getElementById("notif-count");
+        const digest = document.getElementById("appointment-digest")?.value || "";
+        const lastDigest = localStorage.getItem("last_read_digest");
 
+        const isRead = digest && digest === lastDigest;
+
+        if (isRead) {
             box.classList.remove("unread");
             box.classList.add("read");
             if (count) count.style.display = "none";
-            localStorage.setItem("last_read_digest", digest);
+        } else if (digest) {
+            box.classList.remove("read");
+            box.classList.add("unread");
+            if (count) count.style.display = "inline-block";
         }
 
-        window.addEventListener("DOMContentLoaded", function () {
-            const box = document.getElementById("notification-box");
-            const count = document.getElementById("notif-count");
-            const digest = document.getElementById("appointment-digest")?.value || "";
-            const lastDigest = localStorage.getItem("last_read_digest");
-
-            const isRead = digest && digest === lastDigest;
-
-            if (isRead) {
-                box.classList.remove("unread");
-                box.classList.add("read");
-                if (count) count.style.display = "none";
-            } else if (digest) {
-                box.classList.remove("read");
-                box.classList.add("unread");
-                if (count) count.style.display = "inline-block";  // 這是你看不到紅點的關鍵
-            }
-
-            const markReadBtn = document.getElementById("mark-read-btn");
-            if (markReadBtn) {
-                markReadBtn.addEventListener("click", markAsRead);
-            }
-        });
-
-    </script>
-
-
-</body>
-</html>
+        const markReadBtn = document.getElementById("mark-read-btn");
+        if (markReadBtn) {
+            markReadBtn.addEventListener("click", markAsRead);
+        }
+    });
+</script>
+{% endblock %}

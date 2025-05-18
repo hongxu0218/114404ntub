@@ -38,7 +38,8 @@ urlpatterns = [
     # 獸醫相關
     path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
     path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
-
+    path('vet/my-patients/', views.my_patients, name='my_patients'),
+    path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
 ]
 
 # 靜態檔案處理（僅在開發模式下啟用）

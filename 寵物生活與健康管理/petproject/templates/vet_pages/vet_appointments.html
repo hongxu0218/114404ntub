@@ -56,24 +56,34 @@
           </tr>
         </thead>
         <tbody>
-            {% for appt in appointments %}
-            <tr>
-                <td>{{ appt.date }}</td>
-                <td>{{ appt.time }}</td>
-                <td>{{ appt.pet.name }}</td>
-                <td>
-                    {% if appt.owner.last_name or appt.owner.first_name %}
-                        {{ appt.owner.last_name }}{{ appt.owner.first_name }}
-                    {% else %}
-                        {{ appt.owner.username }}
-                    {% endif %}
-                </td>
-                <td>{{ appt.reason }}</td>
-            </tr>
-                {% empty %}
-            <tr>
-                <td colspan="5">目前尚無預約</td>
-            </tr>
+            {% regroup appointments by date as date_groups %}
+
+            {% for group in date_groups %}
+                <tr>
+                    <td colspan="5" style="background-color: #d1ecf1; font-weight: bold;">
+                        📅 {{ group.grouper }}（{{ group.grouper|date:"l" }}）
+                    </td>
+                </tr>
+
+                {% for appt in group.list %}
+                <tr>
+                    <td>{{ appt.date }}</td>
+                    <td>{{ appt.time }}</td>
+                    <td>{{ appt.pet.name }}</td>
+                    <td>    
+                        {% if appt.owner.last_name or appt.owner.first_name %}
+                            {{ appt.owner.last_name }}{{ appt.owner.first_name }}
+                        {% else %}
+                            {{ appt.owner.username }}
+                        {% endif %}
+                    </td>
+                    <td>{{ appt.reason }}</td>
+                </tr>
+                {% endfor %}
+            {% empty %}
+                <tr>
+                    <td colspan="5">目前尚無預約</td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

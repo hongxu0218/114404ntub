@@ -423,3 +423,16 @@ def vet_appointments(request):
 @login_required
 def vet_availability_settings(request):
     return render(request, 'vet_pages/vet_availability_settings.html')
+
+# 顯示「我的看診寵物」
+@login_required
+def my_patients(request):
+    # TODO: 顯示有看診記錄的寵物列表
+    pets = Pet.objects.filter(vetappointment__vet=request.user).distinct()
+    return render(request, 'vet_pages/my_patients.html', {'pets': pets})
+
+# 新增指定寵物的病例
+@login_required
+def add_medical_record(request, pet_id):
+    # TODO: 為指定寵物新增病例
+    return render(request, 'vet_pages/add_medical_record.html')

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>🐾 我的看診寵物</h2>
+
+{% if pets %}
+    <ul>
+    {% for pet in pets %}
+        <li>
+            {{ pet.name }}（飼主：{{ pet.owner.get_full_name|default:pet.owner.username }})
+            - <a href="{% url 'add_medical_record' pet.id %}">新增病例</a>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>目前沒有看診寵物紀錄。</p>
+{% endif %}
+
+<a href="{% url 'vet_home' %}">← 回主控台</a>
+{% endblock %}
