@@ -219,6 +219,8 @@ def add_pet(request):
     if request.method == 'POST':
         form = PetForm(request.POST, request.FILES)
         if form.is_valid():
+            pet = form.save(commit=False)
+            pet.owner = request.user  # 指定目前登入的使用者為寵物的 owner
             form.save()
             return redirect('pet_list')
     else:
