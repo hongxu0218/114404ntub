@@ -33,14 +33,15 @@ urlpatterns = [
 
     # 預約相關
     path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
-    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 取消預約
+    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 飼主取消預約（使用者為 appointment.owner）
 
     # 獸醫相關
     path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
     path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
     path('vet/my-patients/', views.my_patients, name='my_patients'),
     path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
-    path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='cancel_appointment'),
+    path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='vet_cancel_appointment'), # 獸醫取消預約（使用者為 appointment.vet.user）
+
 
 ]
 

@@ -6,7 +6,7 @@ from django.contrib.auth import login
 from .models import Profile, Pet, DailyRecord, VetAppointment
 from allauth.account.forms import SignupForm
 import re
-from datetime import date, time, datetime 
+from datetime import date, time, datetime, timedelta
 
 # 縣市選項常數
 CITY_CHOICES = [
@@ -351,9 +351,14 @@ class VetAppointmentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        tomorrow = date.today() + timedelta(days=1)
+        self.fields['date'].widget.attrs['min'] = tomorrow.strftime('%Y-%m-%d')
+
         if user:
             # 只列出使用者自己的寵物
             self.fields['pet'].queryset = Pet.objects.filter(owner=user)
+        
         # 只列出已驗證的獸醫
         self.fields['vet'].label_from_instance = lambda obj: f"{obj.clinic_name or '未填診所'}（{obj.user.last_name}{obj.user.first_name}）"
         self.fields['vet'].widget.attrs.update({'class': 'form-control searchable-select'})

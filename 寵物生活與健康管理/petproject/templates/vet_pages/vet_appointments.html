@@ -43,6 +43,15 @@
         font-weight: bold;
     ">← 返回主控台</a>
 
+    <div style="margin-bottom: 20px;">
+        {% if show_history %}
+            <a href="{% url 'vet_appointments' %}" class="btn btn-primary">🔙 返回未看診時段</a>
+        {% else %}
+            <a href="{% url 'vet_appointments' %}?history=1" class="btn btn-secondary">📜 查看已看診紀錄</a>
+        {% endif %}
+    </div>
+
+
     <h1>📅 已被預約的時段</h1>
 
     <table>
@@ -53,7 +62,10 @@
             <th>寵物名稱</th>
             <th>飼主</th>
             <th>預約原因</th>
-            <th>操作</th>
+            {% if not show_history %}
+              <th>操作</th>
+            {% endif %}
+
           </tr>
         </thead>
         <tbody>
@@ -79,8 +91,9 @@
                         {% endif %}
                     </td>
                     <td>{{ appt.reason }}</td>
+                    {% if not show_history %}
                     <td>
-                      <form method="POST" action="{% url 'cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');">
+                      <form method="POST" action="{% url 'vet_cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');">
                         {% csrf_token %}
                         <input type="text" name="cancel_reason" placeholder="取消原因" required
                             style="width: 120px; padding: 4px; margin-bottom: 6px; font-size: 14px;">
@@ -88,6 +101,7 @@
                         <button type="submit" style="padding: 6px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px;">取消</button>
                       </form>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             {% empty %}

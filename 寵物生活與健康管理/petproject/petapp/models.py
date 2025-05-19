@@ -47,6 +47,7 @@ class Gender(models.TextChoices):
     UNKNOWN = 'unknown', '未知'
 
 class Pet(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets', verbose_name='飼主')
     species = models.CharField(max_length=10, choices=Species.choices)
     breed = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
@@ -82,13 +83,6 @@ class DailyRecord(models.Model):
         return f"{self.pet.name} 的生活記錄（{self.date}）"
     
 class VetAppointment(models.Model):
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['vet', 'date', 'time'], name='unique_vet_schedule')
-        ]
-
-
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, verbose_name="預約寵物")
     owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="飼主")
     vet = models.ForeignKey(Profile, on_delete=models.CASCADE, limit_choices_to={'account_type': 'vet'}, verbose_name="預約獸醫")

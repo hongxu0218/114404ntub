@@ -15,6 +15,8 @@ from django.views.decorators.http import require_POST, require_http_methods
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
+from django.db.models import Q
+
 
 
 # 首頁
@@ -225,7 +227,7 @@ def add_pet(request):
 
 # 寵物列表
 def pet_list(request):
-    pets = Pet.objects.all()
+    pets = Pet.objects.filter(owner=request.user)
     today = date.today()
     now = datetime.now()
 
@@ -383,6 +385,18 @@ def create_vet_appointment(request):
             appointment.pet = pet
             appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
             
+            today = date.today()
+            now_time = datetime.now().time()
+
+            # 限制只能預約未來（隔日以後）
+            if appointment.date < today:
+                form.add_error('date', '預約日期不可早於今天')
+                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
+            elif appointment.date == today:
+                form.add_error('date', '預約日期需至少提前一天')
+                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
+
+
             # 檢查是否該時段已被預約
             already_booked = VetAppointment.objects.filter(
                 vet=appointment.vet,
@@ -444,8 +458,31 @@ def vet_appointments(request):
         return render(request, '403.html', status=403)
 
     # 取得該獸醫的所有預約
-    appointments = VetAppointment.objects.filter(vet=profile).order_by('date', 'time')
-    return render(request, 'vet_pages/vet_appointments.html', {'appointments': appointments})
+    today = date.today()
+    now_time = datetime.now().time()
+
+    show_history = request.GET.get('history') == '1'
+
+    if show_history:
+        # 顯示已看診紀錄（今天以前，或今天但時間已過）
+        appointments = VetAppointment.objects.filter(
+            vet=profile
+        ).filter(
+            (Q(date__lt=today)) |
+            (Q(date=today) & Q(time__lt=now_time))
+        )
+    else:
+        # 顯示尚未看診
+        appointments = VetAppointment.objects.filter(
+            vet=profile
+        ).filter(
+            (Q(date__gt=today)) |
+            (Q(date=today) & Q(time__gte=now_time))
+        )
+
+    appointments = appointments.order_by('date', 'time')
+    return render(request, 'vet_pages/vet_appointments.html', {'appointments': appointments, 'show_history': show_history})
+
 
 @require_POST
 @login_required
@@ -516,3 +553,41 @@ def my_patients(request):
 def add_medical_record(request, pet_id):
     # TODO: 為指定寵物新增病例
     return render(request, 'vet_pages/add_medical_record.html')
+
+# 飼主取消預約通知獸醫
+@require_POST
+@login_required
+def cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(VetAppointment, id=appointment_id, owner=request.user)
+
+    # 寄信資料
+    vet_user = appointment.vet.user
+    vet_email = vet_user.email
+    pet_name = appointment.pet.name
+    owner_name = f"{request.user.last_name}{request.user.first_name}" or request.user.username
+    clinic = appointment.vet.clinic_name or "您的診所"
+    date = appointment.date
+    time = appointment.time
+
+    subject = f"【毛日好】預約取消通知：{pet_name}"
+    message = f"""親愛的 {vet_user.last_name} 醫師您好：
+
+飼主 {owner_name} 已取消以下預約：
+
+🐾 寵物名稱：{pet_name}
+📅 日期：{date}
+🕒 時間：{time.strftime('%H:%M')}
+🏥 診所：{clinic}
+
+請您留意行程更新，謝謝您的配合！
+
+— 毛日好（Paw&Day）系統"""
+
+    # 刪除資料
+    appointment.delete()
+
+    # 發送通知 Email 給獸醫
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [vet_email], fail_silently=False)
+
+    messages.success(request, "預約已取消，並已通知獸醫。")
+    return redirect('pet_list')
