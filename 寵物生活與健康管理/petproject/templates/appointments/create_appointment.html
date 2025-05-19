@@ -1,0 +1,78 @@
+{% extends "pet_info/base.html" %}
+{% block title %}預約獸醫{% endblock %}
+
+{% block extra_head %}
+<style>
+    form {
+        background: white;
+        padding: 2em;
+        border-radius: 10px;
+        max-width: 600px;
+        margin: auto;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+        display: block;
+        margin-top: 1em;
+        font-weight: bold;
+    }
+    input, select, textarea {
+        width: 100%;
+        padding: 0.5em;
+        margin-top: 0.5em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    button {
+        margin-top: 1.5em;
+        padding: 0.7em 1.5em;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    .text-danger {
+        color: red;
+        font-size: 0.9em;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 2.5rem;
+        padding: 0.5rem;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+</style>
+
+<!-- Select2 樣式 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center;">幫「{{ pet.name }}」預約獸醫</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">提交預約</button>
+</form>
+{% endblock %}
+
+{% block extra_script %}
+<!-- Select2 腳本 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('.searchable-select').select2({
+      placeholder: "請輸入診所名稱或獸醫姓名",
+      allowClear: true,
+      width: '100%'
+    });
+  });
+</script>
+{% endblock %}

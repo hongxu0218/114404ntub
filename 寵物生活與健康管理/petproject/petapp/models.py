@@ -80,3 +80,22 @@ class DailyRecord(models.Model):
 
     def __str__(self):
         return f"{self.pet.name} 的生活記錄（{self.date}）"
+    
+class VetAppointment(models.Model):
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['vet', 'date', 'time'], name='unique_vet_schedule')
+        ]
+
+
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, verbose_name="預約寵物")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="飼主")
+    vet = models.ForeignKey(Profile, on_delete=models.CASCADE, limit_choices_to={'account_type': 'vet'}, verbose_name="預約獸醫")
+    date = models.DateField(verbose_name="預約日期")
+    time = models.TimeField(verbose_name="預約時間")
+    reason = models.TextField(verbose_name="預約原因", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.pet.name} 預約 {self.vet.clinic_name or self.vet.user.username} 於 {self.date} {self.time}"
