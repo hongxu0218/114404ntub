@@ -3,19 +3,25 @@
 from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+
+from datetime import date
+from calendar import monthrange
+import calendar
+from django.utils.timezone import localtime
+
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment
+from .models import Profile, Pet, DailyRecord
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, VetAppointmentForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST, require_http_methods
-from datetime import date, datetime, timedelta, time
-from django.core.mail import send_mail  # 新增：匯入發信功能
-import json
 
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST, require_http_methods
+from .utils import get_temperature_data, get_weight_data
+import json
 
 # 首頁
 
@@ -164,7 +170,7 @@ def edit_profile(request):
 # 飼主主控台
 @login_required
 def owner_dashboard(request):
-    return render(request, 'pet_info/pet_list.html')
+    return render(request, 'dashboards/owner_dashboard.html')
 
 # 獸醫主控台（需審核通過）
 @login_required
@@ -173,7 +179,7 @@ def vet_dashboard(request):
     if not profile.is_verified_vet:
         messages.warning(request, "您的獸醫帳號尚未通過管理員驗證。請稍後再試。")
         return redirect('home')
-    return render(request, 'vet_pages/vet_home.html')
+    return render(request, 'dashboards/vet_dashboard.html')
 
 # 登出成功頁面
 
@@ -193,9 +199,9 @@ def select_type_then_social_login(request):
 def dashboard_redirect(request):
     profile = request.user.profile
     if profile.account_type == 'owner':
-        return redirect('pet_list.html')
+        return redirect('owner_dashboard')
     elif profile.account_type == 'vet':
-        return redirect('vet_home.html')
+        return redirect('vet_dashboard')
     else:
         return redirect('home')
 
@@ -211,54 +217,34 @@ def clear_signup_message(request):
     request.session.pop('signup_redirect_message', None)
     return JsonResponse({'cleared': True})
 
-# 新增寵物
-
+# 新增寵物資料
 def add_pet(request):
     if request.method == 'POST':
         form = PetForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            pet = form.save()
+
+            # 🔽 初始化 6 筆分類 DailyRecord（日期可為 today，content 可為空）
+            categories = ['temperature', 'weight', 'diet', 'exercise', 'allergen', 'other']
+
+            for cat in categories:
+                DailyRecord.objects.create(
+                    pet=pet,
+                    category=cat,
+                    content='',
+                    date=date.today()
+                )
             return redirect('pet_list')
     else:
         form = PetForm()
     return render(request, 'pet_info/add_pet.html', {'form': form})
 
+
 # 寵物列表
+
 def pet_list(request):
     pets = Pet.objects.all()
-    today = date.today()
-    now = datetime.now()
-
-    # 預約資料
-    for pet in pets:
-        pet.future_appointments = VetAppointment.objects.filter(pet=pet, date__gte=today).order_by('date', 'time')
-
-    # 明天內尚未過時的預約
-    tomorrow = today + timedelta(days=1)
-    if request.user.is_authenticated:
-        tomorrow_appointments = VetAppointment.objects.filter(
-            owner=request.user,
-            date=tomorrow,
-        ).filter(
-            time__gt=now.time() if tomorrow == today else time(0, 0)
-        ).order_by('time')
-    else:
-        tomorrow_appointments = []
-    
-    appointment_digest = "|".join([
-        f"{appt.date.isoformat()}_{appt.time.strftime('%H:%M')}_{appt.vet_id}_{appt.pet_id}"
-        for appt in tomorrow_appointments
-    ])
-
-    notif_count = len(tomorrow_appointments)
-
-    return render(request, 'pet_info/pet_list.html', {
-        'pets': pets,
-        'tomorrow_appointments': tomorrow_appointments,
-        'notif_count': notif_count,
-        'appointment_digest': appointment_digest,
-    })
-
+    return render(request, 'pet_info/pet_list.html', {'pets': pets})
 
 # 編輯寵物
 
@@ -283,20 +269,53 @@ def delete_pet(request, pet_id):
     return render(request, 'pet_info/delete_pet.html', {'pet': pet})
 
 # 健康紀錄列表
-
 def health_rec(request):
     records = DailyRecord.objects.select_related('pet').order_by('date')
     grouped_records = []
     pet_map = defaultdict(list)
+
     for record in records:
         pet_map[record.pet].append(record)
+
     for pet, recs in pet_map.items():
         grouped_records.append({
             'pet': pet,
-            'records': recs
+            'records': recs,
         })
-    return render(request, 'health_records/health_rec.html', {'grouped_records': grouped_records})
 
+    pet_temperatures = {}
+    pet_weights = {}
+
+    # 取得當前月份以及過去 2 個月（共 3 個月）的體溫資料
+    months = [datetime.now() - relativedelta(months=i) for i in range(3)]
+
+    for pet in pet_map.keys():
+        temp_by_month = {}
+        weight_by_month = {}
+        for dt in months:
+            year, month = dt.year, dt.month
+            key = f"{year}-{str(month).zfill(2)}"
+
+            temp_records = get_temperature_data(pet, year, month)
+            weight_records = get_weight_data(pet, year, month)
+
+            temp_by_month[key] = [
+                {'date': rec['date'], 'temperature': rec['temperature']}
+                for rec in temp_records
+            ]
+            weight_by_month[key] = [
+                {'date': rec['date'], 'weight': rec['weight']}
+                for rec in weight_records
+            ]
+        pet_temperatures[pet.id] = temp_by_month
+        pet_weights[pet.id] = weight_by_month
+
+    return render(request, 'health_records/health_rec.html', {
+        'grouped_records': grouped_records,
+        'pet_temperatures': pet_temperatures,
+        'pet_weights': pet_weights,
+    })
+    
 # 新增每日健康紀錄
 @require_POST
 @csrf_exempt
@@ -366,153 +385,343 @@ def delete_daily_record(request, pet_id):
         return JsonResponse({'success': False, 'error': 'Record not found'}, status=404)
 
 
-# 新增預約
-@login_required
-def create_vet_appointment(request):
-    pet_id = request.GET.get('pet_id')
-    if not pet_id:
-        return HttpResponseBadRequest("缺少寵物 ID")
-    
+# 體溫頁面
+def tem_rec(request, pet_id):
     pet = get_object_or_404(Pet, id=pet_id)
 
+    # 預設為今天的年月
+    today = datetime.today()
+    year, month = today.year, today.month
+
+    # 嘗試從網址取得指定月份
+    month_str = request.GET.get('month')
+    if month_str:
+        try:
+            year, month = map(int, month_str.split('-'))
+        except ValueError:
+            pass  # 若格式錯誤則維持今天年月
+
+    is_current_month = (year == today.year and month == today.month)
+
+    # 當月的起始與結束日期
+    start_date = date(year, month, 1)
+    end_date = date(year, month, monthrange(year, month)[1])
+
+    # 篩選當月資料
+    raw_records = DailyRecord.objects.filter(
+        pet=pet,
+        category='temperature',
+        date__range=(start_date, end_date)
+    ).order_by('date', 'created_at')
+
+    # 整理資料
+    records = []
+    for rec in raw_records:
+        try:
+            temp_value = float(rec.content)
+        except ValueError:
+            continue
+        records.append({
+            'id': rec.id,
+            'date': rec.date.strftime('%Y-%m-%d'),
+            'datetime': rec.date.strftime('%Y-%m-%d'),
+            'recorded_date': rec.date.strftime('%Y-%m-%d'),
+            'submitted_at': localtime(rec.created_at).strftime('%H:%M'),
+            'temperature': temp_value,
+            'raw_content': rec.content,
+        })
+
+    context = {
+        'pet': pet,
+        'records': records,
+        'current_month': f"{year}-{month:02d}",
+        'current_month_display': f"{year} 年 {month} 月",
+        'is_current_month': is_current_month,
+    }
+    return render(request, 'health_records/tem_rec.html', context)
+
+
+# 增加體溫資料
+from datetime import date as dt_date
+def add_tem(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+    months = list(range(1, 13))
+    today = dt_date.today()
+    current_year = today.year
     if request.method == 'POST':
-        form = VetAppointmentForm(request.POST)
-        if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.owner = request.user
-            appointment.pet = pet
-            appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
-            
-            # 檢查是否該時段已被預約
-            already_booked = VetAppointment.objects.filter(
-                vet=appointment.vet,
-                date=appointment.date,
-                time=appointment.time
-            ).exists()
+        try:
+            month = int(request.POST.get('month'))
+            day = int(request.POST.get('day'))
+            temperature = request.POST.get('temperature', '').strip()
+            if not temperature:
+                messages.error(request, "請輸入體溫")
+                raise ValueError("Missing temperature")
+            record_date = dt_date(current_year, month, day)
+            if record_date > today:
+                messages.error(request, "日期不可超過今天")
+                return redirect('add_tem', pet_id=pet.id)
+            DailyRecord.objects.create(
+                pet=pet,
+                date=record_date,# date 欄位只顯示年月日，時間為儲存當下時間，使用者不見
+                category='temperature',
+                content=temperature
+            )
+            return redirect('tem_rec', pet_id=pet.id)
+        except ValueError:
+            messages.error(request, "日期格式錯誤，請重新輸入")
+            return redirect('add_tem', pet_id=pet.id)
+    context = {
+        'pet': pet,
+        'months': months,
+        'month': today.month,
+        'day': today.day,
+        'temperature': '',
+    }
+    return render(request, 'health_records/add_tem.html', context)
 
-            if already_booked:
-                form.add_error('time', '此時段已被其他飼主預約，請選擇其他時間')
-            else:
-                appointment.save()
-                
-                # ✅ 新增：發送 Email 給獸醫
-                vet_user = appointment.vet.user
-                vet_email = vet_user.email
-                pet_name = pet.name
-                owner_name = f"{request.user.last_name}{request.user.first_name}" or request.user.username
-                clinic = appointment.vet.clinic_name or "您的診所"
+# 修改體溫資料
+def edit_tem(request, pet_id, record_id):
+    record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='temperature')
 
-                subject = f"【毛日好】您有新的預約：{pet_name}"
-                message = f"""親愛的 {vet_user.last_name} 醫師您好：
-
-您有一筆新的預約記錄：
-
-🐾 寵物名稱：{pet_name}
-👤 飼主：{owner_name}
-📅 日期：{appointment.date}
-🕒 時間：{appointment.time.strftime('%H:%M')}
-🏥 診所：{clinic}
-📌 理由：{appointment.reason or '（無填寫）'}
-
-請至後台確認詳細資訊。謝謝您的使用！
-
-— 毛日好（Paw&Day）團隊"""
-
-                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [vet_email], fail_silently=False)
-
-                return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
+    if isinstance(record.date, datetime):
+        record_date = record.date.date()
     else:
-        form = VetAppointmentForm()
+        record_date = record.date
 
-    return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
+    now = datetime.now()
+    year = now.year
 
-# 取消預約
-@require_POST
-@login_required
-def cancel_appointment(request, appointment_id):
-    appointment = get_object_or_404(VetAppointment, id=appointment_id, owner=request.user)
-    appointment.delete()
-    messages.success(request, "預約已取消")
-    return redirect('pet_list')
+    # 取得預設月份與日
+    default_month = record_date.month
+    default_day = record_date.day
 
-# 獸醫查看預約狀況
-@login_required
-def vet_appointments(request):
-    # 確保是獸醫帳號
-    profile = request.user.profile
-    if not profile.is_verified_vet:
-        return render(request, '403.html', status=403)
+    # 使用 GET/POST 選擇的值（優先），否則用預設
+    month = int(request.POST.get('month') or request.GET.get('month') or default_month)
+    day = int(request.POST.get('day') or request.GET.get('day') or default_day)
 
-    # 取得該獸醫的所有預約
-    appointments = VetAppointment.objects.filter(vet=profile).order_by('date', 'time')
-    return render(request, 'vet_pages/vet_appointments.html', {'appointments': appointments})
+    # 取得該月份所有天數，給前端用
+    days_in_month = calendar.monthrange(year, month)[1]
+    days = list(range(1, days_in_month + 1))
+    months = list(range(1, 13))
 
-@require_POST
-@login_required
-def vet_cancel_appointment(request, appointment_id):
-    appointment = get_object_or_404(VetAppointment, id=appointment_id)
+    if request.method == 'POST' and 'temperature' in request.POST:
+        temperature = request.POST.get('temperature')
+        selected_date = datetime(year, month, day)
+        combined_datetime = datetime.combine(selected_date, now.time())
 
-    # 確認使用者是該名獸醫
-    if appointment.vet.user != request.user:
-        messages.error(request, "您無權限取消此預約。")
-        return redirect('vet_appointments')
+        record.date = combined_datetime
+        record.content = temperature
+        record.save()
+        return redirect('tem_rec', pet_id=pet_id)
 
-    # 取得取消原因
-    cancel_reason = request.POST.get('cancel_reason', '').strip()
-    if not cancel_reason:
-        messages.error(request, "請輸入取消原因。")
-        return redirect('vet_appointments')
+    return render(request, 'health_records/edit_tem.html', {
+        'pet_id': pet_id,
+        'months': months,
+        'days': days,
+        'month': month,
+        'day': day,
+        'temperature': record.content,
+    })
+# 刪除體溫資料
+def delete_tem(request, pet_id, record_id):
+    record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='temperature')
+    record.delete()
+    return redirect('tem_rec', pet_id=pet_id)
 
-    # 蒐集資料
-    owner_email = appointment.owner.email
-    pet_name = appointment.pet.name
-    date = appointment.date
-    time = appointment.time
-    vet_name = f"{request.user.last_name}{request.user.first_name}" or request.user.username
+# （體溫）共用函式
+def get_monthly_tem(request, pet_id, year, month):
+    pet = get_object_or_404(Pet, id=pet_id)
 
-    # 建立信件內容
-    subject = "【毛日好】預約取消通知"
-    message = f"""親愛的飼主您好：
+    start_date = date(year, month, 1)
+    end_date = date(year, month, monthrange(year, month)[1])
 
-您為寵物「{pet_name}」所預約的看診（{date} {time.strftime('%H:%M')}）已由獸醫（{vet_name}）取消。
-📌 取消原因：{cancel_reason}
+    raw_records = DailyRecord.objects.filter(
+        pet=pet,
+        category='temperature',
+        date__range=(start_date, end_date)
+    ).order_by('date', 'created_at')
 
-如需看診請重新預約，造成不便敬請見諒。
+    result = []
+    for rec in raw_records:
+        try:
+            temp = float(rec.content)
+        except ValueError:
+            continue
+        result.append({
+            'date': rec.date.strftime('%Y-%m-%d'),
+            'temperature': temp,
+        })
+    return JsonResponse(result, safe=False)
 
-— 毛日好（Paw&Day）系統
-"""
+# （體重）共用函式
+def get_monthly_weight(request, pet_id, year, month):
+    pet = get_object_or_404(Pet, id=pet_id)
 
-    # 刪除預約後寄信
-    appointment.delete()
+    start_date = date(year, month, 1)
+    end_date = date(year, month, monthrange(year, month)[1])
 
-    print("寄信前：", owner_email)
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [owner_email],
-        fail_silently=False
-    )
-    print("寄信成功")
+    raw_records = DailyRecord.objects.filter(
+        pet=pet,
+        category='weight',
+        date__range=(start_date, end_date)
+    ).order_by('date', 'created_at')
 
-    messages.success(request, "已成功取消預約，並通知飼主。")
-    return redirect('vet_appointments')
+    result = []
+    for rec in raw_records:
+        try:
+            weight = float(rec.content)
+        except ValueError:
+            continue
+        result.append({
+            'date': rec.date.strftime('%Y-%m-%d'),
+            'weight': weight,
+        })
+    return JsonResponse(result, safe=False)
 
 
 
-@login_required
-def vet_availability_settings(request):
-    return render(request, 'vet_pages/vet_availability_settings.html')
+# 體重頁面
+def weight_rec(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
 
-# 顯示「我的看診寵物」
-@login_required
-def my_patients(request):
-    # TODO: 顯示有看診記錄的寵物列表
-    pets = Pet.objects.filter(vetappointment__vet=request.user).distinct()
-    return render(request, 'vet_pages/my_patients.html', {'pets': pets})
+    # 預設為今天的年月
+    today = datetime.today()
+    year, month = today.year, today.month
 
-# 新增指定寵物的病例
-@login_required
-def add_medical_record(request, pet_id):
-    # TODO: 為指定寵物新增病例
-    return render(request, 'vet_pages/add_medical_record.html')
+    # 取得目前選定月份
+    month_str = request.GET.get('month')
+    if month_str:
+        try:
+            year, month = map(int, month_str.split('-'))
+        except ValueError:
+            year, month = datetime.now().year, datetime.now().month
+    else:
+        year, month = datetime.now().year, datetime.now().month
+
+    is_current_month = (year == today.year and month == today.month)
+
+    # 當月的起始與結束日期
+    start_date = date(year, month, 1)
+    end_date = date(year, month, monthrange(year, month)[1])
+
+    # 篩選當月資料
+    raw_records = DailyRecord.objects.filter(
+        pet=pet,
+        category='weight',
+        date__range=(start_date, end_date)
+    ).order_by('date', 'created_at')
+
+    # 整理資料
+    records = []
+    for rec in raw_records:
+        try:
+            weight_value = float(rec.content)
+        except ValueError:
+            continue
+        records.append({
+            'id': rec.id,
+            'date': rec.date.strftime('%Y-%m-%d'),
+            'datetime': rec.date.strftime('%Y-%m-%d'),  # 使用者填的日期
+            'recorded_date': rec.date.strftime('%Y-%m-%d'),  # ✅ 額外：使用者填的
+            'submitted_at': localtime(rec.created_at).strftime('%H:%M'),
+            'weight': weight_value,
+            'raw_content': rec.content,
+        })
+    context = {
+        'pet': pet,
+        'records': records,
+        'current_month': f"{year}-{month:02d}",
+        'current_month_display': f"{year} 年 {month} 月",
+        'is_current_month': is_current_month,
+    }
+    return render(request, 'health_records/weight_rec.html', context)
+
+
+#  增加體重資料
+from datetime import date as dt_date
+def add_weight(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+    months = list(range(1, 13))
+    today = dt_date.today()
+    current_year = today.year
+    if request.method == 'POST':
+        try:
+            month = int(request.POST.get('month'))
+            day = int(request.POST.get('day'))
+            weight = request.POST.get('weight', '').strip()
+            if not weight:
+                messages.error(request, "請輸入體重")
+                raise ValueError("Missing weight")
+            record_date = dt_date(current_year, month, day)
+            if record_date > today:
+                messages.error(request, "日期不可超過今天")
+                return redirect('add_weight', pet_id=pet.id)
+            DailyRecord.objects.create(
+                pet=pet,
+                date=record_date,# date 欄位只顯示年月日，時間為儲存當下時間，使用者不見
+                category='weight',
+                content=weight
+            )
+            return redirect('weight_rec', pet_id=pet.id)
+        except ValueError:
+            messages.error(request, "日期格式錯誤，請重新輸入")
+            return redirect('add_weight', pet_id=pet.id)
+    context = {
+        'pet': pet,
+        'months': months,
+        'month': today.month,
+        'day': today.day,
+        'weight': '',
+    }
+    return render(request, 'health_records/add_weight.html', context)
+
+# 修改體重資料
+def edit_weight(request, pet_id, record_id):
+    record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='weight')
+
+    if isinstance(record.date, datetime):
+        record_date = record.date.date()
+    else:
+        record_date = record.date
+
+    now = datetime.now()
+    year = now.year
+
+    # 取得預設月份與日
+    default_month = record_date.month
+    default_day = record_date.day
+
+    # 使用 GET/POST 選擇的值（優先），否則用預設
+    month = int(request.POST.get('month') or request.GET.get('month') or default_month)
+    day = int(request.POST.get('day') or request.GET.get('day') or default_day)
+
+    # 取得該月份所有天數，給前端用
+    days_in_month = calendar.monthrange(year, month)[1]
+    days = list(range(1, days_in_month + 1))
+    months = list(range(1, 13))
+
+    if request.method == 'POST' and 'weight' in request.POST:
+        weight = request.POST.get('weight')
+        selected_date = datetime(year, month, day)
+        combined_datetime = datetime.combine(selected_date, now.time())
+
+        record.date = combined_datetime
+        record.content = weight
+        record.save()
+        return redirect('weight_rec', pet_id=pet_id)
+
+    return render(request, 'health_records/edit_weight.html', {
+        'pet_id': pet_id,
+        'months': months,
+        'days': days,
+        'month': month,
+        'day': day,
+        'weight': record.content,
+    })
+
+
+# 刪除體重資料
+def delete_weight(request, pet_id, record_id):
+    record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='weight')
+    record.delete()
+    return redirect('weight_rec', pet_id=pet_id)

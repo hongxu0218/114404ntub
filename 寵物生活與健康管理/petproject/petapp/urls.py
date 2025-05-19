@@ -10,7 +10,7 @@ urlpatterns = [
     # 導向不同使用者主控台的路由設定
     path('dashboard/', views.dashboard_redirect, name='dashboard'),  # 導向主控台（根據帳號角色判斷導向）
     path('dashboard/owner/', views.owner_dashboard, name='owner_dashboard'),  # 飼主主控台
-    path('vet/', views.vet_dashboard, name='vet_home'),  # 獸醫主控台
+    path('dashboard/vet/', views.vet_dashboard, name='vet_dashboard'),  # 獸醫主控台
 
     # 註冊與帳號管理相關路由
     path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
@@ -25,22 +25,24 @@ urlpatterns = [
     path('pets/delete/<int:pet_id>/', views.delete_pet, name='delete_pet'),  # 刪除指定寵物
 
     # 寵物健康紀錄相關
-    path('pets/', views.pet_list, name='pet_list'),  # （重複）寵物列表頁，建議刪除此行避免重複定義
     path('pets/health/', views.health_rec, name='health_rec'),  # 健康紀錄首頁（所有寵物）
     path('pet/<int:pet_id>/add_daily_record/', views.add_daily_record, name='add_daily_record'),  # 新增每日健康紀錄
     path('save_daily_record/', views.save_daily_record, name='save_daily_record'),  # 儲存每日健康紀錄
     path('pet/<int:pet_id>/health/delete_record/', views.delete_daily_record, name='delete_daily_record'),  # 刪除每日健康紀錄
 
-    # 預約相關
-    path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
-    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 取消預約
+    # 健康記錄-寵物體溫（列表、新增、編輯、刪除、共用函式）
+    path('pets/<int:pet_id>/temperature/', views.tem_rec, name='tem_rec'),   #體溫列表（趨勢圖+所有資料）
+    path('pets/<int:pet_id>/temperature/add/', views.add_tem, name='add_tem'),  #新增體溫記錄
+    path('pets/<int:pet_id>/temperature/edit/<int:record_id>/', views.edit_tem, name='edit_tem'),  #編輯體溫記錄
+    path('pets/<int:pet_id>/temperature/delete/<int:record_id>/', views.delete_tem, name='delete_tem'),  #刪除體溫記錄
+    path('api/pet/<int:pet_id>/temperature/<int:year>/<int:month>/', views.get_monthly_tem, name='get_monthly_tem'),  #共用函式（列表+健康記錄）
 
-    # 獸醫相關
-    path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
-    path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
-    path('vet/my-patients/', views.my_patients, name='my_patients'),
-    path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
-    path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='cancel_appointment'),
+    # 健康記錄-寵物體重（列表、新增、編輯、刪除、共用函式）
+    path('pets/<int:pet_id>/weight/', views.weight_rec, name='weight_rec'),  #體重列表（趨勢圖+所有資料）
+    path('pets/<int:pet_id>/weight/add/', views.add_weight, name='add_weight'),  #新增體重記錄
+    path('pets/<int:pet_id>/weight/edit/<int:record_id>/', views.edit_weight, name='edit_weight'),  #編輯體重記錄
+    path('pets/<int:pet_id>/weight/delete/<int:record_id>/', views.delete_weight, name='delete_weight'),  #刪除體重記錄
+    path('api/pet/<int:pet_id>/weight/<int:year>/<int:month>/', views.get_monthly_weight, name='get_monthly_weight'),  #共用函式（列表+健康記錄）
 
 ]
 

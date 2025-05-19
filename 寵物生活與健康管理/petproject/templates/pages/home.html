@@ -1,4 +1,4 @@
-<!-- templates/pages/home.html -->
+<!-- templates/home.html -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -90,7 +90,7 @@
             {% if user.is_staff %}
                 <a href="{% url 'admin:index' %}" class="btn">進入後台管理</a>
             {% elif user.profile.account_type == 'vet' %}
-                <a href="{% url 'vet_home' %}" class="btn">進入獸醫主控台</a>
+                <a href="{% url 'vet_dashboard' %}" class="btn">進入獸醫主控台</a>
             {% elif user.profile.account_type == 'owner' %}
                 <a href="{% url 'pet_list' %}" class="btn">進入飼主主控台</a>
             {% endif %}
