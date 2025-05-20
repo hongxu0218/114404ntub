@@ -16,9 +16,9 @@ SECRET_KEY = config('SECRET_KEY')   # 從 .env 檔案讀取 Django 的 SECRET_KE
 DEBUG = config('DEBUG', cast=bool)  # 從 .env 讀取，是否啟用除錯模式（開發環境為 True，上線務必為 False）
 
 # 設定允許的主機（可加入網域/IP），開發階段可為空，部署時必填
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
-
+CSRF_TRUSTED_ORIGINS=[]
 
 #  ===== 安裝的應用程式（App） ===== 
 INSTALLED_APPS = [
@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+
     # 本地 App
     'petapp',
     
@@ -39,6 +40,9 @@ INSTALLED_APPS = [
     'allauth.account',          # 帳號系統
     'allauth.socialaccount',    # 社群帳號登入系統
     'allauth.socialaccount.providers.google',   # 啟用 Google 登入
+
+    #換圖片就刪舊圖(寵物資料）
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 
@@ -145,9 +149,10 @@ LOGOUT_REDIRECT_URL = '/accounts/logout-success/'  # 自訂登出成功頁面
 SOCIALACCOUNT_LOGIN_REDIRECT_URL = '/'  # Google 登入後導向首頁
 
 # 設定登入方式為 email，email 為必填
-ACCOUNT_AUTHENTICATION_METHOD = 'email'     # 使用 email 作為帳號登入依據
-ACCOUNT_EMAIL_REQUIRED = True               # 必填 email
-ACCOUNT_USERNAME_REQUIRED = True            # 必填 使用者名稱
+
+
+ACCOUNT_LOGIN_METHODS = {'email'}     # 使用 email 作為帳號登入依據
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']# 必填欄位
 ACCOUNT_EMAIL_VERIFICATION = 'none'         # 關閉 email 驗證（開發階段建議關），上線時請改為 'mandatory'
 
 # 註冊成功後立即導向登入頁（GET 請求立即登入）
