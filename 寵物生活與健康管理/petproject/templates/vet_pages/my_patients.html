@@ -9,6 +9,8 @@
         <li>
             {{ pet.name }}（飼主：{{ pet.owner.get_full_name|default:pet.owner.username }})
             - <a href="{% url 'add_medical_record' pet.id %}">新增病例</a>
+            - <a href="{% url 'add_vaccine' pet.id %}">新增疫苗</a>
+            - <a href="{% url 'add_deworm' pet.id %}">新增驅蟲</a>
         </li>
     {% endfor %}
     </ul>
