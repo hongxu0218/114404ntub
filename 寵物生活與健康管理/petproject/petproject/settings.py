@@ -18,7 +18,6 @@ DEBUG = config('DEBUG', cast=bool)  # 從 .env 讀取，是否啟用除錯模式
 # 設定允許的主機（可加入網域/IP），開發階段可為空，部署時必填
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS=[]
 
 #  ===== 安裝的應用程式（App） ===== 
 INSTALLED_APPS = [
