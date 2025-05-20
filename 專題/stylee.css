@@ -1,0 +1,88 @@
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: #fdf3e5;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+  
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+  }
+  
+  .logo img {
+    width: 40px;
+    height: 40px;
+    margin-right: 8px;
+  }
+  
+  .top-menu button {
+    margin: 0 5px;
+    background-color: transparent;
+    border: none;
+    font-size: 14px;
+  }
+  
+  .nav-buttons {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  
+  .nav-buttons button {
+    background-color: #ffe2a9;
+    border: 2px solid orange;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 18px;
+  }
+  
+  .vaccine-card, .report-section {
+    background-color: white;
+    margin: 0 auto;
+    padding: 20px;
+    width: 80%;
+    border-radius: 10px;
+    text-align: center;
+  }
+  
+  .pet-info img {
+    width: 80px;
+  }
+  
+  .add-button {
+    background-color: white;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin-top: 20px;
+    font-size: 16px;
+  }
+  
+  .report-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: flex-start;
+  }
+  
+  .chart {
+    width: 40%;
+    margin: 10px;
+  }
+  
+  .chart img {
+    width: 100%;
+    height: auto;
+  }
+  

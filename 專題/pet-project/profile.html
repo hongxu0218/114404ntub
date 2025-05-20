@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>寵物基本資料填寫</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #fff6eb;
+      margin: 0;
+      padding: 0;
+    }
+
+    .profile-section {
+      max-width: 600px;
+      margin: 3em auto;
+      background-color: #ffffff;
+      padding: 2em;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .profile-form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .profile-form h2 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    .profile-form label {
+      margin-top: 1em;
+      font-weight: bold;
+    }
+
+    .profile-form input,
+    .profile-form textarea {
+      padding: 0.6em;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-top: 0.2em;
+    }
+
+    .edit-btn {
+      margin-top: 1.5em;
+      padding: 0.8em;
+      font-size: 1em;
+      background-color: #ffda9e;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .edit-btn:hover {
+      background-color: #ffc85a;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 1em;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .img-bottom-right {
+      position: absolute;
+      right: 1em;
+      bottom: -4em;
+      width: 120px;
+    }
+
+    .pet-avatar {
+      width: 80px;
+      display: block;
+      margin: 0 auto 1em;
+    }
+  </style>
+</head>
+<body>
+  <main class="profile-section">
+    <form class="profile-form">
+      <img src="assets/pet-avatar.png" class="pet-avatar" alt="pet avatar" />
+      <h2>寵物基本資料填寫</h2>
+
+      <label for="name">寵物名字：</label>
+      <input type="text" id="name" name="name" placeholder="例如：咪咪汪汪" required />
+
+      <label for="chip">晶片號碼：</label>
+      <input type="text" id="chip" name="chip" placeholder="請輸入晶片號碼" required />
+
+      <label for="birth">出生日期：</label>
+      <input type="date" id="birth" name="birth" required />
+
+      <label for="breed">品種：</label>
+      <input type="text" id="breed" name="breed" placeholder="例如：米克斯" />
+
+      <label for="feature">特徵：</label>
+      <textarea id="feature" name="feature" rows="3" placeholder="例如：胸口有白色毛、耳朵較長"></textarea>
+
+      <label for="vaccine">疫苗施打狀況：</label>
+      <input type="text" id="vaccine" name="vaccine" placeholder="例如：已施打（狂犬病疫苗）" />
+
+      <button type="submit" class="edit-btn">儲存資料</button>
+    </form>
+    <p class="footer-note">資料僅用於寵物管理，不外洩。</p>
+    <img src="assets/dog-cat.png" class="img-bottom-right" alt="寵物插圖" />
+    <a href="login.html">← 返回登入頁</a>
+  </main>
+</body>
+</html>
