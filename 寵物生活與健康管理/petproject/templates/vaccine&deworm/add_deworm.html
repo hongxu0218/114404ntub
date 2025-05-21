@@ -2,13 +2,13 @@
     {% extends "base.html" %}
 
     {% block content %}
-    <h2>為 {{ pet.name }} 新增疫苗紀錄</h2>
+    <h2>為 {{ pet.name }} 新增驅蟲紀錄</h2>
 
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
 
-        <button type="submit">儲存疫苗紀錄</button>
+        <button type="submit">儲存驅蟲紀錄</button>
     </form>
 
     <a href="{% url 'my_patients' %}">← 返回</a>

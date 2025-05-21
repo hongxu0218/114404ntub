@@ -7,13 +7,65 @@
     <ul>
     {% for pet in pets %}
         <li>
-            {{ pet.name }}（飼主：{{ pet.owner.get_full_name|default:pet.owner.username }})
+          <div class="pet-card">
+            <h3>{{ pet.name }}（飼主：{{ pet.owner.get_full_name|default:pet.owner.username }})</h3>
             - <a href="{% url 'add_medical_record' pet.id %}">新增病例</a>
             - <a href="{% url 'add_vaccine' pet.id %}">新增疫苗</a>
             - <a href="{% url 'add_deworm' pet.id %}">新增驅蟲</a>
-        </li>
-    {% endfor %}
+              - <a href="{% url 'add_report' pet.id %}">新增報告</a>
+
+            <h4>疫苗紀錄</h4>
+            <ul>
+              {% for record in pet.vaccine_records.all|dictsortreversed:"date" %}
+                <li>
+                  疫苗品牌：{{ record.name }}<br>
+                  施打時間：{{ record.date }}<br>
+                  施打地點：{{ record.location }}<br>
+                  施打獸醫：{{ record.vet }}<br>
+
+                  <a href="{% url 'edit_vaccine' pet.id record.id %}">✏️編輯</a>
+                  <a href="{% url 'delete_vaccine' record.id %}" onclick="return confirm('確定刪除這筆疫苗紀錄嗎？')">🗑️刪除</a>
+                </li>
+              {% empty %}
+                <li>無疫苗紀錄</li>
+              {% endfor %}
+            </ul>
+
+            <h4>驅蟲紀錄</h4>
+            <ul>
+              {% for record in pet.deworm_records.all|dictsortreversed:"date" %}
+                <li>
+                  驅蟲品牌：{{ record.name }}<br>
+                  施打時間：{{ record.date }}<br>
+                  施打地點：{{ record.location }}<br>
+                  施打獸醫：{{ record.vet }}<br>
+
+                  <a href="{% url 'edit_deworm' pet.id record.id %}">✏️編輯</a>
+                  <a href="{% url 'delete_deworm' record.id %}" onclick="return confirm('確定刪除這筆驅蟲紀錄嗎？')">🗑️刪除</a>
+                </li>
+              {% empty %}
+                <li>無驅蟲紀錄</li>
+              {% endfor %}
+            </ul>
+
+            <h4>報告</h4>
+            <ul>
+              {% for report in pet.reports.all|dictsortreversed:"date_uploaded" %}
+              <li>
+                <strong>標題：</strong>{{ report.title }}<br>
+                <strong>檔案：</strong><a href="{{ report.pdf.url }}" target="_blank">{{ report.pdf }}</a><br>
+
+                <a href="{% url 'delete_report' report.id %}" onclick="return confirm('確定刪除這份報告嗎？')">🗑️刪除</a>
+              </li>
+              {% empty %}
+                <li>無報告</li>
+              {% endfor %}
+            </ul>
+        </div>
+    </li>
+{% endfor %}
     </ul>
+
 {% else %}
     <p>目前沒有看診寵物紀錄。</p>
 {% endif %}
