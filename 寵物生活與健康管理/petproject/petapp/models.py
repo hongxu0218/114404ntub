@@ -53,9 +53,7 @@ class Pet(models.Model):
     name = models.CharField(max_length=100)
     sterilization_status = models.CharField(max_length=20, choices=SterilizationStatus.choices)
     chip = models.CharField(max_length=100, blank=True, null=True)
-    year_of_birth = models.IntegerField(null=True, blank=True)
-    month_of_birth = models.IntegerField(null=True, blank=True)
-    day_of_birth = models.IntegerField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=Gender.choices)
     weight = models.FloatField(null=True, blank=True)
     feature = models.TextField(blank=True)
@@ -93,3 +91,32 @@ class VetAppointment(models.Model):
 
     def __str__(self):
         return f"{self.pet.name} 預約 {self.vet.clinic_name or self.vet.user.username} 於 {self.date} {self.time}"
+
+
+class VaccineRecord(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='vaccine_records', verbose_name='寵物')
+    name = models.CharField(max_length=100, verbose_name='疫苗品牌')
+    date = models.DateField(verbose_name='施打日期')
+    location = models.CharField(max_length=200, verbose_name='施打地點')
+    vet = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, verbose_name='施打醫師') # SET_NULL：避免醫師帳號刪除時連同歷史疫苗紀錄也被刪除（資料應保留）。
+
+    def __str__(self):
+        return f"{self.pet.name} - {self.name}（{self.date}）"
+
+
+class DewormRecord(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='deworm_records', verbose_name='寵物')
+    name = models.CharField(max_length=100, verbose_name='驅蟲品牌')
+    date = models.DateField(verbose_name='施打日期')
+    location = models.CharField(max_length=200, verbose_name='施打地點')
+    vet = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, verbose_name='施打醫師') # SET_NULL：避免醫師帳號刪除時連同歷史疫苗紀錄也被刪除（資料應保留）。
+
+    def __str__(self):
+        return f"{self.pet.name} - {self.name}（{self.date}）"
+
+class Report(models.Model):
+    pet = models.ForeignKey('Pet', on_delete=models.CASCADE, related_name='reports')
+    vet = models.ForeignKey(Profile, on_delete=models.CASCADE, limit_choices_to={'is_staff': True})
+    title = models.CharField(max_length=200)  # 報告標題
+    pdf = models.FileField(upload_to='reports/')  # 上傳 PDF
+    date_uploaded = models.DateTimeField(auto_now_add=True)  # 上傳日期

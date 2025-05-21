@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .models import Profile, Pet, DailyRecord, VetAppointment
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord
 from allauth.account.forms import SignupForm
 import re
 from datetime import date, time, datetime, timedelta
@@ -216,31 +216,28 @@ class RegisterForm(UserCreationForm):
 
 # 寵物資料管理用表單
 class PetForm(forms.ModelForm):
-    year_of_birth = forms.IntegerField(required=True, label='出生年')
-    month_of_birth = forms.IntegerField(required=True, label='出生月')
-    day_of_birth = forms.IntegerField(required=True, label='出生日')
-
     class Meta:
         model = Pet
         fields = [
             'species', 'breed', 'name', 'sterilization_status', 'chip',
-            'gender', 'weight', 'feature', 'picture',
-            'year_of_birth', 'month_of_birth', 'day_of_birth'
+            'gender', 'weight', 'feature', 'picture','birth_date',
         ]
         labels = {
             'species': '種類', 'breed': '品種', 'name': '名字',
             'sterilization_status': '絕育狀態', 'chip': '晶片號碼',
             'gender': '性別', 'weight': '體重（公斤）', 'feature': '特徵',
-            'picture': '圖片', 'year_of_birth': '年', 'month_of_birth': '月', 'day_of_birth': '日'
+            'picture': '圖片', 'birth_date': '出生日期',
         }
         widgets = {
+            'breed': forms.TextInput(attrs={'maxlength': 50}),
+            'name': forms.TextInput(attrs={'maxlength': 50}),
             'chip': forms.NumberInput(attrs={'class': 'form-control'}),
+
+            'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+
             'weight': forms.NumberInput(attrs={'class': 'form-control'}),
             'feature': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'picture': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'year_of_birth': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '年'}),
-            'month_of_birth': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '月'}),
-            'day_of_birth': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '日'})
         }
 
     def __init__(self, *args, **kwargs):
@@ -248,6 +245,9 @@ class PetForm(forms.ModelForm):
         self.fields['picture'].required = True
         for field_name in ['breed', 'name', 'chip', 'weight', 'feature']:
             self.fields[field_name].required = True
+            # 設定 date 預設為今天（僅在初次載入表單時）
+        if not self.initial.get('date'):
+            self.initial['date'] = date.today()
 
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')
@@ -255,37 +255,35 @@ class PetForm(forms.ModelForm):
             raise forms.ValidationError("請輸入合理的體重（1~1000公斤）")
         return weight
 
-    def clean_year_of_birth(self):
-        year = self.cleaned_data.get('year_of_birth')
-        if year is None or year < 1900 or year > date.today().year:
-            raise forms.ValidationError("請輸入有效年份")
-        return year
+    def clean_birth_date(self):
+        record_date = self.cleaned_data.get('birth_date')
+        if record_date and record_date > date.today():
+            raise forms.ValidationError("日期不能是未來")
+        return record_date
 
-    def clean_month_of_birth(self):
-        month = self.cleaned_data.get('month_of_birth')
-        if month is None or month < 1 or month > 12:
-            raise forms.ValidationError("請輸入有效月份")
-        return month
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            qs = Pet.objects.filter(name=name)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)  # 編輯時排除自己
+            if qs.exists():
+                raise forms.ValidationError("已有這個寵物的資料")
+        if len(name) > 20:
+            raise forms.ValidationError("名字最多只能輸入 50 個字元。")
+        return name
 
-    def clean_day_of_birth(self):
-        day = self.cleaned_data.get('day_of_birth')
-        if day is None or day < 1 or day > 31:
-            raise forms.ValidationError("請輸入有效日期")
-        return day
+    def clean_breed(self):
+        breed = self.cleaned_data.get('breed')
+        if len(breed) > 30:
+            raise forms.ValidationError("品種最多只能輸入 50 個字元。")
+        return breed
 
-    def clean(self):
-        cleaned_data = super().clean()
-        try:
-            dob = date(
-                cleaned_data['year_of_birth'],
-                cleaned_data['month_of_birth'],
-                cleaned_data['day_of_birth']
-            )
-            if dob > date.today():
-                raise forms.ValidationError('出生日期不能是未來')
-        except Exception:
-            raise forms.ValidationError('請輸入正確的出生日期')
-        return cleaned_data
+#  出生日期 編輯表單
+class BirthEditForm(forms.Form):
+    birth_date = forms.DateField(label='紀錄時間',
+                           widget=forms.DateInput(attrs={'type': 'date'}), input_formats=['%Y-%m-%d'])
+
 
 # 健康紀錄輸入表單
 class DailyRecordForm(forms.ModelForm):
@@ -315,7 +313,17 @@ class DailyRecordForm(forms.ModelForm):
         if not content:
             raise forms.ValidationError("請填寫內容")
         return content
-    
+#  體溫 編輯表單
+class TemperatureEditForm(forms.Form):
+    date = forms.DateField(label='紀錄時間',
+            widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
+    temperature = forms.FloatField(label='體溫 (°C)')
+# 體重 編輯表單
+class WeightEditForm(forms.Form):
+    date = forms.DateField(label='紀錄時間',
+            widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
+    weight = forms.FloatField(label='體重 (公斤)')
+
 
 class VetAppointmentForm(forms.ModelForm):
     time = forms.ChoiceField(
@@ -323,7 +331,6 @@ class VetAppointmentForm(forms.ModelForm):
         label="時間",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    
     class Meta:
         model = VetAppointment
         fields = ['vet', 'date', 'time', 'reason']
@@ -394,3 +401,22 @@ class VetAppointmentForm(forms.ModelForm):
                 (t.strftime("%H:%M:%S"), label)
                 for t, label in AVAILABLE_TIME_CHOICES
             ]
+
+# 疫苗表單
+class VaccineRecordForm(forms.ModelForm):
+    class Meta:
+        model = VaccineRecord
+        fields = ['name', 'date', 'location']  # ✅ 不含 pet
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+# 驅蟲表單
+class DewormRecordForm(forms.ModelForm):
+    class Meta:
+        model = DewormRecord
+        fields = ['name', 'date', 'location']  # ✅ 不含 pet
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
