@@ -4,10 +4,10 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
@@ -312,10 +312,14 @@ def delete_pet(request, pet_id):
 
 # 健康紀錄列表
 def health_rec(request):
-    # 撈出登入使用者所擁有的所有寵物
-    pets = Pet.objects.filter(owner=request.user)
+    # 撈出 飼主 所擁有的所有寵物
+    pets = Pet.objects.filter(owner=request.user).prefetch_related(
+        'vaccine_records', 'deworm_records', 'reports'
+    )
 
-    records = DailyRecord.objects.select_related('pet').order_by('date')
+    # 健康記錄 撈資料
+    #records = DailyRecord.objects.select_related('pet').order_by('date')
+    records = DailyRecord.objects.filter(pet__in=pets).select_related('pet').order_by('date')
     grouped_records = []
     pet_map = defaultdict(list)
     for record in records:
@@ -351,13 +355,11 @@ def health_rec(request):
         pet_temperatures[pet.id] = temp_by_month
         pet_weights[pet.id] = weight_by_month
 
-        # 撈出這些寵物的疫苗紀錄
-        vaccine_records = VaccineRecord.objects.filter(pet__in=pets).select_related('pet', 'vet').order_by('-date')
     return render(request, 'health_records/health_rec.html', {
         'grouped_records': grouped_records,
         'pet_temperatures': pet_temperatures,
         'pet_weights': pet_weights,
-        'vaccine_records':vaccine_records,
+        'pets':pets
     })
 
 # 新增每日健康紀錄
@@ -603,8 +605,11 @@ def vet_availability_settings(request):
 @login_required
 def my_patients(request):
     # TODO: 顯示有看診記錄的寵物列表
-    pets = Pet.objects.filter(vetappointment__vet=request.user.profile).distinct()
-    return render(request, 'vet_pages/my_patients.html', {'pets': pets})
+    # 抓出該獸醫曾看診過的所有寵物（避免重複）
+    pets = Pet.objects.filter(vetappointment__vet=request.user.profile).distinct().prefetch_related(
+        'vaccine_records', 'deworm_records', 'reports'
+    )
+    return render(request, 'vet_pages/my_patients.html', {'pets': pets,})
 
 # 新增指定寵物的病例
 @login_required
@@ -804,6 +809,7 @@ def edit_tem(request, pet_id, record_id):
         'day': day,
         'temperature': record.content,
     })
+
 # 刪除體溫資料
 def delete_tem(request, pet_id, record_id):
     record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='temperature')
@@ -822,7 +828,6 @@ def get_monthly_tem(request, pet_id, year, month):
         category='temperature',
         date__range=(start_date, end_date)
     ).order_by('date', 'created_at')
-
     result = []
     for rec in raw_records:
         try:
@@ -1017,16 +1022,55 @@ def add_vaccine(request, pet_id):
         if form.is_valid():
             vaccine = form.save(commit=False)
             vaccine.pet = pet
-            vaccine.vet = request.user  # 登入獸醫
+            vaccine.vet = request.user.profile  # 登入獸醫
             vaccine.save()
             return redirect('my_patients')
     else:
         form = VaccineRecordForm()
-
     return render(request, 'vaccine&deworm/add_vaccine.html', {
         'form': form,
         'pet': pet
     })
+from django.http import HttpResponseForbidden
+
+@login_required
+def edit_vaccine(request, pet_id, vaccine_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+    vaccine = get_object_or_404(VaccineRecord, id=vaccine_id, pet=pet)
+
+    # 權限檢查：只能編輯自己建立的疫苗紀錄
+    if vaccine.vet != request.user.profile:
+        return HttpResponseForbidden("你沒有權限編輯這筆疫苗紀錄。")
+
+    if request.method == 'POST':
+        form = VaccineRecordForm(request.POST, instance=vaccine)
+        if form.is_valid():
+            edited_vaccine = form.save(commit=False)
+            edited_vaccine.vet = request.user.profile  # 保持原獸醫資訊
+            edited_vaccine.save()
+            return redirect('my_patients')
+    else:
+        form = VaccineRecordForm(instance=vaccine)
+
+    return render(request, 'vaccine&deworm/edit_vaccine.html', {
+        'form': form,
+        'pet': pet,
+        'vaccine': vaccine,
+    })
+
+
+# 刪除疫苗紀錄
+@login_required
+def delete_vaccine(request, vaccine_id):
+    vaccine = get_object_or_404(VaccineRecord, id=vaccine_id)
+
+    # 確保只有該紀錄的獸醫或具權限者能刪除（可自定邏輯）
+    if request.user.profile == vaccine.vet:
+        pet_id = vaccine.pet.id
+        vaccine.delete()
+        return redirect('my_patients')  # 或導回特定 pet 的健康紀錄頁面
+    else:
+        return redirect('permission_denied')  # 可自定一個拒絕頁面
 
 
 # 新增疫苗
@@ -1037,15 +1081,87 @@ def add_deworm(request, pet_id):
     if request.method == 'POST':
         form = DewormRecordForm(request.POST)
         if form.is_valid():
-            deworm = form.save(commit=False)
-            deworm.pet = pet
-            deworm.vet = request.user  # 登入獸醫
-            deworm.save()
+            deworms = form.save(commit=False)
+            deworms.pet = pet
+            deworms.vet = request.user.profile  # 登入獸醫
+            deworms.save()
             return redirect('my_patients')
     else:
-        form = VaccineRecordForm()
+        form = DewormRecordForm()
 
     return render(request, 'vaccine&deworm/add_deworm.html', {
         'form': form,
         'pet': pet
     })
+
+
+@login_required
+def edit_deworm(request, pet_id, deworm_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+    deworm = get_object_or_404(DewormRecord, id=deworm_id, pet=pet)
+
+    # 權限檢查：只能編輯自己建立的疫苗紀錄
+    if deworm.vet != request.user.profile:
+        return HttpResponseForbidden("你沒有權限編輯這筆疫苗紀錄。")
+
+    if request.method == 'POST':
+        form = DewormRecordForm(request.POST, instance=deworm)
+        if form.is_valid():
+            edited_deworm = form.save(commit=False)
+            edited_deworm.vet = request.user.profile  # 保持原獸醫資訊
+            edited_deworm.save()
+            return redirect('my_patients')
+    else:
+        form = DewormRecordForm(instance=deworm)
+
+    return render(request, 'vaccine&deworm/edit_deworm.html', {
+        'form': form,
+        'pet': pet,
+        'deworm': deworm,
+    })
+
+# 刪除疫苗紀錄
+@login_required
+def delete_deworm(request, deworm_id):
+    deworm = get_object_or_404(DewormRecord, id=deworm_id)
+
+    # 確保只有該紀錄的獸醫或具權限者能刪除（可自定邏輯）
+    if request.user.profile == deworm.vet:
+        pet_id = deworm.pet.id
+        deworm.delete()
+        return redirect('my_patients')  # 或導回特定 pet 的健康紀錄頁面
+    else:
+        return redirect('permission_denied')  # 可自定一個拒絕頁面
+
+# 新增報告
+@login_required
+def add_report(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+
+    if request.method == 'POST':
+        form = ReportForm(request.POST, request.FILES)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.pet = pet
+            report.vet = request.user.profile  # 登入的獸醫
+            report.save()
+            return redirect('my_patients')
+    else:
+        form = ReportForm()
+
+    return render(request, 'vaccine&deworm/add_report.html', {
+        'form': form,
+        'pet': pet
+    })
+# 刪除報告
+@login_required
+def delete_report(request, report_id):
+    report = get_object_or_404(Report, id=report_id)
+
+    # 確保只有該紀錄的獸醫或具權限者能刪除（可自定邏輯）
+    if request.user.profile == report.vet:
+        pet_id = report.pet.id
+        report.delete()
+        return redirect('my_patients')  # 或導回特定 pet 的健康紀錄頁面
+    else:
+        return redirect('permission_denied')  # 可自定一個拒絕頁面

@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report
 from allauth.account.forms import SignupForm
 import re
 from datetime import date, time, datetime, timedelta
@@ -279,12 +279,6 @@ class PetForm(forms.ModelForm):
             raise forms.ValidationError("品種最多只能輸入 50 個字元。")
         return breed
 
-#  出生日期 編輯表單
-class BirthEditForm(forms.Form):
-    birth_date = forms.DateField(label='紀錄時間',
-                           widget=forms.DateInput(attrs={'type': 'date'}), input_formats=['%Y-%m-%d'])
-
-
 # 健康紀錄輸入表單
 class DailyRecordForm(forms.ModelForm):
     class Meta:
@@ -318,6 +312,7 @@ class TemperatureEditForm(forms.Form):
     date = forms.DateField(label='紀錄時間',
             widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
     temperature = forms.FloatField(label='體溫 (°C)')
+
 # 體重 編輯表單
 class WeightEditForm(forms.Form):
     date = forms.DateField(label='紀錄時間',
@@ -407,16 +402,59 @@ class VaccineRecordForm(forms.ModelForm):
     class Meta:
         model = VaccineRecord
         fields = ['name', 'date', 'location']  # ✅ 不含 pet
+        labels = {'name':'疫苗品牌', 'date':'施打時間', 'location':'施打日期'},
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'date': forms.DateInput(attrs={'type': 'date','class': 'form-control',
+                                           'max': date.today().isoformat()
+            },format='%Y-%m-%d'),
+
         }
+    def clean_date(self):
+        date = self.cleaned_data['date']
+        if date > date.today():
+            raise forms.ValidationError("疫苗接種日期不能是未來")
+        return date
+
 
 # 驅蟲表單
 class DewormRecordForm(forms.ModelForm):
     class Meta:
         model = DewormRecord
         fields = ['name', 'date', 'location']  # ✅ 不含 pet
+        labels = {'name':'驅蟲品牌', 'date':'施打時間', 'location':'施打日期'},
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control',
+                                           'max': date.today().isoformat()
+                }, format='%Y-%m-%d'),
+            }
+        def clean_date(self):
+            date = self.cleaned_data['date']
+            if date > date.today():
+                raise forms.ValidationError("驅蟲日期不能是未來")
+            return date
+
+# 報告表單
+class ReportForm(forms.ModelForm):
+    class Meta:
+        model = Report
+        fields = ['title', 'pdf']
+        labels = {'title':'標題', 'pdf':'pdf檔案'},
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '請輸入報告標題'}),
         }
+
+    def clean_pdf(self):
+        pdf_file = self.cleaned_data.get('pdf')
+        if pdf_file:
+            # 檢查副檔名
+            if not pdf_file.name.lower().endswith('.pdf'):
+                raise forms.ValidationError('請上傳 PDF 格式的檔案。')
+            # 檢查 MIME 類型（可選）
+            if pdf_file.content_type != 'application/pdf':
+                raise forms.ValidationError('檔案格式無效，請確認為 PDF。')
+            # 檢查檔案大小（上限：5MB）
+            max_size = 5 * 1024 * 1024  # 5MB in bytes
+            if pdf_file.size > max_size:
+                raise forms.ValidationError('檔案太大，請上傳小於 5MB 的 PDF 檔案。')
+        return pdf_file
 
