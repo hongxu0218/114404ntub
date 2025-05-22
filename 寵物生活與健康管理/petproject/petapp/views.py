@@ -4,15 +4,15 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_POST, require_http_methods ,require_GET
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
@@ -23,6 +23,7 @@ import calendar
 from django.utils.timezone import localtime
 from .utils import get_temperature_data, get_weight_data
 from dateutil.relativedelta import relativedelta
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 
@@ -497,7 +498,14 @@ def create_vet_appointment(request):
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [vet_email], fail_silently=False)
                 return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
     else:
-        form = VetAppointmentForm()
+        form = VetAppointmentForm(
+            user=request.user,
+            initial={
+                'pet': pet,
+                'date': date.today() + timedelta(days=1),
+                # 'vet': 預設獸醫，如你想直接選好獸醫，也可加入
+            }
+        )
     return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
 
 # 取消預約
@@ -599,8 +607,26 @@ def vet_cancel_appointment(request, appointment_id):
 
 @login_required
 def vet_availability_settings(request):
-    return render(request, 'vet_pages/vet_availability_settings.html')
+    profile = request.user.profile
+    if profile.account_type != 'vet':
+        return redirect('home')
 
+    if request.method == 'POST':
+        form = VetAvailableTimeForm(request.POST)
+        if form.is_valid():
+            new_time = form.save(commit=False)
+            new_time.vet = profile
+            new_time.save()
+            messages.success(request, "已新增排班時段")
+            return redirect('vet_availability_settings')
+    else:
+        form = VetAvailableTimeForm()
+
+    schedules = VetAvailableTime.objects.filter(vet=profile).order_by('weekday', 'time_slot')
+    return render(request, 'vet_pages/vet_availability_settings.html', {
+        'form': form,
+        'schedules': schedules,
+    })
 # 顯示「我的看診寵物」
 @login_required
 def my_patients(request):
@@ -1165,3 +1191,59 @@ def delete_report(request, report_id):
         return redirect('my_patients')  # 或導回特定 pet 的健康紀錄頁面
     else:
         return redirect('permission_denied')  # 可自定一個拒絕頁面
+
+# 獸醫編輯可預約時段
+@login_required
+def edit_vet_schedule(request, schedule_id):
+    schedule = get_object_or_404(VetAvailableTime, id=schedule_id, vet=request.user.profile)
+
+    if request.method == 'POST':
+        form = VetAvailableTimeForm(request.POST, instance=schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "排班時段已更新")
+            return redirect('vet_availability_settings')
+    else:
+        form = VetAvailableTimeForm(instance=schedule)
+
+    return render(request, 'vet_pages/edit_schedule.html', {'form': form})
+
+# 獸醫刪除可預約時段
+@login_required
+def delete_vet_schedule(request, schedule_id):
+    schedule = get_object_or_404(VetAvailableTime, id=schedule_id, vet=request.user.profile)
+    schedule.delete()
+    messages.success(request, "排班時段已刪除")
+    return redirect('vet_availability_settings')
+
+@require_GET
+@login_required
+def get_available_times(request):
+    vet_id = request.GET.get('vet_id')
+    date_val = request.GET.get('date')
+
+    if not vet_id or not date_val:
+        return JsonResponse({'error': '缺少參數'}, status=400)
+
+    try:
+        parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
+        weekday = parsed_date.weekday()
+
+        slots = VetAvailableTime.objects.filter(vet_id=vet_id, weekday=weekday)
+
+        valid_times = []
+        for slot in slots:
+            current = datetime.combine(date.today(), slot.start_time)
+            end = datetime.combine(date.today(), slot.end_time)
+            while current.time() < end.time():
+                valid_times.append(current.time())
+                current += timedelta(minutes=30)
+
+        booked = VetAppointment.objects.filter(vet_id=vet_id, date=parsed_date).values_list('time', flat=True)
+        available = [t for t in valid_times if t not in booked]
+
+        time_choices = [(t.strftime("%H:%M:%S"), t.strftime("%H:%M")) for t in available]
+        return JsonResponse({'times': time_choices}, encoder=DjangoJSONEncoder)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
