@@ -1,0 +1,43 @@
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>新增體溫</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script>
+    function handleTempSubmit(event) {
+      event.preventDefault();
+      const temp = document.getElementById('temp-value').value;
+      const date = document.getElementById('temp-date').value;
+
+      if (temp && date) {
+        alert(`已儲存體溫紀錄：\n體溫：${temp} ℃\n日期：${date}`);
+        window.location.href = 'report.html';
+      } else {
+        alert('請完整填寫體溫與日期');
+      }
+    }
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="profile.html">寵物</a>
+    <a href="report.html">健康紀錄</a>
+    <a href="vaccine.html">通知</a>
+    <a href="login.html">登入</a>
+  </nav>
+
+  <div class="container" style="text-align: center;">
+    <h1>新增體溫紀錄</h1>
+
+    <form class="login-box" onsubmit="handleTempSubmit(event)" style="max-width: 400px; margin: 0 auto; padding: 30px; background-color: #fff; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+      <label>體溫（℃）</label>
+      <input type="number" id="temp-value" step="0.1" placeholder="請輸入體溫" required>
+
+      <label>紀錄日期</label>
+      <input type="date" id="temp-date" required>
+
+      <button type="submit">儲存體溫紀錄</button>
+    </form>
+  </div>
+</body>
+</html>
