@@ -1,63 +1,21 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <title>設定可預約時段</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background-color: #f0f2f5;
-    }
-    h1 {
-      margin-bottom: 20px;
-      color: #333;
-    }
-    form {
-      background-color: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      max-width: 400px;
-    }
-    label {
-      display: block;
-      margin-top: 12px;
-      font-weight: bold;
-    }
-    input[type="time"] {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
-</head>
-<body>
-  <h1>🕒 設定可預約時段</h1>
+<h1>🕒 設定可預約時段</h1>
 
-  <form method="post">
-    {% csrf_token %}
-    <label for="start">開始時間</label>
-    <input type="time" name="available_start_time" id="start" value="{{ profile.available_start_time|default:'09:00' }}">
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">新增時段</button>
+</form>
 
-    <label for="end">結束時間</label>
-    <input type="time" name="available_end_time" id="end" value="{{ profile.available_end_time|default:'21:00' }}">
-
-    <button type="submit">儲存</button>
-  </form>
-</body>
-</html>
+<hr>
+<h2>📋 已設定排班</h2>
+<ul>
+  {% for s in schedules %}
+    <li>
+      {{ s.get_weekday_display }}（{{ s.get_time_slot_display }}）：{{ s.start_time }} ~ {{ s.end_time }}
+      <a href="{% url 'edit_vet_schedule' s.id %}">編輯</a> |
+      <a href="{% url 'delete_vet_schedule' s.id %}" onclick="return confirm('確定要刪除嗎？')">刪除</a>
+    </li>
+  {% empty %}
+    <li>尚未設定任何時段</li>
+  {% endfor %}
+</ul>

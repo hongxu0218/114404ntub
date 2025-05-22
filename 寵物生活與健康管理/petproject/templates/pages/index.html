@@ -11,12 +11,23 @@
 
   <!-- Header 區塊 -->
   <header>
-    <div class="logo">
-      <img src="{% static 'images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg' %}" alt="LOGO">
-      <span>PAW<br>DAY</span>
+    <div class="header-left"> 
+      <div class="logo">
+        <img src="{% static 'images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg' %}" alt="LOGO">
+        <span>PAW<br>DAY</span>
+      </div>
     </div>
-    <nav>
-      <a href="#">寵物</a>
+
+ 
+
+    <nav id="navbar" class="nav-collapsed">
+      {% if user.is_staff %}
+        <a href="{% url 'admin:index' %}">後台管理</a>
+      {% elif user.profile.account_type == 'vet' %}
+        <a href="{% url 'vet_home' %}">獸醫</a>
+      {% elif user.profile.account_type == 'owner' %}
+        <a href="{% url 'pet_list' %}">飼主</a>
+      {% endif %}
       <a href="#">健康紀錄</a>
       <a href="#">通知</a>
       {% if user.is_authenticated %}
@@ -27,6 +38,7 @@
       {% endif %}
     </nav>
   </header>
+
 
   <section class="hero">
     <div class="hero-text">

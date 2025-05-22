@@ -1,0 +1,6 @@
+<h2>✏️ 編輯排班時段</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">儲存變更</button>
+</form>
