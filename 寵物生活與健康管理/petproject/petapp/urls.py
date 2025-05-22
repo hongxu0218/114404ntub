@@ -57,9 +57,15 @@ urlpatterns = [
 
     #  疫苗
     path('vaccine/add/<int:pet_id>/', views.add_vaccine, name='add_vaccine'),  #  新增疫苗
-    path('deworm/add/<int:pet_id>/', views.add_deworm, name='add_deworm'),  #  新增疫苗
-
-
+    path('vaccine/edit/<int:pet_id>/<int:vaccine_id>/', views.edit_vaccine, name='edit_vaccine'),  # 編輯疫苗
+    path('vaccine/delete/<int:vaccine_id>/', views.delete_vaccine, name='delete_vaccine'),  # 刪除疫苗
+    #  驅蟲
+    path('deworm/add/<int:pet_id>/', views.add_deworm, name='add_deworm'),  #  新增驅蟲
+    path('deworm/edit/<int:pet_id>/<int:deworm_id>/', views.edit_deworm, name='edit_deworm'),  # 編輯驅蟲
+    path('deworm/delete/<int:deworm_id>/', views.delete_deworm, name='delete_deworm'),  # 刪除驅蟲
+    # 報告
+    path('report/add/<int:pet_id>/', views.add_report, name='add_report'),  # 新增報告
+    path('report/delete/<int:report_id>/', views.delete_report, name='delete_report'),  # 刪除報告
 
 ]
 
