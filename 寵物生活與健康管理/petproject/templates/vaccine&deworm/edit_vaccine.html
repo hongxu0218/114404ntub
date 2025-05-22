@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>編輯 {{ pet.name }} 的疫苗紀錄</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-primary">儲存變更</button>
+        <a href="{% url 'my_patients' %}" class="btn btn-secondary">取消</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
-{% load i18n %}
+
 <!DOCTYPE html>
+{% load i18n %}
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
@@ -68,6 +69,7 @@
 </head>
 <body>
     <div class="login-box">
+        {% csrf_token %}
         <h2>Google 登入確認</h2>
         <p>您即將以 <span class="email-highlight">{{ user.email }}</span> 的身份登入。</p>
         <form method="post" action="{% url 'socialaccount_connections' %}">

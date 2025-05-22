@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>新增報告：{{ pet.name }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+        </div>
+        <div class="form-group">
+            {{ form.pdf.label_tag }}
+            {{ form.pdf }}
+        </div>
+        <button type="submit" class="btn btn-primary">上傳報告</button>
+        <a href="{% url 'my_patients' %}" class="btn btn-secondary">返回</a>
+    </form>
+</div>
+{% endblock %}
