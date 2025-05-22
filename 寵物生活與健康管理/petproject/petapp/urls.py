@@ -10,7 +10,7 @@ urlpatterns = [
     # 導向不同使用者主控台的路由設定
     path('dashboard/', views.dashboard_redirect, name='dashboard'),  # 導向主控台（根據帳號角色判斷導向）
     path('dashboard/owner/', views.owner_dashboard, name='owner_dashboard'),  # 飼主主控台
-    path('vet/', views.vet_dashboard, name='vet_home'),  # 獸醫主控台
+    path('dashboard/vet/', views.vet_dashboard, name='vet_dashboard'),  # 獸醫主控台
 
     # 註冊與帳號管理相關路由
     path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
@@ -30,17 +30,6 @@ urlpatterns = [
     path('save_daily_record/', views.save_daily_record, name='save_daily_record'),  # 儲存每日健康紀錄
     path('pet/<int:pet_id>/health/delete_record/', views.delete_daily_record, name='delete_daily_record'),  # 刪除每日健康紀錄
 
-    # 預約相關
-    path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
-    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 飼主取消預約（使用者為 appointment.owner）
-
-    # 獸醫相關
-    path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
-    path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
-    path('vet/my-patients/', views.my_patients, name='my_patients'),
-    path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
-    path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='vet_cancel_appointment'), # 獸醫取消預約（使用者為 appointment.vet.user）
-
     # 健康記錄-寵物體溫（列表、新增、編輯、刪除、共用函式）
     path('pets/<int:pet_id>/temperature/', views.tem_rec, name='tem_rec'),   #體溫列表（趨勢圖+所有資料）
     path('pets/<int:pet_id>/temperature/add/', views.add_tem, name='add_tem'),  #新增體溫記錄
@@ -55,11 +44,10 @@ urlpatterns = [
     path('pets/<int:pet_id>/weight/delete/<int:record_id>/', views.delete_weight, name='delete_weight'),  #刪除體重記錄
     path('api/pet/<int:pet_id>/weight/<int:year>/<int:month>/', views.get_monthly_weight, name='get_monthly_weight'),  #共用函式（列表+健康記錄）
 
-    #  疫苗
-    path('vaccine/add/<int:pet_id>/', views.add_vaccine, name='add_vaccine'),  #  新增疫苗
-    path('deworm/add/<int:pet_id>/', views.add_deworm, name='add_deworm'),  #  新增疫苗
-
-
+    # 地圖功能相關
+    path('map/', views.map_home, name='map_home'),
+    path('api/locations/', views.api_locations, name='api_locations'),
+    path('api/stats/', views.api_stats, name='api_stats'),
 
 ]
 
