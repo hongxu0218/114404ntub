@@ -22,3 +22,4 @@ document.getElementById('searchBtn').addEventListener('click', () => {
     <div class="result-item">${keyword} 結果 C</div>
   `;
 });
+

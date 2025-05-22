@@ -52,7 +52,8 @@ nav a:hover {
   align-items: center;
 }
 .hero-text {
-  max-width: 600%;
+  max-width: 100%;
+  font-size: 30px;
 }
 
 /* 最新消息區塊 */
@@ -62,9 +63,8 @@ nav a:hover {
 .news-title {
   text-align: left;
   font-size: 24px;
-  margin: 50px 20px 20px 50px;
+  margin: 10px 20px 20px 50px;
   padding-left: 5px;
-  padding-top: 20px;
 }
 .news-scroll-wrapper {
   position: relative;
@@ -134,6 +134,7 @@ nav a:hover {
   display: flex;
   justify-content: space-around;
   padding: 20px 0;
+  margin: -40px 0 20px 0;
 }
 .section-icons div {
   text-align: center;
@@ -332,6 +333,18 @@ img.news-img {
 }
 
 /* === 地圖與側欄樣式 === */
+.main-title {
+  font-size: 50px;
+  margin:-100px 0 5px;
+  font-weight: 800;
+}
+
+.subtitle {
+  font-size: 25px;
+  color: #000;
+  margin-bottom: 35px;
+}
+
 .container{
   display: flex;
   height: calc(100vh - 80px);
@@ -339,9 +352,9 @@ img.news-img {
 
 .sidebar {
   width: 350px;
-  background-color: #fff4e6;
+  background-color: #FFF8F0;
   padding: 10px;
-  padding-top: 60px; /*整組上下移 */
+  padding-top: 90px; /*整組上下移 */
   overflow-y: auto;
 }
 .category-grid {
@@ -357,13 +370,18 @@ img.news-img {
   aspect-ratio: 1 / 1;   /* 維持正方形 */
   padding: 15px;         /* 適度內距，不要太大 */
   box-sizing: border-box;
-  min-height: 90px;
+  min-height: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
+  text-align: center; 
+}
+
+.category-btn.active { 
+  border: 2px solid #ffa726; 
 }
 .category-btn:hover {
   border-color: #ffa726;
@@ -376,7 +394,7 @@ img.news-img {
 }
 .main-content {
   flex-grow: 1;
-  padding:5px;
+  padding:40px;
   display: flex;
   flex-direction: column;
 }
@@ -395,7 +413,7 @@ img.news-img {
   font-weight: 600;
 }
 .map-title {
-  font-size: 24px;
+  font-size: 30px;
   margin: -20px 25px 10px;
 }
 .search-bar {
@@ -405,7 +423,7 @@ img.news-img {
   overflow: hidden;
   margin-bottom: 20px;
   width: 100%;        
-  max-width: 800px; 
+  max-width: 900px; 
 }
 .search-bar input {
   flex: 1;
@@ -415,7 +433,7 @@ img.news-img {
   font-size: 16px;
 }
 .search-bar button {
-  background-color: #ffa726;
+ background-color: #ffa726;
   border: none;
   padding: 0 20px;
   color: white;
@@ -425,6 +443,7 @@ img.news-img {
 .map-placeholder iframe {
   flex-grow: 1;
   min-height: 400px;
+  border: none;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
