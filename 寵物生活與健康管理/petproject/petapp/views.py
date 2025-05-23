@@ -4,10 +4,10 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, MedicalRecord
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm, MedicalRecordForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
@@ -432,48 +432,47 @@ def delete_daily_record(request, pet_id):
         return JsonResponse({'success': False, 'error': 'Record not found'}, status=404)
 
 
+
 # 新增預約
 @login_required
 def create_vet_appointment(request):
     pet_id = request.GET.get('pet_id')
     if not pet_id:
         return HttpResponseBadRequest("缺少寵物 ID")
-    
+
     pet = get_object_or_404(Pet, id=pet_id)
 
     if request.method == 'POST':
-        form = VetAppointmentForm(request.POST)
-        if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.owner = request.user
-            appointment.pet = pet
-            appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
-            
-            today = date.today()
-            now_time = datetime.now().time()
+        print("🔥 POST")
+        form = VetAppointmentForm(request.POST, user=request.user)
+        print("🧪 POST data:", request.POST.dict())
 
-            # 限制只能預約未來（隔日以後）
+        if form.is_valid():
+            print("✅ 表單驗證通過")
+            appointment = form.save(commit=False)
+            appointment.pet = pet
+            appointment.owner = request.user
+            appointment.vet = form.cleaned_data['vet']
+
+            # 時間欄位安全轉型
+            try:
+                appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
+            except ValueError:
+                form.add_error('time', '時間格式錯誤')
+                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
+
+            # 日期邏輯驗證
+            today = date.today()
             if appointment.date < today:
                 form.add_error('date', '預約日期不可早於今天')
-                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
             elif appointment.date == today:
                 form.add_error('date', '預約日期需至少提前一天')
-                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
-
-
-            # 檢查是否該時段已被預約
-            already_booked = VetAppointment.objects.filter(
-                vet=appointment.vet,
-                date=appointment.date,
-                time=appointment.time
-            ).exists()
-
-            if already_booked:
+            elif VetAppointment.objects.filter(vet=appointment.vet, date=appointment.date, time=appointment.time).exists():
                 form.add_error('time', '此時段已被其他飼主預約，請選擇其他時間')
             else:
                 appointment.save()
-                
-                # ✅ 新增：發送 Email 給獸醫
+
+                # 發送 Email 給獸醫
                 vet_user = appointment.vet.user
                 vet_email = vet_user.email
                 pet_name = pet.name
@@ -495,17 +494,23 @@ def create_vet_appointment(request):
 請至後台確認詳細資訊。謝謝您的使用！
 
 — 毛日好（Paw&Day）團隊"""
+
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [vet_email], fail_silently=False)
                 return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
+
+        else:
+            print("❌ 表單驗證失敗")
+            print("❌ 錯誤內容：", form.errors)
+
     else:
         form = VetAppointmentForm(
             user=request.user,
             initial={
                 'pet': pet,
                 'date': date.today() + timedelta(days=1),
-                # 'vet': 預設獸醫，如你想直接選好獸醫，也可加入
             }
         )
+
     return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
 
 # 取消預約
@@ -1225,6 +1230,8 @@ def get_available_times(request):
     if not vet_id or not date_val:
         return JsonResponse({'error': '缺少參數'}, status=400)
 
+
+    print("🟢 收到 AJAX 請求：", request.GET.dict())
     try:
         parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
         weekday = parsed_date.weekday()
@@ -1247,3 +1254,28 @@ def get_available_times(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@login_required
+def create_medical_record(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+    profile = request.user.profile
+
+    if profile.account_type != 'vet':
+        return render(request, 'unauthorized.html')  # 或改為 raise PermissionDenied
+
+    if request.method == 'POST':
+        form = MedicalRecordForm(request.POST)
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.pet = pet
+            record.vet = profile
+            record.clinic_location = profile.clinic_name  # 自動填入診所地點
+            record.save()
+            return redirect('pet_detail', pet_id=pet.id)
+    else:
+        form = MedicalRecordForm(initial={'pet': pet, 'clinic_location': profile.clinic_name})
+
+    return render(request, 'vet_pages/create_medical_record.html', {
+        'form': form,
+        'pet': pet
+    })

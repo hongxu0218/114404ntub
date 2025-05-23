@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, WEEKDAYS, TIME_SLOTS
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, WEEKDAYS, TIME_SLOTS, MedicalRecord
 from allauth.account.forms import SignupForm
 import re
 from datetime import date, time, datetime, timedelta
@@ -321,94 +321,30 @@ class WeightEditForm(forms.Form):
 
 # 獸醫 設定看診時段
 class VetAppointmentForm(forms.ModelForm):
-    time = forms.ChoiceField(
-        choices=[(t.strftime("%H:%M:%S"), label) for t, label in AVAILABLE_TIME_CHOICES],
+    time = forms.CharField(
         label="時間",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
     )
+
     class Meta:
         model = VetAppointment
-        fields = ['pet','vet', 'date', 'time', 'reason']
-        labels = {
-            'pet': '寵物',
-            'vet': '預約獸醫',
-            'date': '日期',
-            'time': '時間',
-            'reason': '預約原因'
-        }
+        fields = ['pet', 'vet', 'date', 'time', 'reason']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'pet': forms.HiddenInput(),
+            'vet': forms.Select(attrs={'class': 'form-control searchable-select'}),
+            'date': forms.DateInput(attrs={'type': 'date','class': 'form-control','min': date.today().isoformat()}),  # 限制最小可選日期為今天
+            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
-
-    def clean_time(self):
-        raw_time = self.cleaned_data['time']
-        allowed = [t.strftime("%H:%M:%S") for t, _ in AVAILABLE_TIME_CHOICES]
-        if raw_time not in allowed:
-            raise forms.ValidationError("請選擇有效時段")
-        return raw_time
-
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        if self.user:
+            self.fields['vet'].queryset = Profile.objects.filter(account_type='vet')
+            self.fields['pet'].queryset = Pet.objects.filter(owner=self.user)
         
-        self.fields['pet'].widget = forms.HiddenInput()
-        
-        # 只列出已驗證的獸醫
-        self.fields['vet'].label_from_instance = lambda obj: f"{obj.clinic_name or '未填診所'}（{obj.user.last_name}{obj.user.first_name}）"
-        self.fields['vet'].widget.attrs.update({'class': 'form-control searchable-select'})
-        self.fields['vet'].queryset = Profile.objects.filter(account_type='vet', is_verified_vet=True)
-
-        # 預設日期為明天起
-        tomorrow = date.today() + timedelta(days=1)
-        self.fields['date'].widget.attrs['min'] = tomorrow.strftime('%Y-%m-%d')
-        
-        # 根據前端提交值即時過濾已被預約的時段
-        vet_field = self.data.get('vet') or self.initial.get('vet')
-        date_field = self.data.get('date') or self.initial.get('date')
-        
-        try:
-            if vet_field and date_field:
-                # 若是 instance（例如初次帶入一筆 VetAppointment），則取 pk
-                vet_id = vet_field.id if hasattr(vet_field, 'id') else vet_field
-                date_val = date_field.strftime('%Y-%m-%d') if hasattr(date_field, 'strftime') else date_field
-
-                parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
-                weekday = parsed_date.weekday()
-
-                # 該獸醫的當天排班時段
-                slots = VetAvailableTime.objects.filter(vet_id=vet_id, weekday=weekday)
-
-                # 全部合法時間（每30分鐘一格）
-                valid_times = []
-                for slot in slots:
-                    current = datetime.combine(date.today(), slot.start_time)
-                    end = datetime.combine(date.today(), slot.end_time)
-                    while current.time() < end.time():
-                        valid_times.append(current.time())
-                        current += timedelta(minutes=30)
-
-                print("產生時段：", [t.strftime("%H:%M") for t in valid_times])
-
-                # 排除已預約
-                booked = VetAppointment.objects.filter(vet_id=vet_id, date=parsed_date).values_list('time', flat=True)
-                available = [t for t in valid_times if t not in booked]
-
-                self.fields['time'].choices = [
-                    (t.strftime("%H:%M:%S"), t.strftime("%H:%M")) for t in available
-                ]
-            else:
-                self.fields['time'].choices = []
-        except Exception as e:
-            print("預約時段載入錯誤：", e)
-            self.fields['time'].choices = []
-        
-        def clean_time(self):
-            raw_time = self.cleaned_data['time']
-            # 時段合法性驗證（選用）
-            return raw_time
 
 # 疫苗表單
 class VaccineRecordForm(forms.ModelForm):
@@ -471,6 +407,7 @@ class ReportForm(forms.ModelForm):
                 raise forms.ValidationError('檔案太大，請上傳小於 5MB 的 PDF 檔案。')
         return pdf_file
 
+# 獸醫設定看診時段
 class VetAvailableTimeForm(forms.ModelForm):
     class Meta:
         model = VetAvailableTime
@@ -505,3 +442,15 @@ class VetAvailableTimeForm(forms.ModelForm):
         if start and end and start >= end:
             raise forms.ValidationError("結束時間必須晚於開始時間")
         return cleaned_data
+
+# 獸醫填寫診斷與治療資訊    
+class MedicalRecordForm(forms.ModelForm):
+    class Meta:
+        model = MedicalRecord
+        fields = ['pet', 'clinic_location', 'diagnosis', 'treatment', 'notes']
+        widgets = {
+            'clinic_location': forms.TextInput(attrs={'placeholder': '預設會自動填入'}),
+            'diagnosis': forms.Textarea(attrs={'rows': 3}),
+            'treatment': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
+        }

@@ -39,6 +39,7 @@ urlpatterns = [
     path('vet/my-patients/', views.my_patients, name='my_patients'),
     path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
     path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='vet_cancel_appointment'), # 獸醫取消預約（使用者為 appointment.vet.user）
+    path('medical_records/create/<int:pet_id>/', views.create_medical_record, name='create_medical_record'),
  
     # 獸醫預約相關 
     path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
@@ -72,6 +73,8 @@ urlpatterns = [
     # 報告
     path('report/add/<int:pet_id>/', views.add_report, name='add_report'),  # 新增報告
     path('report/delete/<int:report_id>/', views.delete_report, name='delete_report'),  # 刪除報告
+
+    # 病歷
 
 ]
 
