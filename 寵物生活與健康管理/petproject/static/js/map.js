@@ -1,663 +1,606 @@
-// 全域變數
-let map;
-let markersCluster;
-let allLocations = [];
-let filteredLocations = [];
-let userLocation = null;
-let selectedType = '';
-let selectedPetTypes = []; 
-
-// 地點類型對應的圖標
-const TYPE_ICONS = {
-    'hospital': '🏥',
-    'cosmetic': '✂️',
-    'park': '🌳',
-    'product': '🛍️',
-    'shelter': '🐾',
-    'funeral': '⚱️',
-    'live': '🏨',
-    'restaurant': '🍽️',
-    'boarding': '🏠'
-};
-
-// 地點類型顏色
-const TYPE_COLORS = {
-    'hospital': '#dc3545',
-    'cosmetic': '#fd7e14',
-    'park': '#28a745',
-    'product': '#007bff',
-    'shelter': '#e83e8c',
-    'funeral': '#495057',
-    'live': '#20c997',
-    'restaurant': '#ffc107',
-    'boarding': '#6f42c1'
-};
-
-// 寵物類型對應的圖標
-const PET_TYPE_ICONS = {
-    'support_small_dog': '🐕‍',
-    'support_medium_dog': '🐕',
-    'support_large_dog': '🦮',
-    'support_cat': '🐈',
-    'support_bird': '🦜',
-    'support_rodent': '🐹',
-    'support_reptile': '🦎',
-    'support_other': '🦝'
-};
-
-// 初始化地圖
-function initializeMap() {
-    const taipeiCenter = [25.0330, 121.5654];
+// map.js - 寵物地圖功能
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('地圖腳本開始初始化...');
     
-    map = L.map('pet-map', {
-        center: taipeiCenter,
-        zoom: 14,
-        zoomControl: false,
-        attributionControl: true
-    });
+    // 全域變數
+    let map;
+    let markers = L.markerClusterGroup();
+    let allLocations = [];
+    let currentFilters = {
+        type: null,
+        city: null,
+        search: null,
+        petTypes: []
+    };
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(map);
+    // 地圖圖標配置
+    const LOCATION_ICONS = {
+        hospital: '🏥',
+        cosmetic: '✂️',
+        park: '🌳',
+        product: '🛒',
+        shelter: '🏠',
+        funeral: '⚱️',
+        live: '🏨',
+        boarding: '🐕',
+        restaurant: '🍽️',
+        default: '📍'
+    };
     
-    markersCluster = L.markerClusterGroup({
-        chunkedLoading: true,
-        maxClusterRadius: 50,
-        iconCreateFunction: function(cluster) {
-            const count = cluster.getChildCount();
-            return L.divIcon({
-                html: `<div class="marker-cluster">${count}</div>`,
-                className: 'custom-cluster',
-                iconSize: [40, 40],
-                iconAnchor: [20, 20]
+    const PET_TYPE_ICONS = {
+        small_dog: '🐕‍',
+        medium_dog: '🐕',
+        large_dog: '🦮',
+        cat: '🐈',
+        bird: '🦜',
+        rodent: '🐹',
+        reptile: '🦎',
+        other: '🦝'
+    };
+    
+    // 初始化地圖
+    function initMap() {
+        console.log('🗺️ 初始化地圖...');
+        
+        // 創建地圖 - 預設中心點為台北
+        map = L.map('pet-map').setView([25.0330, 121.5654], 13);
+        console.log('✅ 地圖物件創建完成');
+        
+        // 添加地圖圖層
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        console.log('✅ 地圖圖層添加完成');
+        
+        // 創建標記群組
+        markers = L.markerClusterGroup({
+            chunkedLoading: true,
+            maxClusterRadius: 50
+        });
+        console.log('✅ 標記群組創建完成');
+        
+        // 添加標記群組到地圖
+        map.addLayer(markers);
+        console.log('✅ 標記群組添加到地圖');
+        
+        // 設置地圖控制項
+        setupMapControls();
+        
+        console.log('🎉 地圖初始化完成');
+    }
+    
+    // 設置地圖控制項
+    function setupMapControls() {
+        // 定位按鈕
+        document.getElementById('locate-btn').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], 15);
+                    
+                    // 添加使用者位置標記
+                    const userMarker = L.marker([lat, lng], {
+                        icon: L.divIcon({
+                            html: '<div style="background: #007cff; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">📍</div>',
+                            className: 'user-location-marker'
+                        })
+                    }).addTo(map);
+                    
+                    userMarker.bindPopup('<b>您的位置</b>').openPopup();
+                }, function() {
+                    alert('無法取得您的位置');
+                });
+            } else {
+                alert('您的瀏覽器不支援定位功能');
+            }
+        });
+        
+        // 全螢幕按鈕
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const mapContainer = document.querySelector('.pet-map-container');
+            if (!document.fullscreenElement) {
+                mapContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
+    
+    // 載入地點資料
+    async function loadLocations() {
+        console.log('載入地點資料...');
+        console.log('當前篩選條件:', currentFilters);
+        
+        try {
+            // 構建查詢參數
+            const params = new URLSearchParams();
+            
+            if (currentFilters.type) {
+                params.append('type', currentFilters.type);
+                console.log('添加服務類型篩選:', currentFilters.type);
+            }
+            if (currentFilters.city) {
+                params.append('city', currentFilters.city);
+                console.log('添加城市篩選:', currentFilters.city);
+            }
+            if (currentFilters.search) {
+                params.append('search', currentFilters.search);
+                console.log('添加搜尋篩選:', currentFilters.search);
+            }
+            
+            // 添加寵物類型篩選
+            currentFilters.petTypes.forEach(petType => {
+                params.append(`support_${petType}`, 'true');
+                console.log('添加寵物類型篩選:', petType);
             });
+            
+            const url = `/api/locations/?${params.toString()}`;
+            console.log('API 請求 URL:', url);
+            
+            const response = await fetch(url);
+            console.log('API 回應狀態:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API 錯誤回應:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+            }
+            
+            const data = await response.json();
+            console.log('API 回應資料:', data);
+            console.log('載入了', data.features ? data.features.length : 0, '個地點');
+            
+            if (data.features) {
+                allLocations = data.features;
+                displayMarkers(allLocations);
+            } else {
+                console.error('API 回應格式錯誤，沒有 features 屬性');
+                allLocations = [];
+                displayMarkers([]);
+            }
+            
+        } catch (error) {
+            console.error('載入地點資料失敗:', error);
+            alert('載入地點資料失敗，請稍後再試。詳細錯誤請查看 Console。');
+            
+            // 顯示空的結果
+            allLocations = [];
+            displayMarkers([]);
         }
-    });
-    
-    map.addLayer(markersCluster);
-    loadPetLocations();
-    setupEventListeners();
-}
-
-// 創建自定義標記
-function createCustomIcon(type) {
-    const icon = TYPE_ICONS[type] || '📍';
-    const color = TYPE_COLORS[type] || '#ff385c';
-    
-    return L.divIcon({
-        className: 'custom-marker',
-        html: `<div class="marker-pin" style="background-color: ${color}; border: 2px solid white;">${icon}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
-        popupAnchor: [0, -15]
-    });
-}
-
-// 載入地點資料
-async function loadPetLocations() {
-    let queryParams = new URLSearchParams();
-    
-    if (selectedType) {
-        queryParams.append('type', selectedType);
     }
     
-    selectedPetTypes.forEach(petType => {
-        queryParams.append(petType, 'true');
-    });
-
-    try {
-        console.log('載入地點資料:', queryParams.toString());
-        const response = await fetch(`/api/locations/?${queryParams.toString()}`);
+    // 顯示標記
+    function displayMarkers(locations) {
+        console.log('🎯 displayMarkers 被呼叫');
+        console.log('傳入的 locations 數量:', locations ? locations.length : 'null/undefined');
+        console.log('locations 資料:', locations);
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // 清除現有標記
+        markers.clearLayers();
+        console.log('✅ 已清除現有標記');
+        
+        if (!locations || !Array.isArray(locations)) {
+            console.error('❌ locations 不是有效的陣列');
+            return;
         }
         
-        const data = await response.json();
-        
-        markersCluster.clearLayers();
-        
-        if (data.type === 'FeatureCollection' && data.features) {
-            allLocations = data.features.map(feature => ({
-                id: feature.properties.id,
-                name: feature.properties.name,
-                type: getLocationType(feature.properties),
-                address: feature.properties.address,
-                lat: feature.geometry && feature.geometry.coordinates ? feature.geometry.coordinates[1] : null,
-                lng: feature.geometry && feature.geometry.coordinates ? feature.geometry.coordinates[0] : null,
-                rating: feature.properties.rating,
-                phone: feature.properties.phone,
-                support_small_dog: feature.properties.support_small_dog,
-                support_medium_dog: feature.properties.support_medium_dog,
-                support_large_dog: feature.properties.support_large_dog,
-                support_cat: feature.properties.support_cat,
-                support_bird: feature.properties.support_bird,
-                support_rodent: feature.properties.support_rodent,
-                support_reptile: feature.properties.support_reptile,
-                support_other: feature.properties.support_other,
-                supported_pet_types: feature.properties.supported_pet_types,
-                business_hours: feature.properties.business_hours,
-                type_display: feature.properties.type_display,
-                website: feature.properties.website,
-                is_hospital: feature.properties.is_hospital,
-                is_cosmetic: feature.properties.is_cosmetic,
-                is_park: feature.properties.is_park,
-                is_product: feature.properties.is_product,
-                is_shelter: feature.properties.is_shelter,
-                is_funeral: feature.properties.is_funeral,
-                is_live: feature.properties.is_live,
-                is_boarding: feature.properties.is_boarding
-            }));
-            
-            console.log(`載入了 ${allLocations.length} 個地點`);
+        if (locations.length === 0) {
+            console.log('⚠️ 沒有地點資料要顯示');
+            return;
         }
         
-        // 篩選並顯示地點
-        filterLocations();
-        updateFilterDisplay();
+        console.log('🔄 開始處理', locations.length, '個地點...');
         
-    } catch (error) {
-        console.error('載入地點資料錯誤:', error);
-        showAlert('無法載入地點資料: ' + error.message, 'error');
-    }
-}
-
-// 根據屬性確定地點類型 - 處理 0/1 格式
-function getLocationType(properties) {
-    if (properties.is_hospital === 1) return 'hospital';
-    if (properties.is_cosmetic === 1) return 'cosmetic';
-    if (properties.is_park === 1) return 'park';
-    if (properties.is_product === 1) return 'product';
-    if (properties.is_shelter === 1) return 'shelter';
-    if (properties.is_funeral === 1) return 'funeral';
-    if (properties.is_live === 1) return 'live';
-    if (properties.is_boarding === 1) return 'boarding';
-    return 'other';
-}
-
-// 篩選地點
-function filterLocations() {
-    const searchText = document.getElementById('map-search-input').value.trim().toLowerCase();
-    
-    filteredLocations = allLocations.filter(location => {
-        // 類型篩選
-        if (selectedType && selectedType !== '') {
-            if (selectedType === 'restaurant') {
-                const isRestaurant = 
-                    (location.name && location.name.includes('餐廳')) || 
-                    (location.address && location.address.includes('餐廳'));
-                if (!isRestaurant) return false;
-            } 
-            else if (selectedType === 'adoption') {
-                if (!location.is_shelter) return false;
-            }
-            else {
-                const propertyName = `is_${selectedType}`;
-                if (!location[propertyName]) return false;
-            }
-        }
+        let successCount = 0;
+        let errorCount = 0;
         
-        // 寵物類型篩選
-        if (selectedPetTypes.length > 0) {
-            let matchesAnyPetType = false;
-            
-            for (const petType of selectedPetTypes) {
-                if (location[petType] && location[petType] !== 0) {
-                    matchesAnyPetType = true;
-                    break;
-                }
-            }
-            
-            if (!matchesAnyPetType) {
-                const assumedSupport = [];
-                if (location.is_hospital || location.is_cosmetic || location.is_live || location.is_boarding) {
-                    assumedSupport.push('support_small_dog', 'support_medium_dog', 'support_large_dog', 'support_cat');
-                }
-                if (location.is_park) {
-                    assumedSupport.push('support_small_dog', 'support_medium_dog', 'support_large_dog');
-                }
-                if (location.is_product) {
-                    assumedSupport.push('support_small_dog', 'support_medium_dog', 'support_large_dog', 'support_cat', 'support_bird', 'support_rodent', 'support_reptile', 'support_other');
+        locations.forEach((location, index) => {
+            try {
+                if (!location.geometry || !location.geometry.coordinates) {
+                    console.error(`❌ 地點 ${index} 沒有座標資料:`, location);
+                    errorCount++;
+                    return;
                 }
                 
-                for (const petType of selectedPetTypes) {
-                    if (assumedSupport.includes(petType)) {
-                        matchesAnyPetType = true;
-                        break;
+                const { coordinates } = location.geometry;
+                const props = location.properties;
+                
+                if (!coordinates || coordinates.length < 2) {
+                    console.error(`❌ 地點 ${index} 座標格式錯誤:`, coordinates);
+                    errorCount++;
+                    return;
+                }
+                
+                console.log(`📍 處理地點 ${index + 1}/${locations.length}: ${props.name} (${coordinates[1]}, ${coordinates[0]})`);
+                
+                // 決定圖標
+                let icon = LOCATION_ICONS.default;
+                if (props.service_types && props.service_types.length > 0) {
+                    const serviceType = props.service_types[0];
+                    if (serviceType.includes('醫療') || serviceType.includes('醫院')) {
+                        icon = LOCATION_ICONS.hospital;
+                    } else if (serviceType.includes('美容')) {
+                        icon = LOCATION_ICONS.cosmetic;
+                    } else if (serviceType.includes('公園')) {
+                        icon = LOCATION_ICONS.park;
+                    } else if (serviceType.includes('用品')) {
+                        icon = LOCATION_ICONS.product;
+                    } else if (serviceType.includes('收容')) {
+                        icon = LOCATION_ICONS.shelter;
+                    } else if (serviceType.includes('殯葬')) {
+                        icon = LOCATION_ICONS.funeral;
+                    } else if (serviceType.includes('寄宿')) {
+                        icon = LOCATION_ICONS.boarding;
                     }
                 }
-            }
-            
-            if (!matchesAnyPetType) return false;
-        }
-        
-        // 搜尋文字篩選
-        if (searchText) {
-            const nameMatch = location.name && location.name.toLowerCase().includes(searchText);
-            const addressMatch = location.address && location.address.toLowerCase().includes(searchText);
-            const petTypeMatch = location.supported_pet_types && 
-                      location.supported_pet_types.some(type => 
-                          type.toLowerCase().includes(searchText));
-            
-            if (!(nameMatch || addressMatch || petTypeMatch)) {
-                return false;
-            }
-        }
-        
-        return true;
-    });
-    
-    console.log(`篩選後剩餘 ${filteredLocations.length} 個地點`);
-    displayMarkers();
-}
-
-// 顯示標記 - 簡化版本，只顯示有座標的地點
-function displayMarkers() {
-    markersCluster.clearLayers();
-    
-    // 只處理有座標的地點
-    const locationsWithCoords = filteredLocations.filter(loc => 
-        loc.lat && loc.lng && loc.lat !== null && loc.lng !== null
-    );
-    
-    const locationsWithoutCoords = filteredLocations.length - locationsWithCoords.length;
-    
-    console.log(`顯示標記: ${locationsWithCoords.length} 個有座標的地點`);
-    if (locationsWithoutCoords > 0) {
-        console.log(`跳過 ${locationsWithoutCoords} 個沒有座標的地點`);
-    }
-    
-    // 添加有座標的標記到地圖
-    locationsWithCoords.forEach(location => {
-        const marker = L.marker([location.lat, location.lng], {
-            icon: createCustomIcon(location.type)
-        });
-        
-        marker.bindPopup(createPopupContent(location));
-        markersCluster.addLayer(marker);
-    });
-    
-    // 調整視圖
-    if (markersCluster.getLayers().length > 0) {
-        try {
-            map.fitBounds(markersCluster.getBounds(), {
-                padding: [50, 50],
-                maxZoom: 16
-            });
-        } catch (error) {
-            console.warn('無法調整地圖視圖:', error);
-        }
-    } else if (filteredLocations.length === 0) {
-        showAlert('沒有找到符合條件的地點', 'info');
-    } else if (locationsWithoutCoords > 0) {
-        showAlert(`找到 ${filteredLocations.length} 個地點，但其中 ${locationsWithoutCoords} 個沒有座標資訊`, 'warning');
-    }
-}
-
-// 創建彈出視窗內容
-function createPopupContent(location) {
-    const stars = location.rating ? 
-        '★'.repeat(Math.floor(location.rating)) + '☆'.repeat(5 - Math.floor(location.rating)) : '';
-    
-    // 顯示支援的寵物類型
-    let petTypesHtml = '';
-    if (location.supported_pet_types && location.supported_pet_types.length > 0) {
-        let petTypeTags = location.supported_pet_types.map(type => {
-            let iconKey = Object.keys(PET_TYPE_ICONS).find(key => 
-                key.includes(type.toLowerCase().replace(/[^a-z0-9]/g, '_')) || 
-                type.toLowerCase().includes(key.replace('support_', ''))
-            );
-            let icon = iconKey ? PET_TYPE_ICONS[iconKey] : '';
-            
-            return `<span class="pet-type-tag">${icon} ${type}</span>`;
-        });
-        
-        petTypesHtml = `
-            <div class="popup-pet-types">
-                <strong>適合寵物：</strong>
-                <div class="popup-pet-tags">${petTypeTags.join('')}</div>
-            </div>
-        `;
-    }
-    
-    // 營業時間
-    let businessHoursHtml = '';
-    if (location.business_hours) {
-        try {
-            let hours;
-            if (typeof location.business_hours === 'string') {
-                hours = JSON.parse(location.business_hours);
-            } else {
-                hours = location.business_hours;
-            }
-            
-            const today = new Date().getDay();
-            const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            const todayKey = weekdays[today];
-            const todayHours = hours[todayKey] || '未提供';
-            
-            businessHoursHtml = `
-                <div class="popup-hours">
-                    <div><strong>今日營業：</strong> ${todayHours}</div>
-                </div>
-            `;
-        } catch (error) {
-            console.warn('無法解析營業時間:', error);
-        }
-    }
-    
-    // 服務標籤
-    let servicesHtml = '';
-    if (location.type_display && location.type_display.length > 0) {
-        servicesHtml = `
-            <div class="popup-services">
-                ${Array.isArray(location.type_display) ? 
-                  location.type_display.map(service => 
-                    `<span class="popup-service-tag">${service}</span>`
-                  ).join('') : 
-                  `<span class="popup-service-tag">${location.type_display}</span>`
-                }
-            </div>
-        `;
-    }
-    
-    // 只顯示 address，不包含 city 和 district
-    const displayAddress = location.address || '';
-    
-    return `
-        <div class="popup-content">
-            <h3>${location.name}</h3>
-            ${displayAddress ? `<div class="popup-address">${displayAddress}</div>` : ''}
-            ${location.rating ? `
-            <div class="popup-rating">
-                <span class="stars">${stars}</span>
-                <span>${location.rating}</span>
-            </div>
-            ` : ''}
-            ${servicesHtml}
-            ${petTypesHtml}
-            ${businessHoursHtml}
-            <div class="popup-actions">
-                ${location.phone ? `<a href="tel:${location.phone}" class="popup-btn">📞 撥打電話</a>` : ''}
-                ${location.lat && location.lng ? 
-                  `<a href="https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}" 
-                    class="popup-btn primary" target="_blank">🧭 導航前往</a>` : ''}
-                ${location.website ? 
-                  `<a href="${location.website}" class="popup-btn" target="_blank">🌐 官方網站</a>` : ''}
-            </div>
-        </div>
-    `;
-}
-
-// 更新篩選顯示
-function updateFilterDisplay() {
-    const filterTagsContainer = document.getElementById('filter-tags');
-    const activeFiltersContainer = document.getElementById('active-filters');
-    
-    if (!filterTagsContainer || !activeFiltersContainer) return;
-    
-    filterTagsContainer.innerHTML = '';
-    let hasActiveFilters = false;
-    
-    selectedPetTypes.forEach(petType => {
-        hasActiveFilters = true;
-        const petTypeSelector = document.querySelector(`.pet-type-filter[data-pet-type="${petType}"]`);
-        if (petTypeSelector) {
-            const petTypeName = petTypeSelector.parentNode.querySelector('span').textContent;
-            const tag = document.createElement('div');
-            tag.className = 'filter-tag';
-            tag.innerHTML = `${petTypeName} <span class="remove-tag" data-type="pet" data-value="${petType}">×</span>`;
-            filterTagsContainer.appendChild(tag);
-        }
-    });
-    
-    if (selectedType) {
-        hasActiveFilters = true;
-        const typeSelector = document.querySelector(`.category-item[data-type="${selectedType}"]`);
-        if (typeSelector) {
-            const typeName = typeSelector.querySelector('.category-name').textContent;
-            const tag = document.createElement('div');
-            tag.className = 'filter-tag';
-            tag.innerHTML = `${typeName} <span class="remove-tag" data-type="location" data-value="${selectedType}">×</span>`;
-            filterTagsContainer.appendChild(tag);
-        }
-    }
-    
-    if (hasActiveFilters) {
-        activeFiltersContainer.style.display = 'flex';
-    } else {
-        activeFiltersContainer.style.display = 'none';
-    }
-    
-    document.querySelectorAll('.remove-tag').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const type = this.getAttribute('data-type');
-            const value = this.getAttribute('data-value');
-            
-            if (type === 'pet') {
-                const checkbox = document.querySelector(`.pet-type-filter[data-pet-type="${value}"]`);
-                if (checkbox) {
-                    checkbox.checked = false;
-                }
-                selectedPetTypes = selectedPetTypes.filter(t => t !== value);
-            } else if (type === 'location') {
-                document.querySelectorAll('.category-item').forEach(i => {
-                    i.classList.remove('active');
+                
+                // 創建自定義標記
+                const customIcon = L.divIcon({
+                    html: `<div style="
+                        background: #FFA726;
+                        color: white;
+                        border-radius: 50%;
+                        width: 35px;
+                        height: 35px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 3px solid white;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                        font-size: 16px;
+                    ">${icon}</div>`,
+                    className: 'custom-marker',
+                    iconSize: [35, 35],
+                    iconAnchor: [17, 17]
                 });
-                selectedType = '';
+                
+                // 創建標記
+                const marker = L.marker([coordinates[1], coordinates[0]], { icon: customIcon });
+                
+                // 創建彈出視窗內容
+                const popupContent = createPopupContent(props);
+                marker.bindPopup(popupContent, { maxWidth: 300 });
+                
+                // 添加到標記群組
+                markers.addLayer(marker);
+                successCount++;
+                
+                console.log(`✅ 成功添加標記: ${props.name}`);
+                
+            } catch (error) {
+                console.error(`❌ 處理地點 ${index} 時發生錯誤:`, error, location);
+                errorCount++;
             }
-            
-            loadPetLocations();
         });
-    });
-}
-
-// 獲取用戶位置
-function getUserLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            position => {
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                
-                L.marker([userLocation.lat, userLocation.lng], {
-                    icon: L.divIcon({
-                        className: 'custom-marker',
-                        html: '<div class="marker-pin" style="background-color: #1976D2;">📍</div>',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                })
-                .addTo(map)
-                .bindPopup('您的位置')
-                .openPopup();
-                
-                map.setView([userLocation.lat, userLocation.lng], 15);
-            },
-            error => {
-                console.error('無法獲取位置:', error);
-                showAlert('無法獲取您的位置', 'warning');
+        
+        console.log(`📊 標記處理完成: 成功 ${successCount} 個, 失敗 ${errorCount} 個`);
+        
+        // 如果有地點，調整地圖視角到包含所有標記
+        if (successCount > 0) {
+            try {
+                const bounds = markers.getBounds();
+                if (bounds.isValid()) {
+                    console.log('🗺️ 調整地圖視角以包含所有標記');
+                    map.fitBounds(bounds, { padding: [20, 20] });
+                } else {
+                    console.log('⚠️ 標記邊界無效，保持當前視角');
+                }
+            } catch (error) {
+                console.error('❌ 調整地圖視角時發生錯誤:', error);
             }
-        );
-    } else {
-        showAlert('您的瀏覽器不支援地理位置功能', 'warning');
-    }
-}
-
-// 全螢幕切換
-function toggleFullscreen() {
-    const mapContainer = document.querySelector('.map-container');
-    
-    if (!document.fullscreenElement) {
-        if (mapContainer.requestFullscreen) {
-            mapContainer.requestFullscreen();
-        } else if (mapContainer.mozRequestFullScreen) {
-            mapContainer.mozRequestFullScreen();
-        } else if (mapContainer.webkitRequestFullscreen) {
-            mapContainer.webkitRequestFullscreen();
-        } else if (mapContainer.msRequestFullscreen) {
-            mapContainer.msRequestFullscreen();
-        }
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
+        } else {
+            console.log('❌ 沒有成功添加任何標記');
         }
     }
-}
-
-// 顯示提示訊息
-function showAlert(message, type = 'info') {
-    const alertElement = document.createElement('div');
-    alertElement.className = `alert alert-${type}`;
-    alertElement.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 10px 20px;
-        border-radius: 8px;
-        z-index: 2000;
-        background-color: ${type === 'error' ? '#f8d7da' : type === 'warning' ? '#fff3cd' : type === 'success' ? '#d4edda' : '#d1ecf1'};
-        color: ${type === 'error' ? '#721c24' : type === 'warning' ? '#856404' : type === 'success' ? '#155724' : '#0c5460'};
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        max-width: 400px;
-        word-wrap: break-word;
-        font-size: 14px;
-        line-height: 1.4;
-    `;
     
-    alertElement.textContent = message;
-    document.body.appendChild(alertElement);
-    
-    setTimeout(() => {
-        alertElement.style.opacity = '0';
-        alertElement.style.transition = 'opacity 0.5s';
-        setTimeout(() => {
-            if (document.body.contains(alertElement)) {
-                document.body.removeChild(alertElement);
-            }
-        }, 500);
-    }, 3000);
-}
-
-// 設置事件監聽器
-function setupEventListeners() {
-    document.querySelectorAll('.category-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const type = this.getAttribute('data-type');
-            
-            document.querySelectorAll('.category-item').forEach(i => {
-                i.classList.remove('active');
+    // 創建彈出視窗內容
+    function createPopupContent(props) {
+        let html = `
+            <div class="popup-content">
+                <h3>${props.name || '未命名地點'}</h3>
+        `;
+        
+        // 地址
+        if (props.address) {
+            html += `<div class="popup-address">📍 ${props.address}</div>`;
+        }
+        
+        // 評分
+        if (props.rating) {
+            const stars = '⭐'.repeat(Math.round(props.rating));
+            html += `<div class="popup-rating">
+                <span class="stars">${stars}</span>
+                <span>${props.rating} (${props.rating_count || 0}則評價)</span>
+            </div>`;
+        }
+        
+        // 服務類型
+        if (props.service_types && props.service_types.length > 0) {
+            html += `<div class="popup-services">`;
+            props.service_types.forEach(service => {
+                html += `<span class="popup-service-tag">${service}</span>`;
             });
+            html += `</div>`;
+        }
+        
+        // 支援的寵物類型
+        if (props.supported_pet_types && props.supported_pet_types.length > 0) {
+            html += `<div class="popup-pet-types">
+                <strong>支援寵物：</strong>
+                <div class="popup-pet-tags">`;
             
-            if (selectedType === type) {
-                selectedType = '';
-            } else {
-                this.classList.add('active');
-                selectedType = type;
-            }
-            
-            console.log('選擇類型:', selectedType);
-            loadPetLocations();
-        });
-    });
-    
-    const searchBtn = document.getElementById('map-search-btn');
-    const searchInput = document.getElementById('map-search-input');
-    
-    if (searchBtn) {
-        searchBtn.addEventListener('click', function() {
-            filterLocations();
-        });
+            props.supported_pet_types.forEach(petType => {
+                // 找到對應的圖標
+                let petIcon = '🐾';
+                let tagClass = 'pet-type-tag';
+                
+                // 如果是推測的寵物類型，使用不同樣式
+                if (petType.includes('通常接受') || petType.includes('未明確設定')) {
+                    petIcon = '❓';
+                    tagClass = 'pet-type-tag uncertain';
+                } else {
+                    for (const [code, icon] of Object.entries(PET_TYPE_ICONS)) {
+                        if (petType.includes('小型犬') && code === 'small_dog') petIcon = icon;
+                        else if (petType.includes('中型犬') && code === 'medium_dog') petIcon = icon;
+                        else if (petType.includes('大型犬') && code === 'large_dog') petIcon = icon;
+                        else if (petType.includes('貓') && code === 'cat') petIcon = icon;
+                        else if (petType.includes('鳥') && code === 'bird') petIcon = icon;
+                        else if (petType.includes('鼠') && code === 'rodent') petIcon = icon;
+                        else if (petType.includes('爬蟲') && code === 'reptile') petIcon = icon;
+                    }
+                }
+                html += `<span class="${tagClass}">${petIcon} ${petType}</span>`;
+            });
+            html += `</div></div>`;
+        } else if (currentFilters.petTypes.length > 0) {
+            // 如果用戶有篩選寵物類型但地點沒有明確設定，顯示提示
+            html += `<div class="popup-pet-types">
+                <div class="popup-pet-tags">
+                    <span class="pet-type-tag uncertain">❓ 未明確標示寵物類型限制</span>
+                </div>
+            </div>`;
+        }
+        
+        // 24小時急診標示
+        if (props.has_emergency) {
+            html += `<div style="color: #e74c3c; font-weight: bold;">🚨 24小時急診</div>`;
+        }
+        
+        // 聯絡資訊
+        if (props.phone) {
+            html += `<div>📞 <a href="tel:${props.phone}">${props.phone}</a></div>`;
+        }
+        
+        // 操作按鈕
+        html += `<div class="popup-actions">`;
+        if (props.phone) {
+            html += `<a href="tel:${props.phone}" class="popup-btn">📞 撥打電話</a>`;
+        }
+        if (props.address) {
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(props.address)}`;
+            html += `<a href="${mapUrl}" target="_blank" class="popup-btn primary">🗺️ 導航</a>`;
+        }
+        html += `</div>`;
+        
+        html += `</div>`;
+        return html;
     }
     
-    if (searchInput) {
+    // 設置篩選器事件監聽
+    function setupFilters() {
+        console.log('設置篩選器...');
+        
+        // 服務類型篩選
+        const categoryItems = document.querySelectorAll('.category-item');
+        categoryItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const type = this.dataset.type;
+                
+                console.log('點擊服務類型:', type); // 除錯用
+                
+                // 檢查是否為暫時沒有資料的服務類型
+                const unavailableTypes = ['live', 'restaurant'];
+                if (unavailableTypes.includes(type)) {
+                    alert('此服務類型的資料即將上線，敬請期待！');
+                    return;
+                }
+                
+                // 切換選中狀態
+                categoryItems.forEach(i => i.classList.remove('active'));
+                
+                if (currentFilters.type === type) {
+                    // 如果點擊同一個，則取消選擇
+                    currentFilters.type = null;
+                    console.log('取消選擇服務類型');
+                } else {
+                    // 選擇新的類型
+                    currentFilters.type = type;
+                    this.classList.add('active');
+                    console.log('選擇服務類型:', type);
+                }
+                
+                updateFilters();
+            });
+        });
+        
+        // 寵物類型篩選
+        const petTypeFilters = document.querySelectorAll('.pet-type-filter');
+        petTypeFilters.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const petType = this.dataset.petType;
+                
+                if (this.checked) {
+                    if (!currentFilters.petTypes.includes(petType)) {
+                        currentFilters.petTypes.push(petType);
+                    }
+                } else {
+                    currentFilters.petTypes = currentFilters.petTypes.filter(type => type !== petType);
+                }
+                
+                updateFilters();
+            });
+        });
+        
+        // 搜尋功能
+        const searchInput = document.getElementById('map-search-input');
+        const searchBtn = document.getElementById('map-search-btn');
+        
+        function performSearch() {
+            const searchText = searchInput.value.trim();
+            currentFilters.search = searchText || null;
+            updateFilters();
+        }
+        
+        searchBtn.addEventListener('click', performSearch);
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                filterLocations();
+                performSearch();
             }
+        });
+        
+        // 清除所有篩選
+        document.getElementById('clear-filters').addEventListener('click', function() {
+            // 重置篩選條件
+            currentFilters = {
+                type: null,
+                city: null,
+                search: null,
+                petTypes: []
+            };
+            
+            // 重置 UI
+            categoryItems.forEach(item => item.classList.remove('active'));
+            petTypeFilters.forEach(checkbox => checkbox.checked = false);
+            searchInput.value = '';
+            
+            // 更新篩選
+            updateFilters();
         });
     }
     
-    document.querySelectorAll('.pet-type-filter').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const petType = this.getAttribute('data-pet-type');
+    // 更新篩選並重新載入資料
+    function updateFilters() {
+        console.log('更新篩選條件:', currentFilters);
+        updateFilterDisplay();
+        loadLocations();
+    }
+    
+    // 更新篩選狀態顯示
+    function updateFilterDisplay() {
+        const activeFiltersDiv = document.getElementById('active-filters');
+        const filterTagsDiv = document.getElementById('filter-tags');
+        
+        // 清空現有標籤
+        filterTagsDiv.innerHTML = '';
+        
+        let hasActiveFilters = false;
+        
+        // 顯示服務類型篩選
+        if (currentFilters.type) {
+            const typeNames = {
+                'hospital': '醫院',
+                'cosmetic': '美容',
+                'park': '公園',
+                'product': '寵物用品',
+                'shelter': '收容所',
+                'funeral': '寵物殯葬',
+                'boarding': '寄宿'
+                // 移除不存在的 'live' 和 'restaurant'
+            };
             
-            if (this.checked) {
-                if (!selectedPetTypes.includes(petType)) {
-                    selectedPetTypes.push(petType);
+            const tag = document.createElement('span');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `${typeNames[currentFilters.type] || currentFilters.type} <span class="remove-tag" data-type="service">×</span>`;
+            filterTagsDiv.appendChild(tag);
+            hasActiveFilters = true;
+        }
+        
+        // 顯示寵物類型篩選
+        currentFilters.petTypes.forEach(petType => {
+            const petTypeNames = {
+                'small_dog': '小型犬',
+                'medium_dog': '中型犬',
+                'large_dog': '大型犬',
+                'cat': '貓',
+                'bird': '鳥類',
+                'rodent': '齧齒動物',
+                'reptile': '爬蟲類',
+                'other': '其他'
+            };
+            
+            const tag = document.createElement('span');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `${petTypeNames[petType] || petType} <span class="remove-tag" data-type="pet" data-value="${petType}">×</span>`;
+            filterTagsDiv.appendChild(tag);
+            hasActiveFilters = true;
+        });
+        
+        // 顯示搜尋篩選
+        if (currentFilters.search) {
+            const tag = document.createElement('span');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `搜尋: ${currentFilters.search} <span class="remove-tag" data-type="search">×</span>`;
+            filterTagsDiv.appendChild(tag);
+            hasActiveFilters = true;
+        }
+        
+        // 顯示/隱藏篩選狀態區域
+        activeFiltersDiv.style.display = hasActiveFilters ? 'flex' : 'none';
+        
+        // 設置移除標籤的事件監聽
+        filterTagsDiv.querySelectorAll('.remove-tag').forEach(removeBtn => {
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const type = this.dataset.type;
+                const value = this.dataset.value;
+                
+                if (type === 'service') {
+                    currentFilters.type = null;
+                    document.querySelectorAll('.category-item').forEach(item => item.classList.remove('active'));
+                } else if (type === 'pet') {
+                    currentFilters.petTypes = currentFilters.petTypes.filter(pt => pt !== value);
+                    const checkbox = document.querySelector(`[data-pet-type="${value}"]`);
+                    if (checkbox) checkbox.checked = false;
+                } else if (type === 'search') {
+                    currentFilters.search = null;
+                    document.getElementById('map-search-input').value = '';
                 }
-            } else {
-                selectedPetTypes = selectedPetTypes.filter(type => type !== petType);
-            }
-            
-            console.log('選擇寵物類型:', selectedPetTypes);
-            loadPetLocations();
-        });
-    });
-    
-    const clearFiltersBtn = document.getElementById('clear-filters');
-    if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', function() {
-            selectedPetTypes = [];
-            document.querySelectorAll('.pet-type-filter').forEach(checkbox => {
-                checkbox.checked = false;
+                
+                updateFilters();
             });
-            
-            selectedType = '';
-            document.querySelectorAll('.category-item').forEach(i => {
-                i.classList.remove('active');
-            });
-            
-            if (searchInput) {
-                searchInput.value = '';
-            }
-            loadPetLocations();
         });
     }
     
-    const locateBtn = document.getElementById('locate-btn');
-    if (locateBtn) {
-        locateBtn.addEventListener('click', function() {
-            getUserLocation();
-        });
+    // 主初始化函數
+    function init() {
+        console.log('開始初始化地圖應用...');
+        
+        // 初始化地圖
+        initMap();
+        
+        // 設置篩選器
+        setupFilters();
+        
+        // 載入初始資料
+        loadLocations();
+        
+        console.log('地圖應用初始化完成');
     }
     
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    if (fullscreenBtn) {
-        fullscreenBtn.addEventListener('click', function() {
-            toggleFullscreen();
-        });
-    }
-    
-    document.addEventListener('fullscreenchange', function() {
-        if (map) {
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
-        }
-    });
-    
-    window.addEventListener('resize', function() {
-        if (map) {
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
-        }
-    });
-}
-
-// 頁面載入完成後初始化地圖
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing map...');
-    initializeMap();
+    // 啟動應用
+    init();
 });
+
+// 錯誤處理
+window.addEventListener('error', function(e) {
+    console.error('JavaScript 錯誤:', e.error);
+});
+
+// 未處理的 Promise 拒絕
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('未處理的 Promise 拒絕:', e.reason);
+});
+
+console.log('地圖腳本載入完成');

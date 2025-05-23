@@ -1,0 +1,16 @@
+petapp 砍掉__pycache__ migrations
+
+步驟
+python manage.py makemigrations
+python manage.py makemigrations petapp
+
+python manage.py migrate
+
+先
+
+py fix_basic_data.py
+再
+
+py import_locations.py
+
+匯入成功

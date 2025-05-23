@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="zh-TW">
@@ -20,22 +21,21 @@
 <body>
     <!-- 頂部導航（如果需要） -->
     <header>
-        <div class="navbar">
-            <div class="logo">
-                <a href="/">
-                    <img src="{% static 'images/logo.png' %}" alt="寵物生活">
-                </a>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="/">首頁</a></li>
-                    <li><a href="/pets/">寵物</a></li>
-                    <li><a href="/health_rec/">健康紀錄</a></li>
-                    <li><a href="/map/" class="active">地圖</a></li>
-                    <!-- 其他導航項目 -->
-                </ul>
-            </nav>
+        <!-- <div class="logo">
+            <img src="{% static 'images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg' %}" alt="LOGO">
+            <span>PAW<br>DAY</span>
         </div>
+            <nav>
+                <a href="#">寵物</a>
+                <a href="#">健康紀錄</a>
+                <a href="#">通知</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'account_logout' %}">登出</a>
+                {% else %}
+                <a href="{% url 'account_login' %}">登入</a>
+                <a href="{% url 'account_signup' %}">註冊</a>
+                {% endif %}
+            </nav> -->
     </header>
 
     <!-- 主要內容區域 -->
@@ -142,18 +142,27 @@
         </div>
     </main>
 
-    <!-- 頁腳 -->
-    <footer>
-        <div class="footer-content">
-            <p>&copy; 2025 寵物生活與健康管理</p>
-        </div>
-    </footer>
-
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     
     <!-- 地圖專用 JS -->
     <script src="{% static 'js/map.js' %}"></script>
+
+      <footer>
+    <div>
+      <h4>網站簡介</h4>
+      <p>這是一個為毛小孩與飼主打造的平台，讓你輕鬆記錄、分享毛孩生活與健康資訊。</p>
+    </div>
+    <div>
+      <h4>客服聯絡資訊</h4>
+      <p>Email：pawday114404@gmail.com<br>電話：02-5566-7788<br>服務時間：週一至五 10:00 - 18:00</p>
+    </div>
+    <div>
+      <h4>社群連結</h4>
+      <p>IG：@pawday114404<br>FB：毛日好 Paw&Day<br>LINE：@pawday114404</p>
+    </div>
+  </footer>
+
 </body>
 </html>

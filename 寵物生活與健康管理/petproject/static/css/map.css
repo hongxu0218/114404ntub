@@ -489,3 +489,8 @@ main {
     padding: 20px;
 }
 
+.pet-type-tag.uncertain {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px dashed #ffeaa7;
+}

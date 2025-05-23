@@ -68,16 +68,73 @@
         max-width: 100%;
         white-space: normal;
     }
+/* 限制特定文字欄位（例如特徵）最多顯示 3 行，太多會裁切 */
+        .pet-details .feature-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;        /* 顯示最多 3 行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .feature-text {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: max-height 0.3s ease;
+
+    .feature-text.collapsed {
+      display: inline-block;
+      max-width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
     }
-    .feature-text.collapsed { -webkit-line-clamp: 3; }
-    .feature-text.expanded { -webkit-line-clamp: unset; }
+
+    .feature-text.expanded {
+      white-space: normal;
+      max-width: none;
+      cursor: pointer;
+    }
+
+    .message-popup {
+      position: fixed;
+      top: 20px;
+      left: 40%;
+      z-index: 9999;
+      min-width: 300px;
+      max-width: 90%;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      animation: fadein 0.5s ease;
+      text-align: center;
+    }
+
+    .message {
+      margin: 0.5em 0;
+      padding: 12px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    /* 不同訊息類別配色 */
+    .message.success {
+      background-color: #28a745;  /* 綠色 */
+    }
+    .message.error {
+      background-color: #dc3545;  /* 紅色 */
+    }
+    .message.warning {
+      background-color: #ffc107;  /* 黃色 */
+      color: #212529;
+    }
+    .message.info {
+      background-color: #17a2b8;  /* 藍色 */
+    }
+
+    /* 淡入動畫 */
+    @keyframes fadein {
+      from {opacity: 0; transform: translateY(-10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
 </style>
 {% endblock %}
 
@@ -89,6 +146,15 @@
 
 <a href="{% url 'add_pet' %}" class="btn btn-primary">➕ 新增寵物資料</a>
 
+<!-- 新增、編輯、刪除 訊息 -->
+{% if messages %}
+      <div id="message-container" class="message-popup">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
 <div class="pet-list">
     <h3>已填過的寵物資料</h3>
     <ul>
@@ -99,7 +165,13 @@
                 <p><strong>品種：</strong>{{ pet.breed }}</p>
                 <p><strong>絕育狀態：</strong>{{ pet.get_sterilization_status_display }}</p>
                 <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
-                <p><strong>出生日期：</strong>{{ pet.year_of_birth }} 年 {{ pet.month_of_birth }} 月 {{ pet.day_of_birth }} 日</p>
+                <p><strong>出生日期：</strong>
+                        {% if pet.birth_date %}
+                            {{ pet.birth_date|date:"Y 年 m 月 d 日" }}
+                          {% else %}
+                            尚未填寫
+                          {% endif %}
+                    </p>
                 <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
                 <p><strong>特徵：</strong>
                   <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
@@ -153,22 +225,35 @@
     function togglePetDetails(petId) {
         var details = document.getElementById("details-" + petId);
         details.style.display = (details.style.display === "none" || details.style.display === "") ? "block" : "none";
-    }
+      }
 
-    function toggleFeature(petId) {
-        const span = document.getElementById("feature-" + petId);
-        const btn = span.nextElementSibling;
+      document.addEventListener('DOMContentLoaded', () => {
+        // 特徵文字展開／收合
+        document.querySelectorAll('.feature-text').forEach(span => {
+          const maxLength = 30;
+          if (span.textContent.length <= maxLength) {
+            span.classList.remove('collapsed');
+            span.style.cursor = 'default';
+            return;
+          }
+          span.classList.add('collapsed');
+          span.addEventListener('click', () => {
+            span.classList.toggle('collapsed');
+            span.classList.toggle('expanded');
+          });
+        });
 
-        if (span.classList.contains("collapsed")) {
-            span.classList.remove("collapsed");
-            span.classList.add("expanded");
-            btn.innerText = "收合";
-        } else {
-            span.classList.remove("expanded");
-            span.classList.add("collapsed");
-            btn.innerText = "展開";
+        // 訊息淡出
+        const msgContainer = document.getElementById('message-container');
+        if (msgContainer) {
+          setTimeout(() => {
+            msgContainer.style.transition = 'opacity 0.5s ease';
+            msgContainer.style.opacity = '0';
+            setTimeout(() => msgContainer.remove(), 500);
+          }, 3000);
         }
-    }
+      });
+
 
     function toggleNotice() {
         const box = document.getElementById("notification-box");

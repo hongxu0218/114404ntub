@@ -50,16 +50,14 @@
         button {
             margin-top: 1.5em;
             padding: 0.7em 1.5em;
-            background-color: #ffc107;
+            background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            width: 100%;
-            font-size: 16px;
         }
         button:hover {
-            background-color: #e0a800;
+            background-color: #45a049;
         }
         .text-danger p {
             color: red;
@@ -68,6 +66,33 @@
         /* 隱藏Django自帶的清除圖片按鈕 */
         input[type="checkbox"][name$="-clear"] {
             display: none;
+        }
+        .button-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2em;
+        }
+
+        .button-row button,
+        .button-row a button {
+            padding: 0.6em 1.5em;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .button-row button[type="submit"] {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .button-row a button {
+            background-color: #95a5a6;
+            color: #fff;
+        }
+        .button-row button:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -78,14 +103,30 @@
 <form method="post" enctype="multipart/form-data" id="edit-form">
     {% csrf_token %}
 
+    {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}
+              <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+
     <label for="id_species">種類</label>
     {{ form.species }}
 
-    <label for="id_breed">品種</label>
-    {{ form.breed }}
+    <label for="id_name">品種</label>
+    {{ form.name }}
 
     <label for="id_name">名字</label>
     {{ form.name }}
+    {% if form.name.errors %}
+      <div class="text-danger">
+        {% for error in form.name.errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
 
     <label for="id_sterilization_status">絕育狀態</label>
     {{ form.sterilization_status }}
@@ -93,42 +134,20 @@
     <label for="id_chip">晶片號碼</label>
     {{ form.chip }}
 
+
     <!-- 出生日期 -->
-    <label for="id_date_of_birth">出生日期</label>
-    <div class="dob-group" style="display: flex; gap: 1em; margin-top: 0.5em;">
-        <div style="flex: 1;">
-            {{ form.year_of_birth }}
-            {% if form.year_of_birth.errors %}
-                <div class="text-danger">
-                    {% for error in form.year_of_birth.errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
+   <label for="id_birth_date">出生日期</label>
+      {{ form.birth_date }}
+      {% if form.birth_date.errors %}
+        <div class="text-danger">
+          {% for error in form.birth_date.errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
         </div>
+      {% endif %}
 
-        <div style="flex: 1;">
-            {{ form.month_of_birth }}
-            {% if form.month_of_birth.errors %}
-                <div class="text-danger">
-                    {% for error in form.month_of_birth.errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
 
-        <div style="flex: 1;">
-            {{ form.day_of_birth }}
-            {% if form.day_of_birth.errors %}
-                <div class="text-danger">
-                    {% for error in form.day_of_birth.errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-    </div>
+
 
     <label for="id_gender">性別</label>
     {{ form.gender }}
@@ -151,7 +170,12 @@
     {% endif %}
     <input type="file" name="picture" class="form-control" id="id_picture" {% if not pet.picture %}required{% endif %}>
 
-    <button type="submit">保存更改</button>
+        <div class="button-row">
+            <a href="{% url 'pet_list' %}">
+                <button type="button">返回</button>
+            </a>
+            <button type="submit">保存更改</button>
+        </div>
 
 </form>
 
@@ -176,56 +200,10 @@
             reader.readAsDataURL(file);
         }
     });
-
-    function isLeapYear(year) {
-        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-    }
-
-    function getDaysInMonth(year, month) {
-        const monthDays = [31, (isLeapYear(year) ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        return monthDays[month - 1];
-    }
-
+    // 圖片欄位驗證
     document.getElementById('edit-form').onsubmit = function(event) {
-        const year = document.getElementById('id_year_of_birth').value.trim();
-        const month = document.getElementById('id_month_of_birth').value.trim();
-        const day = document.getElementById('id_day_of_birth').value.trim();
         const pictureInput = document.querySelector('input[name="picture"]');
         const currentImage = document.querySelector('.current-image img');
-
-        if (!year || !month || !day) {
-            alert("請填寫出生日期");
-            event.preventDefault();
-            return;
-        }
-
-        if (isNaN(year) || isNaN(month) || isNaN(day)) {
-            alert("出生年月日需為數字");
-            event.preventDefault();
-            return;
-        }
-
-        const yearNum = parseInt(year, 10);
-        if (yearNum < 1900 || yearNum > 2025) {
-            alert("請填寫有效年份 (1900～2025)");
-            event.preventDefault();
-            return;
-        }
-
-        const monthNum = parseInt(month, 10);
-        if (monthNum < 1 || monthNum > 12) {
-            alert("請填寫有效月份 (1～12)");
-            event.preventDefault();
-            return;
-        }
-
-        const dayNum = parseInt(day, 10);
-        const maxDay = getDaysInMonth(yearNum, monthNum);
-        if (dayNum < 1 || dayNum > maxDay) {
-            alert(`請填寫有效日期 (該月份最多 ${maxDay} 天)`);
-            event.preventDefault();
-            return;
-        }
 
         if (!currentImage && !pictureInput.files.length) {
             alert("圖片為必填欄位，請選擇一張圖片！");

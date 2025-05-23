@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>毛孩幸福生活</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+  <!-- Header 區塊 -->
+  <header>
+    <div class="logo">
+      <img src="{% static 'images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg' %}" alt="LOGO">
+      <span>PAW<br>DAY</span>
+    </div>
+    <nav>
+      <a href="#">寵物</a>
+      <a href="#">健康紀錄</a>
+      <a href="#">通知</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'account_logout' %}">登出</a>
+      {% else %}
+        <a href="{% url 'account_login' %}">登入</a>
+        <a href="{% url 'account_signup' %}">註冊</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>打造毛孩專屬<br>幸福生活！</h1>
+    </div>
+    <img src="{% static 'images/cat-8525666_1280.webp' %}" alt="毛孩插圖" style="height: 200px;">
+  </section>
+
+  <section class="latest-news">
+    <h2 class="news-title">最新消息</h2>
+    <div class="news-scroll-wrapper">
+      <button class="scroll-btn left" onclick="scrollNews('left')">←</button>
+      <div class="news-container" id="newsContainer">
+        <a href="https://dailyview.tw/popular/detail/29132" class="news-card">
+          <img src="{% static 'images/a1e2c2a5c2358a8358ac34014654e86f658b60925bb664f14510f1a6b275962b.webp' %}" alt="">
+        </a>
+        <a href="https://www.jvs.com.tw/blog/posts/..." class="news-card">
+          <img src="{% static 'images/original.jpg' %}" alt="">
+        </a>
+        <a href="https://udn.com/news/story/..." class="news-card">
+          <img src="{% static 'images/29847947.jpg' %}" alt="">
+        </a>
+        <a href="https://animal.moa.gov.tw/Frontend/News/..." class="news-card">
+          <img src="{% static 'images/231020043730481832ZLZ4S.jpg' %}" alt="">
+        </a>
+        <a href="https://www.dotdotnews.com/a/202503/..." class="news-card">
+          <img src="{% static 'images/67dd054fe4b0e62e722d1fce.jpg' %}" alt="">
+        </a>
+        <a href="https://www.youtube.com/watch?v=uBhBu-LYSqM" class="news-card">
+          <img src="{% static 'images/hq720.jpg' %}" alt="">
+        </a>
+        <a href="more-news.html" class="news-card more"><span>更多消息 →</span></a>
+      </div>
+      <button class="scroll-btn right" onclick="scrollNews('right')">→</button>
+    </div>
+  </section>
+
+  <section class="section-icons">
+    <div class="category-buttons">
+      <a href="#" class="category-link">
+        <img src="{% static 'images/paws (2).png' %}" class="icon-img"><br>新增毛孩
+      </a>
+    </div>
+    <div class="category-buttons">
+      <a href="health.html" class="category-link">
+        <img src="{% static 'images/stethoscope.png' %}" class="icon-img"><br>健康紀錄
+      </a>
+    </div>
+    <div class="category-buttons">
+      <a href="{% url 'map' %}" class="category-link">
+        <img src="{% static 'images/pin.png' %}" class="icon-img"><br>搜尋附近
+      </a>
+    </div>
+    <div class="category-buttons">
+      <a href="#" class="category-link">
+        <img src="{% static 'images/emergency-call.png' %}" class="icon-img"><br>急診
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <h4>網站簡介</h4>
+      <p>這是一個為毛小孩與飼主打造的平台，讓你輕鬆記錄、分享毛孩生活與健康資訊。</p>
+    </div>
+    <div>
+      <h4>客服聯絡資訊</h4>
+      <p>Email：pawday114404@gmail.com<br>電話：02-5566-7788<br>服務時間：週一至五 10:00 - 18:00</p>
+    </div>
+    <div>
+      <h4>社群連結</h4>
+      <p>IG：@pawday114404<br>FB：毛日好 Paw&Day<br>LINE：@pawday114404</p>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/script.js' %}"></script>
+  <script>
+    function scrollNews(direction) {
+      const container = document.getElementById("newsContainer");
+      const scrollAmount = 220;
+      container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+</html>

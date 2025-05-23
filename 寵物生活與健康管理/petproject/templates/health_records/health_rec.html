@@ -61,6 +61,7 @@
         }
 
         .btn-vaccine { background-color: #6f42c1; color: white; }
+        .btn-deworm { background-color: #6c584c; color: white; }
         .btn-report { background-color: #20c997; color: white; }
         .btn-daily { background-color: #17a2b8; color: white; }
         .btn-reminder { background-color: #ffc107; color: black; }
@@ -298,37 +299,110 @@
 
 <div class="tab-buttons">
     <button class="tab-btn btn-vaccine" onclick="showTab('vaccine')">💉 疫苗</button>
+    <button class="tab-btn btn-deworm" onclick="showTab('deworm')"> 驅蟲</button>
     <button class="tab-btn btn-report" onclick="showTab('report')">📄 報告</button>
     <button class="tab-btn btn-daily" onclick="showTab('daily')">📘 生活記錄</button>
     </div>
 
-<!-- 疫苗區塊 -->
-<div id="vaccine" class="tab-content active">
-    <h3>💉 疫苗</h3>
 
-    {% if vaccine_records %}
+<!-- 疫苗區塊 -->
+<div id="vaccine" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('vaccine', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+      >
+        {{ pet.name }} 的疫苗記錄
+      </button>
+    </h3>
+    <div id="details-vaccine-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.vaccine_records.all %}
         <ul>
-            {% for record in vaccine_records %}
-                <li>
-                    <strong>寵物：</strong>{{ record.pet.name }} <br>
-                    <strong>疫苗名稱：</strong>{{ record.vaccine_name }} <br>
-                    <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }} <br>
-                    <strong>施打獸醫：</strong>{{ record.vet.get_full_name }} <br>
-                    <strong>備註：</strong>{{ record.notes }}
-                    <hr>
-                </li>
-            {% endfor %}
+          {% for record in pet.vaccine_records.all|dictsortreversed:"date" %}
+            <li>
+              <strong>疫苗名稱：</strong>{{ record.name }}<br>
+              <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
+              <strong>施打地點：</strong>{{ record.location }}<br>
+              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
+              <a href="{% url 'delete_vaccine' record.id %}" onclick="return confirm('確定刪除這筆疫苗紀錄嗎？')">🗑️刪除</a>
+              <hr>
+            </li>
+          {% endfor %}
         </ul>
-    {% else %}
-        <p>尚無疫苗記錄。</p>
-    {% endif %}
+      {% else %}
+        <p>無疫苗紀錄。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
 </div>
+
+<!-- 驅蟲區塊 -->
+<div id="deworm" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('deworm', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+      >
+        {{ pet.name }} 的驅蟲記錄
+      </button>
+    </h3>
+    <div id="details-deworm-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.deworm_records.all %}
+        <ul>
+          {% for record in pet.deworm_records.all|dictsortreversed:"date" %}
+            <li>
+              <strong>驅蟲品牌：</strong>{{ record.name }}<br>
+              <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
+              <strong>施打地點：</strong>{{ record.location }}<br>
+              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
+              <a href="{% url 'delete_deworm' record.id %}" onclick="return confirm('確定刪除這筆驅蟲紀錄嗎？')">🗑️刪除</a>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>無驅蟲紀錄。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+
 
 <!-- 報告區塊 -->
 <div id="report" class="tab-content">
-    <h3>📄 報告</h3>
-    <p>這裡是所有寵物的醫療報告。</p>
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('report', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+      >
+        {{ pet.name }} 的報告
+      </button>
+    </h3>
+
+    <div id="details-report-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.reports.all %}
+        <ul>
+          {% for record in pet.reports.all|dictsortreversed:"date_uploaded" %}
+            <li>
+              <strong>標題：</strong>{{ record.title }}<br>
+              <strong>檔案：</strong><a href="{{ record.pdf.url }}" target="_blank">{{ record.pdf }}</a><br>
+
+              <a href="{% url 'delete_report' record.id %}" onclick="return confirm('確定刪除這筆報告嗎？')">🗑️刪除</a>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>尚無報告。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
 </div>
+
 
 <!-- 生活記錄區塊 -->
 <div id="daily" class="tab-content">
@@ -496,24 +570,13 @@
     {% endif %}
 </div>
 
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // 切換顯示與隱藏生活記錄
     function toggleRecordVisibility(recordId) {
         const recordDiv = document.getElementById(recordId);
         recordDiv.style.display = recordDiv.style.display === "none" ? "block" : "none";
     }
-</script>
-
-<!-- 提醒區塊 -->
-<div id="reminder" class="tab-content">
-    <h3>⏰ 提醒</h3>
-    <p>這裡是使用者設定的提醒清單。</p>
-</div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
     function getCSRFToken() {
     const name = 'csrftoken';
     const cookies = document.cookie.split(';');
@@ -885,6 +948,13 @@ function changeWeightMonth(petId, offset) {
             if (chartWrapper) chartWrapper.classList.remove('opacity-50');
         });
 }
+
+
+    function toggleDetails(type, petId) {
+          const el = document.getElementById(`details-${type}-${petId}`);
+          el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
+        }
+
 </script>
 </body>
 </html>
