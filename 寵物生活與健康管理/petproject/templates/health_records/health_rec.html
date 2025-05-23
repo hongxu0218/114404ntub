@@ -298,11 +298,44 @@
 <h2>健康記錄</h2>
 
 <div class="tab-buttons">
+    <button class="tab-btn btn-info" onclick="showTab('medical')">🩺 看診紀錄</button>
     <button class="tab-btn btn-vaccine" onclick="showTab('vaccine')">💉 疫苗</button>
     <button class="tab-btn btn-deworm" onclick="showTab('deworm')"> 驅蟲</button>
     <button class="tab-btn btn-report" onclick="showTab('report')">📄 報告</button>
     <button class="tab-btn btn-daily" onclick="showTab('daily')">📘 生活記錄</button>
     </div>
+
+<!-- 病例區塊 -->
+<div id="medical" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('medical', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+      >
+        {{ pet.name }} 的看診紀錄
+      </button>
+    </h3>
+    <div id="details-medical-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.medicalrecord_set.all %}
+        <ul>
+          {% for record in pet.medicalrecord_set.all|dictsortreversed:"visit_date" %}
+            <li>
+              <strong>看診日期：</strong>{{ record.visit_date }}<br>
+              <strong>看診地點：</strong>{{ record.clinic_location }}<br>
+              <strong>診斷結果：</strong>{{ record.diagnosis|default:"未填寫" }}<br>
+              <strong>治療內容：</strong>{{ record.treatment|default:"未填寫" }}<br>
+              <strong>看診獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}<br>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>無看診紀錄。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
 
 
 <!-- 疫苗區塊 -->

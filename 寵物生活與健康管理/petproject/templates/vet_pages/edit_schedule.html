@@ -1,6 +1,17 @@
-<h2>✏️ 編輯排班時段</h2>
+{% extends "vet_pages/base.html" %}
+
+{% block title %}編輯排班時段{% endblock %}
+
+{% block back_button %}
+<a href="{% url 'vet_availability_settings' %}" class="back-home">← 返回可預約設定</a>
+{% endblock %}
+
+{% block header %}✏️ 編輯排班時段{% endblock %}
+
+{% block content %}
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
   <button type="submit">儲存變更</button>
 </form>
+{% endblock %}

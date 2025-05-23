@@ -1,20 +1,17 @@
-{% extends 'base.html' %}
+{% extends "vet_pages/base.html" %}
+
+{% block title %}新增 {{ pet.name }} 的報告{% endblock %}
+
+{% block back_button %}
+<a href="{% url 'my_patients' %}" class="back-home">← 返回列表</a>
+{% endblock %}
+
+{% block header %}新增報告：{{ pet.name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>新增報告：{{ pet.name }}</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="form-group">
-            {{ form.title.label_tag }}
-            {{ form.title }}
-        </div>
-        <div class="form-group">
-            {{ form.pdf.label_tag }}
-            {{ form.pdf }}
-        </div>
-        <button type="submit" class="btn btn-primary">上傳報告</button>
-        <a href="{% url 'my_patients' %}" class="btn btn-secondary">返回</a>
-    </form>
-</div>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">上傳報告</button>
+</form>
 {% endblock %}

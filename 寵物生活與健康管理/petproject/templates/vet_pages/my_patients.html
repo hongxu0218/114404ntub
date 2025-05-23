@@ -1,18 +1,87 @@
 {% extends "vet_pages/base.html" %}
 
-{% block content %}
-<h2>🐾 我的看診寵物</h2>
+{% block title %}我的看診寵物{% endblock %}
 
+{% block back_button %}
+  <a href="{% url 'vet_home' %}" class="back-home">← 回主控台</a>
+{% endblock %}
+
+{% block header %}🐾 我的看診寵物{% endblock %}
+
+{% block extra_css %}
+<style>
+  .record-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-left: 5px solid #4db6ac;
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .record-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .record-card p {
+    margin: 8px 0;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+
+  h4 {
+    margin-top: 24px;
+    font-size: 18px;
+    color: #444;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
 {% if pets %}
     <ul>
     {% for pet in pets %}
         <li>
           <div class="pet-card">
             <h3>{{ pet.name }}（飼主：{{ pet.owner.last_name }}{{ pet.owner.first_name|default:pet.owner.username }}）</h3>
-            - <a href="{% url 'add_medical_record' pet.id %}">新增病例</a>
+            - <a href="{% url 'create_medical_record' pet.id %}">新增病例</a>
             - <a href="{% url 'add_vaccine' pet.id %}">新增疫苗</a>
             - <a href="{% url 'add_deworm' pet.id %}">新增驅蟲</a>
-              - <a href="{% url 'add_report' pet.id %}">新增報告</a>
+            - <a href="{% url 'add_report' pet.id %}">新增報告</a>
+            
+            <h4>病例紀錄</h4>
+            {% with latest_record=pet.medicalrecord_set.last %}
+              {% if latest_record %}
+                <div class="record-card">
+                  <p><strong>📅 看診日期：</strong>{{ latest_record.visit_date }}</p>
+                  <p><strong>🏥 看診地點：</strong>{{ latest_record.clinic_location }}</p>
+                  <p><strong>🩺 診斷結果：</strong>{{ latest_record.diagnosis|default:"未填寫" }}</p>
+                  <p><strong>💊 治療內容：</strong>{{ latest_record.treatment|default:"未填寫" }}</p>
+                  <p><strong>👨‍⚕️ 看診獸醫：</strong>{{ latest_record.vet.user.last_name }}{{ latest_record.vet.user.first_name }}</p>
+                </div>
+
+                <button class="toggle-more-btn" onclick="toggleMore(this)">顯示更多病例紀錄</button>
+
+                <div class="record-more" style="display:none;">
+                  {% for record in pet.medicalrecord_set.all|dictsortreversed:"visit_date" %}
+                    {% if record != latest_record %}
+                      <div class="record-card">
+                        <p><strong>📅 看診日期：</strong>{{ record.visit_date }}</p>
+                        <p><strong>🏥 看診地點：</strong>{{ record.clinic_location }}</p>
+                        <p><strong>🩺 診斷結果：</strong>{{ record.diagnosis|default:"未填寫" }}</p>
+                        <p><strong>💊 治療內容：</strong>{{ record.treatment|default:"未填寫" }}</p>
+                        <p><strong>👨‍⚕️ 看診獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p>無病例紀錄</p>
+              {% endif %}
+            {% endwith %}
+
 
             <h4>疫苗紀錄</h4>
             <ul>
@@ -21,7 +90,7 @@
                   疫苗品牌：{{ record.name }}<br>
                   施打時間：{{ record.date }}<br>
                   施打地點：{{ record.location }}<br>
-                  施打獸醫：{{ record.vet }}<br>
+                  施打獸醫：{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}<br>
 
                   <a href="{% url 'edit_vaccine' pet.id record.id %}">✏️編輯</a>
                   <a href="{% url 'delete_vaccine' record.id %}" onclick="return confirm('確定刪除這筆疫苗紀錄嗎？')">🗑️刪除</a>
@@ -38,7 +107,7 @@
                   驅蟲品牌：{{ record.name }}<br>
                   施打時間：{{ record.date }}<br>
                   施打地點：{{ record.location }}<br>
-                  施打獸醫：{{ record.vet }}<br>
+                  施打獸醫：{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}<br>
 
                   <a href="{% url 'edit_deworm' pet.id record.id %}">✏️編輯</a>
                   <a href="{% url 'delete_deworm' record.id %}" onclick="return confirm('確定刪除這筆驅蟲紀錄嗎？')">🗑️刪除</a>
@@ -63,12 +132,25 @@
             </ul>
         </div>
     </li>
-{% endfor %}
+    {% endfor %}
     </ul>
-
 {% else %}
     <p>目前沒有看診寵物紀錄。</p>
 {% endif %}
 
-<a href="{% url 'vet_home' %}">← 回主控台</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function toggleMore(btn) {
+    const moreDiv = btn.nextElementSibling;
+    if (moreDiv.style.display === "none") {
+      moreDiv.style.display = "block";
+      btn.textContent = "隱藏其他紀錄";
+    } else {
+      moreDiv.style.display = "none";
+      btn.textContent = "顯示更多病例紀錄";
+    }
+  }
+</script>
 {% endblock %}

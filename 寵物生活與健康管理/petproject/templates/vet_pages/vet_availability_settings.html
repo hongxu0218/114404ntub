@@ -1,5 +1,14 @@
-<h1>🕒 設定可預約時段</h1>
+{% extends "vet_pages/base.html" %}
 
+{% block title %}設定可預約時段{% endblock %}
+
+{% block back_button %}
+<a href="{% url 'vet_home' %}" class="back-home">← 回主控台</a>
+{% endblock %}
+
+{% block header %}🕒 設定可預約時段{% endblock %}
+
+{% block content %}
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
@@ -19,3 +28,4 @@
     <li>尚未設定任何時段</li>
   {% endfor %}
 </ul>
+{% endblock %}

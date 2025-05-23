@@ -55,16 +55,21 @@
       font-weight: bold;
     }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
+    {% block back_button %}
     <a href="/" class="back-home">← 回到首頁</a>
+    {% endblock %}
 
     <h1>{% block header %}獸醫主控台{% endblock %}</h1>
 
     {% block content %}
     <p>請在子模板中覆寫內容區塊。</p>
     {% endblock %}
+
+    {% block extra_js %}{% endblock %}
 
 </body>
 </html>

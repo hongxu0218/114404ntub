@@ -1,15 +1,17 @@
+{% extends "vet_pages/base.html" %}
 
-    {% extends "base.html" %}
+{% block title %}新增 {{ pet.name }} 的驅蟲紀錄{% endblock %}
 
-    {% block content %}
-    <h2>為 {{ pet.name }} 新增驅蟲紀錄</h2>
+{% block back_button %}
+<a href="{% url 'my_patients' %}" class="back-home">← 返回列表</a>
+{% endblock %}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
+{% block header %}為 {{ pet.name }} 新增驅蟲紀錄{% endblock %}
 
-        <button type="submit">儲存驅蟲紀錄</button>
-    </form>
-
-    <a href="{% url 'my_patients' %}">← 返回</a>
-    {% endblock %}
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">儲存驅蟲紀錄</button>
+</form>
+{% endblock %}

@@ -1,16 +1,17 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends "vet_pages/base.html" %}
+
+{% block title %}編輯 {{ pet.name }} 的疫苗紀錄{% endblock %}
+
+{% block back_button %}
+<a href="{% url 'my_patients' %}" class="back-home">← 返回列表</a>
+{% endblock %}
+
+{% block header %}編輯 {{ pet.name }} 的疫苗紀錄{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>編輯 {{ pet.name }} 的疫苗紀錄</h2>
-
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-
-        <button type="submit" class="btn btn-primary">儲存變更</button>
-        <a href="{% url 'my_patients' %}" class="btn btn-secondary">取消</a>
-    </form>
-</div>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">儲存變更</button>
+</form>
 {% endblock %}
