@@ -1,14 +1,11 @@
 # petapp/models.py
+# 匯入 Django 所需模組
 from django.db import models
-
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
-import json
-
-# Create your models here.
-# 未來可在此定義寵物相關模型，例如 Pet、VaccineRecord 等
+# 使用者資料擴充：Profile 模型，用於區分飼主與獸醫，並儲存聯絡與診所資訊
 class Profile(models.Model):
     ACCOUNT_TYPE_CHOICES = [
         ('owner', '飼主'),
@@ -26,6 +23,7 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.get_account_type_display()})"
 
+# 使用者註冊表單擴充，加上 email 欄位
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
 
@@ -33,7 +31,8 @@ class RegisterForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'password1', 'password2']
 
-class Species(models.TextChoices):  #種類
+# 以下為各種 Enum 選單：種類、絕育、性別
+class Species(models.TextChoices):
     DOG = 'dog','狗'
     CAT = 'cat','貓'
     OTHER = 'other','其他'
@@ -48,15 +47,15 @@ class Gender(models.TextChoices):
     FEMALE = 'female', '母'
     UNKNOWN = 'unknown', '未知'
 
+# 寵物基本資料
 class Pet(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets', verbose_name='飼主')
     species = models.CharField(max_length=10, choices=Species.choices)
     breed = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     sterilization_status = models.CharField(max_length=20, choices=SterilizationStatus.choices)
     chip = models.CharField(max_length=100, blank=True, null=True)
-    year_of_birth = models.IntegerField(null=True, blank=True)
-    month_of_birth = models.IntegerField(null=True, blank=True)
-    day_of_birth = models.IntegerField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=Gender.choices)
     weight = models.FloatField(null=True, blank=True)
     feature = models.TextField(blank=True)
@@ -64,7 +63,8 @@ class Pet(models.Model):
 
     def __str__(self):
         return self.name
-    
+
+# 寵物的每日生活紀錄
 class DailyRecord(models.Model):
     CATEGORY_CHOICES = [
         ('diet', '飲食習慣'),
@@ -76,44 +76,142 @@ class DailyRecord(models.Model):
     ]
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
     date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)  # 實際填寫的時間戳
+    created_at = models.DateTimeField(auto_now_add=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     content = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.pet.name} 的生活記錄（{self.date}）"
 
-# 新增寵物地點模型
+# 飼主幫寵物預約看診
+class VetAppointment(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, verbose_name="預約寵物")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="飼主")
+    vet = models.ForeignKey(Profile, on_delete=models.CASCADE, limit_choices_to={'account_type': 'vet'}, verbose_name="預約獸醫")
+    date = models.DateField(verbose_name="預約日期")
+    time = models.TimeField(verbose_name="預約時間")
+    reason = models.TextField(verbose_name="預約原因", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.pet.name} 預約 {self.vet.clinic_name or self.vet.user.username} 於 {self.date} {self.time}"
+
+# 疫苗與驅蟲紀錄（含施打獸醫、地點）
+class VaccineRecord(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='vaccine_records', verbose_name='寵物')
+    name = models.CharField(max_length=100, verbose_name='疫苗品牌')
+    date = models.DateField(verbose_name='施打日期')
+    location = models.CharField(max_length=200, verbose_name='施打地點')
+    vet = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, verbose_name='施打醫師') # SET_NULL：避免醫師帳號刪除時連同歷史疫苗紀錄也被刪除（資料應保留）。
+
+    def __str__(self):
+        return f"{self.pet.name} - {self.name}（{self.date}）"
+
+class DewormRecord(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='deworm_records', verbose_name='寵物')
+    name = models.CharField(max_length=100, verbose_name='驅蟲品牌')
+    date = models.DateField(verbose_name='施打日期')
+    location = models.CharField(max_length=200, verbose_name='施打地點')
+    vet = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, verbose_name='施打醫師')
+
+    def __str__(self):
+        return f"{self.pet.name} - {self.name}（{self.date}）"
+
+# 健康報告（上傳 PDF 給寵物與飼主）
+class Report(models.Model):
+    pet = models.ForeignKey('Pet', on_delete=models.CASCADE, related_name='reports')
+    vet = models.ForeignKey(Profile, on_delete=models.CASCADE, limit_choices_to={'account_type': 'vet'})
+    title = models.CharField(max_length=200)    # 報告標題
+    pdf = models.FileField(upload_to='reports/')    # 上傳 PDF
+    date_uploaded = models.DateTimeField(auto_now_add=True) # 上傳日期
+
+# 看診紀錄（含診斷與治療內容）
+class MedicalRecord(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, verbose_name="寵物")
+    vet = models.ForeignKey(Profile, limit_choices_to={'account_type': 'vet'}, on_delete=models.SET_NULL, null=True, verbose_name="看診獸醫")
+    visit_date = models.DateField(auto_now_add=True, verbose_name="看診日期")
+    clinic_location = models.CharField(max_length=100, verbose_name="看診地點")
+    diagnosis = models.TextField(verbose_name="診斷結果")
+    treatment = models.TextField(verbose_name="治療內容")
+    notes = models.TextField(blank=True, verbose_name="備註")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="建立時間")
+
+    def __str__(self):
+        return f"{self.pet.name} - {self.visit_date}"
+
+# 星期與時段常數對應（用於排班與顯示）
+WEEKDAYS = [
+    (0, "星期一"),
+    (1, "星期二"),
+    (2, "星期三"),
+    (3, "星期四"),
+    (4, "星期五"),
+    (5, "星期六"),
+    (6, "星期日"),
+]
+
+TIME_SLOTS = [
+    ("morning", "早上"),
+    ("afternoon", "下午"),
+    ("evening", "晚上"),
+]
+
+# 獸醫的可看診排班時段（支援開始/結束時間與唯一排班組合）
+class VetAvailableTime(models.Model):
+    vet = models.ForeignKey(Profile, on_delete=models.CASCADE, limit_choices_to={"account_type": "vet"}, verbose_name="獸醫")
+    weekday = models.IntegerField(choices=WEEKDAYS, verbose_name="星期")
+    time_slot = models.CharField(max_length=10, choices=TIME_SLOTS, verbose_name="時段")
+    start_time = models.TimeField(verbose_name="看診開始時間")
+    end_time = models.TimeField(verbose_name="看診結束時間")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="建立時間")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="最後更新時間")
+
+    class Meta:
+        unique_together = ('vet', 'weekday', 'time_slot')
+        verbose_name = "獸醫排班時段"
+        verbose_name_plural = "獸醫排班時段"
+
+    def __str__(self):
+        return f"{self.vet.user.username} - {dict(WEEKDAYS).get(self.weekday)} {dict(TIME_SLOTS).get(self.time_slot)} {self.start_time}~{self.end_time}"
+
+
+#################寵物地點模型#######################
+class ServiceType(models.Model):
+    """服務類型表"""
+    name = models.CharField(max_length=50, verbose_name='服務名稱')
+    code = models.CharField(max_length=20, unique=True, verbose_name='服務代碼')
+    is_active = models.BooleanField(default=True, verbose_name='是否啟用')
+
+    class Meta:
+        verbose_name = '服務類型'
+        verbose_name_plural = '服務類型'
+        db_table = 'pet_service_types'
+
+    def __str__(self):
+        return self.name
+
+class PetType(models.Model):
+    """寵物類型表"""
+    name = models.CharField(max_length=50, verbose_name='寵物類型名稱')
+    code = models.CharField(max_length=20, unique=True, verbose_name='寵物代碼')
+    is_active = models.BooleanField(default=True, verbose_name='是否啟用')
+
+    class Meta:
+        verbose_name = '寵物類型'
+        verbose_name_plural = '寵物類型'
+        db_table = 'pet_types'
+
+    def __str__(self):
+        return self.name
+
 class PetLocation(models.Model):
     """寵物相關地點模型"""
-
-    LOCATION_TYPES = [
-    ('hospital', '醫院'),
-    ('cosmetic', '美容'),
-    ('park', '公園'),
-    ('product', '用品'),
-    ('shelter', '收容所'),
-    ('funeral', '殯葬'),
-    ('live', '住宿'),
-    ('boarding', '寄宿')
-
-    ]
-
+    
     # 基本資訊
     name = models.CharField(max_length=255, blank=True, null=True, verbose_name='名稱')
     address = models.CharField(max_length=255, blank=True, null=True, verbose_name='地址')
     phone = models.CharField(max_length=50, blank=True, null=True, verbose_name='電話')
     website = models.TextField(blank=True, null=True, verbose_name='網站')
-    
-    # 服務類型標籤 - 使用布林欄位標記各種服務
-    is_cosmetic = models.BooleanField(default=False, verbose_name='提供美容')
-    is_funeral = models.BooleanField(default=False, verbose_name='提供殯葬')
-    is_hospital = models.BooleanField(default=False, verbose_name='提供醫療')
-    is_live = models.BooleanField(default=False, verbose_name='提供住宿')
-    is_boarding =models.BooleanField(default=False, verbose_name='寄宿')
-    is_park = models.BooleanField(default=False, verbose_name='公園')
-    is_product = models.BooleanField(default=False, verbose_name='銷售用品')
-    is_shelter = models.BooleanField(default=False, verbose_name='收容所')
     
     # 地理資訊
     city = models.CharField(max_length=100, blank=True, null=True, verbose_name='城市')
@@ -125,150 +223,136 @@ class PetLocation(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True, verbose_name='評分')
     rating_count = models.IntegerField(blank=True, null=True, verbose_name='評分數量')
     
-    # 營業資訊
-    business_hours = models.JSONField(blank=True, null=True, verbose_name='營業時間')
-    
     # 醫院特有屬性
     has_emergency = models.BooleanField(default=False, verbose_name='提供24小時急診')
     
-    # 寵物支援
-    support_small_dog = models.BooleanField(default=False, verbose_name='小型犬')
-    support_medium_dog = models.BooleanField(default=False, verbose_name='中型犬')
-    support_large_dog = models.BooleanField(default=False, verbose_name='大型犬')
-    support_cat = models.BooleanField(default=False, verbose_name='貓')
-    support_bird = models.BooleanField(default=False, verbose_name='鳥類')
-    support_rodent = models.BooleanField(default=False, verbose_name='嚙齒類/小動物')
-    support_reptile = models.BooleanField(default=False, verbose_name='爬蟲類')
-    support_other = models.BooleanField(default=False, verbose_name='其他寵物')
+    # 多對多關聯
+    service_types = models.ManyToManyField(ServiceType, blank=True, 
+                                         related_name='locations', verbose_name='服務類型')
+    pet_types = models.ManyToManyField(PetType, blank=True, 
+                                     related_name='locations', verbose_name='支援寵物類型')
     
-    # 保留原始的支援寵物類型字串，用於顯示和相容性
-    supported_pet_types = models.TextField(blank=True, null=True, verbose_name='寵物類型(原始)')
-    
-    # 是否為自動推斷的寵物類型
-    is_pet_type_inferred = models.BooleanField(default=False, verbose_name='自動推斷的類型')
-    
-    # 其他資訊
-    additional_info = models.JSONField(blank=True, null=True, verbose_name='額外資訊')
+    # 保留 business_hours JSONField（過渡期間）
+    business_hours = models.JSONField(blank=True, null=True, verbose_name='營業時間')
     
     # 時間戳記
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='建立時間')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新時間')
 
     class Meta:
-        db_table = 'pet_locations'  # 指定資料表名稱
+        db_table = 'pet_locations'
         verbose_name = '寵物地點'
         verbose_name_plural = '寵物地點'
         indexes = [
             models.Index(fields=['city', 'district'], name='city_district_idx'),
-            models.Index(fields=['is_hospital'], name='hospital_idx'),
-            models.Index(fields=['is_live'], name='live_idx'),
-            models.Index(fields=['is_cosmetic'], name='cosmetic_idx'),
             models.Index(fields=['has_emergency'], name='emergency_idx'),
-            models.Index(fields=['support_small_dog'], name='small_dog_idx'),
-            models.Index(fields=['support_medium_dog'], name='medium_dog_idx'),
-            models.Index(fields=['support_large_dog'], name='large_dog_idx'),
-            models.Index(fields=['support_cat'], name='cat_idx'),
+            models.Index(fields=['lat', 'lon'], name='location_idx'),
         ]
 
     def __str__(self):
-        services = self.get_services_list()
+        services = [st.name for st in self.service_types.all()]
         service_text = f" ({', '.join(services)})" if services else ""
         return f"{self.name or '未命名'}{service_text}"
     
     def get_services_list(self):
         """取得提供的服務列表"""
-        services = []
-        if self.is_cosmetic:
-            services.append('美容')
-        if self.is_funeral:
-            services.append('殯葬')
-        if self.is_hospital:
-            services.append('醫療')
-        if self.is_live:
-            services.append('住宿')
-        if self.is_park:
-            services.append('公園')
-        if self.is_product:
-            services.append('用品')
-        if self.is_shelter:
-            services.append('收容')
-        return services
+        return [st.name for st in self.service_types.filter(is_active=True)]
+        
+    def has_service(self, service_code):
+        """檢查是否提供特定服務"""
+        return self.service_types.filter(code=service_code, is_active=True).exists()
     
-    def get_full_address(self):
-        """取得完整地址 - 修正版本：只返回address欄位，避免重複"""
-        # 只返回address欄位，不包含city和district
-        return self.address if self.address else None
-            
+    def supports_pet_type(self, pet_type_code):
+        """檢查是否支援特定寵物類型"""
+        return self.pet_types.filter(code=pet_type_code, is_active=True).exists()
     
     def get_business_hours_formatted(self):
-        """格式化營業時間"""
-        if not self.business_hours:
-            return None
+        """格式化營業時間顯示"""
+        business_hours = {}
         
-        days_map = {
-            'monday': '週一',
-            'tuesday': '週二',
-            'wednesday': '週三',
-            'thursday': '週四',
-            'friday': '週五',
-            'saturday': '週六',
-            'sunday': '週日'
-        }
+        # 預設所有天都是未提供
+        for day_num in range(7):
+            day_name = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'][day_num]
+            business_hours[day_name] = '未提供'
         
-        formatted = {}
-        for eng_day, chinese_day in days_map.items():
-            if eng_day in self.business_hours:
-                formatted[chinese_day] = self.business_hours[eng_day]
+        try:
+            # 從 BusinessHours 表格取得資料
+            for day_num in range(7):
+                day_name = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'][day_num]
+                periods = self.business_hours_detail.filter(day_of_week=day_num).order_by('period_order')
+                
+                if periods.exists():
+                    time_periods = []
+                    for period in periods:
+                        if period.open_time and period.close_time:
+                            try:
+                                open_str = period.open_time.strftime('%H:%M')
+                                close_str = period.close_time.strftime('%H:%M')
+                                time_periods.append(f"{open_str}-{close_str}")
+                            except:
+                                continue
+                    
+                    if time_periods:
+                        business_hours[day_name] = '、'.join(time_periods)
+                    else:
+                        business_hours[day_name] = '休息'
+                        
+        except Exception as e:
+            # 如果出現任何錯誤，返回預設值
+            pass
         
-        return formatted
+        return business_hours
     
-    def is_of_type(self, type_code):
-        """檢查地點是否提供特定服務"""
-        attr_name = f'is_{type_code}'
-        return getattr(self, attr_name, False) if hasattr(self, attr_name) else False
-    
-    def get_supported_pet_types_list(self):
-        """返回支援的寵物類型列表"""
-        if self.supported_pet_types == '未明確說明':
-            return ['未明確說明']
-            
-        pet_types = []
-        if self.support_small_dog:
-            pet_types.append('小型犬')
-        if self.support_medium_dog:
-            pet_types.append('中型犬')
-        if self.support_large_dog:
-            pet_types.append('大型犬')
-        if self.support_cat:
-            pet_types.append('貓')
-        if self.support_bird:
-            pet_types.append('鳥類')
-        if self.support_rodent:
-            pet_types.append('嚙齒類/小動物')
-        if self.support_reptile:
-            pet_types.append('爬蟲類')
-        if self.support_other:
-            pet_types.append('其他寵物')
-        return pet_types
-    
-    def is_open_24_hours(self):
-        """判斷是否全天營業"""
-        if not self.business_hours:
-            return False
-            
-        for day, hours in self.business_hours.items():
-            if isinstance(hours, str) and ('24' in hours or '24小時' in hours):
+    def is_open_now(self):
+        """判斷現在是否營業中"""
+        from django.utils import timezone
+        
+        now = timezone.localtime()
+        current_weekday = now.weekday()  # 0=週一, 6=週日
+        current_time = now.time()
+        
+        periods = self.business_hours_detail.filter(day_of_week=current_weekday)
+        
+        for period in periods:
+            if (period.open_time and period.close_time and 
+                period.open_time <= current_time <= period.close_time):
                 return True
+        
         return False
     
-    def save(self, *args, **kwargs):
-        """儲存前的邏輯檢查"""
-        # 如果不是醫院類型，確保急診欄位為 False
-        if not self.is_hospital:
-            self.has_emergency = False
-            
-        # 如果是「未明確說明」或空白，設置為自動推斷
-        if self.supported_pet_types == '未明確說明' or not self.supported_pet_types:
-            self.is_pet_type_inferred = True
-            
-        super().save(*args, **kwargs)
+    def get_full_address(self):
+        """取得完整地址"""
+        return self.address if self.address else None
+
+class BusinessHours(models.Model):
+    """營業時間表 - 支援一天多個時段"""
+    WEEKDAY_CHOICES = [
+        (0, '週一'), (1, '週二'), (2, '週三'), (3, '週四'),
+        (4, '週五'), (5, '週六'), (6, '週日'),
+    ]
+    
+    location = models.ForeignKey(PetLocation, on_delete=models.CASCADE, 
+                               related_name='business_hours_detail', verbose_name='地點')
+    day_of_week = models.IntegerField(choices=WEEKDAY_CHOICES, verbose_name='星期')
+    open_time = models.TimeField(null=True, blank=True, verbose_name='開始時間')
+    close_time = models.TimeField(null=True, blank=True, verbose_name='結束時間')
+    period_order = models.PositiveIntegerField(default=1, verbose_name='時段順序')
+    period_name = models.CharField(max_length=20, blank=True, null=True, verbose_name='時段名稱')
+
+    class Meta:
+        unique_together = ('location', 'day_of_week', 'period_order')
+        verbose_name = '營業時間'
+        verbose_name_plural = '營業時間'
+        ordering = ['day_of_week', 'period_order']
+        db_table = 'pet_business_hours'
+        indexes = [
+            models.Index(fields=['location', 'day_of_week'], name='business_hours_idx'),
+        ]
+
+    def __str__(self):
+        if not self.open_time or not self.close_time:
+            return f"{self.location.name} - {self.get_day_of_week_display()} (休息)"
+        period_text = f" ({self.period_name})" if self.period_name else f" (時段{self.period_order})"
+        return f"{self.location.name} - {self.get_day_of_week_display()}{period_text} {self.open_time}-{self.close_time}"
+    
+#################寵物地點模型#######################
