@@ -3,6 +3,7 @@
 
 {% block extra_head %}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     form {
         background: white;
@@ -33,34 +34,11 @@
         border-radius: 6px;
         cursor: pointer;
     }
-    button:hover {
-        background-color: #45a049;
-    }
     .text-danger {
         color: red;
         font-size: 0.9em;
     }
-
-    .select2-container--default .select2-selection--single {
-        height: 2.5rem;
-        padding: 0 0.75rem;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        display: flex;
-        align-items: center;
-        box-sizing: border-box;
-        line-height: 1.2;
-        font-size: 1rem;
-    }
-    .select2-selection__rendered {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
 </style>
-
-<!-- Select2 樣式 -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -68,105 +46,97 @@
 
 <form method="post">
     {% csrf_token %}
+    {{ form.pet }} {# 隱藏欄位 #}
     <div>
         <label for="{{ form.vet.id_for_label }}">{{ form.vet.label }}</label>
-        {{ form.vet }}
-        {% if form.vet.errors %}
-            <div class="text-danger">{{ form.vet.errors }}</div>
-        {% endif %}
+        <select name="{{ form.vet.name }}" id="{{ form.vet.id_for_label }}" class="form-control searchable-select">
+            <option value="" disabled selected>請選擇獸醫</option>
+            {% for vet in form.fields.vet.queryset %}
+                <option value="{{ vet.id }}" {% if form.vet.value|stringformat:'s' == vet.id|stringformat:'s' %}selected{% endif %}>
+                    {{ vet.clinic_name }}（{{ vet.user.last_name }}{{ vet.user.first_name }}）
+                </option>
+            {% endfor %}
+        </select>
+
+        {% if form.vet.errors %}<div class="text-danger">{{ form.vet.errors }}</div>{% endif %}
     </div>
 
     <div>
         <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
         {{ form.date }}
-        {% if form.date.errors %}
-            <div class="text-danger">{{ form.date.errors }}</div>
-        {% endif %}
+        {% if form.date.errors %}<div class="text-danger">{{ form.date.errors }}</div>{% endif %}
     </div>
 
     <div>
         <label for="{{ form.time.id_for_label }}">{{ form.time.label }}</label>
         {{ form.time }}
-        {% if form.time.errors %}
-            <div class="text-danger">{{ form.time.errors }}</div>
-        {% endif %}
+        {% if form.time.errors %}<div class="text-danger">{{ form.time.errors }}</div>{% endif %}
     </div>
 
     <div>
         <label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
         {{ form.reason }}
-        {% if form.reason.errors %}
-            <div class="text-danger">{{ form.reason.errors }}</div>
-        {% endif %}
+        {% if form.reason.errors %}<div class="text-danger">{{ form.reason.errors }}</div>{% endif %}
     </div>
 
     <button type="submit">提交預約</button>
-    
 </form>
 {% endblock %}
 
 {% block extra_script %}
-<!-- jQuery + Select2 -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
 $(document).ready(function () {
-  console.log("🐾 JS loaded");
+  const vetField = $('#id_vet');
+  const dateField = $('#id_date');
+  const timeField = $('#id_time');
 
-  // 套用 select2 美化
   $('.searchable-select').select2({
     placeholder: "請輸入診所名稱或獸醫姓名",
     allowClear: true,
     width: '100%'
   });
 
-  const vetField = $('#id_vet');
-  const dateField = $('#id_date');
-  const timeField = $('#id_time');
-
   function updateTimeOptions() {
     const vetId = vetField.val();
     let dateVal = dateField.val();
 
-    if (dateVal.includes('/')) {
-        const parts = dateVal.split('/');
-        if (parts.length === 3) {
-            // 將 2025/05/23 轉為 2025-05-23
-            dateVal = `${parts[0]}-${parts[1]}-${parts[2]}`;
-        }
+    if (!vetId || !dateVal) {
+      timeField.empty().append('<option disabled selected>請先選擇獸醫與日期</option>');
+      return;
     }
 
-    console.log("嘗試取得時段", { vetId, dateVal });
-
-    if (!vetId || !dateVal) {
-      timeField.html('<option>請先選擇獸醫與日期</option>');
-      return;
+    if (dateVal.includes('/')) {
+      const parts = dateVal.split('/');
+      if (parts.length === 3) {
+        dateVal = `${parts[0]}-${parts[1]}-${parts[2]}`;
+      }
     }
 
     fetch(`/appointments/get-available-times/?vet_id=${vetId}&date=${dateVal}`)
       .then(res => res.json())
       .then(data => {
-        console.log("後端回傳：", data);
         timeField.empty();
         if (data.times && data.times.length > 0) {
           data.times.forEach(([val, label]) => {
             timeField.append(`<option value="${val}">${label}</option>`);
           });
+          timeField.val(data.times[0][0]);  // ✅ 自動選中第一個
         } else {
-          timeField.append('<option disabled>無可預約時段</option>');
+          timeField.append('<option disabled selected>無可預約時段</option>');
         }
       })
-      .catch(err => {
-        console.error("時段請求錯誤：", err);
-        timeField.html('<option disabled>載入失敗</option>');
+      .catch(async err => {
+        console.error("❌ 載入時段錯誤：", err);
+        timeField.empty().append('<option disabled selected>時段載入失敗</option>');
       });
   }
 
   vetField.on('change', updateTimeOptions);
   dateField.on('change', updateTimeOptions);
 
-  // 如果初始已有值也執行一次
   if (vetField.val() && dateField.val()) {
     updateTimeOptions();
   }

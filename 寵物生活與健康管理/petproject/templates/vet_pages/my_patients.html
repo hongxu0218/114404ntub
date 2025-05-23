@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "vet_pages/base.html" %}
 
 {% block content %}
 <h2>🐾 我的看診寵物</h2>
@@ -8,7 +8,7 @@
     {% for pet in pets %}
         <li>
           <div class="pet-card">
-            <h3>{{ pet.name }}（飼主：{{ pet.owner.get_full_name|default:pet.owner.username }})</h3>
+            <h3>{{ pet.name }}（飼主：{{ pet.owner.last_name }}{{ pet.owner.first_name|default:pet.owner.username }}）</h3>
             - <a href="{% url 'add_medical_record' pet.id %}">新增病例</a>
             - <a href="{% url 'add_vaccine' pet.id %}">新增疫苗</a>
             - <a href="{% url 'add_deworm' pet.id %}">新增驅蟲</a>

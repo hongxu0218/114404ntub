@@ -93,13 +93,27 @@
                     <td>{{ appt.reason }}</td>
                     {% if not show_history %}
                     <td>
-                      <form method="POST" action="{% url 'vet_cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');">
-                        {% csrf_token %}
-                        <input type="text" name="cancel_reason" placeholder="取消原因" required
-                            style="width: 120px; padding: 4px; margin-bottom: 6px; font-size: 14px;">
-                        <br>
-                        <button type="submit" style="padding: 6px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px;">取消</button>
-                      </form>
+                    <form method="POST" action="{% url 'vet_cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');" style="display: flex; align-items: center; gap: 8px;">
+                      {% csrf_token %}
+                      <input type="text" name="cancel_reason" placeholder="取消原因" required
+                        style="width: 120px; padding: 4px; font-size: 14px;">
+                      <button type="submit" style="padding: 6px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px;">取消</button>
+                    </form>
+
+                      <a href="{% url 'create_medical_record' appt.pet.id %}" style="
+                          display: inline-block;
+                          width: 120px;
+                          height: 34px;
+                          line-height: 34px;
+                          text-align: center;
+                          margin-top: 6px;
+                          background-color: #28a745;
+                          color: white;
+                          text-decoration: none;
+                          border-radius: 4px;
+                          font-size: 14px;
+                      ">新增病歷</a>
+                      
                     </td>
                     {% endif %}
                 </tr>
