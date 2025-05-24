@@ -6,12 +6,51 @@
 <a href="{% url 'my_patients' %}" class="back-home">← 返回列表</a>
 {% endblock %}
 
-{% block header %}新增報告：{{ pet.name }}{% endblock %}
+{% block header %}<h1 class="section-title">➕ 新增 {{ pet.name }} 的報告</h1>{% endblock %}
+
+{% block extra_css %}
+<style>
+  form {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  form p {
+    margin-bottom: 16px;
+  }
+  input[type="text"], input[type="file"], textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+  input:focus, textarea:focus {
+    border-color: #ffaa00;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 170, 0, 0.2);
+  }
+  button[type="submit"] {
+    background-color: #ffaa00;
+    color: white;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button[type="submit"]:hover {
+    background-color: #ff9900;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<form method="post" enctype="multipart/form-data">
+<div class="card">
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">上傳報告</button>
-</form>
+    <button type="submit">上傳報告</button>
+  </form>
+</div>
 {% endblock %}

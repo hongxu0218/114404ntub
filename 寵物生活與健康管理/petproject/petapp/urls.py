@@ -75,7 +75,7 @@ urlpatterns = [
     path('report/delete/<int:report_id>/', views.delete_report, name='delete_report'),  # 刪除報告
 
     # 病歷
-
+    path('vet/pets/<int:pet_id>/', views.vet_pet_detail, name='vet_pet_detail'),
 ]
 
 # 靜態檔案處理（僅在開發模式下啟用）

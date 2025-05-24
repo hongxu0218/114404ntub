@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block header %}
-📅 已被預約的時段
+<h1>📅 已被預約的時段</h1>
 {% endblock %}
 
 {% block content %}
@@ -64,7 +64,7 @@
         <tr>
           <td>{{ appt.date }}</td>
           <td>{{ appt.time }}</td>
-          <td>{{ appt.pet.name }}</td>
+          <td><a href="{% url 'vet_pet_detail' appt.pet.id %}">{{ appt.pet.name }}</a></td>
           <td>
             {% if appt.owner.last_name or appt.owner.first_name %}
               {{ appt.owner.last_name }}{{ appt.owner.first_name }}

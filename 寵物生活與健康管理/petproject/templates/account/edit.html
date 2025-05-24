@@ -27,8 +27,11 @@
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
     width: 100%;
     max-width: 400px;
-    /* 加這行避免被回首頁蓋住 */
     margin-top: 60px;
+
+    /* 新增，避免超出畫面時可捲動 */
+    max-height: 90vh;
+    overflow-y: auto;
 }
 h2 {
     color: #ffaa00;
@@ -85,6 +88,7 @@ select {
     height: 48px;
     line-height: 1;
     margin-top: 12px;
+    margin-bottom: 20px; /* 新增：避免貼底 */
 }
 .btn:hover {
     background-color: #ff8800;
@@ -105,14 +109,6 @@ select {
 {% endblock %}
 
 {% block content %}
-{% if messages %}
-<div class="message-box">
-    {% for message in messages %}
-    <div class="message">{{ message }}</div>
-    {% endfor %}
-</div>
-{% endif %}
-
 
 <div class="back">
     <a href="{% url 'home' %}">← 回首頁</a>
@@ -176,7 +172,6 @@ select {
 
         <button type="submit" class="btn">儲存</button>
     </form>
-
 </div>
 {% endblock %}
 

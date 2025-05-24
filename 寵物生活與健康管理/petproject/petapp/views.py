@@ -528,7 +528,7 @@ def vet_appointments(request):
     # 確保是獸醫帳號
     profile = request.user.profile
     if not profile.is_verified_vet:
-        return render(request, '403.html', status=403)
+        return render(request, 'pages/403.html', status=403)
 
     # 取得該獸醫的所有預約
     today = date.today()
@@ -612,9 +612,10 @@ def vet_cancel_appointment(request, appointment_id):
 
 @login_required
 def vet_availability_settings(request):
+    # 確保是獸醫帳號
     profile = request.user.profile
-    if profile.account_type != 'vet':
-        return redirect('home')
+    if not profile.is_verified_vet:
+        return render(request, 'pages/403.html', status=403)
 
     if request.method == 'POST':
         form = VetAvailableTimeForm(request.POST)
@@ -635,12 +636,55 @@ def vet_availability_settings(request):
 # 顯示「我的看診寵物」
 @login_required
 def my_patients(request):
-    # TODO: 顯示有看診記錄的寵物列表
-    # 抓出該獸醫曾看診過的所有寵物（避免重複）
-    pets = Pet.objects.filter(vetappointment__vet=request.user.profile).distinct().prefetch_related(
-        'vaccine_records', 'deworm_records', 'reports'
-    )
-    return render(request, 'vet_pages/my_patients.html', {'pets': pets,})
+    profile = request.user.profile
+    if not profile.is_verified_vet:
+        return render(request, 'pages/403.html', status=403)
+
+    # 原始清單（該獸醫曾看診過的所有寵物，避免重複）
+    pets = Pet.objects.filter(vetappointment__vet=profile).distinct()
+
+    # 取得搜尋關鍵字
+    q = request.GET.get('q', '')
+
+    if q:
+        pets = pets.filter(
+            Q(name__icontains=q) |
+            Q(owner__first_name__icontains=q) |
+            Q(owner__last_name__icontains=q)
+        )
+
+    # 最後加上 prefetch_related 提升效能
+    pets = pets.prefetch_related('vaccine_records', 'deworm_records', 'reports')
+
+    return render(request, 'vet_pages/my_patients.html', {
+        'pets': pets,
+        'query': q,
+    })
+
+@login_required
+def vet_pet_detail(request, pet_id):
+    profile = request.user.profile
+    if not profile.is_verified_vet:
+        return render(request, 'pages/403.html', status=403)
+
+    pet = get_object_or_404(Pet, id=pet_id)
+    # 選擇是否限制：只能看自己看診過的寵物
+    if not pet.vetappointment_set.filter(vet=profile).exists():
+        return render(request, 'pages/403.html', status=403)
+
+    medical_records = pet.medicalrecord_set.order_by('-visit_date')
+    vaccine_records = pet.vaccine_records.all().order_by('-date')
+    deworm_records = pet.deworm_records.all().order_by('-date')
+    reports = pet.reports.all().order_by('-date_uploaded')
+
+    return render(request, 'vet_pages/pet_detail.html', {
+        'pet': pet,
+        'medical_records': medical_records,
+        'vaccine_records': vaccine_records,
+        'deworm_records': deworm_records,
+        'reports': reports,
+    })
+
 
 # 新增指定寵物的病例
 @login_required
