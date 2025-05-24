@@ -646,7 +646,7 @@ def my_patients(request):
 @login_required
 def add_medical_record(request, pet_id):
     # TODO: 為指定寵物新增病例
-    return render(request, 'vet_pages/add_medical_record.html')
+    return render(request, 'vet_pages/create_medical_record.html')
 
 # 飼主取消預約通知獸醫
 @require_POST
@@ -1261,7 +1261,7 @@ def create_medical_record(request, pet_id):
     profile = request.user.profile
 
     if profile.account_type != 'vet':
-        return render(request, 'unauthorized.html')  # 或改為 raise PermissionDenied
+        return render(request, 'unauthorized.html')  # 非獸醫導向未授權頁
 
     if request.method == 'POST':
         form = MedicalRecordForm(request.POST)
@@ -1271,7 +1271,7 @@ def create_medical_record(request, pet_id):
             record.vet = profile
             record.clinic_location = profile.clinic_name  # 自動填入診所地點
             record.save()
-            return redirect('pet_detail', pet_id=pet.id)
+            return redirect('my_patients')  # 統一導向與 add_vaccine 相同
     else:
         form = MedicalRecordForm(initial={'pet': pet, 'clinic_location': profile.clinic_name})
 
