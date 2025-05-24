@@ -18,6 +18,13 @@ main {
   padding-bottom: 40px;
 }
 
+main h1 {
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+
 /* 基本字體設定 */
 body {
   font-family: "標楷體", "Noto Sans TC", sans-serif;
