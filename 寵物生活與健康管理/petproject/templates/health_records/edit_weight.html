@@ -1,144 +1,143 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>編輯體重</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 2em;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            background-color: #fff;
-        }
+{% extends "base.html" %}
+{% load static %}
 
-        h2 {
-            text-align: center;
-            margin-bottom: 1.5em;
-            color: #2c3e50;
-        }
+{% block title %}編輯體重{% endblock %}
 
-        label {
-            margin-top: 1em;
-            font-weight: bold;
-        }
-
-        select, input[type="text"] {
-            width: 100%;
-            padding: 0.6em;
-            margin-top: 0.3em;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
-
-        .button-row {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2em;
-        }
-
-        .button-row button,
-        .button-row a button {
-            padding: 0.6em 1.5em;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-        }
-
-        .button-row button[type="submit"] {
-            background-color: #3498db;
-            color: #fff;
-        }
-
-        .button-row a button {
-            background-color: #95a5a6;
-            color: #fff;
-        }
-
-        .button-row button:hover {
-            opacity: 0.9;
-        }
-
-        ul {
-            padding-left: 1.2em;
-            color: red;
-        }
-    </style>
-</head>
-<body>
-  <h2>編輯體重</h2>
-
-{% if messages %}
-  <ul>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
-
-<form method="POST">
-    {% csrf_token %}
-
-    <label for="month">月份</label>
-    <select id="month" name="month" onchange="updateDays()">
-        {% for m in months %}
-            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="day">日期</label>
-    <select id="day" name="day">
-        {% for d in days %}
-            <option value="{{ d }}" {% if d == day %}selected{% endif %}>{{ d }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="weight">體溫（°C）</label>
-    <input type="text" name="weight" id="weight" value="{{ weight|default:'' }}" required>
-
-    <div class="button-row">
-        <a href="{% url 'weight_rec' pet_id=pet_id %}">
-            <button type="button">返回</button>
-        </a>
-        <button type="submit">儲存</button>
-    </div>
-</form>
-
-<script>
-    function updateDays() {
-        const monthSelect = document.getElementById('month');
-        const daySelect = document.getElementById('day');
-        const selectedMonth = parseInt(monthSelect.value);
-        const year = new Date().getFullYear();
-
-        const daysInMonth = new Date(year, selectedMonth, 0).getDate();
-
-        // 保存目前的選擇
-        const selectedDay = parseInt(daySelect.value);
-
-        daySelect.innerHTML = '';
-        for (let d = 1; d <= daysInMonth; d++) {
-            const option = document.createElement('option');
-            option.value = d;
-            option.text = d;
-            if (d === selectedDay) {
-                option.selected = true;
-            }
-            daySelect.appendChild(option);
-        }
+{% block extra_css %}
+<style>
+    .edit-form {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 2em;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
     }
 
-    // 頁面載入時初始化日選單
-    window.onload = updateDays;
+    .edit-form h2 {
+        text-align: center;
+        margin-bottom: 1.5em;
+        color: #2c3e50;
+    }
+
+    .edit-form label {
+        margin-top: 1em;
+        font-weight: bold;
+    }
+
+    .edit-form select,
+    .edit-form input[type="text"] {
+        width: 100%;
+        padding: 0.6em;
+        margin-top: 0.3em;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .edit-form .button-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2em;
+    }
+
+    .edit-form .button-row button,
+    .edit-form .button-row a button {
+        padding: 0.6em 1.5em;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        cursor: pointer;
+    }
+
+    .edit-form .button-row button[type="submit"] {
+        background-color: #3498db;
+        color: #fff;
+    }
+
+    .edit-form .button-row a button {
+        background-color: #95a5a6;
+        color: #fff;
+    }
+
+    .edit-form .button-row button:hover {
+        opacity: 0.9;
+    }
+
+    .edit-form ul {
+        padding-left: 1.2em;
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-form">
+    <h2>編輯體重</h2>
+
+    {% if messages %}
+    <ul>
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label for="month">月份</label>
+        <select id="month" name="month" onchange="updateDays()">
+            {% for m in months %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="day">日期</label>
+        <select id="day" name="day">
+            {% for d in days %}
+            <option value="{{ d }}" {% if d == day %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="weight">體重（公斤）</label>
+        <input type="text" name="weight" id="weight" value="{{ weight|default:'' }}" required>
+
+        <div class="button-row">
+            <a href="{% url 'weight_rec' pet_id=pet_id %}">
+                <button type="button">返回</button>
+            </a>
+            <button type="submit">儲存</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateDays() {
+    const monthSelect = document.getElementById('month');
+    const daySelect = document.getElementById('day');
+    const selectedMonth = parseInt(monthSelect.value);
+    const year = new Date().getFullYear();
+
+    const daysInMonth = new Date(year, selectedMonth, 0).getDate();
+    const selectedDay = parseInt(daySelect.value);
+
+    daySelect.innerHTML = '';
+    for (let d = 1; d <= daysInMonth; d++) {
+        const option = document.createElement('option');
+        option.value = d;
+        option.text = d;
+        if (d === selectedDay) {
+            option.selected = true;
+        }
+        daySelect.appendChild(option);
+    }
+}
+
+window.onload = updateDays;
 </script>
-
-
-
-</body>
-</html>
+{% endblock %}

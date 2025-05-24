@@ -1,114 +1,80 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>新增體重</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 2em;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            background-color: #fff;
-        }
+{% extends "base.html" %}
+{% load static %}
 
-        h2 {
-            text-align: center;
-            margin-bottom: 1.5em;
-            color: #2c3e50;
-        }
+{% block title %}新增體重{% endblock %}
 
-        label {
-            margin-top: 1em;
-            font-weight: bold;
-        }
+{% block extra_css %}
+<style>
+    .weight-form {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 2em;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
 
-        select, input[type="text"] {
-            width: 100%;
-            padding: 0.6em;
-            margin-top: 0.3em;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
+    .weight-form h2 {
+        text-align: center;
+        margin-bottom: 1.5em;
+        color: #2c3e50;
+    }
 
-        .button-row {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2em;
-        }
+    .weight-form label {
+        margin-top: 1em;
+        font-weight: bold;
+    }
 
-        .button-row button,
-        .button-row a button {
-            padding: 0.6em 1.5em;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-        }
+    .weight-form select,
+    .weight-form input[type="text"] {
+        width: 100%;
+        padding: 0.6em;
+        margin-top: 0.3em;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
 
-        .button-row button[type="submit"] {
-            background-color: #3498db;
-            color: #fff;
-        }
+    .weight-form .button-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2em;
+    }
 
-        .button-row a button {
-            background-color: #95a5a6;
-            color: #fff;
-        }
+    .weight-form .button-row button,
+    .weight-form .button-row a button {
+        padding: 0.6em 1.5em;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        cursor: pointer;
+    }
 
-        .button-row button:hover {
-            opacity: 0.9;
-        }
+    .weight-form .button-row button[type="submit"] {
+        background-color: #3498db;
+        color: #fff;
+    }
 
-        ul {
-            padding-left: 1.2em;
-            color: red;
-        }
-    </style>
+    .weight-form .button-row a button {
+        background-color: #95a5a6;
+        color: #fff;
+    }
 
-    <script>
-        function isLeapYear(year) {
-            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-        }
+    .weight-form .button-row button:hover {
+        opacity: 0.9;
+    }
 
-        function updateDays() {
-            const month = parseInt(document.getElementById('month').value);
-            const daySelect = document.getElementById('day');
-            const year = new Date().getFullYear();
-            let daysInMonth = 31;
+    .weight-form ul {
+        padding-left: 1.2em;
+        color: red;
+    }
+</style>
+{% endblock %}
 
-            if ([4, 6, 9, 11].includes(month)) {
-                daysInMonth = 30;
-            } else if (month === 2) {
-                daysInMonth = isLeapYear(year) ? 29 : 28;
-            }
-
-            const currentSelected = parseInt(daySelect.value);
-            daySelect.innerHTML = '';
-            for (let i = 1; i <= daysInMonth; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.text = i;
-                if (i === currentSelected) {
-                    opt.selected = true;
-                }
-                daySelect.appendChild(opt);
-            }
-        }
-
-        window.onload = function () {
-            updateDays();
-            const preselectDay = {{ day|default:1 }};
-            document.getElementById("day").value = preselectDay;
-        }
-    </script>
-</head>
-<body>
+{% block content %}
+<div class="weight-form">
     <h2>新增體重</h2>
 
     <form method="POST">
@@ -134,5 +100,44 @@
             <button type="submit">送出</button>
         </div>
     </form>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function isLeapYear(year) {
+        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+    }
+
+    function updateDays() {
+        const month = parseInt(document.getElementById('month').value);
+        const daySelect = document.getElementById('day');
+        const year = new Date().getFullYear();
+        let daysInMonth = 31;
+
+        if ([4, 6, 9, 11].includes(month)) {
+            daysInMonth = 30;
+        } else if (month === 2) {
+            daysInMonth = isLeapYear(year) ? 29 : 28;
+        }
+
+        const currentSelected = parseInt(daySelect.value);
+        daySelect.innerHTML = '';
+        for (let i = 1; i <= daysInMonth; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.text = i;
+            if (i === currentSelected) {
+                opt.selected = true;
+            }
+            daySelect.appendChild(opt);
+        }
+    }
+
+    window.onload = function () {
+        updateDays();
+        const preselectDay = {{ day|default:1 }};
+        document.getElementById("day").value = preselectDay;
+    }
+</script>
+{% endblock %}

@@ -42,12 +42,12 @@
 
   <section class="section-icons">
     <div class="category-buttons">
-      <a href="#" class="category-link">
+      <a href="{% url 'add_pet' %}" class="category-link">
         <img src="{% static 'images/icon_add_pet.png' %}" class="icon-img"><br>新增毛孩
       </a>
     </div>
     <div class="category-buttons">
-      <a href="health.html" class="category-link">
+      <a href="{% url 'health_rec' %}" class="category-link">
         <img src="{% static 'images/icon_health.png' %}" class="icon-img"><br>健康紀錄
       </a>
     </div>

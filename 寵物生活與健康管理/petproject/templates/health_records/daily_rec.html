@@ -1,10 +1,66 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>新增生活記錄</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}新增生活記錄{% endblock %}
+
+{% block extra_css %}
+<style>
+    .daily-form {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 2em;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .daily-form h2 {
+        text-align: center;
+        margin-bottom: 1.5em;
+        color: #2c3e50;
+    }
+
+    .daily-form button[type="submit"] {
+        margin-top: 1.5em;
+        width: 100%;
+        padding: 0.6em 1.5em;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        background-color: #3498db;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .daily-form button:hover {
+        opacity: 0.9;
+    }
+
+    .daily-form a {
+        display: block;
+        margin-top: 1.5em;
+        text-align: center;
+        color: #fff;
+        background-color: #95a5a6;
+        padding: 0.6em 1.5em;
+        border-radius: 6px;
+        text-decoration: none;
+    }
+
+    .daily-form a:hover {
+        background-color: #7f8c8d;
+    }
+
+    .daily-form p {
+        margin-bottom: 1em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="daily-form">
     <h2>新增 {{ pet.name }} 的生活記錄</h2>
     <form method="post">
         {% csrf_token %}
@@ -12,5 +68,5 @@
         <button type="submit">儲存</button>
     </form>
     <a href="{% url 'health_rec' pet.id %}">返回健康紀錄</a>
-</body>
-</html>
+</div>
+{% endblock %}

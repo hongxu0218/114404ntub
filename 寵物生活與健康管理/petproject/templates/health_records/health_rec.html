@@ -1,15 +1,15 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
 {% load custom_filters %}
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>健康記錄</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
+
+{% block title %}健康紀錄{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            background-color: #f8f9fa;
+            background-color: #fff8f0;
         }
 
         .navbar {
@@ -21,8 +21,8 @@
 
         .nav-btn {
             background-color: #ffffff;
-            border: 1px solid #007bff;
-            color: #007bff;
+            border: 1px solid #6d9773;
+            color: #6d9773;
             padding: 8px 16px;
             border-radius: 5px;
             text-decoration: none;
@@ -31,7 +31,7 @@
         }
 
         .nav-btn:hover {
-            background-color: #007bff;
+            background-color: #6d9773;
             color: white;
         }
 
@@ -60,11 +60,11 @@
             min-width: 140px;
         }
 
-        .btn-vaccine { background-color: #6f42c1; color: white; }
-        .btn-deworm { background-color: #6c584c; color: white; }
-        .btn-report { background-color: #20c997; color: white; }
-        .btn-daily { background-color: #17a2b8; color: white; }
-        .btn-reminder { background-color: #ffc107; color: black; }
+        .btn-vaccine { background-color: #f5b971; color: white; }
+        .btn-deworm { background-color: #d7b49e; color: white; }
+        .btn-report { background-color: #b3c99c; color: white; }
+        .btn-daily { background-color: #6d9773; color: white; }
+        .btn-reminder { background-color: #f9c784; color: black; }
 
         .tab-content {
             display: none;
@@ -90,7 +90,7 @@
         .add-record-btn {
             display: block;
             margin-top: 10px;
-            background-color: #ffc107;
+            background-color: #f9c784;
             color: white;
             padding: 5px 10px;
             border-radius: 5px;
@@ -112,7 +112,7 @@
         }
 
         .input-block .btn-save, .input-block .btn-close {
-            background-color: #28a745;
+            background-color: #92bfa0;
             color: white;
             padding: 8px 16px;
             border-radius: 5px;
@@ -121,7 +121,7 @@
         }
 
         .input-block .btn-close {
-            background-color: #dc3545;
+            background-color: #e97777;
         }
 
         /* 針對圖表調整 */
@@ -161,7 +161,7 @@
             gap: 10px;
         }
         .month-nav button {
-            background-color: #1976d2;
+            background-color: #6d9773;
             color: white;
             border: none;
             padding: 6px 12px;
@@ -171,13 +171,13 @@
         }
 
         .month-nav button:hover {
-            background-color: #1565c0;
+            background-color: #6d9773;
         }
 
 
         /* 修改按鈕樣式 */
         .btn-info {
-            background-color: #17a2b8;
+            background-color: #6d9773;
             color: white;
             padding: 10px 20px;
             border: none;
@@ -188,14 +188,14 @@
         }
 
         .btn-info:hover {
-            background-color: #138496;
+            background-color: #5f8663;
         }
 
         /* 寵物名字按鈕樣式 */
         .pet-name-btn {
             margin-top: 10px;
             display: inline-block;
-            background-color: #28a745;
+            background-color: #92bfa0;
             color: white;
             padding: 5px 10px;
             border-radius: 5px;
@@ -237,7 +237,7 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: #28a745;
+            background-color: #92bfa0;
             color: white;
             padding: 5px 10px;
             border-radius: 5px;
@@ -254,11 +254,11 @@
         .record-header h5 {
             font-size: 20px;
             font-weight: 700;
-            color: #1565c0;                  /* 深藍色，醒目 */
+            color: #6d9773;                  /* 深藍色，醒目 */
         }
 
         .add-btn {
-            background-color: #1565c0;
+            background-color: #6d9773;
             color: white;
             padding: 8px 16px;
             font-size: 14px;
@@ -268,7 +268,7 @@
         }
 
         .add-btn:hover {
-            background-color: #0d47a1;
+            background-color: #5f8663;
         }
 
         .record-item {
@@ -280,21 +280,10 @@
         .record-item:hover .delete-btn {
           display: inline-block;
         }
+</style>
+{% endblock %}
 
-
-
-
-    </style>
-</head>
-<body>
-
-<div class="navbar">
-    <a href="{% url 'pet_list' %}" class="nav-btn">🐾 寵物</a>
-    <a href="{% url 'health_rec' %}" class="nav-btn">🩺 健康記錄</a>
-    <a href="#" class="nav-btn">🔔 通知</a>
-    <a href="#" class="nav-btn">🔑 登入</a>
-</div>
-
+{% block content %}
 <h2>健康記錄</h2>
 
 <div class="tab-buttons">
@@ -311,7 +300,7 @@
     <h3>
       <button
         onclick="toggleDetails('medical', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
       >
         {{ pet.name }} 的看診紀錄
       </button>
@@ -344,7 +333,7 @@
     <h3>
       <button
         onclick="toggleDetails('vaccine', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
       >
         {{ pet.name }} 的疫苗記錄
       </button>
@@ -376,7 +365,7 @@
     <h3>
       <button
         onclick="toggleDetails('deworm', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
       >
         {{ pet.name }} 的驅蟲記錄
       </button>
@@ -410,7 +399,7 @@
     <h3>
       <button
         onclick="toggleDetails('report', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #007bff; text-decoration: underline;"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
       >
         {{ pet.name }} 的報告
       </button>
@@ -531,7 +520,7 @@
                             <div class="chart-container">
                                 <div class="record-header">
                                     <h5>體重</h5>
-                                    <a href="{% url 'add_tem' group.pet.id %}" class="add-btn">＋ 新增</a>
+                                    <a href="{% url 'add_weight' group.pet.id %}" class="add-btn">＋ 新增</a>
                                 </div>
                                 <div class="month-nav">
                                     <button onclick="changeWeightMonth({{ group.pet.id }}, -1)">＜</button>
@@ -989,5 +978,12 @@ function changeWeightMonth(petId, offset) {
         }
 
 </script>
-</body>
-</html>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+
+</script>
+{% endblock %}
