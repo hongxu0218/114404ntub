@@ -1,62 +1,53 @@
-{% extends "base.html" %}
+{% extends "account/base.html" %}
 {% load static %}
 
 {% block title %}登出確認{% endblock %}
 
 {% block extra_css %}
 <style>
-  body {
-    background-color: #fff8f0;
-  }
-
-  .logout-container {
-    text-align: center;
-    margin-top: 120px;
-    padding-bottom: 80px; /* ✅ 新增：避免與 footer 重疊 */
-  }
-
-  .logout-container h1 {
-    color: #ffaa00;
-    font-size: 28px;
-    font-family: "標楷體", "Noto Sans TC", sans-serif;
-  }
-
-  .logout-container p {
-    font-size: 18px;
-    color: #333;
-    margin-top: 10px;
-    font-family: "標楷體", "Noto Sans TC", sans-serif;
-  }
-
-  .logout-container form {
-    margin-top: 30px;
-  }
-
-  .logout-container button {
-    padding: 10px 20px;
-    background-color: #ffaa00;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: bold;
-    font-family: "標楷體", "Noto Sans TC", sans-serif;
-  }
-
-  .logout-container button:hover {
-    background-color: #ff8800;
-  }
+.logout-container {
+  text-align: center;
+  margin-top: 120px;
+  padding-bottom: 80px; /* 避免與 footer 重疊 */
+}
+.logout-container h1 {
+  color: #ffaa00;
+  font-size: 28px;
+  font-family: "標楷體", "Noto Sans TC", sans-serif;
+}
+.logout-container p {
+  font-size: 18px;
+  color: #333;
+  margin-top: 10px;
+  font-family: "標楷體", "Noto Sans TC", sans-serif;
+}
+.logout-container form {
+  margin-top: 30px;
+}
+.logout-container button {
+  padding: 10px 20px;
+  background-color: #ffaa00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  font-family: "標楷體", "Noto Sans TC", sans-serif;
+}
+.logout-container button:hover {
+  background-color: #ff8800;
+}
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="logout-container">
-    <h1>您確定要登出嗎？</h1>
-    <p>我們期待很快再次與您和毛孩見面 🐾</p>
-    <form method="post" action="{% url 'account_logout' %}">
-      {% csrf_token %}
-      <button type="submit">確認登出</button>
-    </form>
-  </div>
+<div class="logout-container">
+  <h1>您確定要登出嗎？</h1>
+  <p>我們期待很快再次與您和毛孩見面 🐾</p>
+  <form method="post" action="{% url 'account_logout' %}">
+    {% csrf_token %}
+    <button type="submit">確認登出</button>
+  </form>
+</div>
 {% endblock %}
