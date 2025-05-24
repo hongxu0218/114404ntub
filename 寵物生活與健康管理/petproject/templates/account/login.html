@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: "Noto Sans TC", sans-serif;
-            background-color: #f9f9f9;
+            background-color: #fff8f0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,17 +17,18 @@
             margin: 0;
         }
         .login-box {
-            background-color: white;
+            background-color: ffffff;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px  12px rgba(0,0,0,0.05);
             width: 100%;
             max-width: 400px;
         }
         h2 {
-            color: #6c63ff;
+            color: #ffaa00;
             margin-bottom: 30px;
             text-align: center;
+            font-weight: 600;
         }
         form {
             text-align: left;
@@ -36,6 +37,7 @@
             display: block;
             margin-bottom: 6px;
             font-weight: bold;
+            color: #333;
         }
         input[type="email"],
         input[type="password"] {
@@ -43,7 +45,7 @@
             padding: 12px;
             margin-bottom: 20px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
         }
         .checkbox-group {
@@ -56,26 +58,31 @@
             font-weight: normal;
             display: flex;
             align-items: center;
+            color: #555;
         }
         .checkbox-group input[type="checkbox"] {
             margin-right: 8px;
         }
         button {
-            background-color: #6c63ff;
+            background-color: #ffaa00;
             color: white;
             border: none;
             padding: 12px 20px;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
             width: 100%;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #574fd6;
+            background-color: #ff8800;
         }
         .google-login {
             background-color: #db4437;
             margin-top: 15px;
+        }
+        .google-login:hover {
+            background-color: #c43a2e;
         }
         .extra-links {
             margin-top: 20px;
@@ -84,7 +91,10 @@
         }
         .extra-links a {
             text-decoration: none;
-            color: #6c63ff;
+            color: #ffaa00;
+        }
+        .extra-links a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
