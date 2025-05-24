@@ -5,12 +5,26 @@
   box-sizing: border-box;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  padding-bottom: 40px;
+}
+
 /* 基本字體設定 */
 body {
   font-family: "標楷體", "Noto Sans TC", sans-serif;
   background-color: #fff8f0;
   color: #333;
   line-height: 1.6;
+  flex: 1;
 }
 
 /* Header 導覽列 */
@@ -31,13 +45,15 @@ header {
 .logo {
   display: flex;
   align-items: center;
+  text-decoration: none;      /* 移除連結底線 */
+  color: inherit;             /* 保持文字顏色一致 */
   gap: 10px;
   white-space: nowrap;     /* 不讓 LOGO 文字換行 */
   flex-shrink: 0;           /* 防止 LOGO 被壓縮 */
 }
 .logo img {
   width: 60px;
-  margin-right: 10px;
+  margin-right: auto;
 }
 nav a {
   margin: 0 10px;
@@ -184,6 +200,7 @@ footer {
   justify-content: space-around;
   padding: 20px;
   border-top: 4px solid #ffe0b3;
+  flex-shrink: 0;
 }
 footer div {
   max-width: 300px;
