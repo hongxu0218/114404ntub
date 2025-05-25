@@ -99,7 +99,10 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),   # 如果在本機使用
         'PORT': os.getenv('DB_PORT'),        # MySQL 預設 port
         'OPTIONS': {
+            'charset': 'utf8mb4',
+            'use_unicode': True,
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'autocommit': True,
         },
     }
 }
@@ -205,6 +208,13 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+# 簡單的記憶體快取設定
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
 
 
 # ===== 國際化與時區 =====

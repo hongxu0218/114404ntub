@@ -71,6 +71,17 @@ urlpatterns = [
     path('map/', views.map_home, name='map'),
     path('api/locations/', views.api_locations, name='api_locations'),
 
+        # ============= 動物認領養功能 =============
+    path('adoption/', views.adoption_home, name='adoption_home'),  # 認領養首頁
+    path('adoption/list/', views.adoption_list, name='adoption_list'),  # 動物列表
+    path('adoption/detail/<str:animal_id>/', views.adoption_detail, name='adoption_detail'),  # 動物詳情
+    path('adoption/apply/<str:animal_id>/', views.adoption_apply, name='adoption_apply'),  # 申請認養
+    path('adoption/favorites/', views.my_favorites, name='my_favorites'),  # 我的收藏
+    path('adoption/applications/', views.my_applications, name='my_applications'),  # 我的申請
+    path('adoption/statistics/', views.adoption_statistics, name='adoption_statistics'),  # 統計資訊
+    
+    # 認領養 API 路由
+    path('api/adoption/favorite/<str:animal_id>/', views.toggle_favorite, name='toggle_favorite'),  # 切換收藏
 
 ]
 
