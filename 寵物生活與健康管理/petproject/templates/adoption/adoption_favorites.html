@@ -1,0 +1,70 @@
+{% extends 'adoption/adoption_base.html' %}
+
+{% block title %}我的收藏 - 認領養平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-heart text-danger"></i> 我的收藏</h1>
+        <div>
+            <a href="{% url 'adoption_home' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-home"></i> 回首頁
+            </a>
+            <a href="{% url 'adoption_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i> 繼續尋找
+            </a>
+        </div>
+    </div>
+
+    {% if favorites %}
+    <div class="row">
+        {% for favorite in favorites %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="adoption-card">
+                <img src="{{ favorite.animal.album_file|default:'/static/images/no-pet-image.jpg' }}" 
+                     alt="{{ favorite.animal.animal_title }}"
+                     onerror="this.src='/static/images/Takemehome.png'; this.onerror=null;"
+                     style="width: 100%; height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h6 class="card-title">{{ favorite.animal.animal_title|default:"可愛的小寶貝" }}</h6>
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-info-circle"></i> 
+                        {{ favorite.animal.animal_kind }} | {{ favorite.animal.animal_sex }} | {{ favorite.animal.animal_age }}
+                    </p>
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-map-marker-alt"></i> 
+                        {{ favorite.animal.shelter_name|default:"未知收容所" }}
+                    </p>
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-clock"></i> 
+                        收藏於 {{ favorite.created_at|date:"m月d日" }}
+                    </p>
+                    <span class="status-badge status-{{ favorite.animal.status_display|lower }}">
+                        {{ favorite.animal.animal_status }}
+                    </span>
+                    <div class="mt-auto pt-3 d-flex justify-content-between align-items-center">
+                        <a href="{% url 'adoption_detail' favorite.animal.animal_id %}" 
+                           class="btn btn-primary btn-sm">查看詳情</a>
+                        <button class="favorite-btn" data-animal-id="{{ favorite.animal.animal_id }}" title="取消收藏">
+                            <i class="fas fa-heart text-danger"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-heart-broken fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">還沒有收藏任何動物</h4>
+        <p class="text-muted">快去尋找你喜歡的毛小孩吧！</p>
+        <a href="{% url 'adoption_list' %}" class="btn btn-primary">
+            <i class="fas fa-search"></i> 開始尋找
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% csrf_token %}
+{% endblock %}
