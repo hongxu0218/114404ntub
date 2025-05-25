@@ -96,6 +96,7 @@
 {% endblock %}
 
 {% block extra_js %}
+  {{ block.super }}
 <script>
 function scrollNews(direction) {
   const container = document.getElementById("newsContainer");

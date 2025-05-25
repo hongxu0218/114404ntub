@@ -134,6 +134,8 @@
             <p><strong>🦠 診斷：</strong>{{ record.diagnosis|default:"未填寫" }}</p>
             <p><strong>💊 治療：</strong>{{ record.treatment|default:"未填寫" }}</p>
             <p><strong>👨‍⚕️ 醫師：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
+            <a href="{% url 'edit_medical_record' pet.id record.id %}">✏️編輯</a>
+            <a href="{% url 'delete_medical_record' record.id %}" onclick="return confirm('確定刪除這筆病例紀錄嗎？')">🗑️刪除</a>
           </div>
         {% endfor %}
         {% if pet.medicalrecord_set.count > 1 %}
@@ -192,6 +194,7 @@
 {% endblock %}
 
 {% block extra_js %}
+  {{ block.super }}
 <script>
   function toggleRecords(className, button) {
     const elements = button.closest('.pet-details').querySelectorAll(`.${className}`);

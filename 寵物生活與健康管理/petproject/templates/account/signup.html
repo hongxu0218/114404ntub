@@ -10,13 +10,17 @@ body {
     font-family: "Noto Sans TC", sans-serif;
     background-color: #fff8f0;
     margin: 0;
-    padding: 40px 0;
+    padding: 0;
+}
+
+.container-wrapper {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     min-height: 100vh;
-    overflow-y: auto;
+    padding: 40px 20px;
 }
+
 .login-box {
     background-color: white;
     padding: 40px;
@@ -24,7 +28,9 @@ body {
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
     width: 100%;
     max-width: 400px;
+    margin: auto;
 }
+
 h2 {
     color: #ffaa00;
     margin-bottom: 30px;
@@ -111,7 +117,8 @@ button:hover {
 {% endblock %}
 
 {% block content %}
-<div class="login-box">
+<div class="container-wrapper">
+  <div class="login-box">
     <h2>註冊帳號</h2>
 
     {% if request.session.signup_redirect_message %}
@@ -180,6 +187,7 @@ button:hover {
     <div class="extra-links">
         <p>已經有帳號了？<a href="{% url 'account_login' %}">登入</a></p>
     </div>
+  </div>
 </div>
 {% endblock %}
 

@@ -170,6 +170,7 @@ input, select, textarea {
 {% endblock %}
 
 {% block extra_js %}
+    {{ block.super }}
 <script>
 function previewImage(event) {
     const input = event.target;

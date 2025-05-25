@@ -46,3 +46,7 @@
 {% block content %}
 <p>請在子模板中覆寫內容區塊。</p>
 {% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+{% endblock %}
