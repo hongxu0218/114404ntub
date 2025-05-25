@@ -7,10 +7,9 @@ from django.conf import settings  # 匯入 settings 模組，用來存取專案�
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 
 urlpatterns = [
-    # 導向不同使用者主控台的路由設定
-    path('dashboard/', views.dashboard_redirect, name='dashboard'),  # 導向主控台（根據帳號角色判斷導向）
-    path('dashboard/owner/', views.owner_dashboard, name='owner_dashboard'),  # 飼主主控台
-    path('vet/', views.vet_dashboard, name='vet_home'),  # 獸醫主控台
+    # 通知
+    path('notifications/count/', views.get_notification_count, name='get_notification_count'),
+    path('notifications/', views.notification_page, name='notification_page'),
 
     # 註冊與帳號管理相關路由
     path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
@@ -76,6 +75,9 @@ urlpatterns = [
 
     # 病歷
     path('vet/pets/<int:pet_id>/', views.vet_pet_detail, name='vet_pet_detail'),
+    path('medical/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
+    path('medical/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
+
 ]
 
 # 靜態檔案處理（僅在開發模式下啟用）

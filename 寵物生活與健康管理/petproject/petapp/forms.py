@@ -449,6 +449,7 @@ class MedicalRecordForm(forms.ModelForm):
         model = MedicalRecord
         fields = ['pet', 'clinic_location', 'diagnosis', 'treatment', 'notes']
         widgets = {
+            'pet': forms.HiddenInput(),
             'clinic_location': forms.TextInput(attrs={'placeholder': '預設會自動填入'}),
             'diagnosis': forms.Textarea(attrs={'rows': 3}),
             'treatment': forms.Textarea(attrs={'rows': 3}),

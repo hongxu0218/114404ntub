@@ -24,7 +24,7 @@ from django.utils.timezone import localtime
 from .utils import get_temperature_data, get_weight_data
 from dateutil.relativedelta import relativedelta
 from django.core.serializers.json import DjangoJSONEncoder
-
+from django.utils import timezone
 
 
 
@@ -692,6 +692,33 @@ def add_medical_record(request, pet_id):
     # TODO: 為指定寵物新增病例
     return render(request, 'vet_pages/create_medical_record.html')
 
+# 修改指定寵物的病例
+@login_required
+def edit_medical_record(request, pet_id, record_id):
+    record = get_object_or_404(MedicalRecord, id=record_id, pet_id=pet_id)
+
+    if request.method == 'POST':
+        form = MedicalRecordForm(request.POST, instance=record)
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.pet = record.pet  # 保險設定
+            record.save()
+            return redirect('my_patients')
+    else:
+        form = MedicalRecordForm(instance=record)
+
+    return render(request, 'vet_pages/edit_medical_record.html', {
+        'form': form,
+        'pet': record.pet
+    })
+# 刪除指定寵物的病例
+@login_required
+def delete_medical_record(request, record_id):
+    record = get_object_or_404(MedicalRecord, id=record_id)
+    record.delete()
+    return redirect('my_patients')
+
+
 # 飼主取消預約通知獸醫
 @require_POST
 @login_required
@@ -1322,4 +1349,42 @@ def create_medical_record(request, pet_id):
     return render(request, 'vet_pages/create_medical_record.html', {
         'form': form,
         'pet': pet
+    })
+
+# 通知
+@login_required
+def get_notification_count(request):
+    user = request.user
+    tomorrow = timezone.now().date() + timedelta(days=1)
+    count = 0
+
+    if hasattr(user, 'profile'):
+        account_type = user.profile.account_type
+        if account_type == 'owner':
+            count = VetAppointment.objects.filter(owner=user, date=tomorrow).count()
+        elif account_type == 'vet':
+            count = VetAppointment.objects.filter(vet=user.profile, date=tomorrow).count()
+
+    return JsonResponse({'count': count})
+
+# 通知頁面邏輯
+@login_required
+def notification_page(request):
+    user = request.user
+    tomorrow = timezone.now().date() + timedelta(days=1)
+
+    appointments = []
+    role = None
+
+    if hasattr(user, 'profile'):
+        role = user.profile.account_type
+        if role == 'owner':
+            appointments = VetAppointment.objects.filter(owner=user, date=tomorrow)
+        elif role == 'vet':
+            appointments = VetAppointment.objects.filter(vet=user.profile, date=tomorrow)
+
+    return render(request, 'pages/notifications.html', {
+        'appointments': appointments,
+        'role': role,
+        'tomorrow': tomorrow,
     })
