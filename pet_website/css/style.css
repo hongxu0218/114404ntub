@@ -44,7 +44,7 @@ nav a:hover {
   background-color: #ffe4b3;
 }
 
-/* Hero 區塊 */
+/* Hero 區塊 
 .hero {
   display: flex;
   justify-content: space-between;
@@ -54,16 +54,16 @@ nav a:hover {
 .hero-text {
   max-width: 100%;
   font-size: 30px;
-}
+}*/
 
 /* 最新消息區塊 */
 .latest-news {
-  margin-bottom: 60px;
+  margin-bottom: 30px;
 }
 .news-title {
   text-align: left;
   font-size: 24px;
-  margin: 10px 20px 20px 50px;
+  margin: -15px 20px 0 50px;
   padding-left: 5px;
 }
 .news-scroll-wrapper {
@@ -105,7 +105,6 @@ nav a:hover {
   flex: 0 0 auto;
   width: 200px;
   height: 130px;
-  border: 1px dashed #5cb6ff;
   border-radius: 6px;
   overflow: hidden;
   background-color: #fff;
@@ -113,6 +112,7 @@ nav a:hover {
   align-items: center;
   justify-content: center;
   transition: transform 0.2s;
+  margin-top: -10px;
 }
 .news-card img {
   width: 100%;
@@ -133,8 +133,8 @@ nav a:hover {
 .section-icons {
   display: flex;
   justify-content: space-around;
-  padding: 20px 0;
-  margin: -40px 0 20px 0;
+  padding: 40px 0;
+  margin: -40px 0 -20px 0;
 }
 .section-icons div {
   text-align: center;
@@ -150,11 +150,15 @@ footer {
   background-color: #fef6ec;
   display: flex;
   justify-content: space-around;
-  padding: 20px;
+  padding: 10px;
   border-top: 4px solid #ffe0b3;
+  margin-top: -25px; 
+  margin-left: -400px;
 }
 footer div {
   max-width: 300px;
+  text-align: left;
+  
 }
 footer h4 {
   margin-bottom: 10px;
