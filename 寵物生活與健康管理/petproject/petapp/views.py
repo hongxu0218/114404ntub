@@ -4,8 +4,7 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report,PetLocation,ServiceType, PetType,BusinessHours
-from django.contrib import messages
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report,PetLocation,ServiceType, PetType,BusinessHours, AdoptionAnimal, AdoptionShelter, AdoptionFavorite, AdoptionApplication
 from django.contrib.auth.decorators import login_required
 from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm
 from allauth.account.views import SignupView
@@ -17,16 +16,16 @@ from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
 from django.db.models import Q
-
+from django.contrib import messages
 from calendar import monthrange
 import calendar
 from django.utils.timezone import localtime
 from .utils import get_temperature_data, get_weight_data
 from dateutil.relativedelta import relativedelta
 
-
-
-
+from django.core.paginator import Paginator
+from django.db.models import Count
+import logging
 
 # 首頁
 
@@ -1434,3 +1433,284 @@ def api_stats(request):
         }
 
 ###############################地圖############################
+
+
+# ============= 動物認領養功能 =============
+
+logger = logging.getLogger(__name__)
+
+def adoption_home(request):
+    """認領養首頁"""
+    try:
+        # 最新上架動物
+        latest_animals = AdoptionAnimal.objects.filter(
+            is_active=True,
+            animal_status='OPEN'
+        ).order_by('-animal_update')[:8]
+        
+        # 統計資料
+        total_animals = AdoptionAnimal.objects.filter(is_active=True).count()
+        available_animals = AdoptionAnimal.objects.filter(
+            is_active=True, 
+            animal_status='OPEN'
+        ).count()
+        
+        context = {
+            'latest_animals': latest_animals,
+            'total_animals': total_animals,
+            'available_animals': available_animals,
+        }
+        
+        return render(request, 'adoption/adoption_home.html', context)
+        
+    except Exception as e:
+        logger.error(f"認領養首頁錯誤: {e}")
+        return render(request, 'adoption/adoption_home.html', {
+            'total_animals': 0,
+            'available_animals': 0,
+            'latest_animals': [],
+        })
+    
+def adoption_list(request):
+    """認領養動物列表"""
+    animals = AdoptionAnimal.objects.filter(is_active=True)
+    
+    # 篩選條件
+    kind = request.GET.get('kind')
+    status = request.GET.get('status')
+    search = request.GET.get('search')
+    
+    if kind:
+        animals = animals.filter(animal_kind__icontains=kind)
+    if status:
+        if status == '開放認養':
+            animals = animals.filter(animal_status='OPEN')
+        else:
+            animals = animals.filter(animal_status=status)
+    if search:
+        animals = animals.filter(
+            Q(animal_title__icontains=search) |
+            Q(animal_kind__icontains=search) |
+            Q(animal_colour__icontains=search) |
+            Q(shelter_name__icontains=search)
+        )
+    
+    # 分頁
+    paginator = Paginator(animals, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # 取得篩選選項
+    animal_kinds = AdoptionAnimal.objects.values_list('animal_kind', flat=True).distinct()
+    
+    context = {
+        'page_obj': page_obj,
+        'animal_kinds': [k for k in animal_kinds if k],
+        'current_filters': {
+            'kind': kind,
+            'status': status,
+            'search': search,
+        }
+    }
+    return render(request, 'adoption/adoption_list.html', context)
+
+import random
+def get_recommended_animals(current_animal, count=4):
+    """
+    智能推薦動物邏輯
+    優先順序：
+    1. 相同種類的動物
+    2. 如果相同種類不足，加入其他種類
+    3. 使用 Python 層級的隨機化確保真正隨機
+    """
+    recommended = []
+    
+    # 第一優先：相同種類的動物
+    same_kind_animals = list(AdoptionAnimal.objects.filter(
+        animal_kind=current_animal.animal_kind,
+        is_active=True,
+        animal_status='OPEN'
+    ).exclude(animal_id=current_animal.animal_id))
+    
+    # 使用 Python 的隨機打亂確保真正隨機
+    random.shuffle(same_kind_animals)
+    
+    # 添加相同種類的動物
+    recommended.extend(same_kind_animals[:count])
+    
+    # 如果相同種類不足，添加其他種類
+    if len(recommended) < count:
+        remaining_count = count - len(recommended)
+        
+        # 排除已經加入的動物ID
+        excluded_ids = [animal.animal_id for animal in recommended] + [current_animal.animal_id]
+        
+        other_animals = list(AdoptionAnimal.objects.filter(
+            is_active=True,
+            animal_status='OPEN'
+        ).exclude(animal_id__in=excluded_ids))
+        
+        random.shuffle(other_animals)
+        recommended.extend(other_animals[:remaining_count])
+    
+    return recommended
+
+def adoption_detail(request, animal_id):
+    """動物詳細頁面"""
+    animal = get_object_or_404(
+        AdoptionAnimal.objects,
+        animal_id=animal_id,
+        is_active=True
+    )
+    
+    # 推薦動物（同種類且開放認養）
+    related_animals = AdoptionAnimal.objects.filter(
+        animal_kind=animal.animal_kind,
+        is_active=True,
+        animal_status='OPEN'
+    )
+
+    related_animals = get_recommended_animals(animal, count=4)
+    
+    # 檢查是否已收藏
+    is_favorited = False
+    if request.user.is_authenticated:
+        try:
+            is_favorited = AdoptionFavorite.objects.filter(
+                user=request.user,
+                animal=animal
+            ).exists()
+        except:
+            is_favorited = False
+    
+    context = {
+        'animal': animal,
+        'related_animals': related_animals,
+        'is_favorited': is_favorited,
+    }
+    return render(request, 'adoption/adoption_detail.html', context)
+
+@login_required
+def adoption_apply(request, animal_id):
+    """申請認養"""
+    animal = get_object_or_404(AdoptionAnimal, animal_id=animal_id, is_active=True)
+    
+    # 檢查動物是否可認養
+    if animal.animal_status != 'OPEN':
+        messages.error(request, '此動物目前不開放認養')
+        return redirect('adoption_detail', animal_id=animal_id)
+    
+    # 檢查是否已申請過
+    existing_application = AdoptionApplication.objects.filter(
+        animal=animal, 
+        applicant=request.user
+    ).first()
+    
+    if existing_application:
+        messages.warning(request, '您已經申請過認養此動物')
+        return redirect('adoption_detail', animal_id=animal_id)
+    
+    if request.method == 'POST':
+        try:
+            # 處理申請表單
+            application = AdoptionApplication.objects.create(
+                animal=animal,
+                applicant=request.user,
+                applicant_name=request.POST.get('applicant_name'),
+                applicant_phone=request.POST.get('applicant_phone'),
+                applicant_email=request.POST.get('applicant_email'),
+                applicant_address=request.POST.get('applicant_address'),
+                experience=request.POST.get('experience'),
+                housing_type=request.POST.get('housing_type'),
+                family_consent=request.POST.get('family_consent') == 'on',
+            )
+            
+            messages.success(request, '認養申請已送出，請等待審核通知！')
+            return redirect('adoption_detail', animal_id=animal_id)
+            
+        except Exception as e:
+            logger.error(f"申請錯誤: {e}")
+            messages.error(request, '申請提交失敗，請稍後再試')
+    
+    context = {
+        'animal': animal,
+    }
+    return render(request, 'adoption/adoption_apply.html', context)
+
+@login_required
+def toggle_favorite(request, animal_id):
+    """切換收藏狀態"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    animal = get_object_or_404(AdoptionAnimal, animal_id=animal_id)
+    
+    favorite, created = AdoptionFavorite.objects.get_or_create(
+        user=request.user,
+        animal=animal
+    )
+    
+    if not created:
+        favorite.delete()
+        is_favorited = False
+    else:
+        is_favorited = True
+    
+    return JsonResponse({
+        'is_favorited': is_favorited,
+        'message': '已加入收藏' if is_favorited else '已取消收藏'
+    })
+
+@login_required
+def my_favorites(request):
+    """我的收藏"""
+    favorites = AdoptionFavorite.objects.filter(
+        user=request.user
+    ).select_related('animal').order_by('-created_at')
+    
+    context = {
+        'favorites': favorites,
+    }
+    return render(request, 'adoption/adoption_favorites.html', context)
+
+@login_required
+def my_applications(request):
+    """我的認養申請"""
+    applications = AdoptionApplication.objects.filter(
+        applicant=request.user
+    ).select_related('animal').order_by('-created_at')
+    
+    context = {
+        'applications': applications,
+    }
+    return render(request, 'adoption/adoption_applications.html', context)
+
+def adoption_statistics(request):
+    """認領養統計頁面"""
+    total_animals = AdoptionAnimal.objects.filter(is_active=True).count()
+    available_animals = AdoptionAnimal.objects.filter(
+        is_active=True, 
+        animal_status='OPEN'
+    ).count()
+    
+    # 按種類統計
+    kind_stats = AdoptionAnimal.objects.filter(is_active=True).values(
+        'animal_kind'
+    ).annotate(count=Count('id')).order_by('-count')
+    
+    # 按收容所統計（改為使用收容所名稱）
+    shelter_stats = AdoptionAnimal.objects.filter(
+        is_active=True,
+        shelter_name__isnull=False,
+        shelter_name__gt=''  # 排除空字串
+    ).values(
+        'shelter_name'
+    ).annotate(count=Count('id')).order_by('-count')[:10]  # 只顯示前10個收容所
+    
+    context = {
+        'total_animals': total_animals,
+        'available_animals': available_animals,
+        'kind_stats': kind_stats,
+        'shelter_stats': shelter_stats,  # 改名為 shelter_stats
+    }
+    return render(request, 'adoption/adoption_statistics.html', context)
