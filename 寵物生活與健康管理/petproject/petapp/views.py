@@ -1375,6 +1375,7 @@ def notification_page(request):
     tomorrow = today + timedelta(days=1)
     appointments = []
     vaccine_reminders = []
+    deworm_reminders = []
     role = None
 
     if hasattr(user, 'profile'):
@@ -1384,6 +1385,7 @@ def notification_page(request):
             appointments = VetAppointment.objects.filter(owner=user, date=tomorrow)
 
             # 每隻寵物的最新疫苗日期
+            # ---------- 疫苗：一年效期 ----------
             latest_vaccine_dates = (VaccineRecord.objects
                 .filter(pet__owner=user)
                 .values('pet')
@@ -1425,6 +1427,45 @@ def notification_page(request):
                         fail_silently=True
                     )
 
+            # ---------- 驅蟲：半年效期 ----------
+            latest_deworm_dates = (DewormRecord.objects
+                .filter(pet__owner=user)
+                .values('pet')
+                .annotate(last_deworm_date=Max('date'))
+            )
+
+            for item in latest_deworm_dates:
+                pet_id = item['pet']
+                last_date = item['last_deworm_date']
+                days_diff = (today - last_date).days
+
+                if days_diff in [182 - 30, 182 - 1]:  # 半年約 182 天
+                    pet = Pet.objects.get(id=pet_id)
+                    deworm_reminders.append({
+                        'pet': pet,
+                        'last_date': last_date,
+                        'days_left': 182 - days_diff
+                    })
+
+                    # Email 通知驅蟲
+                    send_mail(
+                        subject=f"【驅蟲提醒】{pet.name} 的驅蟲即將到期",
+                        message=f"""
+親愛的 {user.last_name or ''}{user.first_name or user.username} 飼主您好：
+
+您的寵物「{pet.name}」的最近一次驅蟲日期為 {last_date}。
+目前距離半年效期只剩下 {182 - days_diff} 天，建議您儘快安排補打驅蟲藥。
+
+歡迎使用「毛日好 Paw&Day」系統預約獸醫進行驅蟲服務。
+
+祝 平安健康，
+毛日好 Paw&Day 團隊
+""",
+                        from_email=f"毛日好通知 <{settings.DEFAULT_FROM_EMAIL}>",
+                        recipient_list=[user.email],
+                        fail_silently=True
+                    )
+
         elif role == 'vet':
             appointments = VetAppointment.objects.filter(vet=user.profile, date=tomorrow)
 
@@ -1433,4 +1474,5 @@ def notification_page(request):
         'role': role,
         'tomorrow': tomorrow,
         'vaccine_reminders': vaccine_reminders,
+        'deworm_reminders': deworm_reminders,
     })
