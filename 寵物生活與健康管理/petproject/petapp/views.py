@@ -11,6 +11,7 @@ from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import csrf_protect
+from django.contrib import messages
 from django.views.decorators.http import require_POST, require_http_methods ,require_GET
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
