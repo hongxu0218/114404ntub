@@ -1,0 +1,121 @@
+
+{% extends "vet_pages/base.html" %}
+
+{% block title %}{{ pet.name }} 的醫療紀錄{% endblock %}
+
+{% block back_button %}
+  <a href="{% url 'my_patients' %}" class="back-home">← 返回我的看診寵物</a>
+{% endblock %}
+
+{% block header %}
+  <h1 class="section-title">🐾 {{ pet.name }} 的醫療紀錄</h1>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .record-card {
+    background-color: #f9f9f9;
+    border: 2px solid #cce5ff;
+    padding: 16px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease-in-out;
+  }
+  .record-card:hover {
+    background-color: #e9f7ff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pet-card">
+
+  <h3>飼主：{{ pet.owner.last_name }}{{ pet.owner.first_name|default:pet.owner.username }}</h3>
+
+  <!-- 病例紀錄 -->
+  <h4>病例紀錄</h4>
+  {% if medical_records %}
+    {% for record in medical_records %}
+      <div class="record-card medical-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
+        <p><strong>🗕️ 看診日期：</strong>{{ record.visit_date }}</p>
+        <p><strong>🏥 看診地點：</strong>{{ record.clinic_location }}</p>
+        <p><strong>🦠 診斷結果：</strong>{{ record.diagnosis|default:"未填寫" }}</p>
+        <p><strong>💊 治療內容：</strong>{{ record.treatment|default:"未填寫" }}</p>
+        <p><strong>👨‍⚕️ 看診獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
+      </div>
+    {% endfor %}
+    {% if medical_records|length > 1 %}
+      <button onclick="toggleRecords('medical-record', this)" class="btn btn-secondary">顯示更多病例紀錄</button>
+    {% endif %}
+  {% else %}
+    <p>無病例紀錄</p>
+  {% endif %}
+
+  <!-- 疫苗紀錄 -->
+  <h4>疫苗紀錄</h4>
+  {% if vaccine_records %}
+    {% for record in vaccine_records %}
+      <div class="record-card vaccine-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
+        <p><strong>💉 疫苗品牌：</strong>{{ record.name }}</p>
+        <p><strong>📅 施打日期：</strong>{{ record.date }}</p>
+        <p><strong>📍 施打地點：</strong>{{ record.location }}</p>
+        <p><strong>👨‍⚕️ 施打獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
+      </div>
+    {% endfor %}
+    {% if vaccine_records|length > 1 %}
+      <button onclick="toggleRecords('vaccine-record', this)" class="btn btn-secondary">顯示更多疫苗紀錄</button>
+    {% endif %}
+  {% else %}
+    <p>無疫苗紀錄</p>
+  {% endif %}
+
+  <!-- 驅蟲紀錄 -->
+  <h4>驅蟲紀錄</h4>
+  {% if deworm_records %}
+    {% for record in deworm_records %}
+      <div class="record-card deworm-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
+        <p><strong>🪲 驅蟲品牌：</strong>{{ record.name }}</p>
+        <p><strong>📅 施打日期：</strong>{{ record.date }}</p>
+        <p><strong>📍 施打地點：</strong>{{ record.location }}</p>
+        <p><strong>👨‍⚕️ 施打獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
+      </div>
+    {% endfor %}
+    {% if deworm_records|length > 1 %}
+      <button onclick="toggleRecords('deworm-record', this)" class="btn btn-secondary">顯示更多驅蟲紀錄</button>
+    {% endif %}
+  {% else %}
+    <p>無驅蟲紀錄</p>
+  {% endif %}
+
+  <!-- 報告 -->
+  <h4>報告</h4>
+  {% if reports %}
+    {% for report in reports %}
+      <div class="record-card report-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
+        <p><strong>📄 標題：</strong>{{ report.title }}</p>
+        <p><strong>📎 檔案：</strong><a href="{{ report.pdf.url }}" target="_blank">{{ report.pdf.name|default:"查看檔案" }}</a></p>
+      </div>
+    {% endfor %}
+    {% if reports|length > 1 %}
+      <button onclick="toggleRecords('report-record', this)" class="btn btn-secondary">顯示更多報告</button>
+    {% endif %}
+  {% else %}
+    <p>無報告</p>
+  {% endif %}
+
+</div>
+
+<!-- 通用展開/收合 JS -->
+<script>
+  function toggleRecords(className, button) {
+    const elements = document.querySelectorAll(`.${className}`);
+    const isHidden = elements[1].style.display === 'none';
+    elements.forEach((el, index) => {
+      if (index > 0) el.style.display = isHidden ? 'block' : 'none';
+    });
+    button.textContent = isHidden ? '隱藏' + button.textContent.replace('顯示更多', '') : '顯示更多' + button.textContent.replace('隱藏', '');
+  }
+</script>
+{% endblock %}

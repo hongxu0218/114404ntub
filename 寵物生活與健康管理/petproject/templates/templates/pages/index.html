@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}毛孩幸福生活{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <h1>打造毛孩專屬<br>幸福生活！</h1>
+  </div>
+  <img src="{% static 'images/hero_cat.webp' %}" alt="毛孩插圖" style="height: 200px;">
+</section>
+
+  <section class="latest-news">
+    <h2 class="news-title">最新消息</h2>
+    <div class="news-scroll-wrapper">
+      <button class="scroll-btn left" onclick="scrollNews('left')">←</button>
+      <div class="news-container" id="newsContainer">
+        <a href="https://dailyview.tw/popular/detail/29132" class="news-card">
+          <img src="{% static 'images/news_1.webp' %}" alt="">
+        </a>
+        <a href="https://www.jvs.com.tw/blog/posts/..." class="news-card">
+          <img src="{% static 'images/news_2.jpg' %}" alt="">
+        </a>
+        <a href="https://udn.com/news/story/..." class="news-card">
+          <img src="{% static 'images/news_3.jpg' %}" alt="">
+        </a>
+        <a href="https://animal.moa.gov.tw/Frontend/News/..." class="news-card">
+          <img src="{% static 'images/news_4.jpg' %}" alt="">
+        </a>
+        <a href="https://www.dotdotnews.com/a/202503/..." class="news-card">
+          <img src="{% static 'images/news_5.jpg' %}" alt="">
+        </a>
+        <a href="https://www.youtube.com/watch?v=uBhBu-LYSqM" class="news-card">
+          <img src="{% static 'images/news_youtube.jpg' %}" alt="">
+        </a>
+        <a href="more-news.html" class="news-card more"><span>更多消息 →</span></a>
+      </div>
+      <button class="scroll-btn right" onclick="scrollNews('right')">→</button>
+    </div>
+  </section>
+
+  <section class="section-icons">
+
+    {% if user.profile.account_type == 'vet' %}
+      <div class="category-buttons">
+          <a href="{% url 'my_patients' %}" class="category-link">
+        	  <img src="{% static 'images/icon_add_pet.png' %}" class="icon-img"><br>看診寵物
+      	  </a>
+      </div>
+    {% else %}
+      <div class="category-buttons">
+          <a href="{% url 'add_pet' %}" class="category-link">
+        	  <img src="{% static 'images/icon_add_pet.png' %}" class="icon-img"><br>新增毛孩
+      	  </a>
+      </div>
+    {% endif %}
+
+    {% if user.profile.account_type == 'vet' %}
+      <div class="category-buttons">
+          <a href="{% url 'vet_appointments' %}" class="category-link">
+        	  <img src="{% static 'images/icon_health.png' %}" class="icon-img"><br>查看預約
+      	  </a>
+      </div>
+    {% else %}
+      <div class="category-buttons">
+          <a href="{% if user.is_authenticated %}{% url 'health_rec' %}{% else %}{% url 'account_login' %}{% endif %}" class="category-link">
+            <img src="{% static 'images/icon_health.png' %}" class="icon-img"><br>健康紀錄
+          </a>
+      </div>
+    {% endif %}
+
+
+    {% if user.profile.account_type == 'vet' %}
+      <div class="category-buttons">
+        <a href="{% url 'vet_availability_settings' %}" class="category-link">
+      	  <img src="{% static 'images/icon_time.png' %}" class="icon-img"><br>排班時段
+    	  </a>
+      </div>
+    {% else %}
+      <div class="category-buttons">
+        <a href="#" class="category-link">
+          <img src="{% static 'images/icon_location.png' %}" class="icon-img"><br>搜尋附近
+        </a>
+      </div>
+    {% endif %}
+    
+    {% if user.profile.account_type != 'vet' %}
+      <div class="category-buttons">
+        <a href="#" class="category-link">
+          <img src="{% static 'images/icon_emergency.png' %}" class="icon-img"><br>急診
+        </a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+<script>
+function scrollNews(direction) {
+  const container = document.getElementById("newsContainer");
+  const scrollAmount = 220;
+  container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+}
+</script>
+{% endblock %}
