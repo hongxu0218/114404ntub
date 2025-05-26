@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST, require_http_methods ,req
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
-from django.db.models import Q
+from django.db.models import Q, Max
 
 from calendar import monthrange
 import calendar
@@ -1371,15 +1371,60 @@ def get_notification_count(request):
 @login_required
 def notification_page(request):
     user = request.user
-    tomorrow = timezone.now().date() + timedelta(days=1)
-
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
     appointments = []
+    vaccine_reminders = []
     role = None
 
     if hasattr(user, 'profile'):
         role = user.profile.account_type
+
         if role == 'owner':
             appointments = VetAppointment.objects.filter(owner=user, date=tomorrow)
+
+            # 每隻寵物的最新疫苗日期
+            latest_vaccine_dates = (VaccineRecord.objects
+                .filter(pet__owner=user)
+                .values('pet')
+                .annotate(last_vaccine_date=Max('date'))
+            )
+
+            for item in latest_vaccine_dates:
+                pet_id = item['pet']
+                last_date = item['last_vaccine_date']
+                days_diff = (today - last_date).days
+
+                # 如果是提前一天或提前一個月提醒
+                if days_diff in [365 - 30, 365 - 1]:  # 即 335 或 364 天
+                    pet = Pet.objects.get(id=pet_id)
+                    vaccine_reminders.append({
+                        'pet': pet,
+                        'last_date': last_date,
+                        'days_left': 365 - days_diff
+                    })
+
+                    # 寄信通知
+                    subject = f"【疫苗提醒】{pet.name} 的疫苗即將到期"
+                    message = f"""
+親愛的 {user.last_name or ''}{user.first_name or user.username} 飼主您好：
+
+您的寵物「{pet.name}」的最近一次疫苗接種日期為 {last_date}。
+目前距離一年效期只剩下 {365 - days_diff} 天，建議您儘快安排補打疫苗。
+
+歡迎使用「毛日好 Paw&Day」系統預約獸醫進行疫苗接種。
+
+祝 平安健康，
+毛日好 Paw&Day 團隊
+"""
+                    send_mail(
+                        subject,
+                         message,
+                        f"毛日好通知 <{settings.DEFAULT_FROM_EMAIL}>",
+                        [user.email],
+                        fail_silently=True
+                    )
+
         elif role == 'vet':
             appointments = VetAppointment.objects.filter(vet=user.profile, date=tomorrow)
 
@@ -1387,4 +1432,5 @@ def notification_page(request):
         'appointments': appointments,
         'role': role,
         'tomorrow': tomorrow,
+        'vaccine_reminders': vaccine_reminders,
     })
