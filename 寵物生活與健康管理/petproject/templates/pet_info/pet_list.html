@@ -3,186 +3,226 @@
 {% block title %}我的毛小孩{% endblock %}
 
 {% block extra_css %}
-<style>
-  h2 {
-    color: #333;
-    margin-bottom: 10px;
-  }
-
-  .pet-list {
-    margin-top: 30px;
-  }
-
-  .card {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  }
-
-  .pet-details p {
-    margin: 6px 0;
-  }
-
-  .feature-text.collapsed {
-    display: inline-block;
-    max-width: 150px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-  }
-
-  .feature-text.expanded {
-    white-space: normal;
-    max-width: none;
-    cursor: pointer;
-  }
-
-  .action-buttons {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .pet-image {
-    max-width: 200px;
-    border-radius: 10px;
-  }
-
-  .message-popup {
-    position: fixed;
-    top: 20px;
-    left: 40%;
-    z-index: 9999;
-    min-width: 300px;
-    max-width: 90%;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    animation: fadein 0.5s ease;
-    text-align: center;
-  }
-
-  .message {
-    padding: 12px 20px;
-    border-radius: 6px;
-    font-weight: bold;
-    color: #fff;
-  }
-
-  .message.success { background-color: #28a745; }
-  .message.error { background-color: #dc3545; }
-  .message.warning { background-color: #ffc107; color: #212529; }
-  .message.info { background-color: #17a2b8; }
-
-  @keyframes fadein {
-    from {opacity: 0; transform: translateY(-10px);}
-    to {opacity: 1; transform: translateY(0);}
-  }
-
-  .pet-details {
-    display: none;  /* 預設收合 */
-  }
-</style>
+<link rel="stylesheet" href="{% static 'css/pet_list.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="card">
-  <a href="{% url 'add_pet' %}" class="category-link">
-    <img src="{% static 'images/icon_add_pet.png' %}" class="icon-img"><br>新增毛孩
-  </a>
-</div>
+<div class="pet-management-container">
+  <div class="container">
+    <!-- 頁面標題 -->
+    <div class="page-header fade-in-up">
+      <h1 class="page-title">
+        <i class="bi bi-heart-fill text-warning"></i>
+        我的毛小孩
+      </h1>
+      <p class="page-subtitle">管理您心愛的寵物，記錄每一個珍貴時刻</p>
+    </div>
 
-<div class="pet-list">
-  <h3>我的毛小孩</h3>
-  {% for pet in pets %}
-  <div class="card">
-    <button class="btn btn-pet" onclick="togglePetDetails({{ pet.id }})">{{ pet.name }}</button>
-    <div id="details-{{ pet.id }}" class="pet-details">
-      <p><strong>品種：</strong>{{ pet.breed }}</p>
-      <p><strong>絕育狀態：</strong>{{ pet.get_sterilization_status_display }}</p>
-      <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
-      <p><strong>出生日期：</strong>
-        {% if pet.birth_date %}
-          {{ pet.birth_date|date:"Y 年 m 月 d 日" }}
-        {% else %}
-          尚未填寫
-        {% endif %}
-      </p>
-      <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
-      <p><strong>特徵：</strong>
-        <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
-        <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">展開</button>
-      </p>
-      <p><strong>性別：</strong>{{ pet.get_gender_display }}</p>
+    <!-- 新增寵物區塊 -->
+    <div class="add-pet-section fade-in-up">
+      <a href="{% url 'add_pet' %}" class="add-pet-card">
+        <img src="{% static 'images/icon_add_pet.png' %}" class="add-pet-icon" alt="新增毛孩">
+        <div class="add-pet-text">
+          <i class="bi bi-plus-circle me-2"></i>新增毛孩
+        </div>
+      </a>
+    </div>
 
-      {% if pet.picture %}
-        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}" class="pet-image">
-      {% else %}
-        <p>尚未上傳圖片</p>
-      {% endif %}
+    <!-- 寵物列表 -->
+    <div class="pets-grid">
+      {% for pet in pets %}
+      <div class="pet-card fade-in-up">
+        <!-- 寵物卡片頭部 -->
+        <div class="pet-card-header" onclick="togglePetDetails({{ pet.id }})">
+          <h3 class="pet-name">
+            <span>
+              <i class="bi bi-heart me-2"></i>{{ pet.name }}
+            </span>
+            <i class="bi bi-chevron-down toggle-icon" id="toggle-{{ pet.id }}"></i>
+          </h3>
+        </div>
 
-      {% if pet.future_appointments %}
-      <div style="margin-top: 10px; background-color: #f1f9ff; padding: 10px; border-left: 4px solid #007bff;">
-        <strong>📅 預約資訊：</strong>
-        <ul style="margin-top: 5px;">
-          {% for appt in pet.future_appointments %}
-          <li>
-            {{ appt.date }} {{ appt.time }}｜{{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
-            （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
-            <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button type="submit" style="background:none; border:none; color:#dc3545; font-weight:bold; cursor:pointer;" title="取消預約">
-                ❌
-              </button>
-            </form>
-          </li>
-          {% endfor %}
-        </ul>
+        <!-- 寵物詳細資訊 -->
+        <div id="details-{{ pet.id }}" class="pet-details">
+          <div class="pet-info-grid">
+            <!-- 基本資訊 -->
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-tag me-1"></i>品種
+              </div>
+              <p class="info-value">{{ pet.breed }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-gender-ambiguous me-1"></i>性別
+              </div>
+              <p class="info-value">{{ pet.get_gender_display }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-scissors me-1"></i>絕育狀態
+              </div>
+              <p class="info-value">{{ pet.get_sterilization_status_display }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-credit-card me-1"></i>晶片號碼
+              </div>
+              <p class="info-value">{{ pet.chip|default:"尚未填寫" }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-calendar-heart me-1"></i>出生日期
+              </div>
+              <p class="info-value">
+                {% if pet.birth_date %}
+                  {{ pet.birth_date|date:"Y 年 m 月 d 日" }}
+                {% else %}
+                  尚未填寫
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-speedometer2 me-1"></i>體重
+              </div>
+              <p class="info-value">
+                {% if pet.weight %}
+                  {{ pet.weight }} 公斤
+                {% else %}
+                  尚未填寫
+                {% endif %}
+              </p>
+            </div>
+
+            <!-- 特徵描述 -->
+            {% if pet.feature %}
+            <div class="pet-info-section feature-section">
+              <div class="info-label">
+                <i class="bi bi-star me-1"></i>特徵描述
+              </div>
+              <p class="info-value">
+                <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
+                <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">
+                  <span id="toggle-text-{{ pet.id }}">展開</span>
+                </button>
+              </p>
+            </div>
+            {% endif %}
+
+            <!-- 寵物圖片 -->
+            <div class="pet-image-container">
+              {% if pet.picture %}
+                <img src="{{ pet.picture.url }}" alt="{{ pet.name }}" class="pet-image">
+              {% else %}
+                <div class="no-image-placeholder">
+                  <i class="bi bi-camera"></i>
+                </div>
+                <p class="text-muted mt-2">尚未上傳圖片</p>
+              {% endif %}
+            </div>
+
+            <!-- 預約資訊 -->
+            {% if pet.future_appointments %}
+            <div class="appointment-section">
+              <div class="appointment-title">
+                <i class="bi bi-calendar-check"></i>
+                預約資訊
+              </div>
+              <ul class="appointment-list">
+                {% for appt in pet.future_appointments %}
+                <li class="appointment-item">
+                  <div class="appointment-info">
+                    <div class="appointment-datetime">
+                      <strong>{{ appt.date }} {{ appt.time }}</strong>
+                    </div>
+                    <div class="appointment-clinic">
+                      {{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
+                      （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
+                    </div>
+                  </div>
+                  <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="cancel-appointment-btn" title="取消預約">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </form>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% else %}
+            <div class="appointment-section no-appointment">
+              <div class="appointment-title">
+                <i class="bi bi-calendar-x"></i>
+                預約資訊
+              </div>
+              <p class="text-muted m-0">
+                <i class="bi bi-info-circle me-1"></i>尚無預約紀錄
+              </p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- 操作按鈕 -->
+          <div class="action-buttons">
+            <a href="{% url 'edit_pet' pet.id %}" class="action-btn btn-edit">
+              <i class="bi bi-pencil"></i>
+              <span>修改資料</span>
+            </a>
+            <a href="{% url 'delete_pet' pet.id %}" class="action-btn btn-delete">
+              <i class="bi bi-trash"></i>
+              <span>刪除寵物</span>
+            </a>
+            <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="action-btn btn-appointment">
+              <i class="bi bi-calendar-plus"></i>
+              <span>預約獸醫</span>
+            </a>
+            <button class="action-btn btn-close" onclick="togglePetDetails({{ pet.id }})">
+              <i class="bi bi-x-lg"></i>
+              <span>關閉</span>
+            </button>
+          </div>
+        </div>
       </div>
-      {% else %}
-        <p style="color: #888; font-style: italic;">尚無預約紀錄</p>
-      {% endif %}
-
-      <div class="action-buttons">
-        <a href="{% url 'edit_pet' pet.id %}" class="btn btn-edit">✏️ 修改</a>
-        <a href="{% url 'delete_pet' pet.id %}" class="btn btn-delete">🗑️ 刪除</a>
-        <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="btn btn-daily">📅 預約獸醫</a>
-        <button class="btn btn-close" onclick="togglePetDetails({{ pet.id }})">❌ 關閉</button>
+      {% empty %}
+      <!-- 空狀態 -->
+      <div class="empty-state fade-in-up">
+        <div class="empty-state-icon">
+          <i class="bi bi-heart"></i>
+        </div>
+        <div class="empty-state-content">
+          <h3 class="empty-state-title">還沒有毛孩資料</h3>
+          <p class="empty-state-text">快來新增你的第一個毛孩吧！</p>
+          <a href="{% url 'add_pet' %}" class="action-btn btn-appointment">
+            <i class="bi bi-plus-circle"></i>
+            <span>立即新增</span>
+          </a>
+        </div>
       </div>
+      {% endfor %}
     </div>
   </div>
-  {% empty %}
-    <p>尚無寵物資料，快來新增你的寵物吧！</p>
-  {% endfor %}
 </div>
 
-<script>
-  function togglePetDetails(petId) {
-    const details = document.getElementById("details-" + petId);
-    details.style.display = (details.style.display === "none" || details.style.display === "") ? "block" : "none";
-  }
-
-  function toggleFeature(petId) {
-    const feature = document.getElementById("feature-" + petId);
-    feature.classList.toggle("collapsed");
-    feature.classList.toggle("expanded");
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const msgContainer = document.getElementById('message-container');
-    if (msgContainer) {
-      setTimeout(() => {
-        msgContainer.style.transition = 'opacity 0.5s ease';
-        msgContainer.style.opacity = '0';
-        setTimeout(() => msgContainer.remove(), 500);
-      }, 3000);
-    }
-  });
-</script>
+<!-- 訊息顯示 -->
+{% if messages %}
+  {% for message in messages %}
+  <div id="message-container" class="message-popup">
+    <div class="message {{ message.tags }}">
+      <i class="bi bi-check-circle me-2"></i>{{ message }}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
 {% endblock %}
+
 {% block extra_js %}
-  {{ block.super }}
+{{ block.super }}
+<script src="{% static 'js/pet_list.js' %}"></script>
 {% endblock %}
