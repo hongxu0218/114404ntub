@@ -1,12 +1,14 @@
 {% extends "vet_pages/base.html" %}
 
-{% block title %}新增 {{ pet.name }} 的疫苗紀錄{% endblock %}
+{% block title %}編輯 {{ pet.name }} 的病例紀錄{% endblock %}
 
 {% block back_button %}
 <a href="{% url 'my_patients' %}" class="back-home">← 返回列表</a>
 {% endblock %}
 
-{% block header %}<h1 class="section-title">➕ 為 {{ pet.name }} 新增疫苗紀錄</h1>{% endblock %}
+{% block header %}
+<h1 class="section-title">✏️ 編輯 {{ pet.name }} 的病例紀錄</h1>
+{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -50,7 +52,7 @@
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">儲存疫苗紀錄</button>
+    <button type="submit">儲存變更</button>
   </form>
 </div>
 {% endblock %}

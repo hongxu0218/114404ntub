@@ -1,115 +1,279 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <title>毛孩幸福生活</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
 
-  <!-- Header 區塊 -->
-  <header>
-    <div class="logo">
-      <img src="{% static 'images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg' %}" alt="LOGO">
-      <span>PAW<br>DAY</span>
-    </div>
-    <nav>
-      <a href="#">寵物</a>
-      <a href="#">健康紀錄</a>
-      <a href="#">通知</a>
-      {% if user.is_authenticated %}
-        <a href="{% url 'account_logout' %}">登出</a>
-      {% else %}
-        <a href="{% url 'account_login' %}">登入</a>
-        <a href="{% url 'account_signup' %}">註冊</a>
-      {% endif %}
-    </nav>
-  </header>
+{% block title %}毛孩幸福生活{% endblock %}
 
-  <section class="hero">
-    <div class="hero-text">
-      <h1>打造毛孩專屬<br>幸福生活！</h1>
-    </div>
-    <img src="{% static 'images/cat-8525666_1280.webp' %}" alt="毛孩插圖" style="height: 200px;">
-  </section>
-
-  <section class="latest-news">
-    <h2 class="news-title">最新消息</h2>
-    <div class="news-scroll-wrapper">
-      <button class="scroll-btn left" onclick="scrollNews('left')">←</button>
-      <div class="news-container" id="newsContainer">
-        <a href="https://dailyview.tw/popular/detail/29132" class="news-card">
-          <img src="{% static 'images/a1e2c2a5c2358a8358ac34014654e86f658b60925bb664f14510f1a6b275962b.webp' %}" alt="">
-        </a>
-        <a href="https://www.jvs.com.tw/blog/posts/..." class="news-card">
-          <img src="{% static 'images/original.jpg' %}" alt="">
-        </a>
-        <a href="https://udn.com/news/story/..." class="news-card">
-          <img src="{% static 'images/29847947.jpg' %}" alt="">
-        </a>
-        <a href="https://animal.moa.gov.tw/Frontend/News/..." class="news-card">
-          <img src="{% static 'images/231020043730481832ZLZ4S.jpg' %}" alt="">
-        </a>
-        <a href="https://www.dotdotnews.com/a/202503/..." class="news-card">
-          <img src="{% static 'images/67dd054fe4b0e62e722d1fce.jpg' %}" alt="">
-        </a>
-        <a href="https://www.youtube.com/watch?v=uBhBu-LYSqM" class="news-card">
-          <img src="{% static 'images/hq720.jpg' %}" alt="">
-        </a>
-        <a href="more-news.html" class="news-card more"><span>更多消息 →</span></a>
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6 col-md-6 mb-4 mb-md-0">
+        <div class="hero-text">
+          <h1 class="display-4 fw-bold">
+            打造毛孩專屬<br>
+            <span class="text-warning">幸福生活！</span>
+          </h1>
+          <p class="lead text-muted mb-4">專業的寵物健康管理平台，記錄每一個珍貴時刻</p>
+          <div class="d-flex flex-wrap gap-3">
+            <a href="{% if user.is_authenticated %}{% url 'add_pet' %}{% else %}{% url 'account_signup' %}{% endif %}" 
+               class="btn btn-primary-custom btn-lg">
+              <i class="bi bi-plus-circle me-2"></i>立即開始
+            </a>
+            <a href="{% url 'map' %}" class="btn btn-outline-warning btn-lg">
+              <i class="bi bi-geo-alt me-2"></i>尋找附近
+            </a>
+          </div>
+        </div>
       </div>
-      <button class="scroll-btn right" onclick="scrollNews('right')">→</button>
+      <div class="col-lg-6 col-md-6 text-center">
+        <img src="{% static 'images/hero_cat.webp' %}" alt="毛孩插圖" class="hero-img img-fluid" style="max-height: 400px;">
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section-icons">
-    <div class="category-buttons">
-      <a href="#" class="category-link">
-        <img src="{% static 'images/paws (2).png' %}" class="icon-img"><br>新增毛孩
-      </a>
+<!-- Latest News Section -->
+<section class="news-section bg-light">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <h2 class="news-title text-center mb-4">
+          <i class="bi bi-newspaper me-3"></i>最新消息
+        </h2>
+        
+        <div class="news-scroll-container">
+          <div class="d-flex gap-3 pb-3" style="overflow-x: auto; min-width: max-content;">
+            <a href="https://dailyview.tw/popular/detail/29132" class="news-card">
+              <img src="{% static 'images/news_1.webp' %}" alt="寵物新聞" class="img-fluid">
+            </a>
+            <a href="https://www.jvs.com.tw/blog/posts/..." class="news-card">
+              <img src="{% static 'images/news_2.jpg' %}" alt="寵物新聞" class="img-fluid">
+            </a>
+            <a href="https://udn.com/news/story/..." class="news-card">
+              <img src="{% static 'images/news_3.jpg' %}" alt="寵物新聞" class="img-fluid">
+            </a>
+            <a href="https://animal.moa.gov.tw/Frontend/News/..." class="news-card">
+              <img src="{% static 'images/news_4.jpg' %}" alt="寵物新聞" class="img-fluid">
+            </a>
+            <a href="https://www.dotdotnews.com/a/202503/..." class="news-card">
+              <img src="{% static 'images/news_5.jpg' %}" alt="寵物新聞" class="img-fluid">
+            </a>
+            <a href="https://www.youtube.com/watch?v=uBhBu-LYSqM" class="news-card">
+              <img src="{% static 'images/news_youtube.jpg' %}" alt="寵物影片" class="img-fluid">
+            </a>
+            <div class="news-card more">
+              <span><i class="bi bi-arrow-right-circle me-2"></i>更多消息</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="category-buttons">
-      <a href="health.html" class="category-link">
-        <img src="{% static 'images/stethoscope.png' %}" class="icon-img"><br>健康紀錄
-      </a>
-    </div>
-    <div class="category-buttons">
-      <a href="{% url 'map' %}" class="category-link">
-        <img src="{% static 'images/pin.png' %}" class="icon-img"><br>搜尋附近
-      </a>
-    </div>
-    <div class="category-buttons">
-      <a href="#" class="category-link">
-        <img src="{% static 'images/emergency-call.png' %}" class="icon-img"><br>急診
-      </a>
-    </div>
-  </section>
+  </div>
+</section>
 
-  <footer>
-    <div>
-      <h4>網站簡介</h4>
-      <p>這是一個為毛小孩與飼主打造的平台，讓你輕鬆記錄、分享毛孩生活與健康資訊。</p>
+<!-- Category Icons Section -->
+<section class="py-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mb-5">
+        <h2 class="display-6 fw-bold text-dark">快速功能</h2>
+        <p class="lead text-muted">選擇您需要的服務，讓毛孩生活更美好</p>
+      </div>
     </div>
-    <div>
-      <h4>客服聯絡資訊</h4>
-      <p>Email：pawday114404@gmail.com<br>電話：02-5566-7788<br>服務時間：週一至五 10:00 - 18:00</p>
-    </div>
-    <div>
-      <h4>社群連結</h4>
-      <p>IG：@pawday114404<br>FB：毛日好 Paw&Day<br>LINE：@pawday114404</p>
-    </div>
-  </footer>
+    
+    <div class="row g-4 justify-content-center">
+      <!-- 第一個功能卡片 -->
+      <div class="col-lg-3 col-md-4 col-sm-6">
+        {% if user.profile.account_type == 'vet' %}
+          <a href="{% url 'my_patients' %}" class="category-card">
+            <img src="{% static 'images/icon_add_pet.png' %}" class="category-icon" alt="看診寵物">
+            <div class="category-text">看診寵物</div>
+          </a>
+        {% else %}
+          <a href="{% url 'add_pet' %}" class="category-card">
+            <img src="{% static 'images/icon_add_pet.png' %}" class="category-icon" alt="新增毛孩">
+            <div class="category-text">新增毛孩</div>
+          </a>
+        {% endif %}
+      </div>
 
-  <script src="{% static 'js/script.js' %}"></script>
-  <script>
-    function scrollNews(direction) {
-      const container = document.getElementById("newsContainer");
-      const scrollAmount = 220;
-      container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
-    }
-  </script>
+      <!-- 第二個功能卡片 -->
+      <div class="col-lg-3 col-md-4 col-sm-6">
+        {% if user.profile.account_type == 'vet' %}
+          <a href="{% url 'vet_appointments' %}" class="category-card">
+            <img src="{% static 'images/icon_health.png' %}" class="category-icon" alt="查看預約">
+            <div class="category-text">查看預約</div>
+          </a>
+        {% else %}
+          <a href="{% if user.is_authenticated %}{% url 'health_rec' %}{% else %}{% url 'account_login' %}{% endif %}" class="category-card">
+            <img src="{% static 'images/icon_health.png' %}" class="category-icon" alt="健康紀錄">
+            <div class="category-text">健康紀錄</div>
+          </a>
+        {% endif %}
+      </div>
 
-</body>
-</html>
+      <!-- 第三個功能卡片 -->
+      <div class="col-lg-3 col-md-4 col-sm-6">
+        {% if user.profile.account_type == 'vet' %}
+          <a href="{% url 'vet_availability_settings' %}" class="category-card">
+            <img src="{% static 'images/icon_time.png' %}" class="category-icon" alt="排班時段">
+            <div class="category-text">排班時段</div>
+          </a>
+        {% else %}
+          <a href="{% url 'map' %}" class="category-card">
+            <img src="{% static 'images/icon_location.png' %}" class="category-icon" alt="搜尋附近">
+            <div class="category-text">搜尋附近</div>
+          </a>
+        {% endif %}
+      </div>
+      
+      <!-- 第四個功能卡片（非獸醫才顯示） -->
+      {% if user.profile.account_type != 'vet' %}
+      <div class="col-lg-3 col-md-4 col-sm-6">
+        <a href="#" class="category-card">
+          <img src="{% static 'images/icon_emergency.png' %}" class="category-icon" alt="急診">
+          <div class="category-text">
+            <span class="text-danger">24H 急診</span>
+          </div>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Features Highlight Section -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mb-5">
+        <h2 class="display-6 fw-bold text-dark">為什麼選擇 PAW&DAY？</h2>
+        <p class="lead text-muted">專業、便利、安心的寵物生活管理</p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="text-center h-100 p-4">
+          <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="bi bi-shield-check text-warning" style="font-size: 2rem;"></i>
+          </div>
+          <h4 class="fw-bold">專業可靠</h4>
+          <p class="text-muted">與認證獸醫合作，提供最專業的寵物健康管理建議</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 col-md-6">
+        <div class="text-center h-100 p-4">
+          <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="bi bi-phone text-warning" style="font-size: 2rem;"></i>
+          </div>
+          <h4 class="fw-bold">隨時隨地</h4>
+          <p class="text-muted">手機、電腦都能使用，隨時記錄毛孩的生活點滴</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 col-md-6">
+        <div class="text-center h-100 p-4">
+          <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="bi bi-heart-fill text-warning" style="font-size: 2rem;"></i>
+          </div>
+          <h4 class="fw-bold">用心服務</h4>
+          <p class="text-muted">貼心的提醒功能，永遠不會錯過重要的健康檢查</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action -->
+{% if not user.is_authenticated %}
+<section class="py-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 mx-auto text-center">
+        <h2 class="display-6 fw-bold mb-4">立即加入 PAW&DAY 大家庭</h2>
+        <p class="lead text-muted mb-4">開始為您的毛孩建立專屬的健康檔案</p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+          <a href="{% url 'account_signup' %}" class="btn btn-primary-custom btn-lg">
+            <i class="bi bi-person-plus me-2"></i>免費註冊
+          </a>
+          <a href="{% url 'account_login' %}" class="btn btn-outline-warning btn-lg">
+            <i class="bi bi-box-arrow-in-right me-2"></i>立即登入
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+<script>
+// 新聞滾動功能
+function scrollNews(direction) {
+  const container = document.querySelector('.news-scroll-container .d-flex');
+  if (container) {
+    const scrollAmount = 220;
+    container.scrollBy({ 
+      left: direction === 'left' ? -scrollAmount : scrollAmount, 
+      behavior: 'smooth' 
+    });
+  }
+}
+
+// 為新聞卡片添加點擊效果
+document.addEventListener('DOMContentLoaded', function() {
+  const newsCards = document.querySelectorAll('.news-card');
+  newsCards.forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-8px) scale(1.02)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(-5px) scale(1)';
+    });
+  });
+
+  // 分類卡片hover效果
+  const categoryCards = document.querySelectorAll('.category-card');
+  categoryCards.forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-12px)';
+      this.style.boxShadow = '0 15px 45px rgba(0,0,0,0.2)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(-8px)';
+      this.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
+    });
+  });
+
+  // 平滑滾動到錨點
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+  });
+});
+
+// 添加滾動視差效果
+window.addEventListener('scroll', function() {
+  const scrolled = window.pageYOffset;
+  const heroImg = document.querySelector('.hero-img');
+  if (heroImg) {
+    heroImg.style.transform = `translateY(${scrolled * 0.1}px)`;
+  }
+});
+</script>
+{% endblock %}

@@ -22,3 +22,7 @@ document.getElementById('searchBtn').addEventListener('click', () => {
     <div class="result-item">${keyword} 結果 C</div>
   `;
 });
+function toggleMenu() {
+  const navbar = document.getElementById('navbar');
+  navbar.classList.toggle('show');
+}
