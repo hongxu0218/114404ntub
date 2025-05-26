@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}我的毛小孩{% endblock %}
+
+{% block extra_css %}
+<style>
+  h2 {
+    color: #333;
+    margin-bottom: 10px;
+  }
+
+  .pet-list {
+    margin-top: 30px;
+  }
+
+  .card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .pet-details p {
+    margin: 6px 0;
+  }
+
+  .feature-text.collapsed {
+    display: inline-block;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .feature-text.expanded {
+    white-space: normal;
+    max-width: none;
+    cursor: pointer;
+  }
+
+  .action-buttons {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pet-image {
+    max-width: 200px;
+    border-radius: 10px;
+  }
+
+  .message-popup {
+    position: fixed;
+    top: 20px;
+    left: 40%;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 90%;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    animation: fadein 0.5s ease;
+    text-align: center;
+  }
+
+  .message {
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    color: #fff;
+  }
+
+  .message.success { background-color: #28a745; }
+  .message.error { background-color: #dc3545; }
+  .message.warning { background-color: #ffc107; color: #212529; }
+  .message.info { background-color: #17a2b8; }
+
+  @keyframes fadein {
+    from {opacity: 0; transform: translateY(-10px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+
+  .pet-details {
+    display: none;  /* 預設收合 */
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <a href="{% url 'add_pet' %}" class="category-link">
+    <img src="{% static 'images/icon_add_pet.png' %}" class="icon-img"><br>新增毛孩
+  </a>
+</div>
+
+<div class="pet-list">
+  <h3>我的毛小孩</h3>
+  {% for pet in pets %}
+  <div class="card">
+    <button class="btn btn-pet" onclick="togglePetDetails({{ pet.id }})">{{ pet.name }}</button>
+    <div id="details-{{ pet.id }}" class="pet-details">
+      <p><strong>品種：</strong>{{ pet.breed }}</p>
+      <p><strong>絕育狀態：</strong>{{ pet.get_sterilization_status_display }}</p>
+      <p><strong>晶片號碼：</strong>{{ pet.chip }}</p>
+      <p><strong>出生日期：</strong>
+        {% if pet.birth_date %}
+          {{ pet.birth_date|date:"Y 年 m 月 d 日" }}
+        {% else %}
+          尚未填寫
+        {% endif %}
+      </p>
+      <p><strong>體重：</strong>{{ pet.weight }} 公斤</p>
+      <p><strong>特徵：</strong>
+        <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
+        <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">展開</button>
+      </p>
+      <p><strong>性別：</strong>{{ pet.get_gender_display }}</p>
+
+      {% if pet.picture %}
+        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}" class="pet-image">
+      {% else %}
+        <p>尚未上傳圖片</p>
+      {% endif %}
+
+      {% if pet.future_appointments %}
+      <div style="margin-top: 10px; background-color: #f1f9ff; padding: 10px; border-left: 4px solid #007bff;">
+        <strong>📅 預約資訊：</strong>
+        <ul style="margin-top: 5px;">
+          {% for appt in pet.future_appointments %}
+          <li>
+            {{ appt.date }} {{ appt.time }}｜{{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
+            （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
+            <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" style="background:none; border:none; color:#dc3545; font-weight:bold; cursor:pointer;" title="取消預約">
+                ❌
+              </button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
+        <p style="color: #888; font-style: italic;">尚無預約紀錄</p>
+      {% endif %}
+
+      <div class="action-buttons">
+        <a href="{% url 'edit_pet' pet.id %}" class="btn btn-edit">✏️ 修改</a>
+        <a href="{% url 'delete_pet' pet.id %}" class="btn btn-delete">🗑️ 刪除</a>
+        <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="btn btn-daily">📅 預約獸醫</a>
+        <button class="btn btn-close" onclick="togglePetDetails({{ pet.id }})">❌ 關閉</button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+    <p>尚無寵物資料，快來新增你的寵物吧！</p>
+  {% endfor %}
+</div>
+
+<script>
+  function togglePetDetails(petId) {
+    const details = document.getElementById("details-" + petId);
+    details.style.display = (details.style.display === "none" || details.style.display === "") ? "block" : "none";
+  }
+
+  function toggleFeature(petId) {
+    const feature = document.getElementById("feature-" + petId);
+    feature.classList.toggle("collapsed");
+    feature.classList.toggle("expanded");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const msgContainer = document.getElementById('message-container');
+    if (msgContainer) {
+      setTimeout(() => {
+        msgContainer.style.transition = 'opacity 0.5s ease';
+        msgContainer.style.opacity = '0';
+        setTimeout(() => msgContainer.remove(), 500);
+      }, 3000);
+    }
+  });
+</script>
+{% endblock %}
+{% block extra_js %}
+  {{ block.super }}
+{% endblock %}
