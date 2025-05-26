@@ -120,13 +120,13 @@
       
 <div class="pet-details" style="display: none;">
   <div class="add-buttons">
-    <a href="{% url 'create_medical_record' pet.id %}" class="btn btn-medical">➕ 新增病例</a>
+    <a href="{% url 'create_medical_record' pet.id %}" class="btn btn-medical">➕ 新增病歷</a>
     <a href="{% url 'add_vaccine' pet.id %}" class="btn btn-vaccine">💉 新增疫苗</a>
     <a href="{% url 'add_deworm' pet.id %}" class="btn btn-deworm">🪱 新增驅蟲</a>
     <a href="{% url 'add_report' pet.id %}" class="btn btn-report">📎 新增報告</a>
   </div>
 
-        <h4>病例紀錄</h4>
+        <h4>病歷紀錄</h4>
         {% for record in pet.medicalrecord_set.all|dictsortreversed:"visit_date" %}
           <div class="record-card medical-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
             <p><strong>🗓️ 日期：</strong>{{ record.visit_date }}</p>
@@ -135,11 +135,11 @@
             <p><strong>💊 治療：</strong>{{ record.treatment|default:"未填寫" }}</p>
             <p><strong>👨‍⚕️ 醫師：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
             <a href="{% url 'edit_medical_record' pet.id record.id %}">✏️編輯</a>
-            <a href="{% url 'delete_medical_record' record.id %}" onclick="return confirm('確定刪除這筆病例紀錄嗎？')">🗑️刪除</a>
+            <a href="{% url 'delete_medical_record' record.id %}" onclick="return confirm('確定刪除這筆病歷紀錄嗎？')">🗑️刪除</a>
           </div>
         {% endfor %}
         {% if pet.medicalrecord_set.count > 1 %}
-          <button onclick="toggleRecords('medical-record', this)" class="btn btn-secondary">顯示更多病例紀錄</button>
+          <button onclick="toggleRecords('medical-record', this)" class="btn btn-secondary">顯示更多病歷紀錄</button>
         {% endif %}
 
         <h4>疫苗紀錄</h4>
