@@ -1,0 +1,986 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}健康紀錄{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #fff8f0;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background-color: #ffffff;
+            border: 1px solid #6d9773;
+            color: #6d9773;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .nav-btn:hover {
+            background-color: #6d9773;
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+
+        .btn-vaccine { background-color: #f5b971; color: white; }
+        .btn-deworm { background-color: #d7b49e; color: white; }
+        .btn-report { background-color: #b3c99c; color: white; }
+        .btn-daily { background-color: #6d9773; color: white; }
+        .btn-reminder { background-color: #f9c784; color: black; }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .record-block {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            position: relative; /* For positioning the 'Add' button */
+        }
+
+        .add-record-btn {
+            display: block;
+            margin-top: 10px;
+            background-color: #f9c784;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .input-block {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .input-block input, .input-block textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .input-block .btn-save, .input-block .btn-close {
+            background-color: #92bfa0;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .input-block .btn-close {
+            background-color: #e97777;
+        }
+
+        /* 針對圖表調整 */
+        .chart-container {
+            background-color: #;        /* 淡藍背景，更明顯區隔 */
+            /*border: 1px solid ;         淺藍邊框 */
+            padding: 15px;                    /* 增加內距，讓內容不擠 */
+            margin-bottom: 30px;              /* 下方間距加大，分隔明顯 */
+            /*border-radius: 12px;               圓角更圓潤 */
+            /*box-shadow: 0 4px 8px rgba(33, 150, 243, 0.15);   輕柔陰影 */
+        }
+        /* 按鈕容器 */
+        .chart-container > div:last-child {
+            margin-top: 12px;
+            text-align: right;
+        }
+        /* 圖表本體 */
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .chart-label {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .trend-chart {
+            width: 100% !important;
+            height: 200px !important;        /* 較高，方便看細節 */
+        }
+        .month-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+        .month-nav button {
+            background-color: #6d9773;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .month-nav button:hover {
+            background-color: #6d9773;
+        }
+
+
+        /* 修改按鈕樣式 */
+        .btn-info {
+            background-color: #6d9773;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-info:hover {
+            background-color: #5f8663;
+        }
+
+        /* 寵物名字按鈕樣式 */
+        .pet-name-btn {
+            margin-top: 10px;
+            display: inline-block;
+            background-color: #92bfa0;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .record-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .record-details .left-col, .record-details .right-col {
+            width: 48%;  /* 左右兩側各佔 48% 寬度 */
+        }
+
+        .record-category {
+            margin-top: 20px;
+        }
+
+        .record-category h5 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .record-category ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .record-category ul li {
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        /* 新增按鈕 */
+        .add-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #92bfa0;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        /* 體溫標題與新增按鈕 */
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;              /* 增加標題與圖表間距 */
+        }
+
+        .record-header h5 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #6d9773;                  /* 深藍色，醒目 */
+        }
+
+        .add-btn {
+            background-color: #6d9773;
+            color: white;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background-color: #5f8663;
+        }
+
+        .record-item {
+            cursor: pointer; /* 滑鼠變成手形（通常是三角形或箭頭） */
+          }
+        .record-item .delete-btn {
+          display: none;
+        }
+        .record-item:hover .delete-btn {
+          display: inline-block;
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>健康記錄</h2>
+
+<div class="tab-buttons">
+    <button class="tab-btn btn-info" onclick="showTab('medical')">🩺 看診紀錄</button>
+    <button class="tab-btn btn-vaccine" onclick="showTab('vaccine')">💉 疫苗</button>
+    <button class="tab-btn btn-deworm" onclick="showTab('deworm')"> 驅蟲</button>
+    <button class="tab-btn btn-report" onclick="showTab('report')">📄 報告</button>
+    <button class="tab-btn btn-daily" onclick="showTab('daily')">📘 生活記錄</button>
+    </div>
+
+<!-- 病例區塊 -->
+<div id="medical" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('medical', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+      >
+        {{ pet.name }} 的看診紀錄
+      </button>
+    </h3>
+    <div id="details-medical-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.medicalrecord_set.all %}
+        <ul>
+          {% for record in pet.medicalrecord_set.all|dictsortreversed:"visit_date" %}
+            <li>
+              <strong>看診日期：</strong>{{ record.visit_date }}<br>
+              <strong>看診地點：</strong>{{ record.clinic_location }}<br>
+              <strong>診斷結果：</strong>{{ record.diagnosis|default:"未填寫" }}<br>
+              <strong>治療內容：</strong>{{ record.treatment|default:"未填寫" }}<br>
+              <strong>看診獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}<br>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>無看診紀錄。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+
+<!-- 疫苗區塊 -->
+<div id="vaccine" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('vaccine', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+      >
+        {{ pet.name }} 的疫苗記錄
+      </button>
+    </h3>
+    <div id="details-vaccine-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.vaccine_records.all %}
+        <ul>
+          {% for record in pet.vaccine_records.all|dictsortreversed:"date" %}
+            <li>
+              <strong>疫苗名稱：</strong>{{ record.name }}<br>
+              <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
+              <strong>施打地點：</strong>{{ record.location }}<br>
+              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
+              <a href="{% url 'delete_vaccine' record.id %}" onclick="return confirm('確定刪除這筆疫苗紀錄嗎？')">🗑️刪除</a>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>無疫苗紀錄。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+<!-- 驅蟲區塊 -->
+<div id="deworm" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('deworm', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+      >
+        {{ pet.name }} 的驅蟲記錄
+      </button>
+    </h3>
+    <div id="details-deworm-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.deworm_records.all %}
+        <ul>
+          {% for record in pet.deworm_records.all|dictsortreversed:"date" %}
+            <li>
+              <strong>驅蟲品牌：</strong>{{ record.name }}<br>
+              <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
+              <strong>施打地點：</strong>{{ record.location }}<br>
+              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
+              <a href="{% url 'delete_deworm' record.id %}" onclick="return confirm('確定刪除這筆驅蟲紀錄嗎？')">🗑️刪除</a>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>無驅蟲紀錄。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+
+
+<!-- 報告區塊 -->
+<div id="report" class="tab-content">
+  {% for pet in pets %}
+    <h3>
+      <button
+        onclick="toggleDetails('report', {{ pet.id }})"
+        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+      >
+        {{ pet.name }} 的報告
+      </button>
+    </h3>
+
+    <div id="details-report-{{ pet.id }}" style="display:none;" class="tab-content">
+      {% if pet.reports.all %}
+        <ul>
+          {% for record in pet.reports.all|dictsortreversed:"date_uploaded" %}
+            <li>
+              <strong>標題：</strong>{{ record.title }}<br>
+              <strong>檔案：</strong><a href="{{ record.pdf.url }}" target="_blank">{{ record.pdf }}</a><br>
+
+              <a href="{% url 'delete_report' record.id %}" onclick="return confirm('確定刪除這筆報告嗎？')">🗑️刪除</a>
+              <hr>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>尚無報告。</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+
+<!-- 生活記錄區塊 -->
+<div id="daily" class="tab-content">
+    <h3>📘 生活記錄</h3>
+
+    {% if grouped_records %}
+        <p>已載入 {{ grouped_records|length }} 筆寵物的生活記錄。</p>
+        {% for group in grouped_records %}
+            <h4>
+                <button class="pet-name-btn" onclick="toggleRecordVisibility('records-{{ group.pet.id }}')">
+                    🐶 {{ group.pet.name }}
+                </button>
+            </h4>
+
+            <div id="records-{{ group.pet.id }}" class="record-block" style="display: none;">
+                <div class="record-details">
+                    <!-- 左側：體溫、飲食、過敏原 -->
+                    <div class="left-col">
+                        <!-- 體溫趨勢圖 -->
+                        <div class="chart-container">
+                            <div class="record-header">
+                                <h5>體溫</h5>
+                                <a href="{% url 'add_tem' group.pet.id %}" class="add-btn">＋ 新增</a>
+                            </div>
+                                <div class="month-nav">
+                                        <button onclick="changeTempMonth({{ group.pet.id }}, -1)">＜</button>
+                                        <span id="month-label-{{ group.pet.id }}"></span>
+                                        <button onclick="changeTempMonth({{ group.pet.id }}, 1)">＞</button>
+                                    </div>
+                                <div id="tempChartWrapper-{{ group.pet.id }}">
+                                    <canvas id="tempChart-{{ group.pet.id }}"></canvas>
+                                </div>
+
+                            <div>
+                                <a href="{% url 'tem_rec' group.pet.id %}" class="btn btn-info">更多訊息</a>
+                            </div>
+                        </div>
+
+
+
+                       <!-- 飲食紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                <h5>飲食習慣</h5>
+                                <button class="add-btn" onclick="toggleInputBlock(this)">＋ 新增 </button>
+                            </div>
+                                <ul>
+                                  {% for record in group.records %}
+                                    {% if record.category == 'diet' and record.content %}
+                                      <li id="diet-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
+                                        {{ record.content }}
+                                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                      </li>
+                                    {% endif %}
+                                  {% endfor %}
+                                </ul>
+                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="diet" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                            </div>
+                        </div>
+
+
+                        <!-- 過敏原紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                <h5>過敏原</h5>
+                                <button class="add-btn" onclick="toggleInputBlock(this)">
+                                    ＋ 新增</button>
+                                </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'allergen' and record.content  %}
+                                        <li id="allergen-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
+                                          {{ record.content }}
+                                          <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="allergen" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：體重、運動、其他 -->
+                    <div class="right-col">
+                        <!-- 體重趨勢圖 -->
+                            <div class="chart-container">
+                                <div class="record-header">
+                                    <h5>體重</h5>
+                                    <a href="{% url 'add_weight' group.pet.id %}" class="add-btn">＋ 新增</a>
+                                </div>
+                                <div class="month-nav">
+                                    <button onclick="changeWeightMonth({{ group.pet.id }}, -1)">＜</button>
+                                    <span id="month-labelw-{{ group.pet.id }}"></span>
+                                    <button onclick="changeWeightMonth({{ group.pet.id }}, 1)">＞</button>
+                                </div>
+                                <div id="weightChartWrapper-{{ group.pet.id }}">
+                                    <canvas id="weightChart-{{ group.pet.id }}"></canvas>
+                                </div>
+                                <div style="text-align: right; margin-top: 10px;">
+                                    <a href="{% url 'weight_rec' group.pet.id %}" class="btn btn-info">更多訊息</a>
+                                </div>
+                            </div>
+
+
+                        <!-- 運動紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                 <h5>運動習慣</h5>
+                                 <button class="add-btn" onclick="toggleInputBlock(this)">
+                                     ＋ 新增</button>
+                                </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'exercise' and record.content  %}
+                                        <li id="exercise-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
+                                            {{ record.content }}
+                                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="exercise" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                            </div>
+                        </div>
+
+                        <!-- 其他紀錄 -->
+                        <div class="record-category">
+                            <div class="record-header">
+                                <h5>其他</h5>
+                                <button class="add-btn" onclick="toggleInputBlock(this)">
+                                    ＋ 新增</button>
+                                </div>
+                            <ul>
+                                {% for record in group.records %}
+                                    {% if record.category == 'other' and record.content  %}
+                                        <li id="other-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
+                                            {{ record.content }}
+                                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                                <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="other" style="display:none;">
+                                    <textarea placeholder="輸入內容..."></textarea><br>
+                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                    <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>先到寵物資料新增生活記錄喔。</p>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 切換顯示與隱藏生活記錄
+    function toggleRecordVisibility(recordId) {
+        const recordDiv = document.getElementById(recordId);
+        recordDiv.style.display = recordDiv.style.display === "none" ? "block" : "none";
+    }
+    function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const c = cookies[i].trim();
+        if (c.startsWith(name + '=')) {
+            return decodeURIComponent(c.substring(name.length + 1));
+        }
+    }
+    return '';
+}
+
+    //  生活記錄的刪除  隱藏功能
+    function toggleDeleteButton(liElement) {
+        const deleteBtn = liElement.querySelector('.delete-btn');
+        if (deleteBtn.style.display === 'none') {
+            // 先隱藏其他打開的刪除按鈕
+            document.querySelectorAll('.delete-btn').forEach(btn => btn.style.display = 'none');
+            deleteBtn.style.display = 'inline-block';
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+    }
+
+    function showTab(tabId) {
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+    }
+        // 顯示或隱藏輸入框
+        function toggleInputBlock(button) {
+            const block = button.closest('.record-category').querySelector('.input-block');
+            block.style.display = block.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function closeInputBlock(button) {
+            const block = button.closest('.input-block');
+            block.style.display = 'none';
+            block.querySelector('textarea').value = '';
+        }
+
+        // 儲存生活記錄資料
+        function saveRecord(button) {
+        const inputBlock = button.closest('.input-block');
+        const textarea = inputBlock.querySelector('textarea');
+        const content = textarea.value.trim();
+        const petId = inputBlock.getAttribute('data-pet-id');
+        const category = inputBlock.getAttribute('data-category');
+
+        if (!content) {
+            alert('請輸入內容');
+            return;
+        }
+
+        // 建立資料物件
+        const data = {
+            pet_id: petId,
+            category: category,
+            content: content
+        };
+
+        // 發送 POST 請求
+        fetch('/save_daily_record/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('儲存失敗');
+            }
+            return response.json();
+        })
+        .then(json => {
+            if (json.success) {
+                const ul = inputBlock.previousElementSibling; // UL 在 input-block 前
+                const li = document.createElement('li');
+                li.id = `${category}-record-${json.record_id}`;
+                li.innerHTML = `
+                    ${content}
+                    <button onclick="deleteRecord('${json.record_id}', '${petId}')">刪除</button>
+                `;
+                ul.appendChild(li);
+                textarea.value = '';
+                inputBlock.style.display = 'none';
+            } else {
+                alert(json.message || '儲存失敗');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('儲存過程中發生錯誤');
+        });
+    }
+
+
+
+
+
+
+// 取得 CSRF Token 的函式
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+    // 刪除生活記錄的資料
+    function deleteRecord(recordId, petId) {
+    if (!confirm('確定要刪除這筆紀錄嗎？')) {
+        return;
+    }
+    // 發送 DELETE 請求到後端
+    fetch(`/pet/${petId}/health/delete_record/`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            'record_id': recordId,
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 刪除成功，移除該記錄的元素
+            document.getElementById(`diet-record-${recordId}`)?.remove();
+            document.getElementById(`allergen-record-${recordId}`)?.remove();
+            document.getElementById(`exercise-record-${recordId}`)?.remove();
+            document.getElementById(`other-record-${recordId}`)?.remove();
+
+            alert('紀錄已刪除');
+        } else {
+            alert('刪除失敗');
+        }
+    });
+}
+
+
+// ===== 體溫相關 =====
+const petTemperatures = {{ pet_temperatures|safe }};
+const currentTempMonthMap = {};
+
+function getMonthString(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function renderTemperatureChart(petId) {
+    const chartId = `tempChart-${petId}`;
+    const ctx = document.getElementById(chartId);
+    if (!ctx) return;
+
+    const current = currentTempMonthMap[petId];
+    const monthKey = getMonthString(current);
+    const monthData = (petTemperatures[petId] && petTemperatures[petId][monthKey]) || [];
+
+    const labels = monthData.map(item => item.date);
+    const data = monthData.map(item => item.temperature);
+
+    if (ctx.chart) ctx.chart.destroy();
+    ctx.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: '體溫 (°C)',
+                data,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        stepSize: 1,
+                        callback: value => value.toFixed(1) + '°C'
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: context => context.raw.toFixed(1) + '°C'
+                    }
+                }
+            }
+        }
+    });
+
+    const labelEl = document.getElementById(`month-label-${petId}`);
+    if (labelEl) {
+        labelEl.textContent = `${current.getFullYear()}年${current.getMonth() + 1}月`;
+    }
+}
+
+function changeTempMonth(petId, offset) {
+    const current = currentTempMonthMap[petId];
+    const newDate = new Date(current);
+    newDate.setMonth(newDate.getMonth() + offset);
+
+    const today = new Date();
+    if (getMonthString(newDate) > getMonthString(today)) return;
+
+    const year = newDate.getFullYear();
+    const month = newDate.getMonth() + 1;
+    const monthKey = getMonthString(newDate);
+
+    const chartWrapper = document.getElementById(`tempChartWrapper-${petId}`);
+    if (chartWrapper) chartWrapper.classList.add('opacity-50');
+
+    if (petTemperatures[petId] && petTemperatures[petId][monthKey]) {
+        currentTempMonthMap[petId] = newDate;
+        renderTemperatureChart(petId);
+        if (chartWrapper) chartWrapper.classList.remove('opacity-50');
+        return;
+    }
+
+    fetch(`/api/pet/${petId}/temperature/${year}/${month}/`)
+        .then(response => {
+            if (!response.ok) throw new Error("Network error");
+            return response.json();
+        })
+        .then(data => {
+            if (!petTemperatures[petId]) petTemperatures[petId] = {};
+            petTemperatures[petId][monthKey] = data;
+            currentTempMonthMap[petId] = newDate;
+            renderTemperatureChart(petId);
+        })
+        .catch(err => {
+            alert("無法載入體溫資料，請稍後再試");
+            console.error(err);
+        })
+        .finally(() => {
+            if (chartWrapper) chartWrapper.classList.remove('opacity-50');
+        });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    Object.keys(petTemperatures).forEach(petId => {
+        const now = new Date();
+        currentTempMonthMap[petId] = new Date(now.getFullYear(), now.getMonth(), 1);
+        renderTemperatureChart(petId);
+    });
+});
+window.addEventListener('DOMContentLoaded', () => {
+    Object.keys(petWeights).forEach(petId => {
+        const now = new Date();
+        currentWeightMonthMap[petId] = new Date(now.getFullYear(), now.getMonth(), 1);
+        renderWeightChart(petId);
+    });
+});
+
+
+// ===== 體重相關 =====
+const petWeights = {{ pet_weights|safe }};
+const currentWeightMonthMap = {};
+
+function renderWeightChart(petId) {
+    const chartId = `weightChart-${petId}`;
+    const ctx = document.getElementById(chartId);
+    if (!ctx) return;
+
+    const current = currentWeightMonthMap[petId];
+    const monthKey = getMonthString(current);
+    const monthData = (petWeights[petId] && petWeights[petId][monthKey]) || [];
+
+    const labels = monthData.map(item => item.date);
+    const data = monthData.map(item => item.weight);
+
+    if (ctx.chart) ctx.chart.destroy();
+    ctx.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: '體重 (kg)',
+                data,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        stepSize: 1,
+                        callback: value => value.toFixed(1) + 'kg'
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: context => context.raw.toFixed(1) + 'kg'
+                    }
+                }
+            }
+        }
+    });
+
+    const labelEl = document.getElementById(`month-labelw-${petId}`);
+    if (labelEl) {
+        labelEl.textContent = `${current.getFullYear()}年${current.getMonth() + 1}月`;
+    }
+}
+
+function changeWeightMonth(petId, offset) {
+    const current = currentWeightMonthMap[petId];
+    const newDate = new Date(current);
+    newDate.setMonth(newDate.getMonth() + offset);
+
+    const today = new Date();
+    if (getMonthString(newDate) > getMonthString(today)) return;
+
+    const year = newDate.getFullYear();
+    const month = newDate.getMonth() + 1;
+    const monthKey = getMonthString(newDate);
+
+    const chartWrapper = document.getElementById(`weightChartWrapper-${petId}`);
+    if (chartWrapper) chartWrapper.classList.add('opacity-50');
+
+    if (petWeights[petId] && petWeights[petId][monthKey]) {
+        currentWeightMonthMap[petId] = newDate;
+        renderWeightChart(petId);
+        if (chartWrapper) chartWrapper.classList.remove('opacity-50');
+        return;
+    }
+
+    fetch(`/api/pet/${petId}/weight/${year}/${month}/`)
+        .then(response => {
+            if (!response.ok) throw new Error("Network error");
+            return response.json();
+        })
+        .then(data => {
+            if (!petWeights[petId]) petWeights[petId] = {};
+            petWeights[petId][monthKey] = data;
+            currentWeightMonthMap[petId] = newDate;
+            renderWeightChart(petId);
+        })
+        .catch(err => {
+            alert("無法載入體重資料，請稍後再試");
+            console.error(err);
+        })
+        .finally(() => {
+            if (chartWrapper) chartWrapper.classList.remove('opacity-50');
+        });
+}
+
+
+    function toggleDetails(type, petId) {
+          const el = document.getElementById(`details-${type}-${petId}`);
+          el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
+        }
+
+</script>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

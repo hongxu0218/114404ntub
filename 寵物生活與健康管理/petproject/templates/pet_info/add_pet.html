@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}新增寵物資料{% endblock %}
+
+{% block extra_css %}
+<style>
+main {
+    padding: 40px 20px;
+    background-color: #fff8f0;
+}
+
+form {
+    background: white;
+    padding: 2em;
+    border-radius: 10px;
+    max-width: 600px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+label {
+    display: block;
+    margin-top: 1em;
+    font-weight: bold;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.5em;
+    margin-top: 0.5em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.text-danger {
+    color: red;
+    font-size: 0.9em;
+}
+
+#image-preview {
+    display: none;
+    margin-top: 1em;
+    max-width: 100%;
+    max-height: 300px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2em;
+}
+
+.button-row button,
+.button-row a button {
+    padding: 0.6em 1.5em;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-row button[type="submit"] {
+    background-color: #ffaa00;
+    color: #fff;
+}
+
+.button-row a button {
+    background-color: #aaa;
+    color: #fff;
+}
+
+.button-row button:hover {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center;">新增寵物資料</h2>
+
+<form method="post" enctype="multipart/form-data" id="add-form">
+    {% csrf_token %}
+
+    <label for="id_species">種類</label>
+    {{ form.species }}
+    {% if form.species.errors %}
+        <div class="text-danger">
+            {% for error in form.species.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_breed">品種</label>
+    {{ form.breed }}
+    {% if form.breed.errors %}
+        <div class="text-danger">
+            {% for error in form.breed.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_name">名字</label>
+    {{ form.name }}
+    {% if form.name.errors %}
+        <div class="text-danger">
+            {% for error in form.name.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_sterilization_status">絕育狀態</label>
+    {{ form.sterilization_status }}
+    {% if form.sterilization_status.errors %}
+        <div class="text-danger">
+            {% for error in form.sterilization_status.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_chip">晶片號碼</label>
+    {{ form.chip }}
+    {% if form.chip.errors %}
+        <div class="text-danger">
+            {% for error in form.chip.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_birth_date">出生日期</label>
+    {{ form.birth_date }}
+    {% if form.birth_date.errors %}
+        <div class="text-danger">
+            {% for error in form.birth_date.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_gender">性別</label>
+    {{ form.gender }}
+    {% if form.gender.errors %}
+        <div class="text-danger">
+            {% for error in form.gender.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_weight">體重（公斤）</label>
+    {{ form.weight }}
+    {% if form.weight.errors %}
+        <div class="text-danger">
+            {% for error in form.weight.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_feature">特徵</label>
+    {{ form.feature }}
+    {% if form.feature.errors %}
+        <div class="text-danger">
+            {% for error in form.feature.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="id_picture">圖片</label>
+    {{ form.picture }}{% if form.picture.errors %}<div class="text-danger">{% for error in form.picture.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+
+    <img id="image-preview" src="#" alt="預覽圖片">
+
+    <div class="button-row">
+        <a href="javascript:history.back()"><button type="button">返回</button></a>
+        <button type="submit">送出</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+<script>
+function previewImage(event) {
+    const input = event.target;
+    const preview = document.getElementById('image-preview');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
