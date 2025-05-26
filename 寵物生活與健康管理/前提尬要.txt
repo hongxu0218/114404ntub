@@ -1,0 +1,24 @@
+我把__pycache__、__init__，刪掉所以你們要自己用migrate，以下是貼心提醒
+
+
+
+python manage.py makemigrations
+python manage.py makemigrations petapp
+
+python manage.py migrate
+
+python manage.py createsuperuser
+
+python manage.py runserver
+
+
+先
+
+py fix_basic_data.py
+再
+
+py import_locations.py
+
+匯入成功
+
+
