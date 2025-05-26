@@ -1,15 +1,85 @@
-# petapp/urls.py
-from django.urls import path
-from . import views
-from .views import clear_signup_message
+# petapp/urls.py  # 此檔案定義 petapp 應用的 URL 路由設定
+
+from django.urls import path  # 匯入 path，用來定義每個 URL 與對應的 view 函數
+from . import views  # 匯入目前資料夾下的 views 模組
+from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
+from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
+from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 
 urlpatterns = [
-    path('dashboard/', views.dashboard_redirect, name='dashboard'),
-    path('dashboard/owner/', views.owner_dashboard, name='owner_dashboard'),
-    path('dashboard/vet/', views.vet_dashboard, name='vet_dashboard'),
-    path('select-account-type/', views.select_account_type, name='select_account_type'),
-    path('account/edit/', views.edit_profile, name='edit_profile'),
-    path('accounts/mark-signup/', views.mark_from_signup_and_redirect, name='mark_from_signup_and_redirect'),
-    path('accounts/clear-signup-message/', clear_signup_message, name='clear_signup_message'),
+    # 通知
+    path('notifications/count/', views.get_notification_count, name='get_notification_count'),
+    path('notifications/', views.notification_page, name='notification_page'),
+
+    # 註冊與帳號管理相關路由
+    path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
+    path('account/edit/', views.edit_profile, name='edit_profile'),  # 編輯個人資料
+    path('accounts/mark-signup/', views.mark_from_signup_and_redirect, name='mark_from_signup_and_redirect'),  # 標記從註冊流程進來的狀態
+    path('accounts/clear-signup-message/', clear_signup_message, name='clear_signup_message'),  # 清除註冊成功提示訊息
+
+    # 寵物資訊 CRUD（新增、列表、編輯、刪除）
+    path('pets/add/', views.add_pet, name='add_pet'),  # 新增寵物
+    path('pets/', views.pet_list, name='pet_list'),  # 寵物列表頁
+    path('pets/edit/<int:pet_id>/', views.edit_pet, name='edit_pet'),  # 編輯指定寵物
+    path('pets/delete/<int:pet_id>/', views.delete_pet, name='delete_pet'),  # 刪除指定寵物
+
+    # 寵物健康紀錄相關
+    path('pets/health/', views.health_rec, name='health_rec'),  # 健康紀錄首頁（所有寵物）
+    path('pet/<int:pet_id>/add_daily_record/', views.add_daily_record, name='add_daily_record'),  # 新增每日健康紀錄
+    path('save_daily_record/', views.save_daily_record, name='save_daily_record'),  # 儲存每日健康紀錄
+    path('pet/<int:pet_id>/health/delete_record/', views.delete_daily_record, name='delete_daily_record'),  # 刪除每日健康紀錄
+
+    # 飼主預約相關
+    path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
+    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 飼主取消預約（使用者為 appointment.owner）
+
+    # 獸醫相關
+    path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
+    path('vet/my-patients/', views.my_patients, name='my_patients'),
+    path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
+    path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='vet_cancel_appointment'), # 獸醫取消預約（使用者為 appointment.vet.user）
+    path('medical_records/create/<int:pet_id>/', views.create_medical_record, name='create_medical_record'),
+ 
+    # 獸醫預約相關 
+    path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
+    path('appointments/get-available-times/', views.get_available_times, name='get_available_times'),
+    path('vet/availability/edit/<int:schedule_id>/', views.edit_vet_schedule, name='edit_vet_schedule'),
+    path('vet/availability/delete/<int:schedule_id>/', views.delete_vet_schedule, name='delete_vet_schedule'),
+
+
+    # 健康記錄-寵物體溫（列表、新增、編輯、刪除、共用函式）
+    path('pets/<int:pet_id>/temperature/', views.tem_rec, name='tem_rec'),   #體溫列表（趨勢圖+所有資料）
+    path('pets/<int:pet_id>/temperature/add/', views.add_tem, name='add_tem'),  #新增體溫記錄
+    path('pets/<int:pet_id>/temperature/edit/<int:record_id>/', views.edit_tem, name='edit_tem'),  #編輯體溫記錄
+    path('pets/<int:pet_id>/temperature/delete/<int:record_id>/', views.delete_tem, name='delete_tem'),  #刪除體溫記錄
+    path('api/pet/<int:pet_id>/temperature/<int:year>/<int:month>/', views.get_monthly_tem, name='get_monthly_tem'),  #共用函式（列表+健康記錄）
+
+    # 健康記錄-寵物體重（列表、新增、編輯、刪除、共用函式）
+    path('pets/<int:pet_id>/weight/', views.weight_rec, name='weight_rec'),  #體重列表（趨勢圖+所有資料）
+    path('pets/<int:pet_id>/weight/add/', views.add_weight, name='add_weight'),  #新增體重記錄
+    path('pets/<int:pet_id>/weight/edit/<int:record_id>/', views.edit_weight, name='edit_weight'),  #編輯體重記錄
+    path('pets/<int:pet_id>/weight/delete/<int:record_id>/', views.delete_weight, name='delete_weight'),  #刪除體重記錄
+    path('api/pet/<int:pet_id>/weight/<int:year>/<int:month>/', views.get_monthly_weight, name='get_monthly_weight'),  #共用函式（列表+健康記錄）
+
+    #  疫苗
+    path('vaccine/add/<int:pet_id>/', views.add_vaccine, name='add_vaccine'),  #  新增疫苗
+    path('vaccine/edit/<int:pet_id>/<int:vaccine_id>/', views.edit_vaccine, name='edit_vaccine'),  # 編輯疫苗
+    path('vaccine/delete/<int:vaccine_id>/', views.delete_vaccine, name='delete_vaccine'),  # 刪除疫苗
+    #  驅蟲
+    path('deworm/add/<int:pet_id>/', views.add_deworm, name='add_deworm'),  #  新增驅蟲
+    path('deworm/edit/<int:pet_id>/<int:deworm_id>/', views.edit_deworm, name='edit_deworm'),  # 編輯驅蟲
+    path('deworm/delete/<int:deworm_id>/', views.delete_deworm, name='delete_deworm'),  # 刪除驅蟲
+    # 報告
+    path('report/add/<int:pet_id>/', views.add_report, name='add_report'),  # 新增報告
+    path('report/delete/<int:report_id>/', views.delete_report, name='delete_report'),  # 刪除報告
+
+    # 病歷
+    path('vet/pets/<int:pet_id>/', views.vet_pet_detail, name='vet_pet_detail'),
+    path('medical/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
+    path('medical/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
 
 ]
+
+# 靜態檔案處理（僅在開發模式下啟用）
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # 設定媒體檔案的 URL 路由

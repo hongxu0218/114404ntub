@@ -1,45 +1,48 @@
-<!-- templates/account/logout_success.html -->
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>已成功登出</title>
-    <style>
-        body {
-            font-family: "Noto Sans TC", sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background: #f0f0f5;
-            margin: 0;
-        }
-        .logout-box {
-            text-align: center;
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .logout-box h1 {
-            color: #333;
-        }
-        .logout-box a {
-            display: inline-block;
-            margin-top: 20px;
-            text-decoration: none;
-            color: white;
-            background-color: #007bff;
-            padding: 10px 20px;
-            border-radius: 8px;
-        }
-    </style>
-</head>
-<body>
-    <div class="logout-box">
-        <h1>您已成功登出</h1>
-        <p>期待下次再見到你！</p>
-        <a href="/">回到首頁</a>
-    </div>
-</body>
-</html>
+{% extends "account/base.html" %}
+
+{% block title %}已成功登出{% endblock %}
+
+{% block extra_css %}
+<style>
+.logout-box {
+    text-align: center;
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%;
+}
+.logout-box h1 {
+    color: #ffaa00;
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+.logout-box p {
+    font-size: 16px;
+    color: #333;
+}
+.logout-box a {
+    display: inline-block;
+    margin-top: 20px;
+    text-decoration: none;
+    color: white;
+    background-color: #ffaa00;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+.logout-box a:hover {
+    background-color: #ff8800;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logout-box">
+    <h1>您已成功登出</h1>
+    <p>期待下次再見到你！</p>
+    <a href="/">回到首頁</a>
+</div>
+{% endblock %}

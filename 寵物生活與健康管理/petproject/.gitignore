@@ -2,11 +2,13 @@
 .env
 *.env
 
+
 # 忽略 Python 編譯產生的快取檔案
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
 
 # Django 的 migration 快取（保留遷移檔案，但忽略其內部快取）
 **/migrations/__pycache__/

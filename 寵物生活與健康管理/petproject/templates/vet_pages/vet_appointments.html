@@ -1,0 +1,108 @@
+{% extends "vet_pages/base.html" %}
+
+{% block title %}已被預約時段{% endblock %}
+
+{% block back_button %}
+<a href="{% url 'vet_home' %}" class="back-home">← 返回主控台</a>
+{% endblock %}
+
+{% block header %}
+<h1>📅 已被預約的時段</h1>
+{% endblock %}
+
+{% block content %}
+<style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  th, td {
+    padding: 12px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+  }
+  th {
+    background-color: #007bff;
+    color: white;
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+</style>
+
+<div style="margin-bottom: 20px;">
+  {% if show_history %}
+      <a href="{% url 'vet_appointments' %}" class="btn btn-primary">🔙 返回未看診時段</a>
+  {% else %}
+      <a href="{% url 'vet_appointments' %}?history=1" class="btn btn-secondary">📜 查看已看診紀錄</a>
+  {% endif %}
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>日期</th>
+      <th>時間</th>
+      <th>寵物名稱</th>
+      <th>飼主</th>
+      <th>預約原因</th>
+      {% if not show_history %}
+        <th>操作</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% regroup appointments by date as date_groups %}
+    {% for group in date_groups %}
+      <tr>
+        <td colspan="6" style="background-color: #d1ecf1; font-weight: bold;">
+          📅 {{ group.grouper }}（{{ group.grouper|date:"l" }}）
+        </td>
+      </tr>
+      {% for appt in group.list %}
+        <tr>
+          <td>{{ appt.date }}</td>
+          <td>{{ appt.time }}</td>
+          <td><a href="{% url 'vet_pet_detail' appt.pet.id %}">{{ appt.pet.name }}</a></td>
+          <td>
+            {% if appt.owner.last_name or appt.owner.first_name %}
+              {{ appt.owner.last_name }}{{ appt.owner.first_name }}
+            {% else %}
+              {{ appt.owner.username }}
+            {% endif %}
+          </td>
+          <td>{{ appt.reason }}</td>
+          {% if not show_history %}
+          <td>
+            <form method="POST" action="{% url 'vet_cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');" style="display: flex; align-items: center; gap: 8px;">
+              {% csrf_token %}
+              <input type="text" name="cancel_reason" placeholder="取消原因" required
+                style="width: 120px; padding: 4px; font-size: 14px;">
+              <button type="submit" style="padding: 6px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px;">取消</button>
+            </form>
+            <a href="{% url 'create_medical_record' appt.pet.id %}" style="
+              display: inline-block;
+              width: 120px;
+              height: 34px;
+              line-height: 34px;
+              text-align: center;
+              margin-top: 6px;
+              background-color: #28a745;
+              color: white;
+              text-decoration: none;
+              border-radius: 4px;
+              font-size: 14px;
+            ">新增病歷</a>
+          </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    {% empty %}
+      <tr>
+        <td colspan="6">目前尚無預約</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
