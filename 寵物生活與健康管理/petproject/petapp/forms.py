@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, WEEKDAYS, TIME_SLOTS, MedicalRecord
 from allauth.account.forms import SignupForm
 import re
 from datetime import date, time, datetime, timedelta
@@ -319,89 +319,38 @@ class WeightEditForm(forms.Form):
             widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
     weight = forms.FloatField(label='體重 (公斤)')
 
-
+# 獸醫 設定看診時段
 class VetAppointmentForm(forms.ModelForm):
-    time = forms.ChoiceField(
-        choices=[(t.strftime("%H:%M:%S"), label) for t, label in AVAILABLE_TIME_CHOICES],
+    time = forms.CharField(
         label="時間",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
     )
+
     class Meta:
         model = VetAppointment
-        fields = ['vet', 'date', 'time', 'reason']
-        labels = {
-            'pet': '寵物',
-            'vet': '預約獸醫',
-            'date': '日期',
-            'time': '時間',
-            'reason': '預約原因'
-        }
+        fields = ['pet', 'vet', 'date', 'time', 'reason']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'pet': forms.HiddenInput(),
+            'vet': forms.Select(attrs={'class': 'form-control searchable-select'}),
+            'date': forms.DateInput(attrs={'type': 'date','class': 'form-control','min': date.today().isoformat()}),  # 限制最小可選日期為今天
+            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
-
-    def clean_time(self):
-        raw_time = self.cleaned_data['time']
-        allowed = [t.strftime("%H:%M:%S") for t, _ in AVAILABLE_TIME_CHOICES]
-        if raw_time not in allowed:
-            raise forms.ValidationError("請選擇有效時段")
-        return raw_time
-
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        if self.user:
+            self.fields['vet'].queryset = Profile.objects.filter(account_type='vet')
+            self.fields['pet'].queryset = Pet.objects.filter(owner=self.user)
         
-        tomorrow = date.today() + timedelta(days=1)
-        self.fields['date'].widget.attrs['min'] = tomorrow.strftime('%Y-%m-%d')
-
-        if user:
-            # 只列出使用者自己的寵物
-            self.fields['pet'].queryset = Pet.objects.filter(owner=user)
-        
-        # 只列出已驗證的獸醫
-        self.fields['vet'].label_from_instance = lambda obj: f"{obj.clinic_name or '未填診所'}（{obj.user.last_name}{obj.user.first_name}）"
-        self.fields['vet'].widget.attrs.update({'class': 'form-control searchable-select'})
-        self.fields['vet'].queryset = Profile.objects.filter(account_type='vet', is_verified_vet=True)
-
-        # 根據前端提交值即時過濾已被預約的時段
-        vet_id = self.data.get('vet') or self.initial.get('vet')
-        date_val = self.data.get('date') or self.initial.get('date')
-
-        try:
-            if vet_id and date_val:
-                # 轉為 date 物件
-                parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
-                
-                booked_times = VetAppointment.objects.filter(
-                    vet_id=vet_id,
-                    date=parsed_date
-                ).values_list('time', flat=True)
-
-                self.fields['time'].choices = [
-                    (t.strftime("%H:%M:%S"), label)
-                    for t, label in AVAILABLE_TIME_CHOICES
-                    if t not in booked_times
-                ]
-            else:
-                self.fields['time'].choices = [
-                    (t.strftime("%H:%M:%S"), label)
-                    for t, label in AVAILABLE_TIME_CHOICES
-                ]
-        except Exception as e:
-            print("預約時段載入錯誤：", e)
-            self.fields['time'].choices = [
-                (t.strftime("%H:%M:%S"), label)
-                for t, label in AVAILABLE_TIME_CHOICES
-            ]
 
 # 疫苗表單
 class VaccineRecordForm(forms.ModelForm):
     class Meta:
         model = VaccineRecord
-        fields = ['name', 'date', 'location']  # ✅ 不含 pet
+        fields = ['name', 'date', 'location']  # 不含 pet
         labels = {'name':'疫苗品牌', 'date':'施打時間', 'location':'施打日期'},
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date','class': 'form-control',
@@ -458,3 +407,51 @@ class ReportForm(forms.ModelForm):
                 raise forms.ValidationError('檔案太大，請上傳小於 5MB 的 PDF 檔案。')
         return pdf_file
 
+# 獸醫設定看診時段
+class VetAvailableTimeForm(forms.ModelForm):
+    class Meta:
+        model = VetAvailableTime
+        fields = ['weekday', 'time_slot', 'start_time', 'end_time']
+        labels = {
+            'weekday': '星期',
+            'time_slot': '時段',
+            'start_time': '開始時間',
+            'end_time': '結束時間',
+        }
+        widgets = {
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.vet = kwargs.pop('vet', None)
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.vet:
+            instance.vet = self.vet.profile
+        if commit:
+            instance.save()
+        return instance
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get('start_time')
+        end = cleaned_data.get('end_time')
+        if start and end and start >= end:
+            raise forms.ValidationError("結束時間必須晚於開始時間")
+        return cleaned_data
+
+# 獸醫填寫診斷與治療資訊    
+class MedicalRecordForm(forms.ModelForm):
+    class Meta:
+        model = MedicalRecord
+        fields = ['pet', 'clinic_location', 'diagnosis', 'treatment', 'notes']
+        widgets = {
+            'pet': forms.HiddenInput(),
+            'clinic_location': forms.TextInput(attrs={'placeholder': '預設會自動填入'}),
+            'diagnosis': forms.Textarea(attrs={'rows': 3}),
+            'treatment': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
+        }

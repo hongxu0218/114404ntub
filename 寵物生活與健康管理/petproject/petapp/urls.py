@@ -7,10 +7,9 @@ from django.conf import settings  # 匯入 settings 模組，用來存取專案�
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 
 urlpatterns = [
-    # 導向不同使用者主控台的路由設定
-    path('dashboard/', views.dashboard_redirect, name='dashboard'),  # 導向主控台（根據帳號角色判斷導向）
-    path('dashboard/owner/', views.owner_dashboard, name='owner_dashboard'),  # 飼主主控台
-    path('vet/', views.vet_dashboard, name='vet_home'),  # 獸醫主控台
+    # 通知
+    path('notifications/count/', views.get_notification_count, name='get_notification_count'),
+    path('notifications/', views.notification_page, name='notification_page'),
 
     # 註冊與帳號管理相關路由
     path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
@@ -30,16 +29,23 @@ urlpatterns = [
     path('save_daily_record/', views.save_daily_record, name='save_daily_record'),  # 儲存每日健康紀錄
     path('pet/<int:pet_id>/health/delete_record/', views.delete_daily_record, name='delete_daily_record'),  # 刪除每日健康紀錄
 
-    # 預約相關
+    # 飼主預約相關
     path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
     path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'), # 飼主取消預約（使用者為 appointment.owner）
 
     # 獸醫相關
     path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
-    path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
     path('vet/my-patients/', views.my_patients, name='my_patients'),
     path('vet/add-record/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
     path('vet/appointments/cancel/<int:appointment_id>/', views.vet_cancel_appointment, name='vet_cancel_appointment'), # 獸醫取消預約（使用者為 appointment.vet.user）
+    path('medical_records/create/<int:pet_id>/', views.create_medical_record, name='create_medical_record'),
+ 
+    # 獸醫預約相關 
+    path('vet/availability/', views.vet_availability_settings, name='vet_availability_settings'),
+    path('appointments/get-available-times/', views.get_available_times, name='get_available_times'),
+    path('vet/availability/edit/<int:schedule_id>/', views.edit_vet_schedule, name='edit_vet_schedule'),
+    path('vet/availability/delete/<int:schedule_id>/', views.delete_vet_schedule, name='delete_vet_schedule'),
+
 
     # 健康記錄-寵物體溫（列表、新增、編輯、刪除、共用函式）
     path('pets/<int:pet_id>/temperature/', views.tem_rec, name='tem_rec'),   #體溫列表（趨勢圖+所有資料）
@@ -67,21 +73,15 @@ urlpatterns = [
     path('report/add/<int:pet_id>/', views.add_report, name='add_report'),  # 新增報告
     path('report/delete/<int:report_id>/', views.delete_report, name='delete_report'),  # 刪除報告
 
-    # 地圖功能相關
+    # 病歷
+    path('vet/pets/<int:pet_id>/', views.vet_pet_detail, name='vet_pet_detail'),
+    path('medical/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
+    path('medical/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
+
+     # 地圖功能相關
     path('map/', views.map_home, name='map'),
     path('api/locations/', views.api_locations, name='api_locations'),
 
-        # ============= 動物認領養功能 =============
-    path('adoption/', views.adoption_home, name='adoption_home'),  # 認領養首頁
-    path('adoption/list/', views.adoption_list, name='adoption_list'),  # 動物列表
-    path('adoption/detail/<str:animal_id>/', views.adoption_detail, name='adoption_detail'),  # 動物詳情
-    path('adoption/apply/<str:animal_id>/', views.adoption_apply, name='adoption_apply'),  # 申請認養
-    path('adoption/favorites/', views.my_favorites, name='my_favorites'),  # 我的收藏
-    path('adoption/applications/', views.my_applications, name='my_applications'),  # 我的申請
-    path('adoption/statistics/', views.adoption_statistics, name='adoption_statistics'),  # 統計資訊
-    
-    # 認領養 API 路由
-    path('api/adoption/favorite/<str:animal_id>/', views.toggle_favorite, name='toggle_favorite'),  # 切換收藏
 
 ]
 

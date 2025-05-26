@@ -4,28 +4,29 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report,PetLocation,ServiceType, PetType,BusinessHours, AdoptionAnimal, AdoptionShelter, AdoptionFavorite, AdoptionApplication
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, MedicalRecord,PetLocation,ServiceType, PetType,BusinessHours
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm, MedicalRecordForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_POST, require_http_methods ,require_GET
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
 from django.db.models import Q
-from django.contrib import messages
+
 from calendar import monthrange
 import calendar
 from django.utils.timezone import localtime
 from .utils import get_temperature_data, get_weight_data
 from dateutil.relativedelta import relativedelta
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
 
-from django.core.paginator import Paginator
-from django.db.models import Count
-import logging
+
 
 # 首頁
 
@@ -431,48 +432,47 @@ def delete_daily_record(request, pet_id):
         return JsonResponse({'success': False, 'error': 'Record not found'}, status=404)
 
 
+
 # 新增預約
 @login_required
 def create_vet_appointment(request):
     pet_id = request.GET.get('pet_id')
     if not pet_id:
         return HttpResponseBadRequest("缺少寵物 ID")
-    
+
     pet = get_object_or_404(Pet, id=pet_id)
 
     if request.method == 'POST':
-        form = VetAppointmentForm(request.POST)
-        if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.owner = request.user
-            appointment.pet = pet
-            appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
-            
-            today = date.today()
-            now_time = datetime.now().time()
+        print("🔥 POST")
+        form = VetAppointmentForm(request.POST, user=request.user)
+        print("🧪 POST data:", request.POST.dict())
 
-            # 限制只能預約未來（隔日以後）
+        if form.is_valid():
+            print("✅ 表單驗證通過")
+            appointment = form.save(commit=False)
+            appointment.pet = pet
+            appointment.owner = request.user
+            appointment.vet = form.cleaned_data['vet']
+
+            # 時間欄位安全轉型
+            try:
+                appointment.time = datetime.strptime(form.cleaned_data['time'], "%H:%M:%S").time()
+            except ValueError:
+                form.add_error('time', '時間格式錯誤')
+                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
+
+            # 日期邏輯驗證
+            today = date.today()
             if appointment.date < today:
                 form.add_error('date', '預約日期不可早於今天')
-                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
             elif appointment.date == today:
                 form.add_error('date', '預約日期需至少提前一天')
-                return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
-
-
-            # 檢查是否該時段已被預約
-            already_booked = VetAppointment.objects.filter(
-                vet=appointment.vet,
-                date=appointment.date,
-                time=appointment.time
-            ).exists()
-
-            if already_booked:
+            elif VetAppointment.objects.filter(vet=appointment.vet, date=appointment.date, time=appointment.time).exists():
                 form.add_error('time', '此時段已被其他飼主預約，請選擇其他時間')
             else:
                 appointment.save()
-                
-                # ✅ 新增：發送 Email 給獸醫
+
+                # 發送 Email 給獸醫
                 vet_user = appointment.vet.user
                 vet_email = vet_user.email
                 pet_name = pet.name
@@ -494,10 +494,23 @@ def create_vet_appointment(request):
 請至後台確認詳細資訊。謝謝您的使用！
 
 — 毛日好（Paw&Day）團隊"""
+
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [vet_email], fail_silently=False)
                 return render(request, 'appointments/appointment_success.html', {'appointment': appointment})
+
+        else:
+            print("❌ 表單驗證失敗")
+            print("❌ 錯誤內容：", form.errors)
+
     else:
-        form = VetAppointmentForm()
+        form = VetAppointmentForm(
+            user=request.user,
+            initial={
+                'pet': pet,
+                'date': date.today() + timedelta(days=1),
+            }
+        )
+
     return render(request, 'appointments/create_appointment.html', {'form': form, 'pet': pet})
 
 # 取消預約
@@ -515,7 +528,7 @@ def vet_appointments(request):
     # 確保是獸醫帳號
     profile = request.user.profile
     if not profile.is_verified_vet:
-        return render(request, '403.html', status=403)
+        return render(request, 'pages/403.html', status=403)
 
     # 取得該獸醫的所有預約
     today = date.today()
@@ -599,23 +612,112 @@ def vet_cancel_appointment(request, appointment_id):
 
 @login_required
 def vet_availability_settings(request):
-    return render(request, 'vet_pages/vet_availability_settings.html')
+    # 確保是獸醫帳號
+    profile = request.user.profile
+    if not profile.is_verified_vet:
+        return render(request, 'pages/403.html', status=403)
 
+    if request.method == 'POST':
+        form = VetAvailableTimeForm(request.POST)
+        if form.is_valid():
+            new_time = form.save(commit=False)
+            new_time.vet = profile
+            new_time.save()
+            messages.success(request, "已新增排班時段")
+            return redirect('vet_availability_settings')
+    else:
+        form = VetAvailableTimeForm()
+
+    schedules = VetAvailableTime.objects.filter(vet=profile).order_by('weekday', 'time_slot')
+    return render(request, 'vet_pages/vet_availability_settings.html', {
+        'form': form,
+        'schedules': schedules,
+    })
 # 顯示「我的看診寵物」
 @login_required
 def my_patients(request):
-    # TODO: 顯示有看診記錄的寵物列表
-    # 抓出該獸醫曾看診過的所有寵物（避免重複）
-    pets = Pet.objects.filter(vetappointment__vet=request.user.profile).distinct().prefetch_related(
-        'vaccine_records', 'deworm_records', 'reports'
-    )
-    return render(request, 'vet_pages/my_patients.html', {'pets': pets,})
+    profile = request.user.profile
+    if not profile.is_verified_vet:
+        return render(request, 'pages/403.html', status=403)
+
+    # 原始清單（該獸醫曾看診過的所有寵物，避免重複）
+    pets = Pet.objects.filter(vetappointment__vet=profile).distinct()
+
+    # 取得搜尋關鍵字
+    q = request.GET.get('q', '')
+
+    if q:
+        pets = pets.filter(
+            Q(name__icontains=q) |
+            Q(owner__first_name__icontains=q) |
+            Q(owner__last_name__icontains=q)
+        )
+
+    # 最後加上 prefetch_related 提升效能
+    pets = pets.prefetch_related('vaccine_records', 'deworm_records', 'reports')
+
+    return render(request, 'vet_pages/my_patients.html', {
+        'pets': pets,
+        'query': q,
+    })
+
+@login_required
+def vet_pet_detail(request, pet_id):
+    profile = request.user.profile
+    if not profile.is_verified_vet:
+        return render(request, 'pages/403.html', status=403)
+
+    pet = get_object_or_404(Pet, id=pet_id)
+    # 選擇是否限制：只能看自己看診過的寵物
+    if not pet.vetappointment_set.filter(vet=profile).exists():
+        return render(request, 'pages/403.html', status=403)
+
+    medical_records = pet.medicalrecord_set.order_by('-visit_date')
+    vaccine_records = pet.vaccine_records.all().order_by('-date')
+    deworm_records = pet.deworm_records.all().order_by('-date')
+    reports = pet.reports.all().order_by('-date_uploaded')
+
+    return render(request, 'vet_pages/pet_detail.html', {
+        'pet': pet,
+        'medical_records': medical_records,
+        'vaccine_records': vaccine_records,
+        'deworm_records': deworm_records,
+        'reports': reports,
+    })
+
 
 # 新增指定寵物的病例
 @login_required
 def add_medical_record(request, pet_id):
     # TODO: 為指定寵物新增病例
-    return render(request, 'vet_pages/add_medical_record.html')
+    return render(request, 'vet_pages/create_medical_record.html')
+
+# 修改指定寵物的病例
+@login_required
+def edit_medical_record(request, pet_id, record_id):
+    record = get_object_or_404(MedicalRecord, id=record_id, pet_id=pet_id)
+
+    if request.method == 'POST':
+        form = MedicalRecordForm(request.POST, instance=record)
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.pet = record.pet  # 保險設定
+            record.save()
+            return redirect('my_patients')
+    else:
+        form = MedicalRecordForm(instance=record)
+
+    return render(request, 'vet_pages/edit_medical_record.html', {
+        'form': form,
+        'pet': record.pet
+    })
+# 刪除指定寵物的病例
+@login_required
+def delete_medical_record(request, record_id):
+    record = get_object_or_404(MedicalRecord, id=record_id)
+    record.delete()
+    return redirect('my_patients')
+
 
 # 飼主取消預約通知獸醫
 @require_POST
@@ -1166,7 +1268,126 @@ def delete_report(request, report_id):
     else:
         return redirect('permission_denied')  # 可自定一個拒絕頁面
 
+# 獸醫編輯可預約時段
+@login_required
+def edit_vet_schedule(request, schedule_id):
+    schedule = get_object_or_404(VetAvailableTime, id=schedule_id, vet=request.user.profile)
 
+    if request.method == 'POST':
+        form = VetAvailableTimeForm(request.POST, instance=schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "排班時段已更新")
+            return redirect('vet_availability_settings')
+    else:
+        form = VetAvailableTimeForm(instance=schedule)
+
+    return render(request, 'vet_pages/edit_schedule.html', {'form': form})
+
+# 獸醫刪除可預約時段
+@login_required
+def delete_vet_schedule(request, schedule_id):
+    schedule = get_object_or_404(VetAvailableTime, id=schedule_id, vet=request.user.profile)
+    schedule.delete()
+    messages.success(request, "排班時段已刪除")
+    return redirect('vet_availability_settings')
+
+@require_GET
+@login_required
+def get_available_times(request):
+    vet_id = request.GET.get('vet_id')
+    date_val = request.GET.get('date')
+
+    if not vet_id or not date_val:
+        return JsonResponse({'error': '缺少參數'}, status=400)
+
+
+    print("🟢 收到 AJAX 請求：", request.GET.dict())
+    try:
+        parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
+        weekday = parsed_date.weekday()
+
+        slots = VetAvailableTime.objects.filter(vet_id=vet_id, weekday=weekday)
+
+        valid_times = []
+        for slot in slots:
+            current = datetime.combine(date.today(), slot.start_time)
+            end = datetime.combine(date.today(), slot.end_time)
+            while current.time() < end.time():
+                valid_times.append(current.time())
+                current += timedelta(minutes=30)
+
+        booked = VetAppointment.objects.filter(vet_id=vet_id, date=parsed_date).values_list('time', flat=True)
+        available = [t for t in valid_times if t not in booked]
+
+        time_choices = [(t.strftime("%H:%M:%S"), t.strftime("%H:%M")) for t in available]
+        return JsonResponse({'times': time_choices}, encoder=DjangoJSONEncoder)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+@login_required
+def create_medical_record(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id)
+    profile = request.user.profile
+
+    if profile.account_type != 'vet':
+        return render(request, 'unauthorized.html')  # 非獸醫導向未授權頁
+
+    if request.method == 'POST':
+        form = MedicalRecordForm(request.POST)
+        if form.is_valid():
+            record = form.save(commit=False)
+            record.pet = pet
+            record.vet = profile
+            record.clinic_location = profile.clinic_name  # 自動填入診所地點
+            record.save()
+            return redirect('my_patients')  # 統一導向與 add_vaccine 相同
+    else:
+        form = MedicalRecordForm(initial={'pet': pet, 'clinic_location': profile.clinic_name})
+
+    return render(request, 'vet_pages/create_medical_record.html', {
+        'form': form,
+        'pet': pet
+    })
+
+# 通知
+@login_required
+def get_notification_count(request):
+    user = request.user
+    tomorrow = timezone.now().date() + timedelta(days=1)
+    count = 0
+
+    if hasattr(user, 'profile'):
+        account_type = user.profile.account_type
+        if account_type == 'owner':
+            count = VetAppointment.objects.filter(owner=user, date=tomorrow).count()
+        elif account_type == 'vet':
+            count = VetAppointment.objects.filter(vet=user.profile, date=tomorrow).count()
+
+    return JsonResponse({'count': count})
+
+# 通知頁面邏輯
+@login_required
+def notification_page(request):
+    user = request.user
+    tomorrow = timezone.now().date() + timedelta(days=1)
+
+    appointments = []
+    role = None
+
+    if hasattr(user, 'profile'):
+        role = user.profile.account_type
+        if role == 'owner':
+            appointments = VetAppointment.objects.filter(owner=user, date=tomorrow)
+        elif role == 'vet':
+            appointments = VetAppointment.objects.filter(vet=user.profile, date=tomorrow)
+
+    return render(request, 'pages/notifications.html', {
+        'appointments': appointments,
+        'role': role,
+        'tomorrow': tomorrow,
+    })
 
 ###############################地圖############################
 
@@ -1433,284 +1654,3 @@ def api_stats(request):
         }
 
 ###############################地圖############################
-
-
-# ============= 動物認領養功能 =============
-
-logger = logging.getLogger(__name__)
-
-def adoption_home(request):
-    """認領養首頁"""
-    try:
-        # 最新上架動物
-        latest_animals = AdoptionAnimal.objects.filter(
-            is_active=True,
-            animal_status='OPEN'
-        ).order_by('-animal_update')[:8]
-        
-        # 統計資料
-        total_animals = AdoptionAnimal.objects.filter(is_active=True).count()
-        available_animals = AdoptionAnimal.objects.filter(
-            is_active=True, 
-            animal_status='OPEN'
-        ).count()
-        
-        context = {
-            'latest_animals': latest_animals,
-            'total_animals': total_animals,
-            'available_animals': available_animals,
-        }
-        
-        return render(request, 'adoption/adoption_home.html', context)
-        
-    except Exception as e:
-        logger.error(f"認領養首頁錯誤: {e}")
-        return render(request, 'adoption/adoption_home.html', {
-            'total_animals': 0,
-            'available_animals': 0,
-            'latest_animals': [],
-        })
-    
-def adoption_list(request):
-    """認領養動物列表"""
-    animals = AdoptionAnimal.objects.filter(is_active=True)
-    
-    # 篩選條件
-    kind = request.GET.get('kind')
-    status = request.GET.get('status')
-    search = request.GET.get('search')
-    
-    if kind:
-        animals = animals.filter(animal_kind__icontains=kind)
-    if status:
-        if status == '開放認養':
-            animals = animals.filter(animal_status='OPEN')
-        else:
-            animals = animals.filter(animal_status=status)
-    if search:
-        animals = animals.filter(
-            Q(animal_title__icontains=search) |
-            Q(animal_kind__icontains=search) |
-            Q(animal_colour__icontains=search) |
-            Q(shelter_name__icontains=search)
-        )
-    
-    # 分頁
-    paginator = Paginator(animals, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # 取得篩選選項
-    animal_kinds = AdoptionAnimal.objects.values_list('animal_kind', flat=True).distinct()
-    
-    context = {
-        'page_obj': page_obj,
-        'animal_kinds': [k for k in animal_kinds if k],
-        'current_filters': {
-            'kind': kind,
-            'status': status,
-            'search': search,
-        }
-    }
-    return render(request, 'adoption/adoption_list.html', context)
-
-import random
-def get_recommended_animals(current_animal, count=4):
-    """
-    智能推薦動物邏輯
-    優先順序：
-    1. 相同種類的動物
-    2. 如果相同種類不足，加入其他種類
-    3. 使用 Python 層級的隨機化確保真正隨機
-    """
-    recommended = []
-    
-    # 第一優先：相同種類的動物
-    same_kind_animals = list(AdoptionAnimal.objects.filter(
-        animal_kind=current_animal.animal_kind,
-        is_active=True,
-        animal_status='OPEN'
-    ).exclude(animal_id=current_animal.animal_id))
-    
-    # 使用 Python 的隨機打亂確保真正隨機
-    random.shuffle(same_kind_animals)
-    
-    # 添加相同種類的動物
-    recommended.extend(same_kind_animals[:count])
-    
-    # 如果相同種類不足，添加其他種類
-    if len(recommended) < count:
-        remaining_count = count - len(recommended)
-        
-        # 排除已經加入的動物ID
-        excluded_ids = [animal.animal_id for animal in recommended] + [current_animal.animal_id]
-        
-        other_animals = list(AdoptionAnimal.objects.filter(
-            is_active=True,
-            animal_status='OPEN'
-        ).exclude(animal_id__in=excluded_ids))
-        
-        random.shuffle(other_animals)
-        recommended.extend(other_animals[:remaining_count])
-    
-    return recommended
-
-def adoption_detail(request, animal_id):
-    """動物詳細頁面"""
-    animal = get_object_or_404(
-        AdoptionAnimal.objects,
-        animal_id=animal_id,
-        is_active=True
-    )
-    
-    # 推薦動物（同種類且開放認養）
-    related_animals = AdoptionAnimal.objects.filter(
-        animal_kind=animal.animal_kind,
-        is_active=True,
-        animal_status='OPEN'
-    )
-
-    related_animals = get_recommended_animals(animal, count=4)
-    
-    # 檢查是否已收藏
-    is_favorited = False
-    if request.user.is_authenticated:
-        try:
-            is_favorited = AdoptionFavorite.objects.filter(
-                user=request.user,
-                animal=animal
-            ).exists()
-        except:
-            is_favorited = False
-    
-    context = {
-        'animal': animal,
-        'related_animals': related_animals,
-        'is_favorited': is_favorited,
-    }
-    return render(request, 'adoption/adoption_detail.html', context)
-
-@login_required
-def adoption_apply(request, animal_id):
-    """申請認養"""
-    animal = get_object_or_404(AdoptionAnimal, animal_id=animal_id, is_active=True)
-    
-    # 檢查動物是否可認養
-    if animal.animal_status != 'OPEN':
-        messages.error(request, '此動物目前不開放認養')
-        return redirect('adoption_detail', animal_id=animal_id)
-    
-    # 檢查是否已申請過
-    existing_application = AdoptionApplication.objects.filter(
-        animal=animal, 
-        applicant=request.user
-    ).first()
-    
-    if existing_application:
-        messages.warning(request, '您已經申請過認養此動物')
-        return redirect('adoption_detail', animal_id=animal_id)
-    
-    if request.method == 'POST':
-        try:
-            # 處理申請表單
-            application = AdoptionApplication.objects.create(
-                animal=animal,
-                applicant=request.user,
-                applicant_name=request.POST.get('applicant_name'),
-                applicant_phone=request.POST.get('applicant_phone'),
-                applicant_email=request.POST.get('applicant_email'),
-                applicant_address=request.POST.get('applicant_address'),
-                experience=request.POST.get('experience'),
-                housing_type=request.POST.get('housing_type'),
-                family_consent=request.POST.get('family_consent') == 'on',
-            )
-            
-            messages.success(request, '認養申請已送出，請等待審核通知！')
-            return redirect('adoption_detail', animal_id=animal_id)
-            
-        except Exception as e:
-            logger.error(f"申請錯誤: {e}")
-            messages.error(request, '申請提交失敗，請稍後再試')
-    
-    context = {
-        'animal': animal,
-    }
-    return render(request, 'adoption/adoption_apply.html', context)
-
-@login_required
-def toggle_favorite(request, animal_id):
-    """切換收藏狀態"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-        
-    animal = get_object_or_404(AdoptionAnimal, animal_id=animal_id)
-    
-    favorite, created = AdoptionFavorite.objects.get_or_create(
-        user=request.user,
-        animal=animal
-    )
-    
-    if not created:
-        favorite.delete()
-        is_favorited = False
-    else:
-        is_favorited = True
-    
-    return JsonResponse({
-        'is_favorited': is_favorited,
-        'message': '已加入收藏' if is_favorited else '已取消收藏'
-    })
-
-@login_required
-def my_favorites(request):
-    """我的收藏"""
-    favorites = AdoptionFavorite.objects.filter(
-        user=request.user
-    ).select_related('animal').order_by('-created_at')
-    
-    context = {
-        'favorites': favorites,
-    }
-    return render(request, 'adoption/adoption_favorites.html', context)
-
-@login_required
-def my_applications(request):
-    """我的認養申請"""
-    applications = AdoptionApplication.objects.filter(
-        applicant=request.user
-    ).select_related('animal').order_by('-created_at')
-    
-    context = {
-        'applications': applications,
-    }
-    return render(request, 'adoption/adoption_applications.html', context)
-
-def adoption_statistics(request):
-    """認領養統計頁面"""
-    total_animals = AdoptionAnimal.objects.filter(is_active=True).count()
-    available_animals = AdoptionAnimal.objects.filter(
-        is_active=True, 
-        animal_status='OPEN'
-    ).count()
-    
-    # 按種類統計
-    kind_stats = AdoptionAnimal.objects.filter(is_active=True).values(
-        'animal_kind'
-    ).annotate(count=Count('id')).order_by('-count')
-    
-    # 按收容所統計（改為使用收容所名稱）
-    shelter_stats = AdoptionAnimal.objects.filter(
-        is_active=True,
-        shelter_name__isnull=False,
-        shelter_name__gt=''  # 排除空字串
-    ).values(
-        'shelter_name'
-    ).annotate(count=Count('id')).order_by('-count')[:10]  # 只顯示前10個收容所
-    
-    context = {
-        'total_animals': total_animals,
-        'available_animals': available_animals,
-        'kind_stats': kind_stats,
-        'shelter_stats': shelter_stats,  # 改名為 shelter_stats
-    }
-    return render(request, 'adoption/adoption_statistics.html', context)
