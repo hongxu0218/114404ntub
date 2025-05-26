@@ -24,14 +24,21 @@
 
     {% if role == 'owner' and vaccine_reminders %}
       <h3 class="mt-4">💉 疫苗提醒</h3>
-        <ul class="list-group mb-3">
-          {% for reminder in vaccine_reminders %}
-            <li class="list-group-item">
-              <strong>{{ reminder.pet.name }}</strong> 的疫苗已於 {{ reminder.last_date|date:"Y-m-d" }} 接種，
-              距離一年效期還有 {{ reminder.days_left }} 天，建議儘快安排補打。
-            </li>
-          {% endfor %}
-        </ul>
+      <ul class="list-group mb-3">
+        {% for item in vaccine_reminders %}
+          <li>{{ item.pet.name }} 的疫苗施打於 {{ item.last_date }}，距離一年期只剩 {{ item.days_left }} 天</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    
+    {% if role == 'owner' and vaccine_reminders %}
+      <h3 class="mt-4">🪱 驅蟲提醒</h3>
+      <ul class="list-group mb-3">
+        {% for item in deworm_reminders %}
+          <li>{{ item.pet.name }} 的驅蟲施打於 {{ item.last_date }}，距離半年期只剩 {{ item.days_left }} 天</li>
+        {% endfor %}
+      </ul>
     {% endif %}
   </div>
 {% endblock %}
