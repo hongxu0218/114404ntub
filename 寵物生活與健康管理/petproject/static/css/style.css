@@ -274,17 +274,6 @@ img.news-img {
   flex-shrink: 0;
 }
 
-/* ☰ 漢堡按鈕樣式 */
-.menu-toggle {
-  display: none;
-  font-size: 28px;
-  cursor: pointer;
-  padding: 10px 20px;
-  margin-left: auto;
-  color: #333;
-}
-
-
 
 .header-content {
   display: flex;
