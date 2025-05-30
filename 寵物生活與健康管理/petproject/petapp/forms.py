@@ -312,12 +312,22 @@ class TemperatureEditForm(forms.Form):
     date = forms.DateField(label='紀錄時間',
             widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
     temperature = forms.FloatField(label='體溫 (°C)')
+        def clean_date(self):
+        selected_date = self.cleaned_data['date']
+        if selected_date > date.today():
+            raise forms.ValidationError("日期不能超過今天")
+        return selected_date
 
 # 體重 編輯表單
 class WeightEditForm(forms.Form):
     date = forms.DateField(label='紀錄時間',
             widget=forms.DateInput(attrs={'type': 'date'}),input_formats=['%Y-%m-%d'])
     weight = forms.FloatField(label='體重 (公斤)')
+    def clean_date(self):
+        selected_date = self.cleaned_data['date']
+        if selected_date > date.today():
+            raise forms.ValidationError("日期不能超過今天")
+        return selected_date
 
 # 獸醫 設定看診時段
 class VetAppointmentForm(forms.ModelForm):
