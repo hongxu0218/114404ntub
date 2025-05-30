@@ -173,3 +173,184 @@ class VetAvailableTime(models.Model):
 
     def __str__(self):
         return f"{self.vet.user.username} - {dict(WEEKDAYS).get(self.weekday)} {dict(TIME_SLOTS).get(self.time_slot)} {self.start_time}~{self.end_time}"
+
+#################寵物地點模型#######################
+class ServiceType(models.Model):
+    """服務類型表"""
+    name = models.CharField(max_length=50, verbose_name='服務名稱')
+    code = models.CharField(max_length=20, unique=True, verbose_name='服務代碼')
+    is_active = models.BooleanField(default=True, verbose_name='是否啟用')
+
+    class Meta:
+        verbose_name = '服務類型'
+        verbose_name_plural = '服務類型'
+        db_table = 'pet_service_types'
+
+    def __str__(self):
+        return self.name
+
+class PetType(models.Model):
+    """寵物類型表"""
+    name = models.CharField(max_length=50, verbose_name='寵物類型名稱')
+    code = models.CharField(max_length=20, unique=True, verbose_name='寵物代碼')
+    is_active = models.BooleanField(default=True, verbose_name='是否啟用')
+
+    class Meta:
+        verbose_name = '寵物類型'
+        verbose_name_plural = '寵物類型'
+        db_table = 'pet_types'
+
+    def __str__(self):
+        return self.name
+
+class PetLocation(models.Model):
+    """寵物相關地點模型"""
+    
+    # 基本資訊
+    name = models.CharField(max_length=255, blank=True, null=True, verbose_name='名稱')
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name='地址')
+    phone = models.CharField(max_length=50, blank=True, null=True, verbose_name='電話')
+    website = models.TextField(blank=True, null=True, verbose_name='網站')
+    
+    # 地理資訊
+    city = models.CharField(max_length=100, blank=True, null=True, verbose_name='城市')
+    district = models.CharField(max_length=100, blank=True, null=True, verbose_name='地區')
+    lat = models.DecimalField(max_digits=10, decimal_places=8, blank=True, null=True, verbose_name='緯度')
+    lon = models.DecimalField(max_digits=11, decimal_places=8, blank=True, null=True, verbose_name='經度')
+    
+    # 評分資訊
+    rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True, verbose_name='評分')
+    rating_count = models.IntegerField(blank=True, null=True, verbose_name='評分數量')
+    
+    # 醫院特有屬性
+    has_emergency = models.BooleanField(default=False, verbose_name='提供24小時急診')
+    
+    # 多對多關聯
+    service_types = models.ManyToManyField(ServiceType, blank=True, 
+                                         related_name='locations', verbose_name='服務類型')
+    pet_types = models.ManyToManyField(PetType, blank=True, 
+                                     related_name='locations', verbose_name='支援寵物類型')
+    
+    # 保留 business_hours JSONField（過渡期間）
+    business_hours = models.JSONField(blank=True, null=True, verbose_name='營業時間')
+    
+    # 時間戳記
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='建立時間')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新時間')
+
+    class Meta:
+        db_table = 'pet_locations'
+        verbose_name = '寵物地點'
+        verbose_name_plural = '寵物地點'
+        indexes = [
+            models.Index(fields=['city', 'district'], name='city_district_idx'),
+            models.Index(fields=['has_emergency'], name='emergency_idx'),
+            models.Index(fields=['lat', 'lon'], name='location_idx'),
+        ]
+
+    def __str__(self):
+        services = [st.name for st in self.service_types.all()]
+        service_text = f" ({', '.join(services)})" if services else ""
+        return f"{self.name or '未命名'}{service_text}"
+    
+    def get_services_list(self):
+        """取得提供的服務列表"""
+        return [st.name for st in self.service_types.filter(is_active=True)]
+        
+    def has_service(self, service_code):
+        """檢查是否提供特定服務"""
+        return self.service_types.filter(code=service_code, is_active=True).exists()
+    
+    def supports_pet_type(self, pet_type_code):
+        """檢查是否支援特定寵物類型"""
+        return self.pet_types.filter(code=pet_type_code, is_active=True).exists()
+    
+    def get_business_hours_formatted(self):
+        """格式化營業時間顯示"""
+        business_hours = {}
+        
+        # 預設所有天都是未提供
+        for day_num in range(7):
+            day_name = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'][day_num]
+            business_hours[day_name] = '未提供'
+        
+        try:
+            # 從 BusinessHours 表格取得資料
+            for day_num in range(7):
+                day_name = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'][day_num]
+                periods = self.business_hours_detail.filter(day_of_week=day_num).order_by('period_order')
+                
+                if periods.exists():
+                    time_periods = []
+                    for period in periods:
+                        if period.open_time and period.close_time:
+                            try:
+                                open_str = period.open_time.strftime('%H:%M')
+                                close_str = period.close_time.strftime('%H:%M')
+                                time_periods.append(f"{open_str}-{close_str}")
+                            except:
+                                continue
+                    
+                    if time_periods:
+                        business_hours[day_name] = '、'.join(time_periods)
+                    else:
+                        business_hours[day_name] = '休息'
+                        
+        except Exception as e:
+            # 如果出現任何錯誤，返回預設值
+            pass
+        
+        return business_hours
+    
+    def is_open_now(self):
+        """判斷現在是否營業中"""
+        from django.utils import timezone
+        
+        now = timezone.localtime()
+        current_weekday = now.weekday()  # 0=週一, 6=週日
+        current_time = now.time()
+        
+        periods = self.business_hours_detail.filter(day_of_week=current_weekday)
+        
+        for period in periods:
+            if (period.open_time and period.close_time and 
+                period.open_time <= current_time <= period.close_time):
+                return True
+        
+        return False
+    
+    def get_full_address(self):
+        """取得完整地址"""
+        return self.address if self.address else None
+
+class BusinessHours(models.Model):
+    """營業時間表 - 支援一天多個時段"""
+    WEEKDAY_CHOICES = [
+        (0, '週一'), (1, '週二'), (2, '週三'), (3, '週四'),
+        (4, '週五'), (5, '週六'), (6, '週日'),
+    ]
+    
+    location = models.ForeignKey(PetLocation, on_delete=models.CASCADE, 
+                               related_name='business_hours_detail', verbose_name='地點')
+    day_of_week = models.IntegerField(choices=WEEKDAY_CHOICES, verbose_name='星期')
+    open_time = models.TimeField(null=True, blank=True, verbose_name='開始時間')
+    close_time = models.TimeField(null=True, blank=True, verbose_name='結束時間')
+    period_order = models.PositiveIntegerField(default=1, verbose_name='時段順序')
+    period_name = models.CharField(max_length=20, blank=True, null=True, verbose_name='時段名稱')
+
+    class Meta:
+        unique_together = ('location', 'day_of_week', 'period_order')
+        verbose_name = '營業時間'
+        verbose_name_plural = '營業時間'
+        ordering = ['day_of_week', 'period_order']
+        db_table = 'pet_business_hours'
+        indexes = [
+            models.Index(fields=['location', 'day_of_week'], name='business_hours_idx'),
+        ]
+
+    def __str__(self):
+        if not self.open_time or not self.close_time:
+            return f"{self.location.name} - {self.get_day_of_week_display()} (休息)"
+        period_text = f" ({self.period_name})" if self.period_name else f" (時段{self.period_order})"
+        return f"{self.location.name} - {self.get_day_of_week_display()}{period_text} {self.open_time}-{self.close_time}"
+    

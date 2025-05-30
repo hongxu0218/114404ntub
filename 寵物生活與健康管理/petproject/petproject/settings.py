@@ -155,6 +155,10 @@ ACCOUNT_LOGIN_METHODS = {'email'}     # 使用 email 作為帳號登入依據
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']# 必填欄位
 ACCOUNT_EMAIL_VERIFICATION = 'none'         # 關閉 email 驗證（開發階段建議關），上線時請改為 'mandatory'
 
+# 顯示信件主旨與寄件網址設定
+ACCOUNT_EMAIL_SUBJECT_TEMPLATE = "password_reset_subject.txt"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # 若你部署沒 SSL 就改為 "http"
+
 # 註冊成功後立即導向登入頁（GET 請求立即登入）
 SOCIALACCOUNT_LOGIN_ON_GET = True
 

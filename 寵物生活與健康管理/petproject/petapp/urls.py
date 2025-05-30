@@ -78,6 +78,11 @@ urlpatterns = [
     path('medical/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
     path('medical/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
 
+         # 地圖功能相關
+    path('map/', views.map_home, name='map'),
+    path('api/locations/', views.api_locations, name='api_locations'),
+
+
 ]
 
 # 靜態檔案處理（僅在開發模式下啟用）

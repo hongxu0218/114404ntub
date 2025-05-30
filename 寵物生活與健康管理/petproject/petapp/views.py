@@ -4,14 +4,14 @@ from collections import defaultdict
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, MedicalRecord
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, MedicalRecord,PetLocation,ServiceType, PetType,BusinessHours
 from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm, MedicalRecordForm
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import csrf_protect
+from django.contrib import messages
 from django.views.decorators.http import require_POST, require_http_methods ,require_GET
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
@@ -1476,3 +1476,269 @@ def notification_page(request):
         'vaccine_reminders': vaccine_reminders,
         'deworm_reminders': deworm_reminders,
     })
+
+###############################地圖############################
+
+pet_types = PetType.objects.filter(is_active=True).order_by('name')
+
+def map_home(request):
+    """地圖首頁"""
+    # 取得所有可用的城市，用於篩選器
+    cities = PetLocation.objects.values_list('city', flat=True).distinct().order_by('city')
+    cities = [city for city in cities if city]  # 過濾空值
+    
+    # 從資料庫取得寵物類型並加上圖標
+    pet_types_raw = PetType.objects.filter(is_active=True).order_by('name')
+    
+    # 為寵物類型添加圖標（這應該在模型中定義，或使用字典映射）
+    PET_TYPE_ICONS = {
+        'small_dog': '🐕‍',
+        'medium_dog': '🐕',
+        'large_dog': '🦮',
+        'cat': '🐈',
+        'bird': '🦜',
+        'rodent': '🐹',
+        'reptile': '🦎',
+        'other': '🦝'
+    }
+    
+    pet_types = []
+    for pet_type in pet_types_raw:
+        pet_types.append({
+            'code': pet_type.code,
+            'name': pet_type.name,
+            'icon': PET_TYPE_ICONS.get(pet_type.code, '🐾')
+        })
+    
+    context = {
+        'cities': cities,
+        'pet_types': pet_types,
+    }
+    return render(request, 'petmap/map.html', context)
+
+
+def api_locations(request):
+    """簡化版地點資料 API - 專注於解決篩選問題"""
+    try:
+        print("🔍 API 請求開始...")
+        print(f"所有 GET 參數: {dict(request.GET)}")
+        
+        # 取得查詢參數
+        location_type = request.GET.get('type', None)
+        city = request.GET.get('city', None)
+        search = request.GET.get('search', None)
+        
+        # 處理寵物類型篩選參數
+        pet_type_codes = []
+        for param_name, param_value in request.GET.items():
+            if param_name.startswith('support_') and param_value == 'true':
+                pet_code = param_name.replace('support_', '')
+                pet_type_codes.append(pet_code)
+        
+        print(f"📊 篩選條件:")
+        print(f"  - 服務類型: {location_type}")
+        print(f"  - 城市: {city}")
+        print(f"  - 搜尋: {search}")
+        print(f"  - 寵物類型: {pet_type_codes}")
+        
+        # 基本查詢 - 只選擇有座標的地點
+        query = PetLocation.objects.filter(
+            lat__isnull=False, 
+            lon__isnull=False
+        ).prefetch_related('service_types', 'pet_types')
+        
+        initial_count = query.count()
+        print(f"📍 初始查詢結果: {initial_count} 個有座標的地點")
+        
+        # 服務類型篩選
+        if location_type:
+            print(f"🏥 應用服務類型篩選: {location_type}")
+            
+            # 檢查這個服務類型是否存在
+            service_exists = ServiceType.objects.filter(code=location_type, is_active=True).exists()
+            print(f"服務類型 '{location_type}' 是否存在: {service_exists}")
+            
+            if service_exists:
+                filtered_query = query.filter(
+                    service_types__code=location_type,
+                    service_types__is_active=True
+                ).distinct()
+                
+                filtered_count = filtered_query.count()
+                print(f"篩選後結果: {filtered_count} 個地點")
+                
+                if filtered_count > 0:
+                    query = filtered_query
+                else:
+                    print("⚠️ 篩選後沒有結果，但仍會返回空列表")
+            else:
+                print(f"❌ 服務類型 '{location_type}' 不存在")
+                query = query.none()  # 返回空查詢集
+        
+        # 城市篩選
+        if city:
+            before_count = query.count()
+            query = query.filter(city=city)
+            after_count = query.count()
+            print(f"🏙️ 城市篩選 ({city}): {before_count} -> {after_count}")
+        
+        # 搜尋篩選
+        if search:
+            before_count = query.count()
+            query = query.filter(
+                Q(name__icontains=search) |
+                Q(address__icontains=search)
+            ).distinct()
+            after_count = query.count()
+            print(f"🔍 搜尋篩選 ({search}): {before_count} -> {after_count}")
+        
+        # 寵物類型篩選
+        if pet_type_codes:
+            print(f"🐾 應用寵物類型篩選: {pet_type_codes}")
+            
+            # 檢查有效的寵物類型代碼
+            valid_pet_codes = list(PetType.objects.filter(
+                code__in=pet_type_codes, 
+                is_active=True
+            ).values_list('code', flat=True))
+            
+            print(f"有效的寵物類型代碼: {valid_pet_codes}")
+            
+            if valid_pet_codes:
+                before_count = query.count()
+                pet_filtered_query = query.filter(
+                    pet_types__code__in=valid_pet_codes,
+                    pet_types__is_active=True
+                ).distinct()
+                
+                pet_filtered_count = pet_filtered_query.count()
+                print(f"寵物類型篩選: {before_count} -> {pet_filtered_count}")
+                
+                # 如果沒有地點明確支援這些寵物類型，不篩選（顯示所有地點）
+                if pet_filtered_count > 0:
+                    query = pet_filtered_query
+                else:
+                    print("⚠️ 沒有地點明確支援指定寵物類型，顯示所有符合其他條件的地點")
+        
+        # 限制結果數量並執行查詢
+        max_results = 200
+        final_locations = list(query[:max_results])
+        final_count = len(final_locations)
+        
+        print(f"📊 最終結果: {final_count} 個地點")
+        
+        # 轉換為 GeoJSON 格式
+        features = []
+        
+        for i, location in enumerate(final_locations):
+            try:
+                # 獲取關聯資料
+                service_types = list(location.service_types.all())
+                pet_types = list(location.pet_types.all())
+                
+                service_names = [st.name for st in service_types]
+                pet_names = [pt.name for pt in pet_types]
+                
+                # 建立寵物支援屬性
+                pet_support = {}
+                for pt in pet_types:
+                    pet_support[f'support_{pt.code}'] = True
+                
+                properties = {
+                    'id': location.id,
+                    'name': location.name or '未命名',
+                    'address': location.address or '',
+                    'phone': location.phone or '',
+                    'city': location.city or '',
+                    'district': location.district or '',
+                    'rating': float(location.rating) if location.rating else None,
+                    'rating_count': location.rating_count or 0,
+                    'has_emergency': location.has_emergency,
+                    'service_types': service_names,
+                    'supported_pet_types': pet_names,
+                    **pet_support
+                }
+                
+                feature = {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [float(location.lon), float(location.lat)]
+                    },
+                    'properties': properties
+                }
+                features.append(feature)
+                
+                # 每處理 20 個地點輸出一次進度
+                if (i + 1) % 20 == 0:
+                    print(f"🔄 已處理 {i + 1}/{final_count} 個地點")
+                    
+            except Exception as e:
+                print(f"❌ 處理地點 {location.id} 時發生錯誤: {e}")
+                continue
+        
+        geojson_response = {
+            'type': 'FeatureCollection',
+            'features': features
+        }
+        
+        print(f"✅ API 處理完成，返回 {len(features)} 個地點特徵")
+        print(f"回應大小: {len(str(geojson_response))} 字元")
+        
+        return JsonResponse(geojson_response)
+        
+    except Exception as e:
+        print(f"💥 API 發生錯誤: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'error': 'Internal server error',
+            'message': str(e),
+            'type': 'server_error'
+        }, status=500)
+                        
+@login_required
+def manage_business_hours(request, location_id):
+    """管理地點營業時間"""
+    location = get_object_or_404(PetLocation, id=location_id)
+    
+    if request.method == 'POST':
+        # 處理營業時間的新增/修改
+        pass
+    
+    # 取得現有營業時間
+    business_hours = BusinessHours.objects.filter(location=location).order_by('day_of_week', 'period_order')
+    
+    return render(request, 'petmap/manage_business_hours.html', {
+        'location': location,
+        'business_hours': business_hours
+    })
+
+@login_required  
+def add_location(request):
+    """新增地點"""
+    if request.method == 'POST':
+        # 處理地點新增邏輯
+        pass
+    
+    service_types = ServiceType.objects.filter(is_active=True)
+    pet_types = PetType.objects.filter(is_active=True)
+    
+    return render(request, 'petmap/add_location.html', {
+        'service_types': service_types,
+        'pet_types': pet_types
+    })
+
+def api_stats(request):
+    """統計資料 API（可選）"""
+    # 按服務類型統計
+    service_stats = {}
+    for service_type in ServiceType.objects.filter(is_active=True):
+        count = service_type.locations.count()
+        service_stats[service_type.code] = {
+            'name': service_type.name,
+            'count': count
+        }
+
+###############################地圖############################
