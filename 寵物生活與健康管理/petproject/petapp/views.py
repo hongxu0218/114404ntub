@@ -837,6 +837,14 @@ def add_tem(request, pet_id):
     months = list(range(1, 13))
     today = dt_date.today()   #抓取今天的日期
     current_year = today.year
+
+    context = {
+        'pet': pet,
+        'months': months,
+        'month': today.month,
+        'day': today.day,
+        'temperature': '',
+    }
     if request.method == 'POST':
         try:
             month = int(request.POST.get('month'))
@@ -848,7 +856,12 @@ def add_tem(request, pet_id):
             record_date = dt_date(current_year, month, day)
             if record_date > today:
                 messages.error(request, "日期不可超過今天")
-                return redirect('add_tem', pet_id=pet.id)
+                context.update({
+                    'temperature': temperature,
+                    'month': month,
+                    'day': day,
+                })
+                return render(request, 'health_records/add_tem.html', context)
             DailyRecord.objects.create(
                 pet=pet,
                 date=record_date,# date 欄位只顯示年月日，時間為儲存當下時間，使用者不見
@@ -859,19 +872,12 @@ def add_tem(request, pet_id):
         except ValueError:
             messages.error(request, "日期格式錯誤，請重新輸入")
             return redirect('add_tem', pet_id=pet.id)
-    context = {
-        'pet': pet,
-        'months': months,
-        'month': today.month,
-        'day': today.day,
-        'temperature': '',
-    }
+
     return render(request, 'health_records/add_tem.html', context)
 
 # 修改體溫資料
 def edit_tem(request, pet_id, record_id):
     record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='temperature')
-
     if isinstance(record.date, datetime):
         record_date = record.date.date()
     else:
@@ -893,9 +899,28 @@ def edit_tem(request, pet_id, record_id):
     days = list(range(1, days_in_month + 1))
     months = list(range(1, 13))
 
+    context = {
+        'pet_id': pet_id,
+        'months': months,
+        'days': days,
+        'month': month,
+        'day': day,
+        'temperature': record.content,
+    }
     if request.method == 'POST' and 'temperature' in request.POST:
         temperature = request.POST.get('temperature')
         selected_date = datetime(year, month, day)
+
+        # 驗證未來日期（只比對年月日）
+        if selected_date.date() > datetime.today().date():
+            messages.error(request, "日期不可超過今天")
+            context.update({
+                'temperature': temperature,
+                'month': month,
+                'day': day,
+            })
+            return render(request, 'health_records/edit_tem.html', context)
+
         combined_datetime = datetime.combine(selected_date, now.time())
 
         record.date = combined_datetime
@@ -903,14 +928,7 @@ def edit_tem(request, pet_id, record_id):
         record.save()
         return redirect('tem_rec', pet_id=pet_id)
 
-    return render(request, 'health_records/edit_tem.html', {
-        'pet_id': pet_id,
-        'months': months,
-        'days': days,
-        'month': month,
-        'day': day,
-        'temperature': record.content,
-    })
+    return render(request, 'health_records/edit_tem.html', context)
 
 # 刪除體溫資料
 def delete_tem(request, pet_id, record_id):
@@ -1033,6 +1051,13 @@ def add_weight(request, pet_id):
     months = list(range(1, 13))
     today = dt_date.today()
     current_year = today.year
+    context = {
+        'pet': pet,
+        'months': months,
+        'month': today.month,
+        'day': today.day,
+        'weight': '',
+    }
     if request.method == 'POST':
         try:
             month = int(request.POST.get('month'))
@@ -1044,7 +1069,12 @@ def add_weight(request, pet_id):
             record_date = dt_date(current_year, month, day)
             if record_date > today:
                 messages.error(request, "日期不可超過今天")
-                return redirect('add_weight', pet_id=pet.id)
+                context.update({
+                    'weight': weight,
+                    'month': month,
+                    'day': day,
+                })
+                return render(request, 'health_records/add_weight.html', context)
             DailyRecord.objects.create(
                 pet=pet,
                 date=record_date,# date 欄位只顯示年月日，時間為儲存當下時間，使用者不見
@@ -1055,13 +1085,7 @@ def add_weight(request, pet_id):
         except ValueError:
             messages.error(request, "日期格式錯誤，請重新輸入")
             return redirect('add_weight', pet_id=pet.id)
-    context = {
-        'pet': pet,
-        'months': months,
-        'month': today.month,
-        'day': today.day,
-        'weight': '',
-    }
+
     return render(request, 'health_records/add_weight.html', context)
 
 # 修改體重資料
@@ -1089,9 +1113,27 @@ def edit_weight(request, pet_id, record_id):
     days = list(range(1, days_in_month + 1))
     months = list(range(1, 13))
 
+    context = {
+        'pet_id': pet_id,
+        'months': months,
+        'days': days,
+        'month': month,
+        'day': day,
+        'weight': record.content,
+    }
     if request.method == 'POST' and 'weight' in request.POST:
         weight = request.POST.get('weight')
         selected_date = datetime(year, month, day)
+        # 驗證未來日期（只比對年月日）
+        if selected_date.date() > datetime.today().date():
+            messages.error(request, "日期不可超過今天")
+            context.update({
+                'weight': weight,
+                'month': month,
+                'day': day,
+            })
+            return render(request, 'health_records/edit_weight.html', context)
+
         combined_datetime = datetime.combine(selected_date, now.time())
 
         record.date = combined_datetime
@@ -1099,14 +1141,7 @@ def edit_weight(request, pet_id, record_id):
         record.save()
         return redirect('weight_rec', pet_id=pet_id)
 
-    return render(request, 'health_records/edit_weight.html', {
-        'pet_id': pet_id,
-        'months': months,
-        'days': days,
-        'month': month,
-        'day': day,
-        'weight': record.content,
-    })
+    return render(request, 'health_records/edit_weight.html', context)
 
 # 刪除體重資料
 def delete_weight(request, pet_id, record_id):
