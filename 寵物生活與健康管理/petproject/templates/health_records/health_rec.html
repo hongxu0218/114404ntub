@@ -123,6 +123,17 @@ body {
         .input-block .btn-close {
             background-color: #e97777;
         }
+        .input-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-block .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
 
         /* 針對圖表調整 */
         .chart-container {
@@ -277,9 +288,7 @@ body {
         .record-item .delete-btn {
           display: none;
         }
-        .record-item:hover .delete-btn {
-          display: inline-block;
-        }
+
 </style>
 {% endblock %}
 
@@ -475,16 +484,18 @@ body {
                                   {% for record in group.records %}
                                     {% if record.category == 'diet' and record.content %}
                                       <li id="diet-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
-                                        {{ record.content }}
-                                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                      </li>
+                                          {{ record.content }}
+                                          <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                        </li>
                                     {% endif %}
                                   {% endfor %}
                                 </ul>
                             <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="diet" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea><br>
+                                <textarea placeholder="輸入內容..."></textarea>
+                                <div class="button-group">
                                 <button class="btn-save" onclick="saveRecord(this)">儲存</button>
                                 <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                </div>
                             </div>
                         </div>
 
@@ -507,9 +518,11 @@ body {
                                 {% endfor %}
                             </ul>
                             <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="allergen" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea><br>
-                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                <textarea placeholder="輸入內容..."></textarea>
+                                <div class="button-group">
+                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                    <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -554,9 +567,11 @@ body {
                                 {% endfor %}
                             </ul>
                             <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="exercise" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea><br>
-                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                <textarea placeholder="輸入內容..."></textarea>
+                                <div class="button-group">
+                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                    <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                </div>
                             </div>
                         </div>
 
@@ -578,9 +593,11 @@ body {
                                 {% endfor %}
                             </ul>
                                 <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="other" style="display:none;">
-                                    <textarea placeholder="輸入內容..."></textarea><br>
-                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                    <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                    <textarea placeholder="輸入內容..."></textarea>
+                                    <div class="button-group">
+                                        <button class="btn-save" onclick="saveRecord(this)">儲存</button>
+                                        <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                    </div>
                                 </div>
                         </div>
                     </div>
@@ -611,17 +628,6 @@ body {
     return '';
 }
 
-    //  生活記錄的刪除  隱藏功能
-    function toggleDeleteButton(liElement) {
-        const deleteBtn = liElement.querySelector('.delete-btn');
-        if (deleteBtn.style.display === 'none') {
-            // 先隱藏其他打開的刪除按鈕
-            document.querySelectorAll('.delete-btn').forEach(btn => btn.style.display = 'none');
-            deleteBtn.style.display = 'inline-block';
-        } else {
-            deleteBtn.style.display = 'none';
-        }
-    }
 
     function showTab(tabId) {
         const tabs = document.querySelectorAll('.tab-content');
@@ -641,64 +647,131 @@ body {
             block.style.display = 'none';
             block.querySelector('textarea').value = '';
         }
+        // 為每個 record-item 綁定點擊事件，顯示其刪除按鈕並隱藏其他的
+        document.querySelectorAll('.record-item').forEach(function (recordItem) {
+            const deleteBtn = recordItem.querySelector('.delete-btn');
 
-        // 儲存生活記錄資料
-        function saveRecord(button) {
-        const inputBlock = button.closest('.input-block');
-        const textarea = inputBlock.querySelector('textarea');
-        const content = textarea.value.trim();
-        const petId = inputBlock.getAttribute('data-pet-id');
-        const category = inputBlock.getAttribute('data-category');
+            recordItem.addEventListener('click', function () {
+                // 隱藏其他項目的刪除按鈕
+                document.querySelectorAll('.record-item').forEach(function (otherItem) {
+                    const otherDeleteBtn = otherItem.querySelector('.delete-btn');
+                    if (otherItem !== recordItem) {
+                        otherItem.classList.remove('clicked');
+                        if (otherDeleteBtn) otherDeleteBtn.style.display = 'none';
+                    }
+                });
 
-        if (!content) {
-            alert('請輸入內容');
-            return;
-        }
-
-        // 建立資料物件
-        const data = {
-            pet_id: petId,
-            category: category,
-            content: content
-        };
-
-        // 發送 POST 請求
-        fetch('/save_daily_record/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken(),
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('儲存失敗');
-            }
-            return response.json();
-        })
-        .then(json => {
-            if (json.success) {
-                const ul = inputBlock.previousElementSibling; // UL 在 input-block 前
-                const li = document.createElement('li');
-                li.id = `${category}-record-${json.record_id}`;
-                li.innerHTML = `
-                    ${content}
-                    <button onclick="deleteRecord('${json.record_id}', '${petId}')">刪除</button>
-                `;
-                ul.appendChild(li);
-                textarea.value = '';
-                inputBlock.style.display = 'none';
-            } else {
-                alert(json.message || '儲存失敗');
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            alert('儲存過程中發生錯誤');
+                // 顯示或隱藏當前項目的刪除按鈕
+                if (recordItem.classList.contains('clicked')) {
+                    recordItem.classList.remove('clicked');
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                } else {
+                    recordItem.classList.add('clicked');
+                    if (deleteBtn) deleteBtn.style.display = 'inline-block';
+                }
+            });
         });
+
+// 隱藏所有 delete 按鈕
+function hideAllDeleteButtons() {
+    document.querySelectorAll('.record-item').forEach(function (item) {
+        item.classList.remove('clicked');
+        const btn = item.querySelector('.delete-btn');
+        if (btn) btn.style.display = 'none';
+    });
+}
+
+// 切換 delete 按鈕顯示
+function toggleDeleteButton(recordItem) {
+    const deleteBtn = recordItem.querySelector('.delete-btn');
+
+    if (recordItem.classList.contains('clicked')) {
+        recordItem.classList.remove('clicked');
+        if (deleteBtn) deleteBtn.style.display = 'none';
+    } else {
+        recordItem.classList.add('clicked');
+        if (deleteBtn) deleteBtn.style.display = 'inline-block';
+    }
+}
+
+// 初始綁定：所有舊的 record-item 加入 click 事件
+function bindRecordItemClickEvents() {
+    document.querySelectorAll('.record-item').forEach(function (recordItem) {
+        recordItem.addEventListener('click', function () {
+            toggleDeleteButton(recordItem);
+        });
+    });
+}
+
+// 儲存生活記錄資料
+function saveRecord(button) {
+    const inputBlock = button.closest('.input-block');
+    const textarea = inputBlock.querySelector('textarea');
+    const content = textarea.value.trim();
+    const petId = inputBlock.getAttribute('data-pet-id');
+    const category = inputBlock.getAttribute('data-category');
+
+    if (!content) {
+        alert('請輸入內容');
+        return;
     }
 
+    const data = {
+        pet_id: petId,
+        category: category,
+        content: content
+    };
+
+    fetch('/save_daily_record/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken(),
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('儲存失敗');
+        }
+        return response.json();
+    })
+    .then(json => {
+        if (json.success) {
+            const ul = inputBlock.previousElementSibling;
+            const li = document.createElement('li');
+            li.id = `${category}-record-${json.record_id}`;
+            li.className = 'record-item';
+
+            // 加入點擊切換刪除按鈕
+            li.addEventListener('click', function () {
+                toggleDeleteButton(li);
+            });
+
+            li.innerHTML = `
+                ${content}
+                <button class="delete-btn" style="display: none;" onclick="event.stopPropagation(); deleteRecord('${json.record_id}', '${petId}')">刪除</button>
+            `;
+
+            ul.appendChild(li);
+            textarea.value = '';
+            inputBlock.style.display = 'none';
+
+            hideAllDeleteButtons(); // 隱藏其他 delete 按鈕
+        } else {
+            alert(json.message || '儲存失敗');
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        alert('儲存過程中發生錯誤');
+    });
+}
+
+// 載入後立即綁定一次所有現有項目
+document.addEventListener('DOMContentLoaded', function () {
+    bindRecordItemClickEvents();
+});
 
 
 
@@ -928,7 +1001,6 @@ function renderWeightChart(petId) {
         labelEl.textContent = `${current.getFullYear()}年${current.getMonth() + 1}月`;
     }
 }
-
 function changeWeightMonth(petId, offset) {
     const current = currentWeightMonthMap[petId];
     const newDate = new Date(current);
@@ -970,6 +1042,7 @@ function changeWeightMonth(petId, offset) {
             if (chartWrapper) chartWrapper.classList.remove('opacity-50');
         });
 }
+
 
 
     function toggleDetails(type, petId) {
