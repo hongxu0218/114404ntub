@@ -243,7 +243,7 @@ class PetForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['picture'].required = True
-        for field_name in ['breed', 'name', 'chip', 'weight', 'feature']:
+        for field_name in ['breed', 'name', 'chip', 'weight', 'feature','birth_date']:
             self.fields[field_name].required = True
             # 設定 date 預設為今天（僅在初次載入表單時）
         if not self.initial.get('date'):
