@@ -78,12 +78,16 @@ urlpatterns = [
     path('medical/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
     path('medical/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
 
-         # 地圖功能相關
+     # 地圖功能相關
     path('map/', views.map_home, name='map'),
     path('api/locations/', views.api_locations, name='api_locations'),
 
-
+    # 🚨 24小時急診地圖功能
+    path('emergency_map/', views.emergency_map_home, name='emergency_map'),  # 24小時急診地圖首頁
+    path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),  # 急診醫院資料 API
 ]
+
+
 
 # 靜態檔案處理（僅在開發模式下啟用）
 if settings.DEBUG:

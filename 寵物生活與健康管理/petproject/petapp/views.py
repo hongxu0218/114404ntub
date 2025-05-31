@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST, require_http_methods ,req
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
-from django.db.models import Q
+from django.db.models import Q ,Max
 
 from calendar import monthrange
 import calendar
@@ -837,6 +837,14 @@ def add_tem(request, pet_id):
     months = list(range(1, 13))
     today = dt_date.today()   #抓取今天的日期
     current_year = today.year
+
+    context = {
+        'pet': pet,
+        'months': months,
+        'month': today.month,
+        'day': today.day,
+        'temperature': '',
+    }
     if request.method == 'POST':
         try:
             month = int(request.POST.get('month'))
@@ -848,7 +856,12 @@ def add_tem(request, pet_id):
             record_date = dt_date(current_year, month, day)
             if record_date > today:
                 messages.error(request, "日期不可超過今天")
-                return redirect('add_tem', pet_id=pet.id)
+                context.update({
+                    'temperature': temperature,
+                    'month': month,
+                    'day': day,
+                })
+                return render(request, 'health_records/add_tem.html', context)
             DailyRecord.objects.create(
                 pet=pet,
                 date=record_date,# date 欄位只顯示年月日，時間為儲存當下時間，使用者不見
@@ -859,19 +872,12 @@ def add_tem(request, pet_id):
         except ValueError:
             messages.error(request, "日期格式錯誤，請重新輸入")
             return redirect('add_tem', pet_id=pet.id)
-    context = {
-        'pet': pet,
-        'months': months,
-        'month': today.month,
-        'day': today.day,
-        'temperature': '',
-    }
+
     return render(request, 'health_records/add_tem.html', context)
 
 # 修改體溫資料
 def edit_tem(request, pet_id, record_id):
     record = get_object_or_404(DailyRecord, id=record_id, pet_id=pet_id, category='temperature')
-
     if isinstance(record.date, datetime):
         record_date = record.date.date()
     else:
@@ -893,9 +899,28 @@ def edit_tem(request, pet_id, record_id):
     days = list(range(1, days_in_month + 1))
     months = list(range(1, 13))
 
+    context = {
+        'pet_id': pet_id,
+        'months': months,
+        'days': days,
+        'month': month,
+        'day': day,
+        'temperature': record.content,
+    }
     if request.method == 'POST' and 'temperature' in request.POST:
         temperature = request.POST.get('temperature')
         selected_date = datetime(year, month, day)
+
+        # 驗證未來日期（只比對年月日）
+        if selected_date.date() > datetime.today().date():
+            messages.error(request, "日期不可超過今天")
+            context.update({
+                'temperature': temperature,
+                'month': month,
+                'day': day,
+            })
+            return render(request, 'health_records/edit_tem.html', context)
+
         combined_datetime = datetime.combine(selected_date, now.time())
 
         record.date = combined_datetime
@@ -903,14 +928,7 @@ def edit_tem(request, pet_id, record_id):
         record.save()
         return redirect('tem_rec', pet_id=pet_id)
 
-    return render(request, 'health_records/edit_tem.html', {
-        'pet_id': pet_id,
-        'months': months,
-        'days': days,
-        'month': month,
-        'day': day,
-        'temperature': record.content,
-    })
+    return render(request, 'health_records/edit_tem.html', context)
 
 # 刪除體溫資料
 def delete_tem(request, pet_id, record_id):
@@ -1033,6 +1051,13 @@ def add_weight(request, pet_id):
     months = list(range(1, 13))
     today = dt_date.today()
     current_year = today.year
+    context = {
+        'pet': pet,
+        'months': months,
+        'month': today.month,
+        'day': today.day,
+        'weight': '',
+    }
     if request.method == 'POST':
         try:
             month = int(request.POST.get('month'))
@@ -1044,7 +1069,12 @@ def add_weight(request, pet_id):
             record_date = dt_date(current_year, month, day)
             if record_date > today:
                 messages.error(request, "日期不可超過今天")
-                return redirect('add_weight', pet_id=pet.id)
+                context.update({
+                    'weight': weight,
+                    'month': month,
+                    'day': day,
+                })
+                return render(request, 'health_records/add_weight.html', context)
             DailyRecord.objects.create(
                 pet=pet,
                 date=record_date,# date 欄位只顯示年月日，時間為儲存當下時間，使用者不見
@@ -1055,13 +1085,7 @@ def add_weight(request, pet_id):
         except ValueError:
             messages.error(request, "日期格式錯誤，請重新輸入")
             return redirect('add_weight', pet_id=pet.id)
-    context = {
-        'pet': pet,
-        'months': months,
-        'month': today.month,
-        'day': today.day,
-        'weight': '',
-    }
+
     return render(request, 'health_records/add_weight.html', context)
 
 # 修改體重資料
@@ -1089,9 +1113,27 @@ def edit_weight(request, pet_id, record_id):
     days = list(range(1, days_in_month + 1))
     months = list(range(1, 13))
 
+    context = {
+        'pet_id': pet_id,
+        'months': months,
+        'days': days,
+        'month': month,
+        'day': day,
+        'weight': record.content,
+    }
     if request.method == 'POST' and 'weight' in request.POST:
         weight = request.POST.get('weight')
         selected_date = datetime(year, month, day)
+        # 驗證未來日期（只比對年月日）
+        if selected_date.date() > datetime.today().date():
+            messages.error(request, "日期不可超過今天")
+            context.update({
+                'weight': weight,
+                'month': month,
+                'day': day,
+            })
+            return render(request, 'health_records/edit_weight.html', context)
+
         combined_datetime = datetime.combine(selected_date, now.time())
 
         record.date = combined_datetime
@@ -1099,14 +1141,7 @@ def edit_weight(request, pet_id, record_id):
         record.save()
         return redirect('weight_rec', pet_id=pet_id)
 
-    return render(request, 'health_records/edit_weight.html', {
-        'pet_id': pet_id,
-        'months': months,
-        'days': days,
-        'month': month,
-        'day': day,
-        'weight': record.content,
-    })
+    return render(request, 'health_records/edit_weight.html', context)
 
 # 刪除體重資料
 def delete_weight(request, pet_id, record_id):
@@ -1371,15 +1406,101 @@ def get_notification_count(request):
 @login_required
 def notification_page(request):
     user = request.user
-    tomorrow = timezone.now().date() + timedelta(days=1)
-
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
     appointments = []
+    vaccine_reminders = []
+    deworm_reminders = []
     role = None
 
     if hasattr(user, 'profile'):
         role = user.profile.account_type
+
         if role == 'owner':
             appointments = VetAppointment.objects.filter(owner=user, date=tomorrow)
+
+            # 每隻寵物的最新疫苗日期
+            # ---------- 疫苗：一年效期 ----------
+            latest_vaccine_dates = (VaccineRecord.objects
+                .filter(pet__owner=user)
+                .values('pet')
+                .annotate(last_vaccine_date=Max('date'))
+            )
+
+            for item in latest_vaccine_dates:
+                pet_id = item['pet']
+                last_date = item['last_vaccine_date']
+                days_diff = (today - last_date).days
+
+                # 如果是提前一天或提前一個月提醒
+                if days_diff in [365 - 30, 365 - 1]:  # 即 335 或 364 天
+                    pet = Pet.objects.get(id=pet_id)
+                    vaccine_reminders.append({
+                        'pet': pet,
+                        'last_date': last_date,
+                        'days_left': 365 - days_diff
+                    })
+
+                    # 寄信通知
+                    subject = f"【疫苗提醒】{pet.name} 的疫苗即將到期"
+                    message = f"""
+親愛的 {user.last_name or ''}{user.first_name or user.username} 飼主您好：
+
+您的寵物「{pet.name}」的最近一次疫苗接種日期為 {last_date}。
+目前距離一年效期只剩下 {365 - days_diff} 天，建議您儘快安排補打疫苗。
+
+歡迎使用「毛日好 Paw&Day」系統預約獸醫進行疫苗接種。
+
+祝 平安健康，
+毛日好 Paw&Day 團隊
+"""
+                    send_mail(
+                        subject,
+                         message,
+                        f"毛日好通知 <{settings.DEFAULT_FROM_EMAIL}>",
+                        [user.email],
+                        fail_silently=True
+                    )
+
+            # ---------- 驅蟲：半年效期 ----------
+            latest_deworm_dates = (DewormRecord.objects
+                .filter(pet__owner=user)
+                .values('pet')
+                .annotate(last_deworm_date=Max('date'))
+            )
+
+            for item in latest_deworm_dates:
+                pet_id = item['pet']
+                last_date = item['last_deworm_date']
+                days_diff = (today - last_date).days
+
+                if days_diff in [182 - 30, 182 - 1]:  # 半年約 182 天
+                    pet = Pet.objects.get(id=pet_id)
+                    deworm_reminders.append({
+                        'pet': pet,
+                        'last_date': last_date,
+                        'days_left': 182 - days_diff
+                    })
+
+                    # Email 通知驅蟲
+                    send_mail(
+                        subject=f"【驅蟲提醒】{pet.name} 的驅蟲即將到期",
+                        message=f"""
+親愛的 {user.last_name or ''}{user.first_name or user.username} 飼主您好：
+
+您的寵物「{pet.name}」的最近一次驅蟲日期為 {last_date}。
+目前距離半年效期只剩下 {182 - days_diff} 天，建議您儘快安排補打驅蟲藥。
+
+歡迎使用「毛日好 Paw&Day」系統預約獸醫進行驅蟲服務。
+
+祝 平安健康，
+毛日好 Paw&Day 團隊
+""",
+                        from_email=f"毛日好通知 <{settings.DEFAULT_FROM_EMAIL}>",
+                        recipient_list=[user.email],
+                        fail_silently=True
+                    )
+
         elif role == 'vet':
             appointments = VetAppointment.objects.filter(vet=user.profile, date=tomorrow)
 
@@ -1387,6 +1508,8 @@ def notification_page(request):
         'appointments': appointments,
         'role': role,
         'tomorrow': tomorrow,
+        'vaccine_reminders': vaccine_reminders,
+        'deworm_reminders': deworm_reminders,
     })
 
 ###############################地圖############################
@@ -1654,3 +1777,222 @@ def api_stats(request):
         }
 
 ###############################地圖############################
+
+###############################24小時急診地圖############################
+
+def emergency_map_home(request):
+    """24小時急診地圖首頁"""
+    # 取得所有可用的城市，用於篩選器
+    cities = PetLocation.objects.values_list('city', flat=True).distinct().order_by('city')
+    cities = [city for city in cities if city]  # 過濾空值
+    
+    # 從資料庫取得寵物類型
+    pet_types_raw = PetType.objects.filter(is_active=True).order_by('name')
+    
+    # 為寵物類型添加圖標
+    PET_TYPE_ICONS = {
+        'small_dog': '🐕‍',
+        'medium_dog': '🐕',
+        'large_dog': '🦮',
+        'cat': '🐈',
+        'bird': '🦜',
+        'rodent': '🐹',
+        'reptile': '🦎',
+        'other': '🦝'
+    }
+    
+    pet_types = []
+    for pet_type in pet_types_raw:
+        pet_types.append({
+            'code': pet_type.code,
+            'name': pet_type.name,
+            'icon': PET_TYPE_ICONS.get(pet_type.code, '🐾')
+        })
+    
+    context = {
+        'cities': cities,
+        'pet_types': pet_types,
+        'page_title': '24小時急診地圖',
+        'is_emergency_page': True,
+    }
+    return render(request, 'petmap/emergency_map.html', context)
+
+
+def api_emergency_locations(request):
+    """急診醫院資料 API - 專門提供急診醫療服務"""
+    try:
+        print("🚨 急診醫院 API 請求開始...")
+        print(f"所有 GET 參數: {dict(request.GET)}")
+        
+        # 取得查詢參數
+        location_type = request.GET.get('type', 'hospital')  # 預設只查醫院
+        city = request.GET.get('city', None)
+        search = request.GET.get('search', None)
+        emergency_only = request.GET.get('emergency', 'true')  # 預設只要急診
+        
+        # 處理寵物類型篩選參數
+        pet_type_codes = []
+        for param_name, param_value in request.GET.items():
+            if param_name.startswith('support_') and param_value == 'true':
+                pet_code = param_name.replace('support_', '')
+                pet_type_codes.append(pet_code)
+        
+        print(f"🏥 急診篩選條件:")
+        print(f"  - 服務類型: {location_type}")
+        print(f"  - 城市: {city}")
+        print(f"  - 搜尋: {search}")
+        print(f"  - 只要急診: {emergency_only}")
+        print(f"  - 寵物類型: {pet_type_codes}")
+        
+        # 基本查詢 - 只選擇有座標的醫院
+        query = PetLocation.objects.filter(
+            lat__isnull=False, 
+            lon__isnull=False
+        ).prefetch_related('service_types', 'pet_types')
+        
+        # 限制為醫院類型
+        if location_type == 'hospital':
+            query = query.filter(
+                service_types__code='hospital',
+                service_types__is_active=True
+            ).distinct()
+        
+        # 急診篩選 - 只顯示有急診服務的醫院
+        if emergency_only == 'true':
+            query = query.filter(has_emergency=True)
+        
+        initial_count = query.count()
+        print(f"🏥 初始急診醫院查詢結果: {initial_count} 個")
+        
+        # 城市篩選
+        if city:
+            before_count = query.count()
+            query = query.filter(city=city)
+            after_count = query.count()
+            print(f"🏙️ 城市篩選 ({city}): {before_count} -> {after_count}")
+        
+        # 搜尋篩選
+        if search:
+            before_count = query.count()
+            query = query.filter(
+                Q(name__icontains=search) |
+                Q(address__icontains=search)
+            ).distinct()
+            after_count = query.count()
+            print(f"🔍 搜尋篩選 ({search}): {before_count} -> {after_count}")
+        
+        # 寵物類型篩選
+        if pet_type_codes:
+            print(f"🐾 應用寵物類型篩選: {pet_type_codes}")
+            
+            valid_pet_codes = list(PetType.objects.filter(
+                code__in=pet_type_codes, 
+                is_active=True
+            ).values_list('code', flat=True))
+            
+            if valid_pet_codes:
+                before_count = query.count()
+                query = query.filter(
+                    pet_types__code__in=valid_pet_codes,
+                    pet_types__is_active=True
+                ).distinct()
+                after_count = query.count()
+                print(f"寵物類型篩選: {before_count} -> {after_count}")
+        
+        # 限制結果數量並執行查詢
+        max_results = 100  # 急診醫院數量相對較少
+        final_locations = list(query[:max_results])
+        final_count = len(final_locations)
+        
+        print(f"🏥 最終急診醫院結果: {final_count} 個")
+        
+        # 轉換為 GeoJSON 格式
+        features = []
+        
+        for i, location in enumerate(final_locations):
+            try:
+                # 獲取關聯資料
+                service_types = list(location.service_types.all())
+                pet_types = list(location.pet_types.all())
+                
+                service_names = [st.name for st in service_types]
+                pet_names = [pt.name for pt in pet_types]
+                
+                # 建立寵物支援屬性
+                pet_support = {}
+                for pt in pet_types:
+                    pet_support[f'support_{pt.code}'] = True
+                
+                # 急診醫院特殊屬性
+                emergency_level = 'basic'
+                if any('一級' in service or '重度' in service for service in service_names):
+                    emergency_level = 'trauma_center'
+                elif any('重症' in service or 'ICU' in service for service in service_names):
+                    emergency_level = 'icu'
+                elif any('外科' in service for service in service_names):
+                    emergency_level = 'surgery'
+                
+                properties = {
+                    'id': location.id,
+                    'name': location.name or '急診醫院',
+                    'address': location.address or '',
+                    'phone': location.phone or '',
+                    'city': location.city or '',
+                    'district': location.district or '',
+                    'rating': float(location.rating) if location.rating else None,
+                    'rating_count': location.rating_count or 0,
+                    'has_emergency': location.has_emergency,
+                    'emergency_level': emergency_level,
+                    'service_types': service_names,
+                    'supported_pet_types': pet_names,
+                    'lat': float(location.lat),
+                    'lon': float(location.lon),
+                    **pet_support
+                }
+                
+                feature = {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [float(location.lon), float(location.lat)]
+                    },
+                    'properties': properties
+                }
+                features.append(feature)
+                
+            except Exception as e:
+                print(f"❌ 處理急診醫院 {i} 時發生錯誤: {e}")
+                continue
+        
+        geojson_response = {
+            'type': 'FeatureCollection',
+            'features': features,
+            'metadata': {
+                'total_count': final_count,
+                'emergency_hospitals': True,
+                'query_params': {
+                    'city': city,
+                    'search': search,
+                    'emergency_only': emergency_only,
+                    'pet_types': pet_type_codes
+                }
+            }
+        }
+        
+        print(f"✅ 急診醫院 API 處理完成，返回 {len(features)} 個急診醫院")
+        
+        return JsonResponse(geojson_response)
+        
+    except Exception as e:
+        print(f"💥 急診醫院 API 發生錯誤: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'error': 'Emergency hospital API error',
+            'message': str(e),
+            'type': 'server_error',
+            'emergency_contact': '119'  # 提供緊急聯絡方式
+        }, status=500)
+
+###############################24小時急診地圖############################
