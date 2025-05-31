@@ -126,12 +126,11 @@
             <div class="category-text">搜尋附近</div>
           </a>
         {% endif %}
-      </div>
-      
+      </div>      
       <!-- 第四個功能卡片（非獸醫才顯示） -->
       {% if user.profile.account_type != 'vet' %}
       <div class="col-lg-3 col-md-4 col-sm-6">
-        <a href="#" class="category-card">
+        <a href="{% url 'emergency_map' %}" class="category-card">
           <img src="{% static 'images/icon_emergency.png' %}" class="category-icon" alt="急診">
           <div class="category-text">
             <span class="text-danger">24H 急診</span>

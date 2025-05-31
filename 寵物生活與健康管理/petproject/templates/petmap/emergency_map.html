@@ -1,0 +1,236 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24小時急診地圖 - PAW DAY</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <!-- 24小時急診地圖專用樣式 -->
+    <link rel="stylesheet" href="{% static 'css/emergency_map.css' %}" />
+</head>
+<body>
+    <!-- Emergency Alert Banner -->
+    <div class="emergency-alert" id="emergencyAlert">
+        <div class="container">
+            <div class="alert-content">
+                <div class="alert-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="alert-text">
+                    <strong>🚨 緊急提醒</strong>
+                    <span>寵物發生緊急狀況請立即撥打下方醫院電話，或前往最近的24小時急診醫院</span>
+                </div>
+                <button class="alert-close" onclick="closeEmergencyAlert()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="custom-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid">
+                    <a href="{% url 'home' %}" class="logo navbar-brand">
+                        <img src="{% static 'images/logo_cat_dog.jpg' %}" alt="LOGO" class="img-fluid">
+                        <span>PAW<br>DAY</span>
+                    </a>
+
+                    <div class="emergency-title">
+                        <h1><i class="bi bi-hospital"></i> 24小時急診地圖</h1>
+                        <p>快速找到最近的緊急醫療服務</p>
+                    </div>
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'map' %}">
+                                    <i class="bi bi-geo-alt me-1"></i>一般地圖
+                                </a>
+                            </li>
+                            {% if user.profile.account_type == 'owner' %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'pet_list' %}">
+                                        <i class="bi bi-heart-fill me-1"></i>我的寵物
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if user.is_authenticated %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_logout' %}">
+                                        <i class="bi bi-box-arrow-right me-1"></i>登出
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_login' %}">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i>登入
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 側邊欄切換按鈕 -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="切換側邊欄">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- 主要內容 -->
+    <div class="emergency-main-container">
+        <!-- 左側急診資訊面板 -->
+        <aside class="emergency-sidebar" id="emergencySidebar">
+            <div class="sidebar-header">
+                <div class="emergency-icon">
+                    <i class="bi bi-hospital"></i>
+                </div>
+                <h1 class="sidebar-title">24小時急診</h1>
+                <p class="sidebar-subtitle">緊急醫療服務搜尋</p>
+                
+
+
+                <!-- 搜尋欄 -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="emergencySearchInput" 
+                           placeholder="搜尋醫院名稱或地址..." aria-label="搜尋急診醫院">
+                    <button class="search-btn" id="emergencySearchBtn" aria-label="搜尋">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+
+
+            <!-- 急診醫院列表 -->
+            <div class="hospital-list-section">
+                <h3 class="section-title">
+                    <i class="bi bi-list-ul"></i>
+                    急診醫院 <span class="hospital-count" id="hospitalCount">(0)</span>
+                </h3>
+                <div class="hospital-list" id="hospitalList">
+                    <!-- 醫院列表將由 JavaScript 動態生成 -->
+                    <div class="loading-hospitals">
+                        <div class="loading-spinner"></div>
+                        <p>載入急診醫院資料中...</p>
+                    </div>
+                </div>
+            </div>
+
+
+        </aside>
+
+        <!-- 右側地圖區域 -->
+        <main class="emergency-map-area">
+            <div id="emergency-map"></div>
+            
+            <!-- 載入覆蓋層 -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">載入急診醫院資料中...</p>
+            </div>
+
+            <!-- 地圖控制項 -->
+            <div class="map-controls">
+                <button class="map-control-btn emergency" id="locateBtn" title="我的位置" aria-label="定位到我的位置">
+                    <i class="bi bi-geo-alt"></i>
+                </button>
+                <button class="map-control-btn emergency" id="refreshBtn" title="重新整理" aria-label="重新載入醫院">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+
+            <!-- 狀態顯示 -->
+            <div class="emergency-status" id="emergencyStatus">
+                <div class="status-info">
+                    <span class="status-count" id="statusCount">找到 0 家急診醫院</span>
+                    <div class="status-legend">
+                        <span class="legend-item">
+                            <span class="legend-color emergency"></span>
+                            24小時急診
+                        </span>
+                        <span class="legend-item">
+                            <span class="legend-color user"></span>
+                            您的位置
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 醫院資訊卡片 */
+            <div class="hospital-info-card" id="hospitalInfoCard" style="display: none;">
+                <div class="hospital-info-header">
+                    <div class="hospital-name-section">
+                        <h3 class="hospital-name" id="hospitalName"></h3>
+                        <div class="hospital-badges" id="hospitalBadges">
+                            <!-- 動態生成 -->
+                        </div>
+                    </div>
+                    <button class="close-info-btn" id="closeInfoBtn" aria-label="關閉資訊卡">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="hospital-info-content" id="hospitalInfoContent">
+                    <!-- 動態生成內容 -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <!-- 24小時急診地圖專用 JS -->
+    <script src="{% static 'js/emergency_map.js' %}"></script>
+
+    <script>
+        // 關閉緊急警告橫幅
+        function closeEmergencyAlert() {
+            document.getElementById('emergencyAlert').style.display = 'none';
+        }
+
+        // 通知數量載入
+        document.addEventListener('DOMContentLoaded', function () {
+            {% if user.is_authenticated %}
+            fetch("{% url 'get_notification_count' %}")
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = document.getElementById('notification-count');
+                    if (countElement && data.count > 0) {
+                        countElement.textContent = data.count;
+                        countElement.classList.remove('d-none');
+                    }
+                })
+                .catch(err => console.error("無法取得通知數量：", err));
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
