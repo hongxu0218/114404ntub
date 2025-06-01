@@ -1,0 +1,45 @@
+<!-- templates/pages/pending_verification.html -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>等待驗證</title>
+  <style>
+    body {
+      font-family: "Noto Sans TC", sans-serif;
+      background-color: #fff3cd;
+      color: #856404;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .box {
+      background-color: #fff;
+      border: 1px solid #ffeeba;
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      text-decoration: none;
+      color: #6c63ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>您的獸醫帳號尚未通過驗證</h2>
+    <p>請等待系統管理員審核後再嘗試進入獸醫主控台。</p>
+    <a href="{% url 'home' %}">← 回首頁</a>
+  </div>
+</body>
+</html>

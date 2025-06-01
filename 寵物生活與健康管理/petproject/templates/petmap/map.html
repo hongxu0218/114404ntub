@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探索附近寵物服務 - PAW DAY</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <!-- 地圖專用樣式 -->
+    <link rel="stylesheet" href="{% static 'css/map.css' %}" />
+</head>
+<body>
+    <!-- Header -->
+    <header class="custom-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid">
+                    <a href="{% url 'home' %}" class="logo navbar-brand">
+                        <img src="{% static 'images/logo_cat_dog.jpg' %}" alt="LOGO" class="img-fluid">
+                        <span>PAW<br>DAY</span>
+                    </a>
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            {% if user.is_authenticated %}
+                                {% if user.profile.account_type == 'owner' %}
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'pet_list' %}">
+                                            <i class="bi bi-heart-fill me-1"></i>我的寵物
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'health_rec' %}">
+                                            <i class="bi bi-heart-pulse me-1"></i>健康紀錄
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link active" href="{% url 'map' %}">
+                                            <i class="bi bi-geo-alt me-1"></i>搜尋附近
+                                        </a>
+                                    </li>
+                                {% elif user.profile.account_type == 'vet' %}
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'vet_appointments' %}">
+                                            <i class="bi bi-calendar-check me-1"></i>預約情況
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'vet_availability_settings' %}">
+                                            <i class="bi bi-clock me-1"></i>排班時段
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'edit_profile' %}">
+                                        <i class="bi bi-person-gear me-1"></i>修改帳號
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'notification_page' %}">
+                                        <i class="bi bi-bell me-1"></i>通知
+                                        <span id="notification-count" class="notification-badge d-none"></span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_logout' %}">
+                                        <i class="bi bi-box-arrow-right me-1"></i>登出
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_login' %}">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i>登入
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_signup' %}">
+                                        <i class="bi bi-person-plus me-1"></i>註冊
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 側邊欄切換按鈕 -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- 主要內容 -->
+    <div class="map-main-container">
+        <!-- 左側搜尋面板 -->
+        <aside class="map-sidebar" id="mapSidebar">
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    探索附近
+                </h1>
+                <p class="sidebar-subtitle">找到最適合您和毛孩的服務</p>
+                
+                <!-- 搜尋欄 -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="mapSearchInput" placeholder="輸入地點或關鍵字...">
+                    <button class="search-btn" id="mapSearchBtn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 服務分類 -->
+            <div class="category-section">
+                <h2 class="section-title">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    服務分類
+                </h2>
+                <div class="category-grid">
+                    <button class="category-item" data-type="park">
+                        <span class="category-icon">🌳</span>
+                        <span class="category-name">公園</span>
+                    </button>
+                    <button class="category-item" data-type="hospital">
+                        <span class="category-icon">🏥</span>
+                        <span class="category-name">醫院</span>
+                    </button>
+                    <button class="category-item" data-type="cosmetic">
+                        <span class="category-icon">✂️</span>
+                        <span class="category-name">美容</span>
+                    </button>
+                    <button class="category-item" data-type="product">
+                        <span class="category-icon">🛒</span>
+                        <span class="category-name">用品</span>
+                    </button>
+                    <button class="category-item" data-type="boarding">
+                        <span class="category-icon">🏠</span>
+                        <span class="category-name">寄宿</span>
+                    </button>
+                    <button class="category-item" data-type="shelter">
+                        <span class="category-icon">🐕</span>
+                        <span class="category-name">收容所</span>
+                    </button>
+                    <button class="category-item coming-soon" data-type="live" title="即將推出">
+                        <span class="category-icon">🏨</span>
+                        <span class="category-name">住宿</span>
+                        <span class="coming-soon-badge">Soon</span>
+                    </button>
+                    <button class="category-item coming-soon" data-type="restaurant" title="即將推出">
+                        <span class="category-icon">🍽️</span>
+                        <span class="category-name">餐廳</span>
+                        <span class="coming-soon-badge">Soon</span>
+                    </button>
+                    <button class="category-item" data-type="funeral">
+                        <span class="category-icon">⚱️</span>
+                        <span class="category-name">殯葬</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 寵物類型篩選 -->
+            <div class="filter-section">
+                <h3 class="section-title">
+                    <i class="bi bi-funnel"></i>
+                    寵物類型篩選
+                </h3>
+                <div class="filter-container">
+                    <div class="filter-options">
+                        {% for pet_type in pet_types %}
+                        <label class="filter-option">
+                            <input type="checkbox" class="pet-type-filter" data-pet-type="{{ pet_type.code }}">
+                            <span class="filter-option-text">{{ pet_type.icon }} {{ pet_type.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速篩選 -->
+            <div class="filter-section">
+                <h3 class="section-title">
+                    <i class="bi bi-lightning"></i>
+                    快速篩選
+                </h3>
+                <div class="filter-container">
+                    <div class="quick-filters">
+                        <label class="filter-option">
+                            <input type="checkbox" class="quick-filter" data-filter="high-rating">
+                            <span class="filter-option-text">⭐ 高評分(4星以上)</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="quick-filter" data-filter="nearby">
+                            <span class="filter-option-text">📍 附近2公里內</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右側地圖區域 -->
+        <main class="map-area">
+            <div id="pet-map"></div>
+            
+            <!-- 載入覆蓋層 -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">載入地點資料中...</p>
+            </div>
+
+            <!-- 地圖控制項 -->
+            <div class="map-controls">
+                <button class="map-control-btn" id="locateBtn" title="我的位置">
+                    <i class="bi bi-geo-alt"></i>
+                </button>
+                <button class="map-control-btn" id="fullscreenBtn" title="全螢幕">
+                    <i class="bi bi-fullscreen"></i>
+                </button>
+                <button class="map-control-btn" id="layerBtn" title="切換圖層">
+                    <i class="bi bi-layers"></i>
+                </button>
+                <button class="map-control-btn" id="refreshBtn" title="重新整理">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+
+            <!-- 篩選狀態顯示 -->
+            <div class="active-filters" id="activeFilters" style="display: none;">
+                <div class="filter-info">
+                    <span class="filter-count" id="filterCount">顯示 0 個地點</span>
+                </div>
+                <div class="filter-tags" id="filterTags"></div>
+                <button class="clear-filters-btn" id="clearFilters">
+                    <i class="bi bi-x-circle me-1"></i>清除篩選
+                </button>
+            </div>    
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <!-- 地圖專用 JS -->
+    <script src="{% static 'js/map.js' %}"></script>
+
+</body>
+</html>

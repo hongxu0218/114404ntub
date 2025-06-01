@@ -1,0 +1,263 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24小時急診地圖 - PAW DAY</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- 急診地圖專用樣式 -->
+    <link rel="stylesheet" href="{% static 'css/emergency_map.css' %}" />
+</head>
+<body>
+    <!-- Header -->
+    <header class="custom-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid">
+                    <a href="{% url 'home' %}" class="logo navbar-brand">
+                        <img src="{% static 'images/logo_cat_dog.jpg' %}" alt="LOGO" class="img-fluid">
+                        <span>PAW<br>DAY</span>
+                    </a>
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            {% if user.is_authenticated %}
+                                {% if user.profile.account_type == 'owner' %}
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'pet_list' %}">
+                                            <i class="bi bi-heart-fill me-1"></i>我的寵物
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'health_rec' %}">
+                                            <i class="bi bi-heart-pulse me-1"></i>健康紀錄
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'map' %}">
+                                            <i class="bi bi-geo-alt me-1"></i>搜尋附近
+                                        </a>
+                                    </li>
+                                {% elif user.profile.account_type == 'vet' %}
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'vet_appointments' %}">
+                                            <i class="bi bi-calendar-check me-1"></i>預約情況
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="{% url 'vet_availability_settings' %}">
+                                            <i class="bi bi-clock me-1"></i>排班時段
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'edit_profile' %}">
+                                        <i class="bi bi-person-gear me-1"></i>修改帳號
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'notification_page' %}">
+                                        <i class="bi bi-bell me-1"></i>通知
+                                        <span id="notification-count" class="notification-badge d-none"></span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_logout' %}">
+                                        <i class="bi bi-box-arrow-right me-1"></i>登出
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_login' %}">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i>登入
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'account_signup' %}">
+                                        <i class="bi bi-person-plus me-1"></i>註冊
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 側邊欄切換按鈕 -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- 主要內容 -->
+    <div class="emergency-main-container">
+        <!-- 左側搜尋面板 -->
+        <aside class="emergency-sidebar" id="emergencySidebar">
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">
+                    <i class="bi bi-hospital-fill"></i>
+                    24小時急診
+                </h1>
+                <p class="sidebar-subtitle">緊急時刻，找到最近的24小時動物醫院</p>
+                
+                <!-- 快速說明 -->
+                <div class="emergency-notice">
+                    <div class="notice-icon">🚨</div>
+                    <div class="notice-content">
+                        <div class="notice-title">緊急提醒</div>
+                        <div class="notice-text">僅顯示提供24小時急診服務的動物醫院</div>
+                    </div>
+                </div>
+
+                <!-- 搜尋欄 -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="emergencySearchInput" placeholder="搜尋醫院或地區...">
+                    <button class="search-btn" id="emergencySearchBtn">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 篩選區域 -->
+            <div class="filter-section">
+                <h3 class="section-title">
+                    <i class="bi bi-funnel"></i>
+                    地區篩選
+                </h3>
+                <div class="filter-container">
+                    <select class="form-select city-filter" id="cityFilter">
+                        <option value="">全部地區</option>
+                        {% for city in cities %}
+                            <option value="{{ city }}">{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- 寵物類型篩選 -->
+            <div class="filter-section">
+                <h3 class="section-title">
+                    <i class="bi bi-heart-pulse"></i>
+                    寵物類型
+                </h3>
+                <div class="filter-container">
+                    <div class="pet-type-grid">
+                        {% for pet_type in pet_types %}
+                        <label class="pet-type-option">
+                            <input type="checkbox" class="pet-type-checkbox" data-pet-type="{{ pet_type.code }}">
+                            <span class="pet-type-text">{{ pet_type.icon }} {{ pet_type.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 距離篩選 -->
+            <div class="filter-section">
+                <h3 class="section-title">
+                    <i class="bi bi-geo-alt"></i>
+                    距離篩選
+                </h3>
+                <div class="filter-container">
+                    <div class="distance-options">
+                        <label class="distance-option">
+                            <input type="radio" name="distance" value="1000" class="distance-radio">
+                            <span class="distance-text">1 公里內</span>
+                        </label>
+                        <label class="distance-option">
+                            <input type="radio" name="distance" value="3000" class="distance-radio">
+                            <span class="distance-text">3 公里內</span>
+                        </label>
+                        <label class="distance-option">
+                            <input type="radio" name="distance" value="5000" class="distance-radio">
+                            <span class="distance-text">5 公里內</span>
+                        </label>
+                        <label class="distance-option">
+                            <input type="radio" name="distance" value="" class="distance-radio" checked>
+                            <span class="distance-text">不限距離</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 醫院列表 -->
+            <div class="hospital-list-section">
+                <h3 class="section-title">
+                    <i class="bi bi-list-ul"></i>
+                    急診醫院列表
+                    <span class="hospital-count" id="hospitalCount">0</span>
+                </h3>
+                <div class="hospital-list" id="hospitalList">
+                    <!-- 動態產生醫院列表 -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右側地圖區域 -->
+        <main class="emergency-map-area">
+            <div id="emergency-map"></div>
+            
+            <!-- 載入覆蓋層 -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">載入急診醫院資料中...</p>
+            </div>
+
+            <!-- 地圖控制項 -->
+            <div class="map-controls">
+                <button class="map-control-btn" id="locateBtn" title="我的位置">
+                    <i class="bi bi-geo-alt"></i>
+                </button>
+                <button class="map-control-btn" id="refreshBtn" title="重新整理">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="map-control-btn" id="routeBtn" title="路線規劃" style="display: none;">
+                    <i class="bi bi-signpost-2"></i>
+                </button>
+            </div>
+
+            <!-- 篩選狀態顯示 -->
+            <div class="active-filters" id="activeFilters" style="display: none;">
+                <div class="filter-info">
+                    <span class="filter-count" id="filterCount">顯示 0 間急診醫院</span>
+                </div>
+                <div class="filter-tags" id="filterTags"></div>
+                <button class="clear-filters-btn" id="clearFilters">
+                    <i class="bi bi-x-circle me-1"></i>清除篩選
+                </button>
+            </div>
+
+
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet CSS & JS (OpenStreetMap替代方案) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <!-- 急診地圖專用 JS -->
+    <script src="{% static 'js/emergency_map.js' %}"></script>
+
+</body>
+</html>
