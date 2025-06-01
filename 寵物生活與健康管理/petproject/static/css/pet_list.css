@@ -1,0 +1,899 @@
+/* ===== PAW&DAY 寵物列表頁面樣式 ===== */
+
+:root {
+  --primary-orange: #ffaa00;
+  --primary-orange-hover: #ff8800;
+  --warm-bg: #fff8f0;
+  --warm-card: #fef6ec;
+  --text-dark: #333;
+  --border-light: #ffe0b3;
+  --shadow-light: rgba(0,0,0,0.1);
+  --gradient-warm: linear-gradient(135deg, #ffffff 0%, #fef6ec 100%);
+  --accent-blue: #5cb6ff;
+  --success-green: #28a745;
+  --danger-red: #dc3545;
+  --warning-yellow: #ffc107;
+  --info-blue: #17a2b8;
+  --secondary-gray: #6c757d;
+}
+
+/* ===== 主容器 ===== */
+.pet-management-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--warm-bg) 0%, #fff5e6 100%);
+  padding: 2rem 0;
+}
+
+/* ===== 頁面標題區塊 ===== */
+.page-header {
+  background: var(--gradient-warm);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px var(--shadow-light);
+  border: 2px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 170, 0, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  z-index: 2;
+}
+
+.page-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* ===== 新增寵物區塊 ===== */
+.add-pet-section {
+  margin-bottom: 2rem;
+}
+
+.add-pet-card {
+  background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-hover) 100%);
+  border: none;
+  border-radius: 50px;
+  padding: 1.5rem 2.5rem;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(255, 170, 0, 0.3);
+  max-width: 300px;
+  margin: 0 auto;
+  min-height: 64px;
+}
+
+.add-pet-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+.add-pet-card:hover::before {
+  opacity: 1;
+}
+
+.add-pet-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(255, 170, 0, 0.4);
+  color: white;
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--primary-orange-hover) 0%, #e6770a 100%);
+}
+
+.add-pet-card:active {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(255, 170, 0, 0.35);
+}
+
+.add-pet-icon {
+  width: 32px;
+  height: 32px;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 2;
+  filter: brightness(0) invert(1);
+}
+
+.add-pet-card:hover .add-pet-icon {
+  transform: scale(1.1);
+}
+
+.add-pet-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+  margin: 0;
+}
+
+/* ===== 寵物卡片列表 ===== */
+.pets-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.pet-card {
+  background: var(--gradient-warm);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px var(--shadow-light);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.pet-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  border-color: var(--primary-orange);
+}
+
+/* ===== 寵物卡片頭部 ===== */
+.pet-card-header {
+  background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-hover) 100%);
+  color: white;
+  padding: 1.5rem;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.pet-card-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.pet-card-header:hover::before {
+  transform: scale(1.5);
+}
+
+.pet-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.pet-card-header.expanded .toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* ===== 寵物詳細資訊 ===== */
+.pet-details {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+
+.pet-details.show {
+  max-height: 1000px;
+  padding: 1.5rem;
+}
+
+.pet-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pet-info-section {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 1rem;
+  border-left: 4px solid var(--primary-orange);
+  transition: all 0.3s ease;
+}
+
+.pet-info-section:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-light);
+}
+
+.feature-section {
+  grid-column: 1 / -1;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+}
+
+.info-value {
+  color: #555;
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ===== 寵物圖片 ===== */
+.pet-image-container {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.pet-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px var(--shadow-light);
+  border: 3px solid white;
+  transition: transform 0.3s ease;
+  object-fit: cover;
+}
+
+.pet-image:hover {
+  transform: scale(1.05);
+}
+
+.no-image-placeholder {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 3rem;
+  margin: 0 auto;
+  border: 3px solid white;
+  box-shadow: 0 8px 25px var(--shadow-light);
+}
+
+/* ===== 特徵文字展開/收合 ===== */
+.feature-text {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.feature-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.toggle-feature-btn {
+  background: none;
+  border: none;
+  color: var(--primary-orange);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.toggle-feature-btn:hover {
+  color: var(--primary-orange-hover);
+}
+
+/* ===== 預約資訊 ===== */
+.appointment-section {
+  background: linear-gradient(135deg, #f1f9ff 0%, #e3f2fd 100%);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--accent-blue);
+  grid-column: 1 / -1;
+}
+
+.appointment-section.no-appointment {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left-color: var(--secondary-gray);
+}
+
+.appointment-title {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.appointment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.appointment-item {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.appointment-item:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateX(5px);
+}
+
+.appointment-info {
+  flex: 1;
+}
+
+.appointment-datetime {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.appointment-clinic {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.cancel-appointment-btn {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 1rem;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.cancel-appointment-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+.cancel-appointment-btn:hover::before {
+  opacity: 1;
+}
+
+.cancel-appointment-btn:hover {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(220, 53, 69, 0.4);
+}
+
+.cancel-appointment-btn:active {
+  transform: translateY(0) scale(1);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.cancel-appointment-btn i {
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* ===== 操作按鈕組 ===== */
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.action-btn {
+  padding: 0.875rem 1.75rem;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  min-height: 48px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+.action-btn:hover::before {
+  opacity: 1;
+}
+
+.action-btn span {
+  position: relative;
+  z-index: 2;
+  font-weight: 600;
+}
+
+.action-btn i {
+  position: relative;
+  z-index: 2;
+  font-size: 1rem;
+}
+
+/* 編輯按鈕 - 綠色 */
+.btn-edit {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.btn-edit:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(40, 167, 69, 0.35);
+  color: white;
+  text-decoration: none;
+  background: linear-gradient(135deg, #218838 0%, #1bb590 100%);
+}
+
+.btn-edit:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.3);
+}
+
+/* 刪除按鈕 - 紅色 */
+.btn-delete {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.btn-delete:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(220, 53, 69, 0.35);
+  color: white;
+  text-decoration: none;
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+}
+
+.btn-delete:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(220, 53, 69, 0.3);
+}
+
+/* 預約按鈕 - 藍色 */
+.btn-appointment {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.btn-appointment:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 123, 255, 0.35);
+  color: white;
+  text-decoration: none;
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+}
+
+.btn-appointment:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+}
+
+/* 關閉按鈕 - 圓形設計 */
+.btn-close {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  border: 2px solid transparent;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-close span {
+  display: none; /* 隱藏文字，只顯示圖標 */
+}
+
+.btn-close i {
+  font-size: 1.1rem;
+}
+
+.btn-close:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(108, 117, 125, 0.35);
+  color: white;
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+}
+
+.btn-close:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.3);
+}
+
+/* 按鈕焦點狀態 */
+.action-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* 按鈕載入狀態 */
+.action-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.action-btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: button-spin 1s linear infinite;
+  right: 12px;
+}
+
+@keyframes button-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== 空狀態 ===== */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--gradient-warm);
+  border-radius: 20px;
+  border: 2px dashed var(--border-light);
+  margin: 2rem 0;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  color: var(--primary-orange);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.empty-state-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.empty-state-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+/* ===== 訊息彈出 ===== */
+.message-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 90%;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  animation: slideInRight 0.5s ease;
+}
+
+.message {
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.message.success { 
+  background: linear-gradient(135deg, var(--success-green) 0%, #20c997 100%);
+}
+
+.message.error { 
+  background: linear-gradient(135deg, var(--danger-red) 0%, #c82333 100%);
+}
+
+.message.warning { 
+  background: linear-gradient(135deg, var(--warning-yellow) 0%, #e0a800 100%);
+  color: #212529;
+}
+
+.message.info { 
+  background: linear-gradient(135deg, var(--info-blue) 0%, #138496 100%);
+}
+
+/* ===== 動畫效果 ===== */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 延遲動畫 */
+.fade-in-up:nth-child(1) { animation-delay: 0.1s; }
+.fade-in-up:nth-child(2) { animation-delay: 0.2s; }
+.fade-in-up:nth-child(3) { animation-delay: 0.3s; }
+.fade-in-up:nth-child(4) { animation-delay: 0.4s; }
+.fade-in-up:nth-child(5) { animation-delay: 0.5s; }
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 768px) {
+  .pet-info-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .pet-card-header {
+    padding: 1rem;
+  }
+
+  .pet-name {
+    font-size: 1.3rem;
+  }
+
+  .pet-details.show {
+    padding: 1rem;
+  }
+
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .action-btn:not(.btn-close) {
+    justify-content: center;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .btn-close {
+    justify-self: center;
+    width: 44px;
+    height: 44px;
+  }
+
+  .message-popup {
+    left: 10px;
+    right: 10px;
+    min-width: auto;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+  }
+
+  .empty-state-title {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.8rem;
+  }
+
+  .pet-image,
+  .no-image-placeholder {
+    max-width: 150px;
+    max-height: 150px;
+    width: 150px;
+    height: 150px;
+  }
+
+  .no-image-placeholder {
+    font-size: 2rem;
+  }
+
+  .appointment-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cancel-appointment-btn {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+}
+
+/* ===== 特殊效果 ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== 列印樣式 ===== */
+@media print {
+  .pet-management-container {
+    background: white;
+    padding: 0;
+  }
+
+  .page-header,
+  .pet-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .action-buttons,
+  .cancel-appointment-btn,
+  .message-popup {
+    display: none;
+  }
+
+  .pet-details {
+    max-height: none !important;
+    padding: 1rem !important;
+  }
+}management-container {
+    padding: 1rem 0;
+  }
+
+  .page-header {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .add-pet-card {
+    padding: 1.5rem;
+  }
+
+  .add-pet-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .add-pet-text {
+    font-size: 1.1rem;
+  }
