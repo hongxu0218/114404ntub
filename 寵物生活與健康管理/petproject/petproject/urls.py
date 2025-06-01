@@ -10,7 +10,7 @@ from django.conf import settings  # 匯入設定檔
 from django.conf.urls.static import static  # 開發環境下處理媒體檔案
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  # Django 管理後台入口
+    path('pawday-mgmt-prod-ntub114404/', admin.site.urls),  # Django 管理後台入口
     path('', views.home, name='home'),  # 首頁 URL 對應 home 函數
 
     # Django Allauth 提供的預設登入、註冊、密碼重設等功能
