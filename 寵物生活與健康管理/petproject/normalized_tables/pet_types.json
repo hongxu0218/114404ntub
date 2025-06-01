@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "name": "小型犬",
+    "code": "small_dog",
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "name": "中型犬",
+    "code": "medium_dog",
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "name": "大型犬",
+    "code": "large_dog",
+    "is_active": true
+  },
+  {
+    "id": 4,
+    "name": "貓",
+    "code": "cat",
+    "is_active": true
+  },
+  {
+    "id": 5,
+    "name": "齧齒類",
+    "code": "rodent",
+    "is_active": true
+  },
+  {
+    "id": 6,
+    "name": "其他",
+    "code": "other",
+    "is_active": true
+  },
+  {
+    "id": 7,
+    "name": "鳥類",
+    "code": "bird",
+    "is_active": true
+  },
+  {
+    "id": 8,
+    "name": "爬蟲類",
+    "code": "reptile",
+    "is_active": true
+  }
+]
