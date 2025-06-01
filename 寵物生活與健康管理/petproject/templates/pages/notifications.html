@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}通知提醒{% endblock %}
+
+{% block content %}
+  <div class="content-wrapper">
+    <h2>📣 明日預約提醒（{{ tomorrow }}）</h2>
+
+    {% if appointments %}
+      <ul>
+        {% for appt in appointments %}
+          <li>
+            {% if role == 'owner' %}
+              🐾 {{ appt.pet.name }} 預約 {{ appt.vet.clinic_name|default:appt.vet.user.username }}，時間：{{ appt.time }}
+            {% elif role == 'vet' %}
+              🐾 飼主：{{ appt.owner.last_name }}{{ appt.owner.first_name }}，寵物：{{ appt.pet.name }}，時間：{{ appt.time }}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>明天沒有預約紀錄。</p>
+    {% endif %}
+
+    {% if role == 'owner' and vaccine_reminders %}
+      <h3 class="mt-4">💉 疫苗提醒</h3>
+      <ul class="list-group mb-3">
+        {% for item in vaccine_reminders %}
+          <li>{{ item.pet.name }} 的疫苗施打於 {{ item.last_date }}，距離一年期只剩 {{ item.days_left }} 天</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    
+    {% if role == 'owner' and deworm_reminders %}
+      <h3 class="mt-4">🪱 驅蟲提醒</h3>
+      <ul class="list-group mb-3">
+        {% for item in deworm_reminders %}
+          <li>{{ item.pet.name }} 的驅蟲施打於 {{ item.last_date }}，距離半年期只剩 {{ item.days_left }} 天</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endblock %}

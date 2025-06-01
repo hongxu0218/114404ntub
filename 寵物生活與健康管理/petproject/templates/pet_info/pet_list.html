@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}我的毛小孩{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pet_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="pet-management-container">
+  <div class="container">
+    <!-- 頁面標題 -->
+    <div class="page-header fade-in-up">
+      <h1 class="page-title">
+        <i class="bi bi-heart-fill text-warning"></i>
+        我的毛小孩
+      </h1>
+      <p class="page-subtitle">管理您心愛的寵物，記錄每一個珍貴時刻</p>
+    </div>
+
+    <!-- 新增寵物區塊 -->
+    <div class="add-pet-section fade-in-up">
+      <a href="{% url 'add_pet' %}" class="add-pet-card">
+        <img src="{% static 'images/icon_add_pet.png' %}" class="add-pet-icon" alt="新增毛孩">
+        <div class="add-pet-text">
+          <i class="bi bi-plus-circle me-2"></i>新增毛孩
+        </div>
+      </a>
+    </div>
+
+    <!-- 寵物列表 -->
+    <div class="pets-grid">
+      {% for pet in pets %}
+      <div class="pet-card fade-in-up">
+        <!-- 寵物卡片頭部 -->
+        <div class="pet-card-header" onclick="togglePetDetails({{ pet.id }})">
+          <h3 class="pet-name">
+            <span>
+              <i class="bi bi-heart me-2"></i>{{ pet.name }}
+            </span>
+            <i class="bi bi-chevron-down toggle-icon" id="toggle-{{ pet.id }}"></i>
+          </h3>
+        </div>
+
+        <!-- 寵物詳細資訊 -->
+        <div id="details-{{ pet.id }}" class="pet-details">
+          <div class="pet-info-grid">
+            <!-- 基本資訊 -->
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-tag me-1"></i>品種
+              </div>
+              <p class="info-value">{{ pet.breed }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-gender-ambiguous me-1"></i>性別
+              </div>
+              <p class="info-value">{{ pet.get_gender_display }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-scissors me-1"></i>絕育狀態
+              </div>
+              <p class="info-value">{{ pet.get_sterilization_status_display }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-credit-card me-1"></i>晶片號碼
+              </div>
+              <p class="info-value">{{ pet.chip|default:"尚未填寫" }}</p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-calendar-heart me-1"></i>出生日期
+              </div>
+              <p class="info-value">
+                {% if pet.birth_date %}
+                  {{ pet.birth_date|date:"Y 年 m 月 d 日" }}
+                {% else %}
+                  尚未填寫
+                {% endif %}
+              </p>
+            </div>
+
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-speedometer2 me-1"></i>體重
+              </div>
+              <p class="info-value">
+                {% if pet.weight %}
+                  {{ pet.weight }} 公斤
+                {% else %}
+                  尚未填寫
+                {% endif %}
+              </p>
+            </div>
+
+            <!-- 特徵描述 -->
+            {% if pet.feature %}
+            <div class="pet-info-section feature-section">
+              <div class="info-label">
+                <i class="bi bi-star me-1"></i>特徵描述
+              </div>
+              <p class="info-value">
+                <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
+                <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">
+                  <span id="toggle-text-{{ pet.id }}">展開</span>
+                </button>
+              </p>
+            </div>
+            {% endif %}
+
+            <!-- 寵物圖片 -->
+            <div class="pet-image-container">
+              {% if pet.picture %}
+                <img src="{{ pet.picture.url }}" alt="{{ pet.name }}" class="pet-image">
+              {% else %}
+                <div class="no-image-placeholder">
+                  <i class="bi bi-camera"></i>
+                </div>
+                <p class="text-muted mt-2">尚未上傳圖片</p>
+              {% endif %}
+            </div>
+
+            <!-- 預約資訊 -->
+            {% if pet.future_appointments %}
+            <div class="appointment-section">
+              <div class="appointment-title">
+                <i class="bi bi-calendar-check"></i>
+                預約資訊
+              </div>
+              <ul class="appointment-list">
+                {% for appt in pet.future_appointments %}
+                <li class="appointment-item">
+                  <div class="appointment-info">
+                    <div class="appointment-datetime">
+                      <strong>{{ appt.date }} {{ appt.time }}</strong>
+                    </div>
+                    <div class="appointment-clinic">
+                      {{ appt.vet.clinic_name|default:"未填寫診所名稱" }}
+                      （{{ appt.vet.user.last_name|default:"" }}{{ appt.vet.user.first_name|default:"" }}{% if not appt.vet.user.last_name and not appt.vet.user.first_name %}{{ appt.vet.user.username }}{% endif %}）
+                    </div>
+                  </div>
+                  <form method="post" action="{% url 'cancel_appointment' appt.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="cancel-appointment-btn" title="取消預約">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </form>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% else %}
+            <div class="appointment-section no-appointment">
+              <div class="appointment-title">
+                <i class="bi bi-calendar-x"></i>
+                預約資訊
+              </div>
+              <p class="text-muted m-0">
+                <i class="bi bi-info-circle me-1"></i>尚無預約紀錄
+              </p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- 操作按鈕 -->
+          <div class="action-buttons">
+            <a href="{% url 'edit_pet' pet.id %}" class="action-btn btn-edit">
+              <i class="bi bi-pencil"></i>
+              <span>修改資料</span>
+            </a>
+            <a href="{% url 'delete_pet' pet.id %}" class="action-btn btn-delete">
+              <i class="bi bi-trash"></i>
+              <span>刪除寵物</span>
+            </a>
+            <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="action-btn btn-appointment">
+              <i class="bi bi-calendar-plus"></i>
+              <span>預約獸醫</span>
+            </a>
+            <button class="action-btn btn-close" onclick="togglePetDetails({{ pet.id }})">
+              <i class="bi bi-x-lg"></i>
+              <span>關閉</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <!-- 空狀態 -->
+      <div class="empty-state fade-in-up">
+        <div class="empty-state-icon">
+          <i class="bi bi-heart"></i>
+        </div>
+        <div class="empty-state-content">
+          <h3 class="empty-state-title">還沒有毛孩資料</h3>
+          <p class="empty-state-text">快來新增你的第一個毛孩吧！</p>
+          <a href="{% url 'add_pet' %}" class="action-btn btn-appointment">
+            <i class="bi bi-plus-circle"></i>
+            <span>立即新增</span>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- 訊息顯示 -->
+{% if messages %}
+  {% for message in messages %}
+  <div id="message-container" class="message-popup">
+    <div class="message {{ message.tags }}">
+      <i class="bi bi-check-circle me-2"></i>{{ message }}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'js/pet_list.js' %}"></script>
+{% endblock %}
