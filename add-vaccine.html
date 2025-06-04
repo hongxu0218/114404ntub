@@ -1,0 +1,47 @@
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>新增疫苗紀錄</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script>
+    function handleVaccineSubmit(event) {
+      event.preventDefault();
+      const name = document.getElementById('vaccine-name').value;
+      const date = document.getElementById('vaccine-date').value;
+      const next = document.getElementById('vaccine-next').value;
+
+      if (name && date) {
+        alert(`已儲存疫苗：\n名稱：${name}\n施打日期：${date}${next ? '\n下次提醒：' + next : ''}`);
+        window.location.href = 'vaccine.html';
+      } else {
+        alert('請完整填寫疫苗名稱與施打日期');
+      }
+    }
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="profile.html">寵物</a>
+    <a href="report.html">健康紀錄</a>
+    <a href="vaccine.html">通知</a>
+    <a href="login.html">登入</a>
+  </nav>
+
+  <div class="container" style="text-align: center;">
+    <h1>新增疫苗紀錄</h1>
+
+    <form class="login-box" onsubmit="handleVaccineSubmit(event)" style="max-width: 400px; margin: 0 auto; padding: 30px; background-color: #fff; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+      <label>疫苗名稱</label>
+      <input type="text" id="vaccine-name" placeholder="請輸入疫苗名稱" required>
+
+      <label>施打日期</label>
+      <input type="date" id="vaccine-date" required>
+
+      <label>下次施打提醒</label>
+      <input type="date" id="vaccine-next">
+
+      <button type="submit">儲存疫苗紀錄</button>
+    </form>
+  </div>
+</body>
+</html>
