@@ -1,0 +1,28 @@
+1.
+ALLOWED_HOSTS = ['pawday114404.duckdns.org', 'localhost', '127.0.0.1']
+
+2. 在檔案最底部加入 HTTPS 設定
+
+# ========== HTTPS 設定 ==========
+# 信任來自反向代理的 HTTPS 標頭
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# 生產環境的安全設定（當 DEBUG=False 時啟用）
+if not DEBUG:
+    # 強制重定向到 HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # HTTP Strict Transport Security
+    SECURE_HSTS_SECONDS = 31536000  # 1 年
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Cookie 安全設定
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # 其他安全標頭
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    X_FRAME_OPTIONS = 'DENY'
