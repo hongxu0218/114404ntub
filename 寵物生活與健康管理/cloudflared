@@ -49,3 +49,52 @@ venv\Scripts\activate
 
 # 啟動 Django
 python manage.py runserver 127.0.0.1:8000
+
+📂 第一步：整理檔案
+建立專用資料夾
+cmd# 開啟命令提示字元，建立 Caddy 資料夾
+mkdir C:\caddy
+移動檔案
+
+將下載的 caddy.exe 移動到 C:\caddy\ 資料夾
+或者記住 caddy.exe 的完整路徑
+
+🔧 第二步：建立 Caddyfile
+在 C:\caddy\ 資料夾中建立 Caddyfile（按照前面教的方法）：
+pawday114404.duckdns.org {
+    reverse_proxy localhost:8000
+}
+💻 第三步：使用 CMD 啟動
+方法一：切換到 Caddy 目錄
+cmd# 開啟命令提示字元 (cmd)
+# 切換到 Caddy 目錄
+cd C:\caddy
+
+# 啟動 Caddy
+caddy.exe run
+方法二：使用完整路徑
+cmd# 直接使用完整路徑執行
+C:\caddy\caddy.exe run
+🚀 完整操作步驟
+1. 開啟命令提示字元
+
+按 Win + R
+輸入 cmd
+按 Enter
+
+2. 執行指令
+cmd# 切換到 Caddy 目錄
+cd C:\caddy
+
+# 檢查檔案是否存在
+dir
+
+# 應該看到：caddy.exe 和 Caddyfile
+
+# 啟動 Caddy
+caddy.exe run
+📋 預期結果
+當您執行 caddy.exe run 時，應該會看到：
+2024/06/05 08:30:00.000 INFO using provided configuration
+2024/06/05 08:30:00.000 INFO applying configuration
+2024/06/05 08:30:00.000 INFO serving initial configuration
