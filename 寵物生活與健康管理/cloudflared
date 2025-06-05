@@ -98,3 +98,8 @@ caddy.exe run
 2024/06/05 08:30:00.000 INFO using provided configuration
 2024/06/05 08:30:00.000 INFO applying configuration
 2024/06/05 08:30:00.000 INFO serving initial configuration
+
+1. 測試 HTTPS 訪問
+https://pawday114404.duckdns.org
+2. 測試 HTTP 重定向（如果 DEBUG=False）
+http://pawday114404.duckdns.org
