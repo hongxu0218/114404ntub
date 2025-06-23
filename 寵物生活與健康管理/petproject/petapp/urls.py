@@ -28,6 +28,8 @@ urlpatterns = [
     path('pet/<int:pet_id>/add_daily_record/', views.add_daily_record, name='add_daily_record'),  # 新增每日健康紀錄
     path('save_daily_record/', views.save_daily_record, name='save_daily_record'),  # 儲存每日健康紀錄
     path('pet/<int:pet_id>/health/delete_record/', views.delete_daily_record, name='delete_daily_record'),  # 刪除每日健康紀錄
+    path('daily_record/<int:record_id>/update/', views.update_daily_record, name='update_daily_record'),
+
 
     # 飼主預約相關
     path('appointments/create/', views.create_vet_appointment, name='create_appointment'),  # 新增預約
@@ -45,7 +47,6 @@ urlpatterns = [
     path('appointments/get-available-times/', views.get_available_times, name='get_available_times'),
     path('vet/availability/edit/<int:schedule_id>/', views.edit_vet_schedule, name='edit_vet_schedule'),
     path('vet/availability/delete/<int:schedule_id>/', views.delete_vet_schedule, name='delete_vet_schedule'),
-
 
     # 健康記錄-寵物體溫（列表、新增、編輯、刪除、共用函式）
     path('pets/<int:pet_id>/temperature/', views.tem_rec, name='tem_rec'),   #體溫列表（趨勢圖+所有資料）
