@@ -71,7 +71,7 @@ body {
             padding: 20px;
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
         .tab-content.active {
@@ -83,8 +83,10 @@ body {
             padding: 10px;
             background-color: #fff;
             border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-            position: relative; /* For positioning the 'Add' button */
+            box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);     /* 上邊線 */
+            border-left: 1px solid rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .add-record-btn {
@@ -111,18 +113,6 @@ body {
             border: 1px solid #ccc;
         }
 
-        .input-block .btn-save, .input-block .btn-close {
-            background-color: #92bfa0;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .input-block .btn-close {
-            background-color: #e97777;
-        }
         .input-block {
             display: flex;
             flex-direction: column;
@@ -206,7 +196,7 @@ body {
         .pet-name-btn {
             margin-top: 10px;
             display: inline-block;
-            background-color: #92bfa0;
+            background-color: #7a9e7e;
             color: white;
             padding: 5px 10px;
             border-radius: 5px;
@@ -277,10 +267,68 @@ body {
             border: none;
             transition: background-color 0.3s ease;
         }
-
         .add-btn:hover {
             background-color: #5f8663;
         }
+        /* 編輯按鈕 */
+        .edit-btn {
+            background-color: #5aa469;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            background-color: #4c8a5a;
+        }
+
+        /* 刪除按鈕 */
+        .delete-btn {
+            background-color: #c94c4c;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background-color: #a93c3c;
+        }
+
+        /* 儲存按鈕 */
+        .save-btn {
+            background-color: #507d63;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #406b53;
+        }
+
+        /* 取消按鈕 */
+        .cancel-btn {
+            background-color: #999999;
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+        .cancel-btn:hover {
+            background-color: #7f7f7f;
+        }
+
 
         .record-item {
             cursor: pointer; /* 滑鼠變成手形（通常是三角形或箭頭） */
@@ -444,7 +492,7 @@ body {
         {% for group in grouped_records %}
             <h4>
                 <button class="pet-name-btn" onclick="toggleRecordVisibility('records-{{ group.pet.id }}')">
-                    🐶 {{ group.pet.name }}
+                     {{  group.pet.name  }}
                 </button>
             </h4>
 
@@ -476,28 +524,35 @@ body {
 
                        <!-- 飲食紀錄 -->
                         <div class="record-category">
-                            <div class="record-header">
-                                <h5>飲食習慣</h5>
-                                <button class="add-btn" onclick="toggleInputBlock(this)">＋ 新增 </button>
+                          <div class="record-header">
+                            <h5>飲食習慣</h5>
+                            <button class="add-btn" onclick="toggleInputBlock(this)">＋ 新增 </button>
+                          </div>
+                          <ul class="record-list">
+                            {% for record in group.records %}
+                              {% if record.category == 'diet' and record.content %}
+                              <li id="diet-record-{{ record.id }}" class="record-item">
+                                <span id="diet-content-{{ record.id }}">{{ record.content }}</span>
+                                <input type="text" id="diet-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
+
+                                <!-- 按鈕群組（預設都隱藏） -->
+                                <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
+                                <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
+                                <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
+                              </li>
+                              {% endif %}
+                            {% endfor %}
+                          </ul>
+                          <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="diet" style="display:none;">
+                            <textarea placeholder="輸入內容..."></textarea>
+                            <div class="button-group">
+                              <button class="save-btn" onclick="saveRecord(this)">儲存</button>
+                              <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
                             </div>
-                                <ul>
-                                  {% for record in group.records %}
-                                    {% if record.category == 'diet' and record.content %}
-                                      <li id="diet-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
-                                          {{ record.content }}
-                                          <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                        </li>
-                                    {% endif %}
-                                  {% endfor %}
-                                </ul>
-                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="diet" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea>
-                                <div class="button-group">
-                                <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
-                                </div>
-                            </div>
+                          </div>
                         </div>
+
 
 
                         <!-- 過敏原紀錄 -->
@@ -507,21 +562,27 @@ body {
                                 <button class="add-btn" onclick="toggleInputBlock(this)">
                                     ＋ 新增</button>
                                 </div>
-                            <ul>
-                                {% for record in group.records %}
-                                    {% if record.category == 'allergen' and record.content  %}
-                                        <li id="allergen-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
-                                          {{ record.content }}
-                                          <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                            </ul>
-                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="allergen" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea>
-                                <div class="button-group">
-                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                    <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                            <ul class="record-list">
+                            {% for record in group.records %}
+                              {% if record.category == 'allergen' and record.content %}
+                              <li id="allergen-record-{{ record.id }}" class="record-item">
+                                <span id="allergen-content-{{ record.id }}">{{ record.content }}</span>
+                                <input type="text" id="allergen-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
+
+                                <!-- 按鈕群組（預設都隱藏） -->
+                                <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
+                                <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
+                                <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
+                              </li>
+                              {% endif %}
+                            {% endfor %}
+                          </ul>
+                          <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="allergen" style="display:none;">
+                            <textarea placeholder="輸入內容..."></textarea>
+                            <div class="button-group">
+                              <button class="save-btn" onclick="saveRecord(this)">儲存</button>
+                              <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
                                 </div>
                             </div>
                         </div>
@@ -556,21 +617,27 @@ body {
                                  <button class="add-btn" onclick="toggleInputBlock(this)">
                                      ＋ 新增</button>
                                 </div>
-                            <ul>
+                            <ul class="record-list">
                                 {% for record in group.records %}
-                                    {% if record.category == 'exercise' and record.content  %}
-                                        <li id="exercise-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
-                                            {{ record.content }}
-                                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                        </li>
-                                    {% endif %}
+                                  {% if record.category == 'exercise' and record.content %}
+                                  <li id="exercise-record-{{ record.id }}" class="record-item">
+                                    <span id="exercise-content-{{ record.id }}">{{ record.content }}</span>
+                                    <input type="text" id="exercise-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
+
+                                    <!-- 按鈕群組（預設都隱藏） -->
+                                    <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
+                                    <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                    <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
+                                    <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
+                                  </li>
+                                  {% endif %}
                                 {% endfor %}
-                            </ul>
-                            <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="exercise" style="display:none;">
+                              </ul>
+                              <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="exercise" style="display:none;">
                                 <textarea placeholder="輸入內容..."></textarea>
                                 <div class="button-group">
-                                    <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                    <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                                  <button class="save-btn" onclick="saveRecord(this)">儲存</button>
+                                  <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
                                 </div>
                             </div>
                         </div>
@@ -582,21 +649,27 @@ body {
                                 <button class="add-btn" onclick="toggleInputBlock(this)">
                                     ＋ 新增</button>
                                 </div>
-                            <ul>
+                            <ul class="record-list">
                                 {% for record in group.records %}
-                                    {% if record.category == 'other' and record.content  %}
-                                        <li id="other-record-{{ record.id }}" class="record-item" onclick="toggleDeleteButton(this)">
-                                            {{ record.content }}
-                                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                        </li>
-                                    {% endif %}
+                                  {% if record.category == 'other' and record.content %}
+                                  <li id="other-record-{{ record.id }}" class="record-item">
+                                    <span id="other-content-{{ record.id }}">{{ record.content }}</span>
+                                    <input type="text" id="other-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
+
+                                    <!-- 按鈕群組（預設都隱藏） -->
+                                    <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
+                                    <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
+                                    <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
+                                    <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
+                                  </li>
+                                  {% endif %}
                                 {% endfor %}
-                            </ul>
-                                <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="other" style="display:none;">
-                                    <textarea placeholder="輸入內容..."></textarea>
-                                    <div class="button-group">
-                                        <button class="btn-save" onclick="saveRecord(this)">儲存</button>
-                                        <button class="btn-close" onclick="closeInputBlock(this)">關閉</button>
+                              </ul>
+                              <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="other" style="display:none;">
+                                <textarea placeholder="輸入內容..."></textarea>
+                                <div class="button-group">
+                                  <button class="save-btn" onclick="saveRecord(this)">儲存</button>
+                                  <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
                                     </div>
                                 </div>
                         </div>
@@ -616,30 +689,48 @@ body {
         const recordDiv = document.getElementById(recordId);
         recordDiv.style.display = recordDiv.style.display === "none" ? "block" : "none";
     }
-    function getCSRFToken() {
-    const name = 'csrftoken';
+    // ===== 取得 CSRF Token =====
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
     const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        const c = cookies[i].trim();
-        if (c.startsWith(name + '=')) {
-            return decodeURIComponent(c.substring(name.length + 1));
-        }
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
     }
-    return '';
+  }
+  return cookieValue;
+}
+function getCSRFToken() {
+  return getCookie('csrftoken');
 }
 
 
+
     function showTab(tabId) {
+        rebindClickHandlers();
         const tabs = document.querySelectorAll('.tab-content');
         tabs.forEach(tab => {
             tab.classList.remove('active');
         });
         document.getElementById(tabId).classList.add('active');
     }
-        // 顯示或隱藏輸入框
         function toggleInputBlock(button) {
-            const block = button.closest('.record-category').querySelector('.input-block');
-            block.style.display = block.style.display === 'none' ? 'block' : 'none';
+        // 若目前有正在編輯的紀錄，先取消編輯
+        if (editingRecordId !== null) {
+          const li = document.querySelector(`[id$='-record-${editingRecordId}']`);
+          if (li) cancelEdit(li);
+        }
+          // 強制結束其他編輯
+          hideAllActionButtons();
+          editingRecordId = null;
+
+          // 切換輸入區塊
+          const block = button.closest('.record-category').querySelector('.input-block');
+          block.style.display = block.style.display === 'none' ? 'block' : 'none';
         }
 
         function closeInputBlock(button) {
@@ -647,183 +738,253 @@ body {
             block.style.display = 'none';
             block.querySelector('textarea').value = '';
         }
-        // 為每個 record-item 綁定點擊事件，顯示其刪除按鈕並隱藏其他的
-        document.querySelectorAll('.record-item').forEach(function (recordItem) {
-            const deleteBtn = recordItem.querySelector('.delete-btn');
 
-            recordItem.addEventListener('click', function () {
-                // 隱藏其他項目的刪除按鈕
-                document.querySelectorAll('.record-item').forEach(function (otherItem) {
-                    const otherDeleteBtn = otherItem.querySelector('.delete-btn');
-                    if (otherItem !== recordItem) {
-                        otherItem.classList.remove('clicked');
-                        if (otherDeleteBtn) otherDeleteBtn.style.display = 'none';
-                    }
-                });
 
-                // 顯示或隱藏當前項目的刪除按鈕
-                if (recordItem.classList.contains('clicked')) {
-                    recordItem.classList.remove('clicked');
-                    if (deleteBtn) deleteBtn.style.display = 'none';
-                } else {
-                    recordItem.classList.add('clicked');
-                    if (deleteBtn) deleteBtn.style.display = 'inline-block';
-                }
-            });
-        });
+// ===== 全域變數：目前正在編輯的紀錄ID（字串） =====
+let editingRecordId = null;
 
-// 隱藏所有 delete 按鈕
-function hideAllDeleteButtons() {
-    document.querySelectorAll('.record-item').forEach(function (item) {
-        item.classList.remove('clicked');
-        const btn = item.querySelector('.delete-btn');
-        if (btn) btn.style.display = 'none';
+// ===== 點擊事件的 handler，綁定在每個 li =====
+function clickHandler(event) {
+  const li = event.currentTarget;
+  const id = li.id.split('-').pop();
+  toggleActionButtons(li, id);
+}
+function rebindClickHandlers() {
+  document.querySelectorAll('.record-item').forEach(li => {
+    li.removeEventListener('click', clickHandler);
+    li.addEventListener('click', clickHandler);
+  });
+}
+
+
+// ===== 切換顯示編輯、刪除按鈕 =====
+function toggleActionButtons(li, id) {
+  if (editingRecordId && editingRecordId !== id) return;  // 已有其他項目在編輯，阻止切換
+
+  if (li.classList.contains('editing')) return; // 自己正在編輯，不切換按鈕顯示
+
+  const alreadyVisible = li.classList.contains('showing-actions');
+
+  hideAllActionButtons();
+  document.querySelectorAll('.input-block').forEach(block => block.style.display = 'none');
+
+  if (!alreadyVisible) {
+    li.classList.add('showing-actions');
+    li.querySelector('.edit-btn').style.display = 'inline';
+    li.querySelector('.delete-btn').style.display = 'inline';
+  }
+}
+
+
+// ===== 進入編輯模式 =====
+function enterEditMode(li) {
+  if (editingRecordId !== null) return; // 防止多重編輯
+
+  const id = li.id.split('-').pop();
+  editingRecordId = id;
+
+  li.classList.add('editing');
+  li.removeEventListener('click', clickHandler); // 移除點擊事件，避免點擊時切換按鈕顯示
+
+  const [category] = li.id.split('-');
+
+  document.getElementById(`${category}-content-${id}`).style.display = 'none';
+  document.getElementById(`${category}-input-${id}`).style.display = 'inline';
+
+  li.querySelector('.edit-btn').style.display = 'none';
+  li.querySelector('.delete-btn').style.display = 'none';
+  li.querySelector('.save-btn').style.display = 'inline';
+  li.querySelector('.cancel-btn').style.display = 'inline';
+}
+
+// ===== 取消編輯，還原狀態 =====
+function cancelEdit(li) {
+  const id = li.id.split('-').pop();
+  editingRecordId = null;
+
+
+  li.classList.remove('editing');
+  li.addEventListener('click', clickHandler); // 恢復點擊事件
+  rebindClickHandlers();
+  const [category] = li.id.split('-');
+
+  document.getElementById(`${category}-content-${id}`).style.display = 'inline';
+  document.getElementById(`${category}-input-${id}`).style.display = 'none';
+
+  li.querySelector('.edit-btn').style.display = 'inline';
+  li.querySelector('.delete-btn').style.display = 'inline';
+  li.querySelector('.save-btn').style.display = 'none';
+  li.querySelector('.cancel-btn').style.display = 'none';
+
+  hideAllActionButtons();
+}
+
+
+// ===== 隱藏所有項目的操作按鈕 =====
+function hideAllActionButtons() {
+  rebindClickHandlers();
+  document.querySelectorAll('.record-item').forEach(li => {
+    li.classList.remove('showing-actions');
+
+    li.querySelectorAll('.edit-btn, .delete-btn, .save-btn, .cancel-btn').forEach(btn => {
+      if (btn) btn.style.display = 'none';
     });
-}
 
-// 切換 delete 按鈕顯示
-function toggleDeleteButton(recordItem) {
-    const deleteBtn = recordItem.querySelector('.delete-btn');
+    const id = li.id.split('-').pop();
+    const categories = ['diet', 'allergen', 'exercise', 'other'];
+    categories.forEach(category => {
+      const content = document.getElementById(`${category}-content-${id}`);
+      const input = document.getElementById(`${category}-input-${id}`);
 
-    if (recordItem.classList.contains('clicked')) {
-        recordItem.classList.remove('clicked');
-        if (deleteBtn) deleteBtn.style.display = 'none';
-    } else {
-        recordItem.classList.add('clicked');
-        if (deleteBtn) deleteBtn.style.display = 'inline-block';
-    }
-}
-
-// 初始綁定：所有舊的 record-item 加入 click 事件
-function bindRecordItemClickEvents() {
-    document.querySelectorAll('.record-item').forEach(function (recordItem) {
-        recordItem.addEventListener('click', function () {
-            toggleDeleteButton(recordItem);
-        });
+      if (content) content.style.display = 'inline';
+      if (input) input.style.display = 'none';
     });
+  });
 }
 
-// 儲存生活記錄資料
+
 function saveRecord(button) {
-    const inputBlock = button.closest('.input-block');
-    const textarea = inputBlock.querySelector('textarea');
-    const content = textarea.value.trim();
-    const petId = inputBlock.getAttribute('data-pet-id');
-    const category = inputBlock.getAttribute('data-category');
+  const inputBlock = button.closest('.input-block');
+  const textarea = inputBlock.querySelector('textarea');
+  const content = textarea.value.trim();
+  const petId = inputBlock.getAttribute('data-pet-id');
+  const category = inputBlock.getAttribute('data-category');
 
-    if (!content) {
-        alert('請輸入內容');
-        return;
+  if (!content) {
+    alert('請輸入內容');
+    return;
+  }
+
+  const data = {
+    pet_id: petId,
+    category: category,
+    content: content
+  };
+
+  fetch('/save_daily_record/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken(),
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('儲存失敗');
+    return response.json();
+  })
+  .then(json => {
+    if (json.success) {
+      const ul = inputBlock.previousElementSibling;
+      const li = document.createElement('li');
+      li.id = `${category}-record-${json.record_id}`;
+      li.className = 'record-item';
+
+      // 綁定點擊事件顯示操作按鈕
+      li.addEventListener('click', clickHandler);
+      rebindClickHandlers();
+
+      li.innerHTML = `
+        <span id="${category}-content-${json.record_id}">${content}</span>
+        <input type="text" id="${category}-input-${json.record_id}" value="${content}" style="display: none;">
+        <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
+        <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('${json.record_id}', '${petId}')" style="display: none;">刪除</button>
+        <button class="save-btn" onclick="event.stopPropagation(); saveEdit(${json.record_id})" style="display: none;">儲存</button>
+        <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
+      `;
+
+      ul.appendChild(li);
+      textarea.value = '';
+      inputBlock.style.display = 'none';
+
+      hideAllActionButtons();
+    } else {
+      alert(json.message || '儲存失敗');
     }
-
-    const data = {
-        pet_id: petId,
-        category: category,
-        content: content
-    };
-
-    fetch('/save_daily_record/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken(),
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('儲存失敗');
-        }
-        return response.json();
-    })
-    .then(json => {
-        if (json.success) {
-            const ul = inputBlock.previousElementSibling;
-            const li = document.createElement('li');
-            li.id = `${category}-record-${json.record_id}`;
-            li.className = 'record-item';
-
-            // 加入點擊切換刪除按鈕
-            li.addEventListener('click', function () {
-                toggleDeleteButton(li);
-            });
-
-            li.innerHTML = `
-                ${content}
-                <button class="delete-btn" style="display: none;" onclick="event.stopPropagation(); deleteRecord('${json.record_id}', '${petId}')">刪除</button>
-            `;
-
-            ul.appendChild(li);
-            textarea.value = '';
-            inputBlock.style.display = 'none';
-
-            hideAllDeleteButtons(); // 隱藏其他 delete 按鈕
-        } else {
-            alert(json.message || '儲存失敗');
-        }
-    })
-    .catch(error => {
-        console.error(error);
-        alert('儲存過程中發生錯誤');
-    });
+  })
+  .catch(error => {
+    console.error(error);
+    alert('儲存過程中發生錯誤');
+  });
 }
 
-// 載入後立即綁定一次所有現有項目
-document.addEventListener('DOMContentLoaded', function () {
-    bindRecordItemClickEvents();
+
+// ===== 儲存編輯後的生活記錄 =====
+function saveEdit(id) {
+  const li = document.querySelector(`[id$='-record-${id}']`);
+  const [category] = li.id.split('-');
+
+  const newContent = document.getElementById(`${category}-input-${id}`).value.trim();
+  if (!newContent) {
+    alert('內容不得為空');
+    return;
+  }
+
+  fetch(`/daily_record/${id}/update/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken(),
+    },
+    body: JSON.stringify({ content: newContent })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById(`${category}-content-${id}`).textContent = newContent;
+      cancelEdit(li);
+      hideAllActionButtons();
+    } else {
+      alert('更新失敗：' + data.error);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('更新過程發生錯誤');
+  });
+}
+
+
+
+// ===== 刪除生活記錄 =====
+function deleteRecord(recordId, petId) {
+  if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+
+  fetch(`/pet/${petId}/health/delete_record/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken(),
+    },
+    body: JSON.stringify({
+      'record_id': recordId,
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // 嘗試移除所有分類下的該紀錄元素（只會有一個存在）
+      ['diet', 'allergen', 'exercise', 'other'].forEach(category => {
+        const el = document.getElementById(`${category}-record-${recordId}`);
+        if (el) el.remove();
+      });
+
+      alert('紀錄已刪除');
+    } else {
+      alert('刪除失敗');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('刪除過程發生錯誤');
+  });
+}
+// ===== 頁面載入後自動綁定 li 點擊事件 =====
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.record-item').forEach(li => {
+    li.addEventListener('click', clickHandler);
+  });
 });
-
-
-
-
-
-// 取得 CSRF Token 的函式
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-            cookie = cookie.trim();
-            if (cookie.startsWith(name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-    // 刪除生活記錄的資料
-    function deleteRecord(recordId, petId) {
-    if (!confirm('確定要刪除這筆紀錄嗎？')) {
-        return;
-    }
-    // 發送 DELETE 請求到後端
-    fetch(`/pet/${petId}/health/delete_record/`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify({
-            'record_id': recordId,
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // 刪除成功，移除該記錄的元素
-            document.getElementById(`diet-record-${recordId}`)?.remove();
-            document.getElementById(`allergen-record-${recordId}`)?.remove();
-            document.getElementById(`exercise-record-${recordId}`)?.remove();
-            document.getElementById(`other-record-${recordId}`)?.remove();
-
-            alert('紀錄已刪除');
-        } else {
-            alert('刪除失敗');
-        }
-    });
-}
 
 
 // ===== 體溫相關 =====
@@ -930,19 +1091,17 @@ function changeTempMonth(petId, offset) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    const now = new Date();
     Object.keys(petTemperatures).forEach(petId => {
-        const now = new Date();
         currentTempMonthMap[petId] = new Date(now.getFullYear(), now.getMonth(), 1);
         renderTemperatureChart(petId);
     });
-});
-window.addEventListener('DOMContentLoaded', () => {
     Object.keys(petWeights).forEach(petId => {
-        const now = new Date();
         currentWeightMonthMap[petId] = new Date(now.getFullYear(), now.getMonth(), 1);
         renderWeightChart(petId);
     });
 });
+
 
 
 // ===== 體重相關 =====
@@ -1044,11 +1203,12 @@ function changeWeightMonth(petId, offset) {
 }
 
 
-
     function toggleDetails(type, petId) {
           const el = document.getElementById(`details-${type}-${petId}`);
           el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
         }
+
+
 
 </script>
 {% endblock %}
