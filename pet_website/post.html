@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>毛孩趣事平台</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "微軟正黑體", sans-serif;
+      background-color: #fef6ee;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 30px;
+      background-color: #fff7ec;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    header img.logo {
+      height: 50px;
+    }
+    nav a {
+      margin-left: 20px;
+      text-decoration: none;
+      color: black;
+      font-weight: bold;
+    }
+    .layout {
+      display: flex;
+    }
+    .sidebar {
+      width: 220px;
+      background-color: #f6efe3;
+      height: calc(100vh - 70px);
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+    .sidebar .channel {
+      margin: 8px 0;
+      cursor: pointer;
+    }
+    .main {
+      flex: 1;
+      padding: 30px;
+    }
+    .post {
+      background-color: #fff7e8;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+    .post img.media {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+    }
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: #888;
+      margin-top: 4px;
+    }
+    .actions button {
+      margin-right: 10px;
+      background-color: transparent;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .like-icon {
+      font-size: 20px;
+      vertical-align: middle;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+    .comment-section {
+      margin-top: 10px;
+      background: #fff3dc;
+      padding: 12px;
+      border-radius: 10px;
+    }
+    .comment, .reply {
+      margin-top: 8px;
+      padding: 8px;
+      background: #fff;
+      border-radius: 8px;
+    }
+    .reply {
+      margin-left: 20px;
+    }
+    .comment .text, .reply .text {
+      flex-grow: 1;
+    }
+    .comment-like {
+      cursor: pointer;
+    }
+    .new-comment {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .new-comment input {
+      flex: 1;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .new-comment button {
+      background-color: #fcd59f;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <a href="index.html">
+      <img src="images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg" alt="logo" class="logo">
+    </a>
+  </div>
+  <nav>
+    <a href="#">寵物</a>
+    <a href="#">健康紀錄</a>
+    <a href="#">通知</a>
+    <a href="#">登入</a>
+  </nav>
+</header>
+
+<div class="layout">
+  <div class="sidebar">
+    <h3>訂閱內容</h3>
+    <div class="channel">🐶巴弟</div>
+    <div class="channel">🐱 Butter</div>
+    <div class="channel">🐾 yyselina</div>
+    <div class="channel">🐶 Hailey</div>
+  </div>
+
+  <div class="main" id="mainContent"></div>
+</div>
+
+<!-- 分享彈窗 -->
+<div class="modal-overlay" id="shareModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;">
+  <div class="modal" style="background:white;padding:20px;border-radius:12px;width:300px;">
+    <span style="float:right;cursor:pointer" onclick="closeModal()">✕</span>
+    <h3>分享貼文</h3>
+    <img src="images/1080.webp" style="border-radius:10px;width:100%;"><br><br>
+    <div style="display:flex;justify-content:space-between;border:1px solid #ccc;padding:6px;border-radius:8px;">
+      <span>https://youtu.be/abc123</span>
+      <button onclick="copyLink()">複製</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const currentUser = "你";
+
+  function getTimeString() {
+    return new Date().toLocaleString('zh-TW');
+  }
+
+  function toggleLike(el) {
+    const heart = el.querySelector('.like-icon');
+    const count = el.querySelector('span');
+    const liked = heart.textContent === '❤️';
+    heart.textContent = liked ? '🖤' : '❤️';
+    count.innerText = liked ? parseInt(count.innerText) - 1 : parseInt(count.innerText) + 1;
+  }
+
+  function toggleComment(postId) {
+    const section = document.querySelector(`#${postId} .comment-section`);
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function likeComment(el) {
+    const span = el.querySelector('span');
+    span.innerText = parseInt(span.innerText) + 1;
+  }
+
+  function addComment(postId, parent = null) {
+    const input = parent ? parent.querySelector('input') : document.querySelector(`#${postId} .new-comment input`);
+    const text = input.value.trim();
+    if (!text) return;
+
+    const comment = document.createElement('div');
+    comment.className = parent ? 'reply' : 'comment';
+    comment.innerHTML = `
+      <div><strong>${currentUser}</strong>：${text} <span class="timestamp">${getTimeString()}</span></div>
+      <div>
+        <span class="comment-like" onclick="likeComment(this)">👍 <span>0</span></span>
+        <button onclick="toggleReply(this)">回覆</button>
+      </div>
+      <div class="new-comment" style="display:none;">
+        <input type="text" placeholder="輸入回覆...">
+        <button onclick="addComment('${postId}', this.parentElement.parentElement)">送出</button>
+      </div>
+    `;
+    const section = parent || document.querySelector(`#${postId} .comment-section`);
+    section.insertBefore(comment, section.querySelector('.new-comment'));
+    input.value = '';
+  }
+
+  function toggleReply(el) {
+    const box = el.parentElement.nextElementSibling;
+    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText("https://youtu.be/abc123");
+    alert("已複製分享連結！");
+  }
+
+  function closeModal() {
+    document.getElementById('shareModal').style.display = 'none';
+  }
+
+  function openModal() {
+    document.getElementById('shareModal').style.display = 'flex';
+  }
+
+  function repost(postId) {
+    const original = document.getElementById(postId);
+    const clone = original.cloneNode(true);
+    const newId = postId + '_repost_' + Date.now();
+    clone.id = newId;
+    const header = clone.querySelector('h2');
+    header.innerText = `${currentUser} 轉發了 ${header.innerText}`;
+    document.getElementById('mainContent').prepend(clone);
+  }
+
+  const posts = [
+    {
+      id: 'post1',
+      user: 'Hailey',
+      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+      text: '逗逗啃寵物骨頭好可愛！',
+      image: 'images/1080.webp',
+      likes: 20
+    },
+    {
+      id: 'post2',
+      user: 'yyselina',
+      avatar: 'https://randomuser.me/api/portraits/women/12.jpg',
+      text: '今天帶狗狗去洗澡，好香好乾淨！',
+      image: 'images/shower.jpg',
+      likes: 5
+    },
+    {
+        id: 'post3',
+        user: 'Butter',
+        avatar: 'https://randomuser.me/api/portraits/women/8.jpg',
+        text: '今天帶狗狗去散步遇到好多狗狗，真可愛!',
+        image: 'images/1024x706.jpeg',
+        likes: 10
+      }
+  ];
+
+  const main = document.getElementById('mainContent');
+  posts.forEach(post => {
+    const div = document.createElement('div');
+    div.className = 'post';
+    div.id = post.id;
+    div.innerHTML = `
+      <div class="post-header">
+        <img src="${post.avatar}" alt="avatar" class="avatar">
+        <div>
+          <h2>${post.user}</h2>
+          <div class="timestamp">由 ${post.user} 發布 · ${getTimeString()}</div>
+        </div>
+      </div>
+      <p>${post.text}</p>
+      <img src="${post.image}" alt="貼文圖片" class="media">
+      <div class="actions">
+        <span onclick="toggleLike(this)"><span class="like-icon">🖤</span> <span>${post.likes}</span></span>
+        <button onclick="toggleComment('${post.id}')">💬 留言</button>
+        <button onclick="openModal()">🔗 分享</button>
+        <button onclick="repost('${post.id}')">🔁 轉發</button>
+      </div>
+      <div class="comment-section" style="display:none;">
+        <div class="comment">
+          <div><strong>訪客A</strong>：太萌了！ <span class="timestamp">${getTimeString()}</span></div>
+          <div>
+            <span class="comment-like" onclick="likeComment(this)">👍 <span>2</span></span>
+            <button onclick="toggleReply(this)">回覆</button>
+          </div>
+          <div class="new-comment" style="display:none;">
+            <input type="text" placeholder="輸入回覆...">
+            <button onclick="addComment('${post.id}', this.parentElement.parentElement)">送出</button>
+          </div>
+        </div>
+        <div class="new-comment">
+          <input type="text" placeholder="輸入留言...">
+          <button onclick="addComment('${post.id}')">送出</button>
+        </div>
+      </div>
+    `;
+    main.appendChild(div);
+  });
+</script>
+</body>
+</html>
