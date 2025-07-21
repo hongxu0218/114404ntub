@@ -241,7 +241,6 @@ class PetForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.owner = kwargs.pop('owner', None)
         super().__init__(*args, **kwargs)
         self.fields['picture'].required = True
         for field_name in ['breed', 'name', 'chip', 'weight', 'feature','birth_date']:
@@ -265,7 +264,7 @@ class PetForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data.get('name')
         if name:
-            qs = Pet.objects.filter(name=name, owner=self.owner)
+            qs = Pet.objects.filter(name=name)
             if self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)  # 編輯時排除自己
             if qs.exists():

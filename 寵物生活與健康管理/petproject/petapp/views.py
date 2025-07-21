@@ -228,7 +228,7 @@ from datetime import date as dt_date
 @login_required
 def add_pet(request):
     if request.method == 'POST':
-        form = PetForm(request.POST, request.FILES, owner=request.user)
+        form = PetForm(request.POST, request.FILES)
         if form.is_valid():
             pet = form.save(commit=False)  # 不馬上存進資料庫
             pet.owner = request.user  # 指定目前登入使用者為飼主
@@ -292,7 +292,7 @@ def pet_list(request):
 def edit_pet(request, pet_id):
     pet = get_object_or_404(Pet, id=pet_id)
     if request.method == 'POST':
-        form = PetForm(request.POST, request.FILES, instance=pet, owner=request.user)
+        form = PetForm(request.POST, request.FILES, instance=pet)
         if form.is_valid():
             form.save()
             messages.info(request, f"寵物 {pet.name} 資料已更新。")
@@ -319,6 +319,7 @@ def health_rec(request):
     )
 
     # 健康記錄 撈資料
+    #records = DailyRecord.objects.select_related('pet').order_by('date')
     records = DailyRecord.objects.filter(pet__in=pets).select_related('pet').order_by('date')
     grouped_records = []
     pet_map = defaultdict(list)
@@ -416,25 +417,6 @@ def save_daily_record(request):
         'content': content,
         'date': record.date.isoformat()
     })
-# 更新生活紀錄
-@csrf_exempt
-def update_daily_record(request, record_id):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            content = data.get('content', '').strip()
-            record = DailyRecord.objects.get(id=record_id)
-
-            if not content:
-                return JsonResponse({'success': False, 'error': '內容不得為空'})
-
-            record.content = content
-            record.save()
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': '只接受 POST'})
 
 # 刪除每日健康紀錄
 @csrf_exempt
