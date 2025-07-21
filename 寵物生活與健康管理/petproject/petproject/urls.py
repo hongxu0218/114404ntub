@@ -26,6 +26,11 @@ urlpatterns = [
     # 將 petapp 應用的 urls.py 加入整體路由中（例如 dashboard、寵物管理等）
     path('', include('petapp.urls')),
 ]
+# 錯誤處理器
+handler400 = 'petapp.views.custom_400'
+handler403 = 'petapp.views.custom_403'
+handler404 = 'petapp.views.custom_404'
+handler500 = 'petapp.views.custom_500'
 
 # 開發環境下允許媒體檔案顯示（例如上傳的寵物照片）
 if settings.DEBUG:
