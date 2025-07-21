@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}醫師管理 - {{ clinic.clinic_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.doctor-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.doctor-card:hover {
+  box-shadow: 0 4px 15px var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.doctor-avatar {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.status-inactive {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  border: 1px solid rgba(108, 117, 125, 0.2);
+}
+
+.verified-badge {
+  background-color: rgba(13, 202, 240, 0.1);
+  color: #0dcaf0;
+  border: 1px solid rgba(13, 202, 240, 0.2);
+}
+
+.admin-badge {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.page-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid #dee2e6;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  
+  <!-- 頁面標題 -->
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1 class="mb-2">
+          <i class="bi bi-people-fill me-3 text-primary"></i>
+          醫師管理
+        </h1>
+        <p class="text-muted mb-0">
+          <i class="bi bi-hospital me-2"></i>{{ clinic.clinic_name }}
+          <span class="mx-2">•</span>
+          <i class="bi bi-person-check me-2"></i>共 {{ doctors.count }} 位醫師
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="{% url 'add_doctor' %}" class="btn btn-primary">
+          <i class="bi bi-person-plus me-2"></i>
+          新增醫師
+        </a>
+        <a href="{% url 'clinic_dashboard' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>
+          返回管理
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    
+    <!-- 醫師列表 -->
+    <div class="col-12">
+      {% if doctors %}
+        {% for doctor in doctors %}
+        <div class="doctor-card">
+          <div class="row align-items-center">
+            
+            <!-- 醫師基本資訊 -->
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <div class="doctor-avatar me-3">
+                  {% if doctor.user.first_name %}
+                    {{ doctor.user.first_name|first }}
+                  {% else %}
+                    {{ doctor.user.username|first|upper }}
+                  {% endif %}
+                </div>
+                <div>
+                  <h5 class="mb-1">
+                    {% if doctor.user.first_name %}
+                      Dr. {{ doctor.user.first_name }}
+                    {% else %}
+                      Dr. {{ doctor.user.username }}
+                    {% endif %}
+                  </h5>
+                  <p class="text-muted mb-1">
+                    <i class="bi bi-envelope me-2"></i>{{ doctor.user.email }}
+                  </p>
+                  {% if doctor.specialization %}
+                  <p class="text-muted mb-0">
+                    <i class="bi bi-award me-2"></i>{{ doctor.specialization }}
+                  </p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            
+            <!-- 醫師狀態 -->
+            <div class="col-md-3">
+              <div class="d-flex flex-column gap-2">
+                <!-- 啟用狀態 -->
+                {% if doctor.is_active %}
+                  <span class="status-badge status-active">
+                    <i class="bi bi-check-circle me-1"></i>啟用中
+                  </span>
+                {% else %}
+                  <span class="status-badge status-inactive">
+                    <i class="bi bi-x-circle me-1"></i>已停用
+                  </span>
+                {% endif %}
+                
+                <!-- 管理員身份 -->
+                {% if doctor.is_clinic_admin %}
+                  <span class="status-badge admin-badge">
+                    <i class="bi bi-crown me-1"></i>管理員
+                  </span>
+                {% endif %}
+                
+                <!-- 驗證狀態 -->
+                {% if doctor.is_verified %}
+                  <span class="status-badge verified-badge">
+                    <i class="bi bi-shield-check me-1"></i>已驗證
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+            
+            <!-- 操作按鈕 -->
+            <div class="col-md-3 text-end">
+              <div class="btn-group" role="group">
+                <a href="{% url 'edit_doctor' doctor.id %}" 
+                   class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                
+                <a href="{% url 'manage_doctor_schedules' doctor.id %}" 
+                   class="btn btn-outline-info btn-sm"
+                   title="管理排班">
+                  <i class="bi bi-calendar3"></i>
+                </a>
+                
+                {% if doctor.is_active %}
+                  <form method="post" action="{% url 'toggle_doctor_status' doctor.id %}" 
+                        class="d-inline"
+                        onsubmit="return confirm('確定要停用此醫師嗎？')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-warning btn-sm"
+                            title="停用醫師">
+                      <i class="bi bi-pause"></i>
+                    </button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{% url 'toggle_doctor_status' doctor.id %}" 
+                        class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success btn-sm"
+                            title="啟用醫師">
+                      <i class="bi bi-play"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- 醫師詳細資訊 -->
+          {% if doctor.bio or doctor.years_of_experience > 0 or doctor.vet_license_number %}
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="border-top pt-3">
+                <div class="row">
+                  {% if doctor.vet_license_number %}
+                  <div class="col-md-4">
+                    <small class="text-muted">執照號碼</small>
+                    <p class="mb-1">{{ doctor.vet_license_number }}</p>
+                  </div>
+                  {% endif %}
+                  
+                  {% if doctor.years_of_experience > 0 %}
+                  <div class="col-md-4">
+                    <small class="text-muted">執業年資</small>
+                    <p class="mb-1">{{ doctor.years_of_experience }} 年</p>
+                  </div>
+                  {% endif %}
+                  
+                  {% if doctor.moa_license_type %}
+                  <div class="col-md-4">
+                    <small class="text-muted">執照類別</small>
+                    <p class="mb-1">{{ doctor.moa_license_type }}</p>
+                  </div>
+                  {% endif %}
+                </div>
+                
+                {% if doctor.bio %}
+                <div class="mt-2">
+                  <small class="text-muted">個人簡介</small>
+                  <p class="mb-0">{{ doctor.bio }}</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        
+      {% else %}
+        <!-- 無醫師時的顯示 -->
+        <div class="text-center py-5">
+          <div class="mb-4">
+            <i class="bi bi-people" style="font-size: 4rem; color: #dee2e6;"></i>
+          </div>
+          <h4 class="text-muted">尚未新增任何醫師</h4>
+          <p class="text-muted mb-4">請點擊上方按鈕新增第一位醫師</p>
+          <a href="{% url 'add_doctor' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-2"></i>
+            新增醫師
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 操作說明 -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="card-title">
+            <i class="bi bi-info-circle me-2"></i>
+            操作說明
+          </h6>
+          <ul class="mb-0 small">
+            <li><strong>編輯：</strong>修改醫師基本資料和權限設定</li>
+            <li><strong>排班：</strong>設定醫師的看診時間和排班</li>
+            <li><strong>停用/啟用：</strong>暫時停用或重新啟用醫師帳號</li>
+            <li><strong>管理員：</strong>具有診所管理權限的醫師</li>
+            <li><strong>已驗證：</strong>已通過執照驗證的醫師</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 醫師卡片點擊效果
+  const doctorCards = document.querySelectorAll('.doctor-card');
+  
+  doctorCards.forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.borderColor = 'var(--primary-orange)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      this.style.borderColor = '#e9ecef';
+    });
+  });
+  
+  // 確認對話框
+  const toggleForms = document.querySelectorAll('form[action*="toggle"]');
+  
+  toggleForms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+      const isActivating = this.querySelector('button .bi-play');
+      if (isActivating) {
+        return confirm('確定要啟用此醫師嗎？');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

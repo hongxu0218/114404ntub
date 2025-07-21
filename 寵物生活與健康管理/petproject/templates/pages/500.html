@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}系統錯誤 - 毛日好{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-lg-6 col-md-8 text-center">
+      <div class="error-card p-5">
+        <!-- 錯誤圖示 -->
+        <div class="error-icon mb-4">
+          <i class="bi bi-exclamation-triangle" style="font-size: 5rem; color: var(--error-color);"></i>
+        </div>
+        
+        <!-- 錯誤代碼 -->
+        <h1 class="error-code mb-3" style="font-size: 4rem; font-weight: 700; color: var(--primary-orange);">500</h1>
+        
+        <!-- 錯誤標題 -->
+        <h2 class="error-title mb-3" style="color: var(--text-dark);">
+          <i class="bi bi-gear me-2"></i>
+          系統發生錯誤
+        </h2>
+        
+        <!-- 錯誤描述 -->
+        <div class="error-description mb-4">
+          <p class="lead text-muted">糟糕！伺服器遇到了問題 🛠️</p>
+          <p class="text-muted">
+            我們的工程師正在努力修復中，請您稍後再試。
+          </p>
+          
+          <div class="alert alert-light border-warning mt-3">
+            <i class="bi bi-info-circle text-warning me-2"></i>
+            <strong>緊急情況？</strong><br>
+            如果您的毛孩需要緊急醫療協助，請直接撥打當地動物急診電話或前往最近的獸醫院。
+          </div>
+        </div>
+        
+        <!-- 操作按鈕 -->
+        <div class="error-actions mb-4">
+          <a href="{% url 'home' %}" class="btn btn-primary-custom btn-lg me-3">
+            <i class="bi bi-house-door me-2"></i>
+            回到首頁
+          </a>
+        
+        <!-- 聯絡資訊 -->
+        <div class="contact-info mb-4">
+          <h6 class="text-muted mb-3">聯絡客服：</h6>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <div class="contact-item p-2 border rounded">
+                <i class="bi bi-envelope text-primary"></i>
+                <div class="mt-1">
+                  <small class="text-muted">Email</small><br>
+                  <a href="mailto:pawday114404@gmail.com" class="text-decoration-none">
+                    <small>客服信箱</small>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="contact-item p-2 border rounded">
+                <i class="bi bi-telephone text-success"></i>
+                <div class="mt-1">
+                  <small class="text-muted">電話</small><br>
+                  <a href="tel:+886255667788" class="text-decoration-none">
+                    <small>02-5566-7788</small>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="contact-item p-2 border rounded">
+                <i class="bi bi-clock text-warning"></i>
+                <div class="mt-1">
+                  <small class="text-muted">服務時間</small><br>
+                  <small>週一至五<br>10:00-18:00</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 可能的解決方案 -->
+        <div class="solutions mb-4">
+          <h6 class="text-muted mb-3">您可以嘗試：</h6>
+          <ul class="list-unstyled text-muted text-start">
+            <li class="mb-2">
+              <i class="bi bi-arrow-clockwise text-info me-2"></i>
+              重新整理頁面（Ctrl + F5）
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-clock-history text-info me-2"></i>
+              稍後再試（系統可能正在維護）
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-browser-chrome text-info me-2"></i>
+              嘗試使用其他瀏覽器
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-wifi text-info me-2"></i>
+              檢查網路連線狀態
+            </li>
+          </ul>
+        </div>
+        
+        <!-- 可愛的小貓工程師插圖區域 -->
+        <div class="mt-5 text-muted">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">🐱‍💻🔧</div>
+          <small>我們的貓咪工程師正在搶修中！</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.error-card {
+  background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px var(--shadow-light);
+  border: 1px solid var(--border-light);
+}
+
+.error-icon {
+  animation: shake 1s infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.contact-item {
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.contact-item:hover {
+  background-color: var(--warm-bg);
+  transform: translateY(-2px);
+}
+
+.contact-item i {
+  font-size: 1.5rem;
+}
+
+.solutions {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1rem auto;
+  max-width: 400px;
+}
+
+.min-vh-100 {
+  min-height: calc(100vh - 200px);
+}
+</style>
+{% endblock %}

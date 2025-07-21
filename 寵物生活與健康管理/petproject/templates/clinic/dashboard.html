@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}診所管理 - {{ clinic.clinic_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-header {
+  background: linear-gradient(135deg, var(--primary-orange) 0%, #ff8c42 100%);
+  color: white;
+  padding: var(--spacing-xl) 0;
+  margin-bottom: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+}
+
+.stat-card {
+  background: white;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: 0 4px 6px var(--shadow-light);
+  border-left: 4px solid var(--primary-orange);
+  transition: transform var(--transition-normal);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px var(--shadow-hover);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary-orange);
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quick-action-card {
+  background: white;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+  box-shadow: 0 4px 6px var(--shadow-light);
+  transition: all var(--transition-normal);
+  border: 2px solid transparent;
+}
+
+.quick-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px var(--shadow-hover);
+  border-color: var(--primary-orange);
+}
+
+.action-icon {
+  font-size: 3rem;
+  color: var(--primary-orange);
+  margin-bottom: var(--spacing-md);
+}
+
+.clinic-info-card {
+  background: rgba(255, 170, 0, 0.1);
+  border: 1px solid rgba(255, 170, 0, 0.2);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+}
+
+.verification-badge {
+  background: var(--success-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  
+  <!-- 診所資訊標題 -->
+  <div class="dashboard-header">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h1 class="mb-2">
+            <i class="bi bi-hospital-fill me-3"></i>
+            {{ clinic.clinic_name }}
+          </h1>
+          <p class="mb-0 opacity-75">
+            <i class="bi bi-geo-alt me-2"></i>{{ clinic.clinic_address }}
+          </p>
+          <div class="mt-2">
+            <span class="verification-badge">
+              <i class="bi bi-shield-check me-1"></i>
+              已通過農委會驗證
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <div class="text-white-50">
+            <small>執照字號：{{ clinic.license_number }}</small><br>
+            <small>註冊時間：{{ clinic.created_at|date:"Y年m月d日" }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    
+    <!-- 統計卡片 -->
+    <div class="row mb-4">
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <div class="stat-number">{{ today_appointments|default:0 }}</div>
+              <div class="stat-label">今日預約</div>
+            </div>
+            <div class="text-primary">
+              <i class="bi bi-calendar-check" style="font-size: 2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <div class="stat-number">{{ pending_appointments|default:0 }}</div>
+              <div class="stat-label">待確認預約</div>
+            </div>
+            <div class="text-warning">
+              <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <div class="stat-number">{{ doctors_count|default:0 }}</div>
+              <div class="stat-label">獸醫師數量</div>
+            </div>
+            <div class="text-success">
+              <i class="bi bi-people-fill" style="font-size: 2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <div class="stat-number">{{ total_appointments_this_month|default:0 }}</div>
+              <div class="stat-label">本月總預約</div>
+            </div>
+            <div class="text-info">
+              <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="mb-3">快速操作</h3>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'clinic_appointments' %}" class="text-decoration-none">
+          <div class="quick-action-card">
+            <div class="action-icon">
+              <i class="bi bi-calendar2-week"></i>
+            </div>
+            <h5>預約管理</h5>
+            <p class="text-muted mb-0">查看和管理預約</p>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'manage_doctors' %}" class="text-decoration-none">
+          <div class="quick-action-card">
+            <div class="action-icon">
+              <i class="bi bi-people"></i>
+            </div>
+            <h5>醫師管理</h5>
+            <p class="text-muted mb-0">管理診所醫師</p>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'manage_schedules' %}" class="text-decoration-none">
+          <div class="quick-action-card">
+            <div class="action-icon">
+              <i class="bi bi-clock"></i>
+            </div>
+            <h5>排班管理</h5>
+            <p class="text-muted mb-0">設定醫師排班</p>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <a href="{% url 'vet_patients' %}" class="text-decoration-none">
+          <div class="quick-action-card">
+            <div class="action-icon">
+              <i class="bi bi-heart-pulse"></i>
+            </div>
+            <h5>病患管理</h5>
+            <p class="text-muted mb-0">查看病患資料</p>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 診所詳細資訊 -->
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-info-circle me-2"></i>
+              診所詳細資訊
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">診所名稱</label>
+                  <p class="form-control-plaintext">{{ clinic.clinic_name }}</p>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">執照字號</label>
+                  <p class="form-control-plaintext">{{ clinic.license_number }}</p>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">電話</label>
+                  <p class="form-control-plaintext">{{ clinic.clinic_phone }}</p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">信箱</label>
+                  <p class="form-control-plaintext">{{ clinic.clinic_email }}</p>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">地址</label>
+                  <p class="form-control-plaintext">{{ clinic.clinic_address }}</p>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">驗證狀態</label>
+                  <p class="form-control-plaintext">
+                    {% if clinic.is_verified %}
+                      <span class="badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i>
+                        已通過農委會驗證
+                      </span>
+                    {% else %}
+                      <span class="badge bg-warning">
+                        <i class="bi bi-clock me-1"></i>
+                        等待驗證
+                      </span>
+                    {% endif %}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="clinic-info-card">
+          <h5 class="text-primary">
+            <i class="bi bi-lightbulb me-2"></i>
+            使用提示
+          </h5>
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2">
+              <i class="bi bi-check text-success me-2"></i>
+              定期更新醫師排班時間
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-check text-success me-2"></i>
+              及時處理預約確認
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-check text-success me-2"></i>
+              保持診所資訊更新
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-check text-success me-2"></i>
+              定期檢查系統通知
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 自動重新載入統計數據（每5分鐘）
+  setInterval(function() {
+    // 可以在這裡添加AJAX更新統計數據的邏輯
+    console.log('檢查統計數據更新...');
+  }, 300000); // 5分鐘
+});
+</script>
+{% endblock %}

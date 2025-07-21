@@ -1,0 +1,511 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}診所註冊 - 毛日好{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/clinic-registration.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="registration-container">
+  
+  <!-- 註冊標題區域 -->
+  <div class="registration-header">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <div class="header-icon mb-3">
+            <i class="bi bi-hospital-fill"></i>
+          </div>
+          <h1 class="page-title">診所註冊</h1>
+          <p class="page-subtitle">加入毛日好平台，為更多毛孩提供專業醫療服務</p>
+          
+          <!-- 註冊流程指示器 -->
+          <div class="progress-indicator mt-4">
+            <div class="step active">
+              <div class="step-number">1</div>
+              <div class="step-label">填寫資料</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div class="step-label">農委會驗證</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div class="step-label">完成註冊</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 註冊表單區域 -->
+  <div class="registration-form-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          
+          <!-- 重要提醒 -->
+          <div class="alert alert-info mb-4" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>重要說明：</strong>
+            <ul class="mb-0 mt-2">
+              <li>診所名稱和執照字號必須與農委會登記資料完全相同</li>
+              <li>系統將自動向農委會API驗證診所資訊</li>
+              <li>驗證通過後，管理員帳號將立即啟用</li>
+            </ul>
+          </div>
+
+          <!-- 註冊表單卡片 -->
+          <div class="registration-form-card">
+            <form method="post" class="clinic-registration-form" id="clinicRegistrationForm">
+              {% csrf_token %}
+              
+              <!-- 診所基本資訊 -->
+              <div class="form-section">
+                <div class="section-header">
+                  <h4 class="section-title">
+                    <i class="bi bi-building me-2"></i>
+                    診所基本資訊
+                  </h4>
+                  <p class="section-subtitle">請填寫與農委會登記完全相同的診所資訊</p>
+                </div>
+                
+                <div class="row">
+                  <!-- 診所名稱 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.clinic_name.id_for_label }}" class="form-label required">
+                      <i class="bi bi-shop me-1"></i>
+                      診所名稱
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-hospital"></i>
+                      </span>
+                      {{ form.clinic_name }}
+                    </div>
+                    {% if form.clinic_name.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.clinic_name.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="form-text">
+                      <i class="bi bi-lightbulb me-1"></i>
+                      {{ form.clinic_name.help_text }}
+                    </div>
+                  </div>
+                  
+                  <!-- 開業執照字號 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.license_number.id_for_label }}" class="form-label required">
+                      <i class="bi bi-award me-1"></i>
+                      開業執照字號
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-shield-check"></i>
+                      </span>
+                      {{ form.license_number }}
+                    </div>
+                    {% if form.license_number.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.license_number.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="form-text">
+                      <i class="bi bi-lightbulb me-1"></i>
+                      {{ form.license_number.help_text }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <!-- 診所電話 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.clinic_phone.id_for_label }}" class="form-label required">
+                      <i class="bi bi-telephone me-1"></i>
+                      診所電話
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-phone"></i>
+                      </span>
+                      {{ form.clinic_phone }}
+                    </div>
+                    {% if form.clinic_phone.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.clinic_phone.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- 診所信箱 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.clinic_email.id_for_label }}" class="form-label required">
+                      <i class="bi bi-envelope me-1"></i>
+                      診所信箱
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-at"></i>
+                      </span>
+                      {{ form.clinic_email }}
+                    </div>
+                    {% if form.clinic_email.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.clinic_email.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <!-- 診所地址 -->
+                <div class="mb-3">
+                  <label for="{{ form.clinic_address.id_for_label }}" class="form-label required">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    診所地址
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-map"></i>
+                    </span>
+                    {{ form.clinic_address }}
+                  </div>
+                  {% if form.clinic_address.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.clinic_address.errors %}
+                        <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <div class="form-text">
+                    <i class="bi bi-lightbulb me-1"></i>
+                    {{ form.clinic_address.help_text }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 管理員帳號資訊 -->
+              <div class="form-section">
+                <div class="section-header">
+                  <h4 class="section-title">
+                    <i class="bi bi-person-gear me-2"></i>
+                    管理員帳號資訊
+                  </h4>
+                  <p class="section-subtitle">設定診所管理員的登入帳號</p>
+                </div>
+                
+                <div class="row">
+                  <!-- 管理員帳號 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.admin_username.id_for_label }}" class="form-label required">
+                      <i class="bi bi-person-circle me-1"></i>
+                      管理員帳號
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-person"></i>
+                      </span>
+                      {{ form.admin_username }}
+                    </div>
+                    {% if form.admin_username.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.admin_username.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    <div class="form-text">
+                      <i class="bi bi-lightbulb me-1"></i>
+                      用於登入系統的使用者名稱
+                    </div>
+                  </div>
+                  
+                  <!-- 管理員信箱 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.admin_email.id_for_label }}" class="form-label required">
+                      <i class="bi bi-envelope-at me-1"></i>
+                      管理員信箱
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-envelope"></i>
+                      </span>
+                      {{ form.admin_email }}
+                    </div>
+                    {% if form.admin_email.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.admin_email.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <!-- 管理員密碼 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.admin_password.id_for_label }}" class="form-label required">
+                      <i class="bi bi-key me-1"></i>
+                      管理員密碼
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-lock"></i>
+                      </span>
+                      {{ form.admin_password }}
+                      <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                        <i class="bi bi-eye" id="passwordIcon"></i>
+                      </button>
+                    </div>
+                    {% if form.admin_password.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.admin_password.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- 確認密碼 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.admin_password_confirm.id_for_label }}" class="form-label required">
+                      <i class="bi bi-key-fill me-1"></i>
+                      確認密碼
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-lock-fill"></i>
+                      </span>
+                      {{ form.admin_password_confirm }}
+                    </div>
+                    {% if form.admin_password_confirm.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.admin_password_confirm.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <!-- 管理員姓名 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.admin_real_name.id_for_label }}" class="form-label required">
+                      <i class="bi bi-person-badge me-1"></i>
+                      管理員真實姓名
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-person-lines-fill"></i>
+                      </span>
+                      {{ form.admin_real_name }}
+                    </div>
+                    {% if form.admin_real_name.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.admin_real_name.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- 管理員電話 -->
+                  <div class="col-md-6 mb-3">
+                    <label for="{{ form.admin_phone.id_for_label }}" class="form-label required">
+                      <i class="bi bi-phone-vibrate me-1"></i>
+                      管理員電話
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-phone-fill"></i>
+                      </span>
+                      {{ form.admin_phone }}
+                    </div>
+                    {% if form.admin_phone.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.admin_phone.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 驗證確認區域 -->
+              <div class="form-section">
+                <div class="verification-section">
+                  <h4 class="section-title mb-3">
+                    <i class="bi bi-patch-check me-2"></i>
+                    驗證確認
+                  </h4>
+                  
+                  <div class="verification-info mb-4">
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="verification-step">
+                          <i class="bi bi-database-check"></i>
+                          <h6>農委會資料庫</h6>
+                          <p>即時查詢驗證</p>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="verification-step">
+                          <i class="bi bi-shield-check"></i>
+                          <h6>執照狀態</h6>
+                          <p>確認開業狀態</p>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="verification-step">
+                          <i class="bi bi-check-circle"></i>
+                          <h6>資料比對</h6>
+                          <p>確保資料一致</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- 確認checkbox -->
+                  <div class="form-check confirmation-check">
+                    {{ form.verification_confirmed }}
+                    <label class="form-check-label" for="{{ form.verification_confirmed.id_for_label }}">
+                      <strong>我確認以上資料正確，且同意接受農委會API驗證</strong>
+                    </label>
+                    {% if form.verification_confirmed.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.verification_confirmed.errors %}
+                          <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- 提交按鈕區域 -->
+              <div class="form-actions">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="security-info">
+                      <i class="bi bi-shield-lock-fill text-success me-2"></i>
+                      <small class="text-muted">您的資料將安全加密傳輸</small>
+                    </div>
+                  </div>
+                  <div class="col-md-6 text-md-end">
+                    <button type="submit" class="btn btn-primary-custom btn-lg" id="submitBtn">
+                      <i class="bi bi-hospital-fill me-2"></i>
+                      開始註冊驗證
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- 註冊說明 -->
+          <div class="registration-help mt-5">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="help-card">
+                  <h5>
+                    <i class="bi bi-question-circle me-2"></i>
+                    需要幫助？
+                  </h5>
+                  <p>如果在註冊過程中遇到問題，請參考我們的幫助文檔或聯絡客服。</p>
+                  <a href="#" class="btn btn-outline-primary">
+                    <i class="bi bi-book me-1"></i>
+                    查看幫助
+                  </a>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="help-card">
+                  <h5>
+                    <i class="bi bi-headset me-2"></i>
+                    聯絡客服
+                  </h5>
+                  <p>我們的客服團隊隨時為您提供註冊協助。</p>
+                  <a href="mailto:pawday114404@gmail.com" class="btn btn-outline-primary">
+                    <i class="bi bi-envelope me-1"></i>
+                    發送Email
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 驗證進度 Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="text-center py-4">
+          <div class="verification-animation mb-4">
+            <div class="spinner-grow text-primary" role="status">
+              <span class="visually-hidden">驗證中...</span>
+            </div>
+            <div class="spinner-grow text-info" role="status">
+              <span class="visually-hidden">驗證中...</span>
+            </div>
+            <div class="spinner-grow text-success" role="status">
+              <span class="visually-hidden">驗證中...</span>
+            </div>
+          </div>
+          
+          <h4 class="mb-3" id="verificationTitle">正在進行農委會驗證...</h4>
+          <p class="text-muted mb-4" id="verificationDescription">
+            系統正在向農委會資料庫查詢您的診所資訊，請稍候片刻
+          </p>
+          
+          <div class="verification-steps">
+            <div class="step" id="step1">
+              <i class="bi bi-clock"></i>
+              <span>連接農委會API</span>
+            </div>
+            <div class="step" id="step2">
+              <i class="bi bi-search"></i>
+              <span>查詢診所資料</span>
+            </div>
+            <div class="step" id="step3">
+              <i class="bi bi-check-circle"></i>
+              <span>驗證完成</span>
+            </div>
+          </div>
+          
+          <div class="progress mt-4" style="height: 8px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 0%" id="verificationProgress"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/clinic-registration.js' %}"></script>
+{% endblock %}

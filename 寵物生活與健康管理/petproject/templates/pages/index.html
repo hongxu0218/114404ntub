@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}毛孩幸福生活{% endblock %}
+{% block title %}毛孩幸福生活 - 毛日好 Paw&Day{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/homepage.css' %}">
+{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -44,22 +48,22 @@
         
         <div class="news-scroll-container">
           <div class="d-flex gap-3 pb-3" style="overflow-x: auto; min-width: max-content;">
-            <a href="https://dailyview.tw/popular/detail/29132" class="news-card">
+            <a href="https://dailyview.tw/popular/detail/29132" class="news-card" target="_blank" rel="noopener">
               <img src="{% static 'images/news_1.webp' %}" alt="寵物新聞" class="img-fluid">
             </a>
-            <a href="https://www.jvs.com.tw/blog/posts/..." class="news-card">
+            <a href="https://www.jvs.com.tw/blog/posts/..." class="news-card" target="_blank" rel="noopener">
               <img src="{% static 'images/news_2.jpg' %}" alt="寵物新聞" class="img-fluid">
             </a>
-            <a href="https://udn.com/news/story/..." class="news-card">
+            <a href="https://udn.com/news/story/..." class="news-card" target="_blank" rel="noopener">
               <img src="{% static 'images/news_3.jpg' %}" alt="寵物新聞" class="img-fluid">
             </a>
-            <a href="https://animal.moa.gov.tw/Frontend/News/..." class="news-card">
+            <a href="https://animal.moa.gov.tw/Frontend/News/..." class="news-card" target="_blank" rel="noopener">
               <img src="{% static 'images/news_4.jpg' %}" alt="寵物新聞" class="img-fluid">
             </a>
-            <a href="https://www.dotdotnews.com/a/202503/..." class="news-card">
+            <a href="https://www.dotdotnews.com/a/202503/..." class="news-card" target="_blank" rel="noopener">
               <img src="{% static 'images/news_5.jpg' %}" alt="寵物新聞" class="img-fluid">
             </a>
-            <a href="https://www.youtube.com/watch?v=uBhBu-LYSqM" class="news-card">
+            <a href="https://www.youtube.com/watch?v=uBhBu-LYSqM" class="news-card" target="_blank" rel="noopener">
               <img src="{% static 'images/news_youtube.jpg' %}" alt="寵物影片" class="img-fluid">
             </a>
             <div class="news-card more">
@@ -85,13 +89,13 @@
     <div class="row g-4 justify-content-center">
       <!-- 第一個功能卡片 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
-        {% if user.profile.account_type == 'vet' %}
+        {% if user.is_authenticated and user.profile.account_type == 'veterinarian' %}
           <a href="{% url 'my_patients' %}" class="category-card">
             <img src="{% static 'images/icon_add_pet.png' %}" class="category-icon" alt="看診寵物">
             <div class="category-text">看診寵物</div>
           </a>
         {% else %}
-          <a href="{% url 'add_pet' %}" class="category-card">
+          <a href="{% if user.is_authenticated %}{% url 'add_pet' %}{% else %}{% url 'account_signup' %}{% endif %}" class="category-card">
             <img src="{% static 'images/icon_add_pet.png' %}" class="category-icon" alt="新增毛孩">
             <div class="category-text">新增毛孩</div>
           </a>
@@ -100,7 +104,7 @@
 
       <!-- 第二個功能卡片 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
-        {% if user.profile.account_type == 'vet' %}
+        {% if user.is_authenticated and user.profile.account_type == 'veterinarian' %}
           <a href="{% url 'vet_appointments' %}" class="category-card">
             <img src="{% static 'images/icon_health.png' %}" class="category-icon" alt="查看預約">
             <div class="category-text">查看預約</div>
@@ -115,8 +119,8 @@
 
       <!-- 第三個功能卡片 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
-        {% if user.profile.account_type == 'vet' %}
-          <a href="{% url 'vet_availability_settings' %}" class="category-card">
+        {% if user.is_authenticated and user.profile.account_type == 'clinic_admin' %}
+          <a href="{% url 'manage_schedules' %}" class="category-card">
             <img src="{% static 'images/icon_time.png' %}" class="category-icon" alt="排班時段">
             <div class="category-text">排班時段</div>
           </a>
@@ -126,9 +130,9 @@
             <div class="category-text">搜尋附近</div>
           </a>
         {% endif %}
-      </div>      
-      <!-- 第四個功能卡片（非獸醫才顯示） -->
-      {% if user.profile.account_type != 'vet' %}
+      </div>
+      
+      <!-- 第四個功能卡片 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
         <a href="{% url 'emergency_map' %}" class="category-card">
           <img src="{% static 'images/icon_emergency.png' %}" class="category-icon" alt="急診">
@@ -137,7 +141,6 @@
           </div>
         </a>
       </div>
-      {% endif %}
     </div>
   </div>
 </section>
@@ -210,69 +213,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  {{ block.super }}
-<script>
-// 新聞滾動功能
-function scrollNews(direction) {
-  const container = document.querySelector('.news-scroll-container .d-flex');
-  if (container) {
-    const scrollAmount = 220;
-    container.scrollBy({ 
-      left: direction === 'left' ? -scrollAmount : scrollAmount, 
-      behavior: 'smooth' 
-    });
-  }
-}
-
-// 為新聞卡片添加點擊效果
-document.addEventListener('DOMContentLoaded', function() {
-  const newsCards = document.querySelectorAll('.news-card');
-  newsCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.style.transform = 'translateY(-8px) scale(1.02)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.transform = 'translateY(-5px) scale(1)';
-    });
-  });
-
-  // 分類卡片hover效果
-  const categoryCards = document.querySelectorAll('.category-card');
-  categoryCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.style.transform = 'translateY(-12px)';
-      this.style.boxShadow = '0 15px 45px rgba(0,0,0,0.2)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.transform = 'translateY(-8px)';
-      this.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)';
-    });
-  });
-
-  // 平滑滾動到錨點
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }
-    });
-  });
-});
-
-// 添加滾動視差效果
-window.addEventListener('scroll', function() {
-  const scrolled = window.pageYOffset;
-  const heroImg = document.querySelector('.hero-img');
-  if (heroImg) {
-    heroImg.style.transform = `translateY(${scrolled * 0.1}px)`;
-  }
-});
-</script>
+<script src="{% static 'js/homepage.js' %}"></script>
 {% endblock %}

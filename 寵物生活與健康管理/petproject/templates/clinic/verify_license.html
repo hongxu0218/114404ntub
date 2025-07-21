@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}獸醫師執照驗證 - 毛日好{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/verify-license.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      
+      <!-- 頁面標題 -->
+      <div class="page-header text-center mb-5">
+        <div class="header-icon mb-3">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <h1 class="page-title">獸醫師執照驗證</h1>
+        <p class="page-subtitle">完成農委會執照驗證，開始您的專業服務</p>
+      </div>
+
+      <!-- 驗證狀態卡片 -->
+      <div class="verification-status-card mb-4">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <div class="status-info">
+              <h5 class="mb-2">
+                <i class="bi bi-person-badge me-2"></i>
+                {{ vet_doctor.user.get_full_name|default:vet_doctor.user.username }}
+              </h5>
+              <p class="text-muted mb-1">
+                <i class="bi bi-hospital me-2"></i>
+                {{ vet_doctor.clinic.clinic_name }}
+              </p>
+              {% if vet_doctor.specialization %}
+              <p class="text-muted mb-0">
+                <i class="bi bi-star me-2"></i>
+                專科：{{ vet_doctor.specialization }}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-md-4 text-md-end">
+            {% if is_verified %}
+              <div class="status-badge verified">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                已驗證
+              </div>
+            {% else %}
+              <div class="status-badge pending">
+                <i class="bi bi-clock me-2"></i>
+                待驗證
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if is_verified %}
+        <!-- 已驗證狀態 -->
+        <div class="verification-success-card">
+          <div class="text-center py-4">
+            <div class="success-icon mb-3">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <h4 class="text-success mb-3">執照驗證完成！</h4>
+            <div class="verified-info">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="info-item">
+                    <strong>執照號碼：</strong><br>
+                    <span class="license-number">{{ vet_doctor.vet_license_number }}</span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="info-item">
+                    <strong>執照類別：</strong><br>
+                    <span class="license-type">{{ vet_doctor.moa_license_type|default:"獸醫師" }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4">
+              <a href="{% url 'clinic_dashboard' %}" class="btn btn-primary-custom btn-lg">
+                <i class="bi bi-house-door me-2"></i>
+                前往診所管理
+              </a>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <!-- 執照驗證表單 -->
+        <div class="verification-form-card">
+          
+          <!-- 驗證說明 -->
+          <div class="verification-info mb-4">
+            <h5 class="mb-3">
+              <i class="bi bi-info-circle me-2"></i>
+              執照驗證說明
+            </h5>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="info-step">
+                  <div class="step-number">1</div>
+                  <div class="step-content">
+                    <h6>輸入執照號碼</h6>
+                    <p>請輸入完整的獸醫師執照字號</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-step">
+                  <div class="step-number">2</div>
+                  <div class="step-content">
+                    <h6>農委會驗證</h6>
+                    <p>系統將自動向農委會API查詢驗證</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 驗證表單 -->
+          <form method="post" class="verification-form" id="licenseVerificationForm">
+            {% csrf_token %}
+            
+            <div class="form-group mb-4">
+              <label for="{{ form.vet_license_number.id_for_label }}" class="form-label">
+                <i class="bi bi-card-text me-2"></i>
+                獸醫師執照號碼 <span class="text-danger">*</span>
+              </label>
+              
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-shield-check"></i>
+                </span>
+                {{ form.vet_license_number }}
+              </div>
+              
+              {% if form.vet_license_number.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.vet_license_number.errors %}
+                    <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+              
+              <div class="form-text">
+                <i class="bi bi-lightbulb me-1"></i>
+                請輸入完整執照字號，例如：94府農畜字第13273號
+              </div>
+            </div>
+
+            <!-- 範例說明 -->
+            <div class="license-example mb-4">
+              <h6 class="mb-2">
+                <i class="bi bi-card-list me-2"></i>
+                執照號碼格式範例
+              </h6>
+              <div class="example-list">
+                <div class="example-item">
+                  <span class="example-format">94府農畜字第13273號</span>
+                  <span class="example-desc">一般格式</span>
+                </div>
+                <div class="example-item">
+                  <span class="example-format">103農牧字第1031473829號</span>
+                  <span class="example-desc">新式格式</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 重要提醒 -->
+            <div class="alert alert-warning" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>重要提醒：</strong>
+              <ul class="mb-0 mt-2">
+                <li>執照號碼必須與農委會登記資料完全相同</li>
+                <li>驗證過程需要網路連線至農委會資料庫</li>
+                <li>請確保執照狀態為「開業」才能通過驗證</li>
+              </ul>
+            </div>
+
+            <!-- 提交按鈕 -->
+            <div class="form-actions text-center">
+              <button type="submit" class="btn btn-primary-custom btn-lg" id="submitBtn">
+                <i class="bi bi-shield-check me-2"></i>
+                開始驗證
+              </button>
+              <a href="{% url 'clinic_dashboard' %}" class="btn btn-outline-secondary btn-lg ms-3">
+                <i class="bi bi-arrow-left me-2"></i>
+                稍後驗證
+              </a>
+            </div>
+          </form>
+        </div>
+
+        <!-- 驗證流程說明 -->
+        <div class="verification-process mt-5">
+          <h5 class="text-center mb-4">
+            <i class="bi bi-diagram-3 me-2"></i>
+            驗證流程
+          </h5>
+          <div class="process-steps">
+            <div class="row">
+              <div class="col-md-3">
+                <div class="process-step">
+                  <div class="step-icon step-1">
+                    <i class="bi bi-pencil-square"></i>
+                  </div>
+                  <h6>輸入執照</h6>
+                  <p>填寫完整執照號碼</p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="process-step">
+                  <div class="step-icon step-2">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                  </div>
+                  <h6>系統查詢</h6>
+                  <p>向農委會API發送請求</p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="process-step">
+                  <div class="step-icon step-3">
+                    <i class="bi bi-search"></i>
+                  </div>
+                  <h6>資料比對</h6>
+                  <p>驗證執照狀態與資訊</p>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="process-step">
+                  <div class="step-icon step-4">
+                    <i class="bi bi-check-circle"></i>
+                  </div>
+                  <h6>驗證完成</h6>
+                  <p>取得專業權限</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 幫助資訊 -->
+        <div class="help-section mt-5">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="help-card">
+                <h6>
+                  <i class="bi bi-question-circle me-2"></i>
+                  找不到執照號碼？
+                </h6>
+                <p>請查看您的獸醫師執業執照證書，執照號碼通常位於證書上方或下方。</p>
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  查看範例圖片
+                </a>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="help-card">
+                <h6>
+                  <i class="bi bi-headset me-2"></i>
+                  需要協助？
+                </h6>
+                <p>如果驗證過程中遇到問題，歡迎聯絡我們的客服團隊。</p>
+                <a href="mailto:pawday114404@gmail.com" class="btn btn-outline-primary btn-sm">
+                  聯絡客服
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<!-- 驗證進度 Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-5">
+        <div class="verification-spinner mb-3">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">驗證中...</span>
+          </div>
+        </div>
+        <h5 class="mb-2">正在驗證執照...</h5>
+        <p class="text-muted">請稍候，系統正在向農委會查詢您的執照資訊</p>
+        <div class="progress mt-3" style="height: 6px;">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/verify-license.js' %}"></script>
+{% endblock %}
