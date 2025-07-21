@@ -15,9 +15,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')   # 從 .env 檔案讀取 Django 的 SECRET_KEY
 DEBUG = config('DEBUG', cast=bool)  # 從 .env 讀取，是否啟用除錯模式（開發環境為 True，上線務必為 False）
 
-# 設定允許的主機（可加入網域/IP），開發階段可為空，部署時必填
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS 設定
+ALLOWED_HOSTS_STR = config('ALLOWED_HOSTS', default='127.0.0.1,localhost')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
 
+# CSRF 設定
+CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='http://127.0.0.1:8000,http://localhost:8000')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
+
+# 🚨 DEBUG=False 時的安全設定
+if not DEBUG:
+    # 確保 ALLOWED_HOSTS 不為空
+    if not ALLOWED_HOSTS:
+        ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+    
+    # 關閉一些安全檢查（僅開發環境）
+    SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    
+    # SESSION 設定
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    
 
 
 #  ===== 安裝的應用程式（App） ===== 

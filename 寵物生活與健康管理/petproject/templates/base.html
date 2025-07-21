@@ -5,410 +5,210 @@
   <meta charset="UTF-8">
   <title>{% block title %}毛孩幸福生活{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}毛日好 Paw&Day - 為毛小孩與飼主打造的健康管理平台{% endblock %}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
   
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   
-  <style>
-    :root {
-      --primary-orange: #ffaa00;
-      --primary-orange-hover: #ff8800;
-      --warm-bg: #fff8f0;
-      --warm-card: #fef6ec;
-      --text-dark: #333;
-      --border-light: #ffe0b3;
-      --shadow-light: rgba(0,0,0,0.1);
-      --news-border: #5cb6ff;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: "Noto Sans TC", "標楷體", sans-serif;
-      background-color: var(--warm-bg);
-      color: var(--text-dark);
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    main {
-      flex: 1;
-      padding-bottom: 2rem;
-    }
-
-    /* Custom Header Styles */
-    .custom-header {
-      background-color: var(--warm-bg);
-      padding: 1rem 0;
-      box-shadow: 0 2px 4px var(--shadow-light);
-    }
-
-    .logo {
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: bold;
-    }
-
-    .logo img {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-
-    .logo span {
-      font-size: 1.2rem;
-      line-height: 1.2;
-    }
-
-    .nav-link {
-      color: var(--text-dark) !important;
-      font-weight: 500;
-      border: 1px solid #ccc;
-      border-radius: 20px;
-      padding: 8px 16px !important;
-      margin: 0 4px;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .nav-link:hover {
-      background-color: #ffe4b3;
-      color: var(--text-dark) !important;
-      transform: translateY(-2px);
-    }
-
-    .notification-badge {
-      background-color: #dc3545;
-      color: white;
-      border-radius: 12px;
-      padding: 2px 8px;
-      font-size: 0.8rem;
-      margin-left: 5px;
-    }
-
-    /* Hero Section */
-    .hero-section {
-      padding: 3rem 0;
-      background: linear-gradient(135deg, var(--warm-bg) 0%, #fff5e6 100%);
-    }
-
-    .hero-text h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      color: var(--text-dark);
-      margin-bottom: 1rem;
-      line-height: 1.2;
-    }
-
-    .hero-img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 20px;
-      box-shadow: 0 8px 32px var(--shadow-light);
-    }
-
-    /* News Section */
-    .news-section {
-      padding: 3rem 0;
-    }
-
-    .news-title {
-      font-size: 2rem;
-      font-weight: 600;
-      margin-bottom: 2rem;
-      color: var(--text-dark);
-    }
-
-    .news-card {
-      width: 200px;
-      height: 130px;
-      border: 2px dashed var(--news-border);
-      border-radius: 12px;
-      overflow: hidden;
-      background-color: #fff;
-      transition: all 0.3s ease;
-      flex-shrink: 0;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .news-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px var(--shadow-light);
-      border-color: var(--primary-orange);
-    }
-
-    .news-card img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .news-card.more {
-      background: linear-gradient(135deg, #f7f0e8 0%, #fff 100%);
-      font-weight: bold;
-      color: var(--text-dark);
-      font-size: 1rem;
-    }
-
-    .news-scroll-container {
-      overflow-x: auto;
-      padding: 1rem 0;
-    }
-
-    .news-scroll-container::-webkit-scrollbar {
-      height: 8px;
-    }
-
-    .news-scroll-container::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-
-    .news-scroll-container::-webkit-scrollbar-thumb {
-      background: var(--primary-orange);
-      border-radius: 10px;
-    }
-
-    /* Category Icons */
-    .category-card {
-      background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-      border-radius: 20px;
-      box-shadow: 0 4px 20px var(--shadow-light);
-      padding: 2rem 1rem;
-      text-align: center;
-      height: 180px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      color: var(--text-dark);
-      border: 1px solid transparent;
-    }
-
-    .category-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-      background: linear-gradient(135deg, #fff 0%, var(--warm-card) 100%);
-      border-color: var(--primary-orange);
-      color: var(--text-dark);
-    }
-
-    .category-icon {
-      width: 60px;
-      height: 60px;
-      margin-bottom: 1rem;
-      transition: transform 0.3s ease;
-    }
-
-    .category-card:hover .category-icon {
-      transform: scale(1.1);
-    }
-
-    .category-text {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    /* Custom Buttons */
-    .btn-primary-custom {
-      background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-hover) 100%);
-      border: none;
-      border-radius: 25px;
-      padding: 12px 30px;
-      font-weight: 600;
-      color: white;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(255, 170, 0, 0.3);
-    }
-
-    .btn-primary-custom:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(255, 170, 0, 0.4);
-      background: linear-gradient(135deg, var(--primary-orange-hover) 0%, #e6770a 100%);
-      color: white;
-    }
-
-    /* Footer */
-    .custom-footer {
-      background: linear-gradient(135deg, var(--warm-card) 0%, #f0e6d6 100%);
-      border-top: 4px solid var(--border-light);
-      padding: 3rem 0 1rem 0;
-      margin-top: auto;
-    }
-
-    .footer-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: var(--text-dark);
-    }
-
-    .footer-text {
-      color: #666;
-      line-height: 1.6;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .hero-text h1 {
-        font-size: 2rem;
-      }
-      
-      .news-title {
-        font-size: 1.5rem;
-      }
-      
-      .category-card {
-        height: 150px;
-        padding: 1.5rem 1rem;
-      }
-      
-      .category-icon {
-        width: 45px;
-        height: 45px;
-      }
-      
-      .category-text {
-        font-size: 1rem;
-      }
-    }
-
-    /* Animation for smooth loading */
-    .fade-in {
-      animation: fadeIn 0.8s ease-in;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Navbar toggler custom styling */
-    .navbar-toggler {
-      border: none;
-      padding: 4px 8px;
-    }
-
-    .navbar-toggler:focus {
-      box-shadow: none;
-    }
-
-    .navbar-toggler-icon {
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-    }
-  </style>
-
+  <!-- 自訂樣式 -->
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  
   {% block extra_css %}
   <!-- 子模板可以插入額外的 CSS -->
   {% endblock %}
+  
+  <!-- Meta 資訊 -->
+  <meta name="author" content="毛日好 Paw&Day">
+  <meta name="keywords" content="寵物,健康管理,獸醫,預約,寵物醫院">
+  
+  <!-- Open Graph 資訊 -->
+  <meta property="og:title" content="{% block og_title %}{{ block.super }}毛孩幸福生活{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}毛日好 Paw&Day - 為毛小孩與飼主打造的健康管理平台{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:image" content="{% static 'images/og-image.jpg' %}">
+  
+  <!-- 調試模式標記 -->
+  {% if debug %}
+  <script>window.DEBUG = true;</script>
+  {% endif %}
 </head>
 <body>
+
+  <!-- 用戶資訊 (隱藏，供 JavaScript 使用) -->
+  <div class="d-none" 
+       data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
+       {% if user.profile %}data-user-type="{{ user.profile.account_type }}"{% endif %}>
+  </div>
+
+  <!-- Skip to content link for accessibility -->
+  <a href="#main-content" class="skip-link">跳至主要內容</a>
+
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">載入中...</span>
+    </div>
+  </div>
+
+  <!-- Messages Container -->
+  {% if messages %}
+  <div class="messages-container">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {% if message.tags == 'error' %}
+          <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+        {% elif message.tags == 'success' %}
+          <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
+        {% elif message.tags == 'warning' %}
+          <i class="bi bi-exclamation-circle-fill me-2" aria-hidden="true"></i>
+        {% else %}
+          <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
+        {% endif %}
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="關閉"></button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <!-- Header 區塊 -->
   <header class="custom-header">
     <div class="container">
-      <nav class="navbar navbar-expand-lg">
+      <nav class="navbar navbar-expand-lg" role="navigation" aria-label="主要導航">
         <div class="container-fluid">
-          <a href="{% url 'home' %}" class="logo navbar-brand">
-            <img src="{% static 'images/logo_cat_dog.jpg' %}" alt="LOGO" class="img-fluid">
+          <!-- Logo -->
+          <a href="{% url 'home' %}" class="logo navbar-brand" aria-label="回到首頁">
+            <img src="{% static 'images/logo_cat_dog.jpg' %}" alt="毛日好 Logo" class="img-fluid">
             <span>PAW<br>DAY</span>
           </a>
 
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <!-- 手機版選單切換按鈕 -->
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                  aria-controls="navbarNav" aria-expanded="false" aria-label="切換導航選單">
             <span class="navbar-toggler-icon"></span>
           </button>
 
+          <!-- 導航選單 -->
           <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-              {% if user.profile.account_type == 'owner' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'pet_list' %}">
-                    <i class="bi bi-heart-fill me-1"></i>我的寵物
-                  </a>
-                </li>
-              {% endif %}
-
-              {% if user.profile.account_type == 'vet' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'vet_appointments' %}">
-                    <i class="bi bi-calendar-check me-1"></i>預約情況
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'vet_availability_settings' %}">
-                    <i class="bi bi-clock me-1"></i>排班時段
-                  </a>
-                </li>
-              {% endif %}
-
-              {% if user.is_staff %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'admin:index' %}">
-                    <i class="bi bi-gear me-1"></i>後台管理
-                  </a>
-                </li>
-              {% elif user.is_authenticated %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'edit_profile' %}">
-                    <i class="bi bi-person-gear me-1"></i>修改帳號資料
-                  </a>
-                </li>
-              {% endif %}
-              
-              {% if user.profile.account_type == 'owner' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'health_rec' %}">
-                    <i class="bi bi-heart-pulse me-1"></i>健康紀錄
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'map' %}">
-                    <i class="bi bi-geo-alt me-1"></i>搜尋附近
-                  </a>
-                </li>
-              {% endif %}
-              
               {% if user.is_authenticated %}
+                <!-- 飼主專用選單 -->
+                {% if user.profile.account_type == 'owner' %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pet_list' %}" aria-label="管理我的寵物">
+                      <i class="bi bi-heart-fill me-1" aria-hidden="true"></i>我的寵物
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'health_rec' %}" aria-label="查看健康紀錄">
+                      <i class="bi bi-heart-pulse me-1" aria-hidden="true"></i>健康紀錄
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'my_appointments' %}" aria-label="我的預約">
+                      <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>我的預約
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'map' %}" aria-label="搜尋附近醫院">
+                      <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>搜尋附近
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'emergency_map' %}" aria-label="急診醫院地圖">
+                      <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>急診地圖
+                    </a>
+                  </li>
+                
+                <!-- 診所管理員專用選單 -->
+                {% elif user.profile.account_type == 'clinic_admin' %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'clinic_dashboard' %}" aria-label="診所管理">
+                      <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所管理
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'clinic_appointments' %}" aria-label="預約管理">
+                      <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>預約管理
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'manage_doctors' %}" aria-label="醫師管理">
+                      <i class="bi bi-people me-1" aria-hidden="true"></i>醫師管理
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'manage_schedules' %}" aria-label="排班管理">
+                      <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>排班管理
+                    </a>
+                  </li>
+                {% endif %}
+
+                <!-- 系統管理員選單 -->
+                {% if user.is_staff %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}" aria-label="系統後台">
+                      <i class="bi bi-gear me-1" aria-hidden="true"></i>後台管理
+                    </a>
+                  </li>
+                {% else %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'edit_profile' %}" aria-label="修改個人資料">
+                      <i class="bi bi-person-gear me-1" aria-hidden="true"></i>修改帳號資料
+                    </a>
+                  </li>
+                {% endif %}
+                
+                <!-- 通知 -->
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'notification_page' %}" id="notification-link">
-                    <i class="bi bi-bell me-1"></i>通知<span id="notification-count" class="notification-badge d-none"></span>
+                  <a class="nav-link" href="{% url 'notification_page' %}" id="notification-link" aria-label="查看通知">
+                    <i class="bi bi-bell me-1" aria-hidden="true"></i>通知
+                    <span id="notification-count" class="notification-badge d-none" aria-label="未讀通知數量"></span>
                   </a>
                 </li>
+                
+                <!-- 登出 -->
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'account_logout' %}">
-                    <i class="bi bi-box-arrow-right me-1"></i>登出
+                  <a class="nav-link" href="{% url 'account_logout' %}" aria-label="登出系統">
+                    <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>登出
                   </a>
                 </li>
               {% else %}
+                <!-- 未登入用戶選單 -->
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'account_login' %}">
-                    <i class="bi bi-box-arrow-in-right me-1"></i>登入
+                  <a class="nav-link" href="{% url 'map' %}" aria-label="搜尋寵物醫院">
+                    <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>尋找醫院
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'account_signup' %}">
-                    <i class="bi bi-person-plus me-1"></i>註冊
+                  <a class="nav-link" href="{% url 'emergency_map' %}" aria-label="急診醫院地圖">
+                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>急診地圖
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'account_login' %}" aria-label="登入系統">
+                    <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>登入
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'account_signup' %}" aria-label="註冊帳號">
+                    <i class="bi bi-person-plus me-1" aria-hidden="true"></i>註冊
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'clinic_registration' %}" aria-label="診所註冊">
+                    <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所註冊
                   </a>
                 </li>
               {% endif %}
@@ -420,8 +220,9 @@
   </header>
 
   <!-- 主內容區塊 -->
-  <main class="fade-in">
+  <main class="fade-in" id="main-content">
     {% block header %}{% endblock %}
+    
     {% block content %}
     <!-- 子模板主內容會顯示在這裡 -->
     {% endblock %}
@@ -433,34 +234,65 @@
       <div class="row">
         <div class="col-lg-4 col-md-6 mb-4">
           <h4 class="footer-title">
-            <i class="bi bi-info-circle me-2"></i>網站簡介
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>網站簡介
           </h4>
           <p class="footer-text">這是一個為毛小孩與飼主打造的平台，讓你輕鬆記錄、分享毛孩生活與健康資訊。</p>
+          
+          <!-- 快速連結 -->
+          <div class="mt-3">
+            <a href="{% url 'map' %}" class="btn btn-outline-secondary btn-sm me-2">
+              <i class="bi bi-geo-alt me-1"></i>尋找醫院
+            </a>
+            <a href="{% url 'emergency_map' %}" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-exclamation-triangle me-1"></i>急診
+            </a>
+          </div>
         </div>
+        
         <div class="col-lg-4 col-md-6 mb-4">
           <h4 class="footer-title">
-            <i class="bi bi-telephone me-2"></i>客服聯絡資訊
+            <i class="bi bi-telephone me-2" aria-hidden="true"></i>客服聯絡資訊
           </h4>
           <p class="footer-text">
-            Email：pawday114404@gmail.com<br>
-            電話：02-5566-7788<br>
+            Email：<a href="mailto:pawday114404@gmail.com">pawday114404@gmail.com</a><br>
+            電話：<a href="tel:+886255667788">02-5566-7788</a><br>
             服務時間：週一至五 10:00 - 18:00
           </p>
         </div>
+        
         <div class="col-lg-4 col-md-12 mb-4">
           <h4 class="footer-title">
-            <i class="bi bi-share me-2"></i>社群連結
+            <i class="bi bi-share me-2" aria-hidden="true"></i>社群連結
           </h4>
           <p class="footer-text">
             IG：@pawday114404<br>
             FB：毛日好 Paw&Day<br>
             LINE：@pawday114404
           </p>
+          
+          <!-- 統計資訊 -->
+          <div class="mt-3">
+            <small class="text-muted">
+              <i class="bi bi-heart me-1"></i>
+              為超過 <strong>10,000+</strong> 隻毛孩提供服務
+            </small>
+          </div>
         </div>
       </div>
+      
       <hr class="my-4">
-      <div class="text-center">
-        <p class="footer-text mb-0">&copy; 2025 毛日好 Paw&Day. All rights reserved.</p>
+      
+      <div class="row">
+        <div class="col-md-6">
+          <p class="footer-text mb-0">&copy; 2025 毛日好 Paw&Day. All rights reserved.</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <small class="text-muted">
+            <a href="#" class="text-decoration-none me-3">隱私政策</a>
+            <a href="#" class="text-decoration-none me-3">服務條款</a>
+            <a href="#" class="text-decoration-none">意見回饋</a>
+          </small>
+        </div>
       </div>
     </div>
   </footer>
@@ -468,36 +300,39 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
+  <!-- 自訂 JavaScript -->
+  <script src="{% static 'js/utils.js' %}"></script>
+  <script src="{% static 'js/base.js' %}"></script>
+  
   {% block extra_js %}
   <!-- 子模板可以插入額外的 JS -->
+  {% endblock %}
+  
+  <!-- CSRF Token for AJAX -->
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // 通知數量
-      fetch("{% url 'get_notification_count' %}")
-        .then(response => response.json())
-        .then(data => {
-          const countElement = document.getElementById('notification-count');
-          if (data.count > 0) {
-            countElement.textContent = data.count;
-            countElement.classList.remove('d-none');
+    // 為 AJAX 請求提供 CSRF Token
+    document.addEventListener('DOMContentLoaded', function() {
+      const csrfToken = '{{ csrf_token }}';
+      
+      // 設定全局 AJAX 預設值
+      if (window.fetch) {
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+          if (options.method && options.method.toUpperCase() !== 'GET') {
+            options.headers = {
+              'X-CSRFToken': csrfToken,
+              ...options.headers
+            };
           }
-        })
-        .catch(err => console.error("無法取得通知數量：", err));
-
-      // 平滑滾動效果
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-          e.preventDefault();
-          const target = document.querySelector(this.getAttribute('href'));
-          if (target) {
-            target.scrollIntoView({
-              behavior: 'smooth'
-            });
-          }
-        });
-      });
+          return originalFetch(url, options);
+        };
+      }
     });
   </script>
-  {% endblock %}
+  
+  <!-- Google Analytics (如果需要) -->
+  {% if not debug %}
+  <!-- 在生產環境中插入 Google Analytics 代碼 -->
+  {% endif %}
 </body>
 </html>

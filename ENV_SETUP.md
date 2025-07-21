@@ -12,6 +12,9 @@
 SECRET_KEY=your-django-secret-key  # 請替換為你自己的 Django 密鑰
 DEBUG=True  # 開發階段請設為 True，部署時建議設為 False
 
+ALLOWED_HOSTS=127.0.0.1,localhost,127.0.0.1:8000
+CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
+
 # ======== Google OAuth 登入用 ========
 GOOGLE_CLIENT_ID=your-google-client-id  # 從 Google Cloud Console 取得
 GOOGLE_CLIENT_SECRET=your-google-client-secret  # 從 Google Cloud Console 取得
@@ -21,7 +24,7 @@ DB_NAME=your_db_name  # 資料庫名稱(pawday_db)
 DB_USER=your_db_user  # 資料庫使用者名稱(root)
 DB_PASSWORD=your_db_password  # 資料庫密碼
 DB_HOST=localhost  # 通常為 localhost，除非是遠端資料庫
-DB_PORT=5432  # PostgreSQL 預設為 5432
+DB_PORT=3306  # PostgreSQL 預設為 5432 // MySQL 預設為 3306
 
 # ======== Email 設定（使用 SMTP 發信）========
 EMAIL_HOST_USER=your-email@example.com  # SMTP 登入帳號，例如 Gmail。發信方
