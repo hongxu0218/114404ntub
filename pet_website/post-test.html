@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <title>毛孩社群平台 - 圖一版面</title>
+  <title>毛孩社群平台</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -79,10 +79,36 @@
     .post-media-single{max-width:600px;margin:0 auto;border-radius:var(--radius-lg);overflow:hidden;}
 
     /* 多圖走馬燈 */
-    .carousel-wrapper{position:relative;max-width:600px;margin:0 auto;}
-    .carousel-wrapper .carousel-track{display:flex;transition:transform .4s ease;}
-    .carousel-wrapper .carousel-track img{width:600px;max-width:100%;flex:0 0 100%;object-fit:cover;aspect-ratio:4/3;}
-    .carousel-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.8);border:none;padding:4px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:1.25rem;line-height:1;}
+    .carousel-wrapper{
+      position:relative;
+      max-width:600px;
+      margin:0 auto; 
+      overflow: hidden;
+    }
+
+    .carousel-wrapper .carousel-track{
+      display:flex;
+      transition:transform .4s ease;
+    }
+    .carousel-wrapper .carousel-track img{
+      width:600px;
+      max-width:100%;
+      flex:0 0 100%;
+      object-fit:cover;
+      aspect-ratio:4/3;
+    }
+    .carousel-btn{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      background:rgba(255,255,255,.8);
+      border:none;
+      padding:4px 8px;
+      border-radius:var(--radius-sm);
+      cursor:pointer;
+      font-size:1.25rem;
+      line-height:1;
+    }
     .carousel-btn:hover{background:#fff;}
     .carousel-btn.prev{left:4px;}
     .carousel-btn.next{right:4px;}
@@ -141,7 +167,7 @@
   <!-- 頂端導覽列 -->
   <header class="topbar">
     <div class="brand-area">
-      <img src="https://placekitten.com/80/80" alt="logo" />
+      <img src="images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg" alt="logo" />
       毛孩社群平台
     </div>
     <nav>
@@ -184,9 +210,9 @@
    * 假資料：追蹤中清單
    ****************************************************/
   const followData = [
-    {name:"Ku's dream酷的夢", avatar:"https://i.pravatar.cc/24?img=1"},
-    {name:"TEEP R 呀啦啦啦", avatar:"https://i.pravatar.cc/24?img=5"},
-    {name:"yyselina", avatar:"https://i.pravatar.cc/24?img=8"},
+    {name:"Peanut", avatar:"https://i.pravatar.cc/24?img=1"},
+    {name:"Teddy", avatar:"https://i.pravatar.cc/24?img=5"},
+    {name:"Butter", avatar:"https://i.pravatar.cc/24?img=8"},
     {name:"逗逗", avatar:"https://i.pravatar.cc/24?img=10"},
   ];
 
@@ -201,7 +227,7 @@
       ts:'2小時前',
       text:'噢噢，逗逗啃寵物骨頭的模樣好可愛 🐶',
       type:'single',
-      media:['https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&w=800&q=80'],
+      media:['images/12143403_2.jpg'],
       likes:20,
       comments:[
         {id:'c1', user:{name:'Lydia', avatar:'https://i.pravatar.cc/40?img=12'}, text:'這張真的太可愛了😍', likes:3, replies:[{id:'c1r1',user:{name:'逗逗',avatar:'https://i.pravatar.cc/40?img=10'},text:'謝謝妳～牠超會吃😂',likes:1}]},
@@ -211,15 +237,15 @@
     },
     {
       id:'p2',
-      user:{name:'Ku', avatar:'https://i.pravatar.cc/80?img=1'},
+      user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=1'},
       ts:'昨天',
       text:'戶外散步集錦，一次放上四張～',
       type:'carousel',
       media:[
-        'https://images.unsplash.com/photo-1525253086316-d0c936c814f8?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1558944351-c334a35dbd72?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1583511655684-270a8f2c49df?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?auto=format&fit=crop&w=800&q=80'
+        'images/original.png',
+        'images/191216-21811-01-kVAKu.jpg',
+        'images/istockphoto-1285465107-612x612.jpg',
+        'images/southeast.jfif'
       ],
       likes:12,
       comments:[
@@ -229,14 +255,14 @@
     },
     {
       id:'p3',
-      user:{name:'yyselina', avatar:'https://i.pravatar.cc/80?img=8'},
+      user:{name:'Butter', avatar:'https://i.pravatar.cc/80?img=8'},
       ts:'3天前',
       text:'小黑今天去洗澡啦🛁 多圖記錄！',
       type:'carousel',
       media:[
-        'https://images.unsplash.com/photo-1612831200243-fe533f5f2e3c?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1576502200916-3808e07386a5?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1583511655996-6a82aabf6d94?auto=format&fit=crop&w=800&q=80'
+        'images/owner-washing-dog-bathtub-high-angle_23-2149658862.avif',
+        'images/下載.webp',
+        'images/dog-shaking-off-water-lawn_1048944-21641557.avif'
       ],
       likes:5,
       comments:[],
