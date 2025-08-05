@@ -1,0 +1,1066 @@
+/* static/css/clinic/schedule-management.css */
+
+/* ========== 繼承醫師管理的 CSS 變數 ========== */
+:root {
+  /* 主色調 */
+  --primary-color: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --secondary-color: #64748b;
+  
+  /* 狀態顏色 */
+  --success-color: #10b981;
+  --success-light: #34d399;
+  --warning-color: #f59e0b;
+  --warning-light: #fbbf24;
+  --danger-color: #ef4444;
+  --danger-light: #f87171;
+  --info-color: #06b6d4;
+  --info-light: #22d3ee;
+  
+  /* 排班專用顏色 */
+  --schedule-morning: #fef3c7;
+  --schedule-afternoon: #ddd6fe;
+  --schedule-evening: #fed7d7;
+  --schedule-border: #e5e7eb;
+  
+  /* 灰色調 */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* 間距與圓角 */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* 陰影與過渡 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* ========== 主容器 ========== */
+.schedule-management-container {
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+/* ========== 頁面標題區域（醫師資訊） ========== */
+.page-header-modern {
+  background: linear-gradient(135deg, #ffffff 0%, var(--gray-50) 100%);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--info-color), var(--success-color));
+}
+
+.page-title-modern {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--spacing-sm);
+}
+
+.doctor-info-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.doctor-avatar-small {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-md);
+}
+
+.doctor-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.admin-badge {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.clinic-info {
+  color: var(--gray-600);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.schedule-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.8);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  text-align: center;
+  min-width: 120px;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-top: var(--spacing-xs);
+}
+
+/* ========== 操作按鈕（繼承樣式） ========== */
+.action-buttons-modern {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.btn-modern {
+  position: relative;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-primary-modern {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.btn-secondary-modern {
+  background: linear-gradient(135deg, var(--info-color), var(--info-light));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.btn-outline-modern {
+  background: white;
+  color: var(--gray-700);
+  border: 2px solid var(--gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-outline-modern:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+/* ========== 工具列區域 ========== */
+.toolbar-section {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+}
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.view-toggle-group {
+  display: flex;
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xs);
+  border: 1px solid var(--gray-200);
+}
+
+.view-toggle {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.view-toggle.active {
+  background: white;
+  color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-chips {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-chip.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* ========== 週行事曆檢視 ========== */
+.schedule-view {
+  display: none;
+}
+
+.schedule-view.active {
+  display: block;
+}
+
+.weekly-calendar {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: 100px repeat(7, 1fr);
+  background: linear-gradient(135deg, var(--gray-100), var(--gray-50));
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.time-column-header {
+  padding: var(--spacing-lg);
+  font-weight: 600;
+  color: var(--gray-700);
+  border-right: 1px solid var(--gray-200);
+  background: var(--gray-100);
+  text-align: center;
+}
+
+.day-header {
+  padding: var(--spacing-lg) var(--spacing-md);
+  text-align: center;
+  border-right: 1px solid var(--gray-200);
+  position: relative;
+}
+
+.day-header:last-child {
+  border-right: none;
+}
+
+.day-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-xs);
+}
+
+.day-count {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.calendar-body {
+  display: grid;
+  grid-template-columns: 100px repeat(7, 1fr);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.time-column {
+  background: var(--gray-50);
+  border-right: 2px solid var(--gray-200);
+}
+
+.time-slot {
+  height: 60px;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-column {
+  border-right: 1px solid var(--gray-200);
+}
+
+.day-column:last-child {
+  border-right: none;
+}
+
+.time-cell {
+  height: 60px;
+  border-bottom: 1px solid var(--gray-200);
+  position: relative;
+  background: white;
+  transition: background-color var(--transition-fast);
+}
+
+.time-cell:hover {
+  background: var(--gray-50);
+}
+
+.schedule-slot-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.time-cell:hover .schedule-slot-placeholder {
+  opacity: 1;
+}
+
+.add-schedule-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-schedule-btn:hover {
+  transform: scale(1.1);
+  background: var(--primary-dark);
+}
+
+/* 行事曆中的排班區塊 */
+.schedule-block {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.schedule-block:hover {
+  transform: scale(1.02);
+  z-index: 20;
+}
+
+.schedule-block.inactive {
+  background: linear-gradient(135deg, var(--gray-400), var(--gray-500));
+  opacity: 0.7;
+}
+
+.schedule-time {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+/* ========== 列表檢視 ========== */
+.schedules-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+.schedule-card-modern {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.schedule-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+  transform: scaleX(0);
+  transition: transform var(--transition-normal);
+}
+
+.schedule-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-color);
+}
+
+.schedule-card-modern:hover::before {
+  transform: scaleX(1);
+}
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.schedule-day-badge {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: 0.875rem;
+  min-width: 80px;
+  text-align: center;
+}
+
+.schedule-time-info {
+  flex: 1;
+}
+
+.schedule-time {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-xs);
+}
+
+.schedule-duration {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.schedule-status {
+  text-align: right;
+}
+
+/* 狀態徽章（繼承樣式） */
+.status-badge-modern {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border: 1px solid;
+}
+
+.status-active-modern {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.status-inactive-modern {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--gray-500);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.schedule-details {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--gray-200);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.detail-item {
+  text-align: center;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.schedule-notes {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--gray-200);
+}
+
+.notes-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-sm);
+}
+
+.notes-content {
+  color: var(--gray-700);
+  line-height: 1.6;
+  font-size: 0.875rem;
+}
+
+/* ========== 操作按鈕組（繼承樣式） ========== */
+.action-buttons-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+}
+
+.btn-copy {
+  background: linear-gradient(135deg, var(--info-color), var(--info-light));
+  color: white;
+}
+
+.btn-toggle-active {
+  background: linear-gradient(135deg, var(--warning-color), var(--warning-light));
+  color: white;
+}
+
+.btn-toggle-inactive {
+  background: linear-gradient(135deg, var(--success-color), var(--success-light));
+  color: white;
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, var(--danger-color), var(--danger-light));
+  color: white;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+/* ========== Modal 對話框 ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-container {
+  background: white;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(0.9);
+  transition: transform var(--transition-normal);
+}
+
+.modal-overlay.show .modal-container {
+  transform: scale(1);
+}
+
+.modal-container.modal-sm {
+  max-width: 400px;
+}
+
+.modal-header {
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: between;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  flex: 1;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--gray-400);
+  transition: color var(--transition-fast);
+}
+
+.modal-close:hover {
+  color: var(--gray-600);
+}
+
+.modal-body {
+  padding: var(--spacing-xl);
+}
+
+.modal-footer {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+/* ========== 表單樣式 ========== */
+.form-row {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-sm);
+}
+
+.required {
+  color: var(--danger-color);
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+  background: var(--gray-50);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ========== 排班預覽 ========== */
+.schedule-preview {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--gray-200);
+  margin-top: var(--spacing-lg);
+}
+
+.schedule-preview h6 {
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-md);
+}
+
+.preview-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.preview-slot {
+  background: var(--primary-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* ========== 複製選項 ========== */
+.copy-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+}
+
+.copy-option {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.copy-option:hover {
+  border-color: var(--primary-color);
+  background: var(--gray-50);
+}
+
+.copy-option input[type="radio"] {
+  margin-right: var(--spacing-md);
+}
+
+.copy-option input[type="radio"]:checked + .option-content {
+  color: var(--primary-color);
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 600;
+}
+
+/* ========== 空狀態（繼承樣式） ========== */
+.empty-state-modern {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--gray-300);
+  margin-bottom: var(--spacing-lg);
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-description {
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.6;
+}
+
+/* ========== 說明區域（繼承樣式） ========== */
+.help-section-modern {
+  background: linear-gradient(135deg, var(--gray-50), white);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  margin-top: var(--spacing-2xl);
+}
+
+.help-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.help-item {
+  padding: var(--spacing-sm) 0;
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.help-item::before {
+  content: '✓';
+  color: var(--success-color);
+  font-weight: 700;
+}
+
+/* ========== 載入動畫（繼承樣式） ========== */
+.loading-spinner-modern {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-300);
+  border-top: 2px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+}
+
+.loading-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 1200px) {
+  .calendar-header,
+  .calendar-body {
+    grid-template-columns: 80px repeat(7, 1fr);
+  }
+  
+  .time-column-header,
+  .time-slot {
+    padding: var(--spacing-sm);
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .schedule-management-container {
+    padding: var(--spacing-md);
+  }
+  
+  .page-header-modern {
+    padding: var(--spacing-xl);
+  }
+  
+  .page-title-modern {
+    font-size: 2rem;
+  }
+  
+  .doctor-info-header {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-md);
+  }
+  
+  .schedule-stats {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .action-buttons-modern {
+    flex-direction: column;
+  }
+  
+  .schedules-list {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .copy-options {
+    flex-direction: column;
+  }
+  
+  /* 行動版週行事曆 */
+  .weekly-calendar {
+    overflow-x: auto;
+  }
+  
+  .calendar-header,
+  .calendar-body {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title-modern {
+    font-size: 1.75rem;
+  }
+  
+  .doctor-avatar-small {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+  
+  .modal-container {
+    width: 95%;
+    margin: var(--spacing-md);
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: var(--spacing-lg);
+  }
+}
