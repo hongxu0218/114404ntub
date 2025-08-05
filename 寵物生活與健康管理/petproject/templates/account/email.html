@@ -1,0 +1,609 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+
+{% block title %}電子郵件管理｜毛日好 Paw&Day{% endblock %}
+
+{% block extra_css %}
+<style>
+* {
+    box-sizing: border-box;
+}
+
+.email-management-container {
+    max-width: 640px;
+    margin: 60px auto 40px;
+    padding: 0 20px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 40px;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.breadcrumb a {
+    color: #374151;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.breadcrumb a:hover {
+    color: #111827;
+}
+
+.breadcrumb-separator {
+    color: #d1d5db;
+    font-size: 12px;
+}
+
+.email-container {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 32px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.page-header {
+    margin-bottom: 32px;
+    text-align: center;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+}
+
+.page-header .subtitle {
+    color: #6b7280;
+    font-size: 15px;
+    font-weight: 400;
+    margin: 0;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 20px 0;
+}
+
+.email-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.email-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    background-color: #ffffff;
+    transition: all 0.15s ease;
+}
+
+.email-item:hover {
+    background-color: #f9fafb;
+}
+
+.email-item.primary {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.email-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.email-address {
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.email-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.verified {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.unverified {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.primary-email {
+    background-color: #dbeafe;
+    color: #1e40af;
+    margin-left: 8px;
+}
+
+.email-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-primary-small {
+    background-color: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
+
+.btn-primary-small:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    text-decoration: none;
+}
+
+.btn-secondary-small {
+    background-color: #ffffff;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.btn-secondary-small:hover {
+    background-color: #f9fafb;
+    color: #111827;
+    text-decoration: none;
+}
+
+.btn-danger-small {
+    background-color: #ffffff;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+.btn-danger-small:hover {
+    background-color: #fef2f2;
+    text-decoration: none;
+}
+
+.add-email-form {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #111827;
+    background-color: #ffffff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.empty-state-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    color: #9ca3af;
+}
+
+.empty-state-text {
+    font-size: 15px;
+    margin: 0;
+}
+
+.info-box {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.info-box-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.info-box-icon {
+    width: 20px;
+    height: 20px;
+    color: #2563eb;
+    margin-top: 2px;
+}
+
+.info-box-text {
+    font-size: 14px;
+    color: #1e40af;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.success-message {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+}
+
+.success-message-text {
+    font-size: 14px;
+    color: #166534;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.error-message {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+}
+
+.error-message-text {
+    font-size: 14px;
+    color: #dc2626;
+    margin: 0;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .email-management-container {
+        margin: 40px auto 20px;
+        padding: 0 16px;
+    }
+    
+    .email-container {
+        padding: 24px;
+    }
+    
+    .email-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .email-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .btn-small {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="email-management-container">
+    <!-- 導航路徑 -->
+    <nav class="breadcrumb">
+        <a href="{% url 'home' %}">首頁</a>
+        <span class="breadcrumb-separator">›</span>
+        <a href="{% url 'edit_profile' %}">帳號設定</a>
+        <span class="breadcrumb-separator">›</span>
+        <span>電子郵件管理</span>
+    </nav>
+
+    <div class="email-container">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <h1>電子郵件管理</h1>
+            <p class="subtitle">管理您的電子郵件地址與驗證狀態</p>
+        </div>
+
+        <!-- 成功/錯誤訊息 -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    <div class="success-message">
+                        <p class="success-message-text">{{ message }}</p>
+                    </div>
+                {% else %}
+                    <div class="error-message">
+                        <p class="error-message-text">{{ message }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <!-- 目前電子郵件地址 -->
+        <div class="section">
+            <h2 class="section-title">您的電子郵件地址</h2>
+            
+            <div class="info-box">
+                <div class="info-box-content">
+                    <svg class="info-box-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="info-box-text">
+                        主要電子郵件地址用於登入和接收重要通知。請確保至少有一個已驗證的電子郵件地址。
+                    </p>
+                </div>
+            </div>
+
+            {% if user.emailaddress_set.all %}
+                <ul class="email-list">
+                    {% for emailaddress in user.emailaddress_set.all %}
+                        <li class="email-item{% if emailaddress.primary %} primary{% endif %}">
+                            <div class="email-info">
+                                <span class="email-address">{{ emailaddress.email }}</span>
+                                <div class="email-status">
+                                    {% if emailaddress.verified %}
+                                        <span class="status-badge verified">
+                                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            已驗證
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge unverified">
+                                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            未驗證
+                                        </span>
+                                    {% endif %}
+                                    {% if emailaddress.primary %}
+                                        <span class="status-badge primary-email">主要信箱</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="email-actions">
+                                {% if not emailaddress.primary and emailaddress.verified %}
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_primary" value="">
+                                        <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                                        <button type="submit" class="btn-small btn-primary-small">
+                                            設為主要
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                {% if not emailaddress.verified %}
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_send" value="">
+                                        <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                                        <button type="submit" class="btn-small btn-secondary-small">
+                                            重新發送驗證
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                {% if not emailaddress.primary %}
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action_remove" value="">
+                                        <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                                        <button type="submit" class="btn-small btn-danger-small" 
+                                                onclick="return confirm('確定要移除此電子郵件地址嗎？')">
+                                            移除
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-state">
+                    <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="empty-state-text">目前沒有設定電子郵件地址</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 新增電子郵件地址 -->
+        <div class="section">
+            <h2 class="section-title">新增電子郵件地址</h2>
+            
+            <div class="add-email-form">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_email" class="form-label">電子信箱</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            id="id_email"
+                            class="form-input"
+                            placeholder="輸入新的電子郵件地址"
+                            required>
+                    </div>
+                    <input type="hidden" name="action_add" value="">
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        新增電子郵件
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 檢查是否從電子郵件確認頁面返回
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true') {
+        // 顯示成功訊息
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = '<p class="success-message-text">電子郵件驗證成功！</p>';
+        
+        const container = document.querySelector('.email-container');
+        const header = container.querySelector('.page-header');
+        container.insertBefore(successDiv, header.nextSibling);
+        
+        // 2秒後移除訊息
+        setTimeout(() => {
+            successDiv.remove();
+        }, 5000);
+        
+        // 清除URL參數
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // 為表單提交增加載入狀態
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.6';
+                
+                // 根據按鈕類型顯示不同的載入文字
+                if (submitBtn.textContent.includes('重新發送')) {
+                    submitBtn.textContent = '發送中...';
+                } else if (submitBtn.textContent.includes('設為主要')) {
+                    submitBtn.textContent = '設定中...';
+                } else if (submitBtn.textContent.includes('移除')) {
+                    submitBtn.textContent = '移除中...';
+                } else {
+                    submitBtn.textContent = '處理中...';
+                }
+                
+                // 3秒後恢復按鈕狀態（防止網路問題卡住）
+                setTimeout(() => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.innerHTML = originalText;
+                    }
+                }, 3000);
+            }
+        });
+    });
+    
+    // 檢查頁面焦點，如果用戶從其他頁面返回，重新載入數據
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            // 頁面重新獲得焦點時，檢查是否需要重新載入
+            const lastCheck = sessionStorage.getItem('emailPageLastCheck');
+            const now = Date.now();
+            
+            // 如果超過30秒沒有檢查，重新載入頁面
+            if (!lastCheck || (now - parseInt(lastCheck)) > 30000) {
+                location.reload();
+            }
+        }
+    });
+    
+    // 記錄頁面檢查時間
+    sessionStorage.setItem('emailPageLastCheck', Date.now().toString());
+});
+</script>
+{% endblock %}
