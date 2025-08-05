@@ -1,158 +1,652 @@
-{% extends "base.html" %}
-{% block title %}預約獸醫{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block extra_css %}
+{% block title %}為 {{ pet.name }} 預約 - 毛日好 Paw&Day{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/appointments/appointment.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    form {
-        background: #ffffff;
-        padding: 2em;
-        border-radius: 10px;
-        max-width: 600px;
-        margin: auto;
-        box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
-    }
-
-    label {
-        display: block;
-        margin-top: 1em;
-        font-weight: bold;
-        color: #444;
-    }
-
-    input, select, textarea {
-        width: 100%;
-        padding: 0.6em;
-        margin-top: 0.5em;
-        border-radius: 6px;
-        border: 1px solid #d9b98b;
-        background-color: #fffaf2;
-        font-size: 1em;
-    }
-
-    button {
-        margin-top: 1.5em;
-        padding: 0.75em 1.5em;
-        background-color: #ffaa00;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-
-    button:hover {
-        background-color: #ff8800;
-    }
-
-    .text-danger {
-        color: #d9534f;
-        font-size: 0.9em;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
-<h2 style="text-align: center;">幫「{{ pet.name }}」預約獸醫</h2>
-
-<form method="post">
-    {% csrf_token %}
-    {{ form.pet }} {# 隱藏欄位 #}
-    <div>
-        <label for="{{ form.vet.id_for_label }}">{{ form.vet.label }}</label>
-        <select name="{{ form.vet.name }}" id="{{ form.vet.id_for_label }}" class="form-control searchable-select">
-            <option value="" disabled selected>請選擇獸醫</option>
-            {% for vet in form.fields.vet.queryset %}
-                <option value="{{ vet.id }}" {% if form.vet.value|stringformat:'s' == vet.id|stringformat:'s' %}selected{% endif %}>
-                    {{ vet.clinic_name }}（{{ vet.user.last_name }}{{ vet.user.first_name }}）
-                </option>
-            {% endfor %}
-        </select>
-        {% if form.vet.errors %}<div class="text-danger">{{ form.vet.errors }}</div>{% endif %}
+<div class="appointment-wrapper">
+    <!-- 動態背景 -->
+    <div class="animated-background">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+        <div class="floating-shape shape-4"></div>
+        <div class="floating-paws">
+            <div class="paw-print paw-1">🐾</div>
+            <div class="paw-print paw-2">🐾</div>
+            <div class="paw-print paw-3">🐾</div>
+        </div>
     </div>
 
-    <div>
-        <label for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
-        {{ form.date }}
-        {% if form.date.errors %}<div class="text-danger">{{ form.date.errors }}</div>{% endif %}
+    <!-- 頂部導航 -->
+    <header class="appointment-header">
+        <div class="container">
+            <nav class="header-nav">
+                <a href="{% url 'pet_list' %}" class="back-btn glass-morphism">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>返回寵物列表</span>
+                </a>
+                <div class="header-title">
+                    <h1>
+                        <span class="icon-wrapper">
+                            <i class="fas fa-calendar-heart"></i>
+                        </span>
+                        預約看診
+                    </h1>
+                    <p>為 <strong>{{ pet.name }}</strong> 預約最優質的醫療服務</p>
+                </div>
+                <div class="header-actions">
+                    <button class="help-btn glass-morphism" onclick="toggleHelpPanel()" title="幫助">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 智能進度指示器 -->
+    <section class="progress-section">
+        <div class="container">
+            <div class="smart-progress">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="1">
+                        <div class="step-bubble">
+                            <div class="step-icon">
+                                <i class="fas fa-paw"></i>
+                            </div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>寵物確認</h4>
+                            <p>確認寵物信息</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-step" data-step="2">
+                        <div class="step-bubble">
+                            <div class="step-icon">
+                                <i class="fas fa-hospital"></i>
+                            </div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>選擇診所</h4>
+                            <p>找到信任的醫院</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-step" data-step="3">
+                        <div class="step-bubble">
+                            <div class="step-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>預約時間</h4>
+                            <p>選擇合適時段</p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-step" data-step="4">
+                        <div class="step-bubble">
+                            <div class="step-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="step-pulse"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>完成預約</h4>
+                            <p>確認所有信息</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 主要內容區域 -->
+    <main class="appointment-main">
+        <div class="container">
+            <div class="main-grid">
+                <!-- 寵物信息面板 -->
+                <aside class="pet-panel">
+                    <!-- 寵物卡片 -->
+                    <div class="pet-card modern-card">
+                        <div class="card-glow"></div>
+                        <div class="pet-header">
+                            <div class="pet-avatar-section">
+                                {% if pet.picture %}
+                                    <div class="pet-avatar-frame">
+                                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}" class="pet-avatar">
+                                        <div class="avatar-border"></div>
+                                    </div>
+                                {% else %}
+                                    <div class="pet-avatar-frame">
+                                        <div class="pet-avatar-placeholder">
+                                            {% if pet.species == 'dog' %}
+                                                <i class="fas fa-dog"></i>
+                                            {% elif pet.species == 'cat' %}
+                                                <i class="fas fa-cat"></i>
+                                            {% else %}
+                                                <i class="fas fa-paw"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="avatar-border"></div>
+                                    </div>
+                                {% endif %}
+                                <div class="online-indicator">
+                                    <div class="indicator-dot"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="pet-identity">
+                                <h2 class="pet-name">{{ pet.name }}</h2>
+                                <div class="pet-tags">
+                                    <span class="tag tag-species" data-species="{{ pet.species }}">
+                                        {% if pet.species == 'dog' %}
+                                            <i class="fas fa-dog"></i> 狗狗
+                                        {% elif pet.species == 'cat' %}
+                                            <i class="fas fa-cat"></i> 貓咪
+                                        {% else %}
+                                            <i class="fas fa-paw"></i> {{ pet.get_species_display }}
+                                        {% endif %}
+                                    </span>
+                                    <span class="tag tag-breed">{{ pet.breed }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 寵物統計 -->
+                        <div class="pet-stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon weight">
+                                    <i class="fas fa-weight"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">體重</span>
+                                    <span class="stat-value">{{ pet.weight|default:"--" }}<small>kg</small></span>
+                                </div>
+                            </div>
+                            
+                            {% if pet.birth_date %}
+                            <div class="stat-card">
+                                <div class="stat-icon birthday">
+                                    <i class="fas fa-birthday-cake"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">年齡</span>
+                                    <span class="stat-value">{{ pet.age }}<small>歲</small></span>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="stat-card">
+                                <div class="stat-icon gender">
+                                    {% if pet.gender == 'male' %}
+                                        <i class="fas fa-mars"></i>
+                                    {% elif pet.gender == 'female' %}
+                                        <i class="fas fa-venus"></i>
+                                    {% else %}
+                                        <i class="fas fa-question"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">性別</span>
+                                    <span class="stat-value">{{ pet.get_gender_display }}</span>
+                                </div>
+                            </div>
+
+                            <div class="stat-card">
+                                <div class="stat-icon sterilization">
+                                    <i class="fas fa-cut"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">絕育</span>
+                                    <span class="stat-value">{{ pet.get_sterilization_status_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if pet.feature %}
+                        <div class="pet-features">
+                            <h4><i class="fas fa-sparkles"></i> 特徵描述</h4>
+                            <p class="feature-text">{{ pet.feature }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 預約提醒卡片 -->
+                    <div class="tips-card modern-card">
+                        <div class="tips-header">
+                            <div class="tips-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h3>預約小貼士</h3>
+                        </div>
+                        <div class="tips-content">
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="tip-text">
+                                    <strong>提前到達</strong>
+                                    <span>請提前 10-15 分鐘到達診所</span>
+                                </div>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="fas fa-syringe"></i>
+                                </div>
+                                <div class="tip-text">
+                                    <strong>攜帶記錄</strong>
+                                    <span>請攜帶疫苗接種記錄</span>
+                                </div>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div class="tip-text">
+                                    <strong>身分證件</strong>
+                                    <span>首次就診請攜帶身分證</span>
+                                </div>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div class="tip-text">
+                                    <strong>取消預約</strong>
+                                    <span>如需取消請提前 24 小時通知</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- 預約表單區域 -->
+                <section class="form-section">
+                    <div class="form-container modern-card">
+                        <div class="form-header">
+                            <div class="form-title-section">
+                                <h1>
+                                    為 <span class="pet-highlight">{{ pet.name }}</span> 預約看診
+                                </h1>
+                                <p>請仔細填寫預約信息，我們將為您提供最好的醫療服務</p>
+                            </div>
+                            <div class="form-decoration">
+                                <div class="decoration-dot"></div>
+                                <div class="decoration-dot"></div>
+                                <div class="decoration-dot"></div>
+                            </div>
+                        </div>
+
+                        <form method="post" id="appointmentForm" class="smart-form" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- 全局錯誤提示 -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger" id="globalErrors">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="alert-content">
+                                        <h4>請檢查以下問題：</h4>
+                                        <ul>
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <button type="button" class="alert-close" onclick="this.parentElement.style.display='none'">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+
+                            <!-- 第一步：診所選擇 -->
+                            <div class="form-step active" data-step="clinic" id="step-clinic">
+                                <div class="step-header">
+                                    <div class="step-indicator">
+                                        <span class="step-number">01</span>
+                                        <div class="step-progress"></div>
+                                    </div>
+                                    <div class="step-info">
+                                        <h2>選擇診所</h2>
+                                        <p>選擇您信任的動物醫院和專業醫師</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="fields-group">
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.clinic.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-hospital"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                診所名稱 <span class="required-mark">*</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-select-wrapper">
+                                            {{ form.clinic }}
+                                            <div class="select-icon">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </div>
+                                            <div class="field-underline"></div>
+                                        </div>
+                                        <div class="field-feedback" data-field="clinic"></div>
+                                        {% if form.clinic.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.clinic.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.doctor.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-user-md"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                指定醫師
+                                                <span class="optional-mark">(可選)</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-select-wrapper">
+                                            {{ form.doctor }}
+                                            <div class="select-icon">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </div>
+                                            <div class="field-underline"></div>
+                                            <div class="loading-overlay" id="doctorLoading">
+                                                <div class="loading-spinner"></div>
+                                            </div>
+                                        </div>
+                                        <div class="field-feedback" data-field="doctor"></div>
+                                        <div class="field-hint">
+                                            <i class="fas fa-info-circle"></i>
+                                            可選擇特定醫師，或選「任何醫師」查看所有時段
+                                        </div>
+                                        {% if form.doctor.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.doctor.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 第二步：時間選擇 -->
+                            <div class="form-step" data-step="datetime" id="step-datetime">
+                                <div class="step-header">
+                                    <div class="step-indicator">
+                                        <span class="step-number">02</span>
+                                        <div class="step-progress"></div>
+                                    </div>
+                                    <div class="step-info">
+                                        <h2>選擇時間</h2>
+                                        <p>選擇最適合的看診日期和時段</p>
+                                    </div>
+                                </div>
+
+                                <div class="fields-group datetime-fields">
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.appointment_date.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                預約日期 <span class="required-mark">*</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-input-wrapper">
+                                            {{ form.appointment_date }}
+                                            <div class="input-icon">
+                                                <i class="fas fa-calendar"></i>
+                                            </div>
+                                            <div class="field-underline"></div>
+                                        </div>
+                                        <div class="field-feedback" data-field="appointment_date"></div>
+                                        {% if form.appointment_date.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.appointment_date.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.time_slot.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-clock"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                預約時段 <span class="required-mark">*</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-select-wrapper">
+                                            {{ form.time_slot }}
+                                            <div class="select-icon">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </div>
+                                            <div class="field-underline"></div>
+                                            <div class="loading-overlay" id="slotsLoading">
+                                                <div class="loading-spinner"></div>
+                                                <span class="loading-text">載入時段中...</span>
+                                            </div>
+                                        </div>
+                                        <div class="field-feedback" data-field="time_slot"></div>
+                                        <div class="slots-status" id="slotsStatus">
+                                            <div class="status-content">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>請先選擇診所和日期</span>
+                                            </div>
+                                        </div>
+                                        {% if form.time_slot.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.time_slot.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 第三步：詳細信息 -->
+                            <div class="form-step" data-step="details" id="step-details">
+                                <div class="step-header">
+                                    <div class="step-indicator">
+                                        <span class="step-number">03</span>
+                                        <div class="step-progress"></div>
+                                    </div>
+                                    <div class="step-info">
+                                        <h2>詳細信息</h2>
+                                        <p>提供預約相關詳細信息，幫助醫師更好地為您服務</p>
+                                    </div>
+                                </div>
+
+                                <div class="fields-group details-fields">
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.reason.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-stethoscope"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                預約原因
+                                                <span class="optional-mark">(可選，但建議填寫)</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-textarea-wrapper">
+                                            {{ form.reason }}
+                                            <div class="field-underline"></div>
+                                            <div class="char-counter">
+                                                <span id="reasonCounter">0</span>/500
+                                            </div>
+                                        </div>
+                                        <div class="field-feedback" data-field="reason"></div>
+                                        <div class="field-hint">
+                                            <i class="fas fa-lightbulb"></i>
+                                            例如：定期健檢、疫苗接種、身體不適、行為問題等
+                                        </div>
+                                        {% if form.reason.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.reason.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.notes.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-sticky-note"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                其他備註
+                                                <span class="optional-mark">(可選)</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-textarea-wrapper">
+                                            {{ form.notes }}
+                                            <div class="field-underline"></div>
+                                            <div class="char-counter">
+                                                <span id="notesCounter">0</span>/300
+                                            </div>
+                                        </div>
+                                        <div class="field-feedback" data-field="notes"></div>
+                                        <div class="field-hint">
+                                            <i class="fas fa-comment"></i>
+                                            其他需要醫師知道的重要信息
+                                        </div>
+                                        {% if form.notes.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.notes.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="field-wrapper">
+                                        <label class="modern-label" for="{{ form.contact_phone.id_for_label }}">
+                                            <span class="label-icon">
+                                                <i class="fas fa-phone"></i>
+                                            </span>
+                                            <span class="label-text">
+                                                聯絡電話 <span class="required-mark">*</span>
+                                            </span>
+                                        </label>
+                                        <div class="modern-input-wrapper">
+                                            {{ form.contact_phone }}
+                                            <div class="input-icon">
+                                                <i class="fas fa-phone"></i>
+                                            </div>
+                                            <div class="field-underline"></div>
+                                        </div>
+                                        <div class="field-feedback" data-field="contact_phone"></div>
+                                        <div class="field-hint">
+                                            <i class="fas fa-info-circle"></i>
+                                            如需變更預約時診所會撥打此號碼聯絡您
+                                        </div>
+                                        {% if form.contact_phone.errors %}
+                                            <div class="field-errors">
+                                                {% for error in form.contact_phone.errors %}
+                                                    <span class="error-item">{{ error }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 表單操作按鈕 -->
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="history.back()">
+                                    <span class="btn-icon">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </span>
+                                    <span class="btn-text">取消預約</span>
+                                    <div class="btn-ripple"></div>
+                                </button>
+                                
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <span class="btn-icon">
+                                        <i class="fas fa-heart"></i>
+                                    </span>
+                                    <span class="btn-text">確認預約</span>
+                                    <div class="btn-loading">
+                                        <div class="loading-spinner"></div>
+                                    </div>
+                                    <div class="btn-ripple"></div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- 幫助面板 -->
+    <div class="help-panel" id="helpPanel">
+        <div class="help-content">
+            <div class="help-header">
+                <h3><i class="fas fa-question-circle"></i> 預約幫助</h3>
+                <button class="help-close" onclick="toggleHelpPanel()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="help-body">
+                <div class="help-item">
+                    <h4>🏥 選擇診所</h4>
+                    <p>選擇離您最近或您信任的動物醫院。您可以根據地理位置、評價等因素做選擇。</p>
+                </div>
+                <div class="help-item">
+                    <h4>👨‍⚕️ 指定醫師</h4>
+                    <p>如果您有偏好的醫師，可以指定特定醫師。選擇「任何醫師」會顯示所有可用時段。</p>
+                </div>
+                <div class="help-item">
+                    <h4>📅 預約時間</h4>
+                    <p>建議至少提前一天預約。急診情況請直接聯絡診所或撥打緊急電話。</p>
+                </div>
+                <div class="help-item">
+                    <h4>📞 聯絡方式</h4>
+                    <p>如有任何問題，請撥打客服電話：<strong>0800-123-456</strong></p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div>
-        <label for="{{ form.time.id_for_label }}">{{ form.time.label }}</label>
-        {{ form.time }}
-        {% if form.time.errors %}<div class="text-danger">{{ form.time.errors }}</div>{% endif %}
+    <!-- 載入遮罩 -->
+    <div class="loading-overlay-global" id="globalLoading">
+        <div class="loading-content">
+            <div class="loading-spinner-large"></div>
+            <h3>處理中...</h3>
+            <p>正在為您的寵物安排最好的醫療服務</p>
+        </div>
     </div>
+</div>
 
-    <div>
-        <label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
-        {{ form.reason }}
-        {% if form.reason.errors %}<div class="text-danger">{{ form.reason.errors }}</div>{% endif %}
-    </div>
-
-    <button type="submit">提交預約</button>
-</form>
-{% endblock %}
-
-{% block extra_js %}
-  {{ block.super }}
+<!-- JavaScript -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<script>
-$(document).ready(function () {
-  const vetField = $('#id_vet');
-  const dateField = $('#id_date');
-  const timeField = $('#id_time');
-
-  $('.searchable-select').select2({
-    placeholder: "請輸入診所名稱或獸醫姓名",
-    allowClear: true,
-    width: '100%'
-  });
-
-  function updateTimeOptions() {
-    const vetId = vetField.val();
-    let dateVal = dateField.val();
-
-    if (!vetId || !dateVal) {
-      timeField.empty().append('<option disabled selected>請先選擇獸醫與日期</option>');
-      return;
-    }
-
-    if (dateVal.includes('/')) {
-      const parts = dateVal.split('/');
-      if (parts.length === 3) {
-        dateVal = `${parts[0]}-${parts[1]}-${parts[2]}`;
-      }
-    }
-
-    fetch(`/appointments/get-available-times/?vet_id=${vetId}&date=${dateVal}`)
-      .then(res => res.json())
-      .then(data => {
-        timeField.empty();
-        if (data.times && data.times.length > 0) {
-          data.times.forEach(([val, label]) => {
-            timeField.append(`<option value="${val}">${label}</option>`);
-          });
-          timeField.val(data.times[0][0]);  // ✅ 自動選中第一個
-        } else {
-          timeField.append('<option disabled selected>無可預約時段</option>');
-        }
-      })
-      .catch(async err => {
-        console.error("❌ 載入時段錯誤：", err);
-        timeField.empty().append('<option disabled selected>時段載入失敗</option>');
-      });
-  }
-
-  vetField.on('change', updateTimeOptions);
-  dateField.on('change', updateTimeOptions);
-
-  if (vetField.val() && dateField.val()) {
-    updateTimeOptions();
-  }
-});
-</script>
+<script src="{% static 'js/appointments/appointment.js' %}"></script>
 {% endblock %}

@@ -121,8 +121,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6">
         {% if user.is_authenticated and user.profile.account_type == 'clinic_admin' %}
           <a href="{% url 'manage_schedules' %}" class="category-card">
-            <img src="{% static 'images/icon_time.png' %}" class="category-icon" alt="排班時段">
-            <div class="category-text">排班時段</div>
+            <img src="{% static 'images/icon_time.png' %}" class="category-icon" alt="排班管理">
+            <div class="category-text">排班管理</div>
           </a>
         {% else %}
           <a href="{% url 'map' %}" class="category-card">

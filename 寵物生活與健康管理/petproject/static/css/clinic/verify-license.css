@@ -1,0 +1,520 @@
+
+/* ===== 頁面標題區域 ===== */
+.page-header {
+  margin-bottom: var(--spacing-xxl);
+}
+
+.header-icon {
+  font-size: 4rem;
+  color: var(--primary-orange);
+  text-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.page-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: var(--spacing-md);
+}
+
+.page-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ===== 驗證狀態卡片 ===== */
+.verification-status-card {
+  background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 20px var(--shadow-light);
+  transition: all var(--transition-normal) ease;
+}
+
+.verification-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--shadow-medium);
+}
+
+.status-info h5 {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.status-info p {
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-xl);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.verified {
+  background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.status-badge.pending {
+  background: linear-gradient(135deg, var(--warning-color) 0%, #fd7e14 100%);
+  color: #212529;
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+/* ===== 驗證成功卡片 ===== */
+.verification-success-card {
+  background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+  border: 2px solid var(--success-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xxl);
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 5rem;
+  color: var(--success-color);
+  animation: successPulse 2s ease-in-out infinite;
+}
+
+@keyframes successPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.verified-info {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+}
+
+.info-item {
+  text-align: left;
+  padding: var(--spacing-md);
+}
+
+.license-number {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: var(--primary-orange);
+  background: rgba(255, 170, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.license-type {
+  font-weight: 600;
+  color: var(--success-color);
+}
+
+/* ===== 驗證表單卡片 ===== */
+.verification-form-card {
+  background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xxl);
+  box-shadow: 0 8px 32px var(--shadow-light);
+}
+
+/* ===== 驗證說明區域 ===== */
+.verification-info {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  border-left: 4px solid var(--info-color);
+}
+
+.info-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.step-number {
+  background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-hover) 100%);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px var(--shadow-hover);
+}
+
+.step-content h6 {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.step-content p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* ===== 表單樣式 ===== */
+.verification-form .form-label {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: var(--spacing-sm);
+}
+
+.verification-form .input-group-text {
+  background: linear-gradient(135deg, var(--warm-bg) 0%, #fff 100%);
+  border-color: #ced4da;
+  color: var(--primary-orange);
+}
+
+.verification-form .form-control {
+  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+  padding: 12px 16px;
+  font-size: var(--font-size-base);
+  transition: all var(--transition-normal) ease;
+}
+
+.verification-form .form-control:focus {
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 0.2rem rgba(255, 170, 0, 0.25);
+}
+
+.verification-form .form-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* ===== 執照範例說明 ===== */
+.license-example {
+  background: rgba(91, 182, 255, 0.1);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  border-left: 4px solid var(--news-border);
+}
+
+.license-example h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.example-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.example-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(91, 182, 255, 0.2);
+}
+
+.example-format {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: var(--news-border);
+  font-size: var(--font-size-sm);
+}
+
+.example-desc {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  background: rgba(91, 182, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+/* ===== 表單操作按鈕 ===== */
+.form-actions {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.form-actions .btn {
+  min-width: 160px;
+  padding: 12px 24px;
+  font-weight: 600;
+}
+
+.form-actions .btn-primary-custom {
+  box-shadow: 0 4px 15px var(--shadow-hover);
+}
+
+.form-actions .btn-primary-custom:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 170, 0, 0.4);
+}
+
+/* ===== 驗證流程說明 ===== */
+.verification-process {
+  background: linear-gradient(135deg, #f8f9fa 0%, var(--warm-bg) 100%);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xxl);
+  margin-top: var(--spacing-xxl);
+}
+
+.verification-process h5 {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-bottom: var(--spacing-xl);
+}
+
+.process-steps {
+  position: relative;
+}
+
+.process-step {
+  text-align: center;
+  position: relative;
+  padding: var(--spacing-lg);
+}
+
+.step-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-md);
+  font-size: 2rem;
+  color: white;
+  position: relative;
+  z-index: 2;
+}
+
+.step-icon.step-1 {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.step-icon.step-2 {
+  background: linear-gradient(135deg, var(--info-color) 0%, #138496 100%);
+  box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.step-icon.step-3 {
+  background: linear-gradient(135deg, var(--warning-color) 0%, #e0a800 100%);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.step-icon.step-4 {
+  background: linear-gradient(135deg, var(--success-color) 0%, #1e7e34 100%);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.process-step h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.process-step p {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* 流程連接線 */
+.process-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 12.5%;
+  right: 12.5%;
+  height: 2px;
+  background: linear-gradient(to right, #e9ecef 0%, var(--primary-orange) 50%, #e9ecef 100%);
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+/* ===== 幫助卡片 ===== */
+.help-section {
+  margin-top: var(--spacing-xxl);
+}
+
+.help-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid #e9ecef;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  height: 100%;
+  transition: all var(--transition-normal) ease;
+}
+
+.help-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--shadow-light);
+  border-color: var(--primary-orange);
+}
+
+.help-card h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.help-card p {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+/* ===== 驗證進度 Modal ===== */
+.verification-spinner .spinner-border {
+  border-width: 4px;
+}
+
+.modal-content {
+  border: none;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-body {
+  padding: var(--spacing-xxl);
+}
+
+.progress {
+  background-color: #e9ecef;
+  border-radius: 10px;
+}
+
+.progress-bar {
+  background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-hover) 100%);
+  border-radius: 10px;
+}
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .header-icon {
+    font-size: 3rem;
+  }
+  
+  .verification-status-card,
+  .verification-form-card,
+  .verification-process {
+    padding: var(--spacing-lg);
+  }
+  
+  .success-icon {
+    font-size: 4rem;
+  }
+  
+  .step-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .example-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .process-steps::before {
+    display: none;
+  }
+  
+  .process-step {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 576px) {
+  .verification-info .row {
+    flex-direction: column;
+  }
+  
+  .info-step {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .verified-info .row {
+    flex-direction: column;
+  }
+  
+  .modal-body {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* ===== 動畫效果 ===== */
+.verification-form-card {
+  animation: slideInUp var(--transition-slow) ease;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== 高對比度模式 ===== */
+@media (prefers-contrast: high) {
+  .status-badge,
+  .step-icon,
+  .btn-primary-custom {
+    border: 2px solid;
+  }
+  
+  .verification-status-card,
+  .verification-form-card,
+  .help-card {
+    border-width: 2px;
+  }
+}
+
+/* ===== 減少動畫模式 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .success-icon {
+    animation: none;
+  }
+  
+  .verification-form-card {
+    animation: none;
+  }
+  
+  .btn:hover,
+  .help-card:hover,
+  .verification-status-card:hover {
+    transform: none;
+  }
+}

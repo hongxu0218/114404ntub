@@ -1,0 +1,609 @@
+/* static/css/clinic/add-doctor.css */
+
+/* ========== 繼承醫師管理基礎樣式 ========== */
+/* 引用基礎變數和通用樣式 */
+@import 'doctor-management.css';
+
+/* ========== 新增醫師專用樣式 ========== */
+
+/* 容器樣式 */
+.add-doctor-container {
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+/* ========== 表單進度指示器 ========== */
+.form-progress-modern {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  position: relative;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  position: relative;
+  flex: 1;
+}
+
+.step-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--gray-200);
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all var(--transition-normal);
+  position: relative;
+  z-index: 2;
+}
+
+.progress-step.active .step-circle {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  box-shadow: var(--shadow-lg);
+}
+
+.progress-step.completed .step-circle {
+  background: linear-gradient(135deg, var(--success-color), var(--success-light));
+  color: white;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-align: center;
+  transition: color var(--transition-normal);
+}
+
+.progress-step.active .step-label {
+  color: var(--primary-color);
+}
+
+.progress-step.completed .step-label {
+  color: var(--success-color);
+}
+
+/* 進度連接線 */
+.progress-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: calc(50% + 25px);
+  right: calc(-50% + 25px);
+  height: 3px;
+  background: var(--gray-200);
+  z-index: 1;
+  transition: background var(--transition-normal);
+}
+
+.progress-step.completed::after {
+  background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--gray-200);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+  border-radius: 2px;
+  transition: width var(--transition-normal);
+}
+
+/* ========== 表單容器 ========== */
+.form-container-modern {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  position: relative;
+}
+
+.form-section {
+  padding: var(--spacing-2xl);
+  display: none;
+  animation: fadeInSlide 0.4s ease-out;
+}
+
+.form-section.active {
+  display: block;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.section-header {
+  margin-bottom: var(--spacing-2xl);
+  text-align: center;
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--gray-100);
+}
+
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.section-description {
+  color: var(--gray-600);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ========== 表單元素樣式 ========== */
+.form-group-modern {
+  margin-bottom: var(--spacing-xl);
+  position: relative;
+}
+
+.form-label-modern {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.95rem;
+}
+
+.required-mark {
+  color: var(--danger-color);
+  font-weight: 700;
+}
+
+.form-control {
+  padding: var(--spacing-md);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  transition: all var(--transition-normal);
+  background: var(--gray-50);
+  width: 100%;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-control.is-valid {
+  border-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.form-control.is-invalid {
+  border-color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.form-help {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.info-button {
+  background: none;
+  border: none;
+  color: var(--info-color);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.875rem;
+  transition: color var(--transition-fast);
+}
+
+.info-button:hover {
+  color: var(--info-light);
+}
+
+.invalid-feedback {
+  display: none;
+  color: var(--danger-color);
+  font-size: 0.85rem;
+  margin-top: var(--spacing-xs);
+  font-weight: 500;
+}
+
+.form-control.is-invalid + .invalid-feedback {
+  display: block;
+}
+
+/* ========== 密碼輸入樣式 ========== */
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: color var(--transition-fast);
+}
+
+.password-toggle:hover {
+  color: var(--gray-600);
+}
+
+.password-strength {
+  margin-top: var(--spacing-sm);
+}
+
+.strength-bar {
+  height: 4px;
+  background: var(--gray-200);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-xs);
+}
+
+.strength-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: all var(--transition-normal);
+}
+
+.strength-fill.weak {
+  width: 25%;
+  background: var(--danger-color);
+}
+
+.strength-fill.fair {
+  width: 50%;
+  background: var(--warning-color);
+}
+
+.strength-fill.good {
+  width: 75%;
+  background: var(--info-color);
+}
+
+.strength-fill.strong {
+  width: 100%;
+  background: var(--success-color);
+}
+
+.strength-text {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+.character-counter {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  text-align: right;
+  margin-top: var(--spacing-xs);
+}
+
+.character-counter .current {
+  font-weight: 600;
+}
+
+/* ========== 權限卡片設計 ========== */
+.permission-cards {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.permission-card {
+  background: var(--gray-50);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  transition: all var(--transition-normal);
+}
+
+.permission-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+.permission-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.permission-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.permission-content {
+  space-y: var(--spacing-md);
+}
+
+.form-check-modern {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.form-check-input-modern {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.form-check-label-modern {
+  flex: 1;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+.permission-description {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  font-weight: 400;
+  margin-top: var(--spacing-xs);
+}
+
+.admin-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  color: var(--warning-color);
+  font-size: 0.875rem;
+  margin-top: var(--spacing-md);
+}
+
+/* ========== 確認預覽區域 ========== */
+.confirmation-card {
+  background: linear-gradient(135deg, var(--gray-50), white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.doctor-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.preview-avatar {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.preview-info {
+  flex: 1;
+}
+
+.preview-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-xs);
+}
+
+.preview-email {
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-xs);
+}
+
+.preview-specialization {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.confirmation-details {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-label {
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.detail-value {
+  color: var(--gray-600);
+  text-align: right;
+}
+
+.final-checks {
+  background: white;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+}
+
+/* ========== 表單控制按鈕 ========== */
+.form-controls-modern {
+  background: var(--gray-50);
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.controls-right {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.btn-success-modern {
+  background: linear-gradient(135deg, var(--success-color), var(--success-light));
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-success-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.btn-success-modern.loading {
+  pointer-events: none;
+}
+
+.btn-success-modern.loading .loading-spinner-modern {
+  display: inline-block;
+}
+
+.btn-success-modern .loading-spinner-modern {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: var(--spacing-sm);
+}
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 768px) {
+  .add-doctor-container {
+    padding: var(--spacing-md);
+  }
+  
+  .form-section {
+    padding: var(--spacing-xl);
+  }
+  
+  .progress-steps {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+  
+  .progress-step:not(:last-child)::after {
+    display: none;
+  }
+  
+  .step-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .doctor-preview {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .preview-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .detail-value {
+    text-align: left;
+  }
+  
+  .form-controls-modern {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .controls-right {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .permission-cards {
+    gap: var(--spacing-md);
+  }
+  
+  .permission-card {
+    padding: var(--spacing-lg);
+  }
+}

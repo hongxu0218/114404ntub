@@ -1,36 +1,69 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}帳號頁面{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <style>
-        body {
-            font-family: "Noto Sans TC", sans-serif;
-            background-color: #fff8f0;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        /* RWD：手機裝置 */
-        @media screen and (max-width: 600px) {
-            .back-top-left a {
-                font-size: 16px;
-                padding: 5px 10px;
-            }
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    {% block content %}
-    <!-- 子模板會填充這裡 -->
-    {% endblock %}
 
-    {% block extra_js %}{% endblock %}
-</body>
-</html>
+{% block head_extra %}
+    <link href="{% static 'css/account.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- 側邊欄導航 -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-cog"></i> 帳號管理
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}">
+                        <i class="fas fa-user-edit"></i> 編輯個人資料
+                    </a>
+                    <a href="{% url 'account_change_password' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key"></i> 更改密碼
+                    </a>
+                    <a href="{% url 'account_email' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-envelope"></i> 管理信箱
+                    </a>
+                    {% if user.profile.account_type == 'owner' %}
+                        <a href="{% url 'pet_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-paw"></i> 我的寵物
+                        </a>
+                        <a href="{% url 'my_appointments' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-calendar-check"></i> 我的預約
+                        </a>
+                    {% elif user.profile.account_type == 'clinic_admin' %}
+                        <a href="{% url 'clinic_dashboard' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-hospital"></i> 診所管理
+                        </a>
+                    {% elif user.profile.account_type == 'veterinarian' %}
+                        <a href="{% url 'vet_appointments' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-stethoscope"></i> 我的預約
+                        </a>
+                        <a href="{% url 'my_patients' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-heart"></i> 我的患者
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要內容區域 -->
+        <div class="col-md-9">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block account_content %}
+            <!-- 子模板的內容會在這裡 -->
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

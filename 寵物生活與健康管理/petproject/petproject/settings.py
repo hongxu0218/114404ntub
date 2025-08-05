@@ -174,7 +174,15 @@ SOCIALACCOUNT_LOGIN_REDIRECT_URL = '/'  # Google 登入後導向首頁
 
 ACCOUNT_LOGIN_METHODS = {'email'}     # 使用 email 作為帳號登入依據
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']# 必填欄位
-ACCOUNT_EMAIL_VERIFICATION = 'none'         # 關閉 email 驗證（開發階段建議關），上線時請改為 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'         # 關閉 email 驗證（開發階段建議關），上線時請改為 'mandatory'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True 
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 7
+ACCOUNT_EMAIL_CONFIRMATION_HMAC = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+
+# 郵件設定
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
 
 # 顯示信件主旨與寄件網址設定
 ACCOUNT_EMAIL_SUBJECT_TEMPLATE = "password_reset_subject.txt"

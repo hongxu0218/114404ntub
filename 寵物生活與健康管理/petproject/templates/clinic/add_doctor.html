@@ -1,0 +1,445 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}新增醫師 - {{ clinic.clinic_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/clinic/add-doctor.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="add-doctor-container">
+  
+  <!-- 現代化頁面標題 -->
+  <div class="page-header-modern">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h1 class="page-title-modern">
+          <i class="bi bi-person-plus-fill me-3"></i>
+          新增醫師成員
+        </h1>
+        <div class="page-subtitle-modern">
+          <i class="bi bi-hospital me-2"></i>
+          <span>{{ clinic.clinic_name }}</span>
+          <span class="mx-2">•</span>
+          <span>擴充您的醫療團隊</span>
+        </div>
+      </div>
+      
+      <div class="col-lg-4">
+        <div class="action-buttons-modern">
+          <a href="{% url 'manage_doctors' %}" class="btn-modern btn-outline-modern">
+            <i class="bi bi-arrow-left"></i>
+            <span>返回列表</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 表單進度指示器 -->
+  <div class="form-progress-modern">
+    <div class="progress-steps">
+      <div class="progress-step active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">基本資料</div>
+      </div>
+      <div class="progress-step" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">專業資訊</div>
+      </div>
+      <div class="progress-step" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">權限設定</div>
+      </div>
+      <div class="progress-step" data-step="4">
+        <div class="step-circle">4</div>
+        <div class="step-label">確認建立</div>
+      </div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 25%;"></div>
+    </div>
+  </div>
+
+  <!-- 主要表單區域 -->
+  <div class="form-container-modern">
+    <form method="post" id="addDoctorForm" novalidate>
+      {% csrf_token %}
+      
+      <!-- 步驟 1: 基本資料 -->
+      <div class="form-section active" data-section="1">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="bi bi-person-badge me-2"></i>
+            基本資料設定
+          </h3>
+          <p class="section-description">
+            設定醫師的基本個人資訊和登入帳號
+          </p>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.first_name.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-person me-1"></i>
+                {{ form.first_name.label }}
+                <span class="required-mark">*</span>
+              </label>
+              {{ form.first_name }}
+              <div class="form-help">醫師的真實姓名，將顯示在預約系統中</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.username.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-at me-1"></i>
+                {{ form.username.label }}
+                <span class="required-mark">*</span>
+              </label>
+              {{ form.username }}
+              <div class="form-help">用於登入的使用者名稱，建議使用英文</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.email.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-envelope me-1"></i>
+                {{ form.email.label }}
+                <span class="required-mark">*</span>
+              </label>
+              {{ form.email }}
+              <div class="form-help">將用於接收系統通知和密碼重設</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.phone_number.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-telephone me-1"></i>
+                {{ form.phone_number.label }}
+              </label>
+              {{ form.phone_number }}
+              <div class="form-help">聯絡電話，格式：09xxxxxxxx</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.password.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-lock me-1"></i>
+                {{ form.password.label }}
+                <span class="required-mark">*</span>
+              </label>
+              <div class="password-input-wrapper">
+                {{ form.password }}
+                <button type="button" class="password-toggle" id="togglePassword1">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+              <div class="password-strength">
+                <div class="strength-bar">
+                  <div class="strength-fill"></div>
+                </div>
+                <div class="strength-text">密碼強度：<span>弱</span></div>
+              </div>
+              <div class="form-help">至少8個字元，建議包含大小寫字母、數字和特殊符號</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步驟 2: 專業資訊 -->
+      <div class="form-section" data-section="2">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="bi bi-award me-2"></i>
+            專業資訊設定
+          </h3>
+          <p class="section-description">
+            設定醫師的專業背景和執照資訊
+          </p>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.vet_license_number.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-card-text me-1"></i>
+                {{ form.vet_license_number.label }}
+              </label>
+              {{ form.vet_license_number }}
+              <div class="form-help">
+                農委會核發的獸醫師執照號碼
+                <button type="button" class="info-button" data-bs-toggle="tooltip" 
+                        title="填寫後可透過農委會API自動驗證執照有效性">
+                  <i class="bi bi-info-circle"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label for="{{ form.years_of_experience.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-calendar-check me-1"></i>
+                {{ form.years_of_experience.label }}
+              </label>
+              {{ form.years_of_experience }}
+              <div class="form-help">從取得執照開始計算的年資</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group-modern">
+              <label for="{{ form.specialization.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-star me-1"></i>
+                {{ form.specialization.label }}
+              </label>
+              {{ form.specialization }}
+              <div class="form-help">例如：小動物內科、外科、皮膚科等專業領域</div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group-modern">
+              <label for="{{ form.bio.id_for_label }}" class="form-label-modern">
+                <i class="bi bi-file-text me-1"></i>
+                {{ form.bio.label }}
+              </label>
+              {{ form.bio }}
+              <div class="form-help">簡短介紹醫師的專業背景和治療理念</div>
+              <div class="character-counter">
+                <span class="current">0</span> / <span class="max">500</span>
+              </div>
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步驟 3: 權限設定 -->
+      <div class="form-section" data-section="3">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="bi bi-shield-check me-2"></i>
+            權限與功能設定
+          </h3>
+          <p class="section-description">
+            設定醫師在系統中的權限和可使用的功能
+          </p>
+        </div>
+        
+        <div class="permission-cards">
+          <div class="permission-card">
+            <div class="permission-header">
+              <h4 class="permission-title">
+                <i class="bi bi-calendar3 me-2"></i>
+                預約管理權限
+              </h4>
+            </div>
+            <div class="permission-content">
+              <div class="form-check-modern">
+                {{ form.can_manage_appointments }}
+                <label for="{{ form.can_manage_appointments.id_for_label }}" class="form-check-label-modern">
+                  可管理預約
+                  <span class="permission-description">允許查看、確認、取消和修改預約</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="permission-card">
+            <div class="permission-header">
+              <h4 class="permission-title">
+                <i class="bi bi-people me-2"></i>
+                管理員權限
+              </h4>
+            </div>
+            <div class="permission-content">
+              <div class="form-check-modern">
+                <input type="checkbox" id="isClinicAdmin" name="is_clinic_admin" class="form-check-input-modern">
+                <label for="isClinicAdmin" class="form-check-label-modern">
+                  診所管理員
+                  <span class="permission-description">可管理其他醫師、排班和診所設定</span>
+                </label>
+              </div>
+              
+              <div class="admin-warning" id="adminWarning" style="display: none;">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>注意：</strong>管理員權限將允許此醫師管理診所的所有設定和其他醫師帳號
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步驟 4: 確認建立 -->
+      <div class="form-section" data-section="4">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="bi bi-check-circle me-2"></i>
+            確認醫師資訊
+          </h3>
+          <p class="section-description">
+            請確認以下資訊無誤後建立醫師帳號
+          </p>
+        </div>
+        
+        <div class="confirmation-card">
+          <div class="doctor-preview">
+            <div class="preview-avatar">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="preview-info">
+              <h4 class="preview-name" id="previewName">Dr. --</h4>
+              <div class="preview-email" id="previewEmail">--</div>
+              <div class="preview-specialization" id="previewSpecialization">--</div>
+            </div>
+          </div>
+          
+          <div class="confirmation-details">
+            <div class="detail-row">
+              <span class="detail-label">使用者名稱:</span>
+              <span class="detail-value" id="previewUsername">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">聯絡電話:</span>
+              <span class="detail-value" id="previewPhone">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">執照號碼:</span>
+              <span class="detail-value" id="previewLicense">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">執業年資:</span>
+              <span class="detail-value" id="previewExperience">-- 年</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">權限設定:</span>
+              <span class="detail-value" id="previewPermissions">--</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="final-checks">
+          <div class="form-check-modern">
+            <input type="checkbox" id="confirmInfo" class="form-check-input-modern" required>
+            <label for="confirmInfo" class="form-check-label-modern">
+              我已確認以上資訊正確無誤
+            </label>
+          </div>
+          
+          <div class="form-check-modern">
+            <input type="checkbox" id="confirmEmail" class="form-check-input-modern" required>
+            <label for="confirmEmail" class="form-check-label-modern">
+              我已確認將發送歡迎信件到該醫師的信箱
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 表單控制按鈕 -->
+      <div class="form-controls-modern">
+        <button type="button" id="prevBtn" class="btn-modern btn-outline-modern" style="display: none;">
+          <i class="bi bi-chevron-left"></i>
+          <span>上一步</span>
+        </button>
+        
+        <div class="controls-right">
+          <button type="button" id="nextBtn" class="btn-modern btn-primary-modern">
+            <span>下一步</span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          
+          <button type="submit" id="submitBtn" class="btn-modern btn-success-modern" style="display: none;">
+            <i class="bi bi-check-circle"></i>
+            <span>建立醫師</span>
+            <div class="loading-spinner-modern"></div>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- 幫助提示區域 -->
+  <div class="help-section-modern">
+    <h6 class="help-title">
+      <i class="bi bi-lightbulb"></i>
+      建立醫師注意事項
+    </h6>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <ul class="help-list">
+          <li class="help-item">
+            <strong>基本資料：</strong>確保信箱地址正確，系統將發送登入資訊
+          </li>
+          <li class="help-item">
+            <strong>密碼設定：</strong>建議使用強密碼，醫師首次登入後可自行修改
+          </li>
+          <li class="help-item">
+            <strong>執照驗證：</strong>填寫執照號碼後可透過農委會API驗證
+          </li>
+        </ul>
+      </div>
+      
+      <div class="col-md-6">
+        <ul class="help-list">
+          <li class="help-item">
+            <strong>權限分配：</strong>建議依據醫師職責給予適當權限
+          </li>
+          <li class="help-item">
+            <strong>管理員權限：</strong>謹慎授予，管理員可管理其他醫師
+          </li>
+          <li class="help-item">
+            <strong>後續設定：</strong>建立後可在醫師列表中進一步設定排班
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/clinic/add-doctor.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎯 新增醫師頁面載入完成');
+  
+  // 顯示表單錯誤（如果有）
+  {% if form.errors %}
+    {% for field, errors in form.errors.items %}
+      {% for error in errors %}
+        showFieldError('{{ field }}', '{{ error|escapejs }}');
+      {% endfor %}
+    {% endfor %}
+  {% endif %}
+  
+  // 初始化表單驗證
+  initializeFormValidation();
+});
+</script>
+{% endblock %}

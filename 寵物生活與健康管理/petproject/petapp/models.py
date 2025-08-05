@@ -278,7 +278,54 @@ class VetSchedule(models.Model):
         doctor_name = self.doctor.user.get_full_name() or self.doctor.user.username
         return f"{doctor_name} - {self.get_weekday_display()} {self.start_time}-{self.end_time}"
         
-
+    @property
+    def duration_hours(self):
+        """計算排班時長（小時）"""
+        if self.start_time and self.end_time:
+            start_seconds = self.start_time.hour * 3600 + self.start_time.minute * 60
+            end_seconds = self.end_time.hour * 3600 + self.end_time.minute * 60
+            duration_seconds = end_seconds - start_seconds
+            return round(duration_seconds / 3600, 1)
+        return 0
+    
+    @property
+    def duration_minutes(self):
+        """計算排班時長（分鐘）"""
+        if self.start_time and self.end_time:
+            start_minutes = self.start_time.hour * 60 + self.start_time.minute
+            end_minutes = self.end_time.hour * 60 + self.end_time.minute
+            return end_minutes - start_minutes
+        return 0
+    
+    @property
+    def total_slots(self):
+        """計算可生成的時段數"""
+        if self.duration_minutes and self.appointment_duration:
+            return self.duration_minutes // self.appointment_duration
+        return 0
+    
+    @property
+    def time_display(self):
+        """格式化時間顯示"""
+        if self.start_time and self.end_time:
+            return f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+        return "未設定"
+    
+    @property
+    def period_display(self):
+        """顯示時段（早上/下午/晚上）"""
+        if self.start_time:
+            hour = self.start_time.hour
+            if 6 <= hour < 12:
+                return "早上"
+            elif 12 <= hour < 18:
+                return "下午"
+            elif 18 <= hour < 22:
+                return "晚上"
+            else:
+                return "其他"
+        return "未設定"
+    
 class VetScheduleException(models.Model):
     """獸醫師排班例外（請假、特殊排班等）"""
     

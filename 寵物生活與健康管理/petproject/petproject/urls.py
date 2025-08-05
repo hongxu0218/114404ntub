@@ -4,7 +4,7 @@ from django.contrib import admin  # 匯入 Django 後台管理模組
 from django.urls import path  # 匯入 URL 路由設定功能
 from django.urls import include  # 匯入 include 用來導入子應用路由
 from petapp import views  # 匯入自定義 views 函數
-from petapp.views import CustomSignupView, CustomSocialSignupView  # 匯入自定義的註冊 view
+from petapp.views import CustomSignupView, CustomSocialSignupView , CustomConfirmEmailView  # 匯入自定義的註冊 view
 
 from django.conf import settings  # 匯入設定檔
 from django.conf.urls.static import static  # 開發環境下處理媒體檔案
@@ -22,6 +22,8 @@ urlpatterns = [
     path('accounts/logout-success/', views.logout_success, name='logout_success'),  # 登出成功頁面
     path('accounts/social/signup/extra/', views.social_signup_extra, name='social_signup_extra'),  # Google 註冊補資料頁
     path("accounts/social/signup/", CustomSocialSignupView.as_view(), name="socialaccount_signup"),  # 覆寫 Allauth 的社群註冊
+     path('accounts/confirm-email/<str:key>/', CustomConfirmEmailView.as_view(), name='account_confirm_email'),
+    
 
     # 將 petapp 應用的 urls.py 加入整體路由中（例如 dashboard、寵物管理等）
     path('', include('petapp.urls')),
