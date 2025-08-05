@@ -33,12 +33,22 @@ urlpatterns = [
     path('clinic/schedules/<int:doctor_id>/add/', views.add_schedule, name='add_schedule'),  # 新增排班
     path('clinic/schedules/<int:schedule_id>/edit/', views.edit_schedule, name='edit_schedule'),  # 編輯排班
     path('clinic/schedules/<int:schedule_id>/delete/', views.delete_schedule, name='delete_schedule'),  # 刪除排班
+    path('clinic/schedules/toggle/<int:schedule_id>/', views.toggle_schedule_status, name='toggle_schedule_status'),
+    path('clinic/schedules/copy-week/<int:doctor_id>/', views.copy_week_schedule, name='copy_week_schedule'),
     
     # 診所預約管理
     path('clinic/appointments/', views.clinic_appointments, name='clinic_appointments'),  # 診所預約管理頁面
     path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),  # 查看預約詳情
     path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),  # 確認預約
     path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),  # 診所取消預約
+
+
+    # ============ Dashboard API ============
+    path('api/dashboard/stats/', views.api_dashboard_stats, name='api_dashboard_stats'),
+    path('api/schedules/stats/', views.api_schedule_stats, name='api_schedule_stats'), 
+    path('api/clinic/status/', views.api_clinic_status, name='api_clinic_status'),
+    path('api/appointments/list/', views.api_appointments_list, name='api_appointments_list'),
+    path('api/clinic/settings/', views.api_clinic_settings, name='api_clinic_settings'),
     
     # ============ 飼主預約系統（重新設計） ============
     path('appointments/create/<int:pet_id>/', views.create_appointment, name='create_appointment'),  # 新增預約（新流程）
@@ -52,9 +62,8 @@ urlpatterns = [
     path('api/clinics/search/', views.api_search_clinics, name='api_search_clinics'),  # 搜尋診所
     
     # ============ 通知系統 ============
-    path('notifications/count/', views.get_notification_count, name='get_notification_count'),  # 取得通知數量
-    path('notifications/', views.notification_page, name='notification_page'),  # 通知頁面
-
+    path('api/notifications/count/', views.get_notification_count, name='get_notification_count'),
+    path('notifications/', views.notification_page, name='notification_page'),
     # ============ 註冊與帳號管理相關路由 ============
     path('select-account-type/', views.select_account_type, name='select_account_type'),  # 註冊後選擇帳號類型
     path('account/edit/', views.edit_profile, name='edit_profile'),  # 編輯個人資料
