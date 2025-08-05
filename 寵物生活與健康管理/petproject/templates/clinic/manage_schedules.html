@@ -1,374 +1,600 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}排班管理 - {{ clinic.clinic_name }}{% endblock %}
+{% block title %}排班管理 - {{ doctor.user.get_full_name|default:doctor.user.username }}{% endblock %}
 
 {% block extra_css %}
-<style>
-.schedule-card {
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
-  transition: all var(--transition-normal);
-}
-
-.schedule-card:hover {
-  box-shadow: 0 4px 15px var(--shadow-hover);
-  transform: translateY(-2px);
-}
-
-.weekday-badge {
-  background: var(--primary-orange);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius-pill);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.time-display {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.duration-badge {
-  background-color: rgba(13, 202, 240, 0.1);
-  color: #0dcaf0;
-  border: 1px solid rgba(13, 202, 240, 0.2);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--border-radius-pill);
-  font-size: 0.75rem;
-}
-
-.capacity-badge {
-  background-color: rgba(40, 167, 69, 0.1);
-  color: var(--success-color);
-  border: 1px solid rgba(40, 167, 69, 0.2);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--border-radius-pill);
-  font-size: 0.75rem;
-}
-
-.page-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
-  border: 1px solid #dee2e6;
-}
-
-.doctor-selector {
-  background: white;
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
-  border: 1px solid #dee2e6;
-  margin-bottom: var(--spacing-lg);
-}
-
-.weekly-overview {
-  background: rgba(255, 170, 0, 0.05);
-  border: 1px solid rgba(255, 170, 0, 0.1);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-}
-
-.day-column {
-  background: white;
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-  border: 1px solid #f1f3f4;
-  min-height: 100px;
-}
-
-.day-header {
-  font-weight: 600;
-  color: var(--primary-orange);
-  border-bottom: 1px solid #f1f3f4;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.schedule-time {
-  background: rgba(255, 170, 0, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius-sm);
-  font-size: 0.8rem;
-  margin-bottom: 0.25rem;
-  border-left: 3px solid var(--primary-orange);
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/clinic/schedule-management.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="schedule-management-container">
   
-  <!-- 頁面標題 -->
-  <div class="page-header">
+  <!-- 現代化頁面標題 -->
+  <div class="page-header-modern">
     <div class="row align-items-center">
-      <div class="col-md-8">
-        <h1 class="mb-2">
-          <i class="bi bi-clock-fill me-3 text-primary"></i>
-          排班管理
+      <div class="col-lg-8">
+        <h1 class="page-title-modern">
+          <i class="bi bi-calendar3 me-3"></i>
+          排班管理中心
         </h1>
-        <p class="text-muted mb-0">
-          <i class="bi bi-hospital me-2"></i>{{ clinic.clinic_name }}
-          {% if doctor %}
-            <span class="mx-2">•</span>
-            <i class="bi bi-person me-2"></i>
-            {% if doctor.user.first_name %}
-              Dr. {{ doctor.user.first_name }}
-            {% else %}
-              Dr. {{ doctor.user.username }}
-            {% endif %}
-          {% endif %}
-        </p>
-      </div>
-      <div class="col-md-4 text-md-end">
-        {% if can_edit %}
-        <a href="{% url 'add_schedule' doctor.id %}" class="btn btn-primary">
-          <i class="bi bi-plus-circle me-2"></i>
-          新增排班
-        </a>
-        {% endif %}
-        <a href="{% url 'clinic_dashboard' %}" class="btn btn-outline-secondary">
-          <i class="bi bi-arrow-left me-2"></i>
-          返回管理
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- 醫師選擇器 -->
-  {% if vet_profile.can_manage_doctors %}
-  <div class="doctor-selector">
-    <h5 class="mb-3">
-      <i class="bi bi-person-gear me-2"></i>
-      選擇醫師
-    </h5>
-    <div class="row">
-      {% for clinic_doctor in clinic.doctors.all %}
-      <div class="col-md-3 mb-2">
-        <a href="{% url 'manage_doctor_schedules' clinic_doctor.id %}" 
-           class="btn {% if clinic_doctor == doctor %}btn-primary{% else %}btn-outline-primary{% endif %} w-100">
-          {% if clinic_doctor.user.first_name %}
-            Dr. {{ clinic_doctor.user.first_name }}
-          {% else %}
-            Dr. {{ clinic_doctor.user.username }}
-          {% endif %}
-          {% if clinic_doctor.is_clinic_admin %}
-            <i class="bi bi-crown ms-1"></i>
-          {% endif %}
-        </a>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- 週排班概覽 -->
-  {% if schedules %}
-  <div class="weekly-overview">
-    <h5 class="mb-3">
-      <i class="bi bi-calendar-week me-2"></i>
-      週排班概覽
-    </h5>
-    <div class="row">
-      {% for day_num in "0123456" %}
-        <div class="col">
-          <div class="day-column">
-            <div class="day-header">
-              {% if day_num == "0" %}週一
-              {% elif day_num == "1" %}週二
-              {% elif day_num == "2" %}週三
-              {% elif day_num == "3" %}週四
-              {% elif day_num == "4" %}週五
-              {% elif day_num == "5" %}週六
-              {% elif day_num == "6" %}週日
+        <div class="page-subtitle-modern">
+          <div class="doctor-info-header">
+            <div class="doctor-avatar-small">
+              {% if doctor.user.first_name %}
+                {{ doctor.user.first_name|first }}
+              {% else %}
+                {{ doctor.user.username|first|upper }}
               {% endif %}
             </div>
-            {% for schedule in schedules %}
-              {% if schedule.weekday|stringformat:"s" == day_num %}
-                <div class="schedule-time">
-                  {{ schedule.start_time|time:"H:i" }}-{{ schedule.end_time|time:"H:i" }}
-                </div>
-              {% endif %}
-            {% endfor %}
+            <div class="doctor-details">
+              <div class="doctor-name">
+                <i class="bi bi-person-fill me-2"></i>
+                <span>{{ doctor.user.get_full_name|default:doctor.user.username }}</span>
+                {% if doctor.is_clinic_admin %}
+                  <span class="admin-badge">
+                    <i class="bi bi-crown"></i>
+                    管理員
+                  </span>
+                {% endif %}
+              </div>
+              <div class="clinic-info">
+                <i class="bi bi-hospital me-2"></i>
+                <span>{{ doctor.clinic.clinic_name }}</span>
+                <span class="mx-2">•</span>
+                <i class="bi bi-shield-check me-2"></i>
+                <span class="{% if doctor.is_verified %}text-success{% else %}text-warning{% endif %}">
+                  {% if doctor.is_verified %}執照已驗證{% else %}待驗證{% endif %}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      {% endfor %}
+        
+        <!-- 排班統計 -->
+        <div class="schedule-stats">
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.total_schedules }}</div>
+            <div class="stat-label">個排班</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.active_schedules }}</div>
+            <div class="stat-label">啟用中</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.weekly_hours|floatformat:1 }}</div>
+            <div class="stat-label">週總時數</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{ stats.avg_duration|floatformat:0 }}</div>
+            <div class="stat-label">分鐘/時段</div>
+          </div>
+        </div>  
+
+        <!-- 排班卡片中使用 -->
+        <div class="schedule-time">
+          <i class="bi bi-clock me-2"></i>
+          {{ schedule.time_display }}
+        </div>
+        <div class="schedule-duration">
+          時長：{{ schedule.duration_hours }} 小時 ({{ schedule.period_display }})
+        </div>
+
+        <!-- 詳細資訊 -->
+        <div class="detail-item">
+          <div class="detail-label">時段總數</div>
+          <div class="detail-value">{{ schedule.total_slots }} 個</div>
+        </div>
+
+      <div class="col-lg-4">
+        <div class="action-buttons-modern">
+          {% if can_edit %}
+          <button class="btn-modern btn-primary-modern" onclick="showAddScheduleModal()">
+            <i class="bi bi-plus-circle"></i>
+            <span>新增排班</span>
+          </button>
+          <button class="btn-modern btn-secondary-modern" onclick="showCopyWeekModal()">
+            <i class="bi bi-arrow-repeat"></i>
+            <span>複製排班</span>
+          </button>
+          {% endif %}
+          <a href="{% url 'manage_doctors' %}" class="btn-modern btn-outline-modern">
+            <i class="bi bi-arrow-left"></i>
+            <span>返回醫師</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
-  {% endif %}
 
-  <!-- 排班列表 -->
-  <div class="row">
-    <div class="col-12">
-      <h4 class="mb-3">
-        <i class="bi bi-list-ul me-2"></i>
-        詳細排班列表
-      </h4>
+  <!-- 操作工具列 -->
+  <div class="toolbar-section">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="view-controls">
+          <div class="view-toggle-group">
+            <button class="view-toggle active" data-view="calendar">
+              <i class="bi bi-calendar3"></i>
+              <span>週行事曆</span>
+            </button>
+            <button class="view-toggle" data-view="list">
+              <i class="bi bi-list-ul"></i>
+              <span>列表模式</span>
+            </button>
+          </div>
+        </div>
+      </div>
       
-      {% if schedules %}
-        {% for schedule in schedules %}
-        <div class="schedule-card">
-          <div class="row align-items-center">
-            
-            <!-- 星期顯示 -->
-            <div class="col-md-2">
-              <span class="weekday-badge">
-                {{ schedule.get_weekday_display }}
-              </span>
+      <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="filter-chips">
+            <div class="filter-chip active" data-filter="all">
+              <i class="bi bi-calendar-week me-1"></i>
+              全部排班
             </div>
-            
-            <!-- 時間顯示 -->
-            <div class="col-md-3">
-              <div class="time-display">
-                <i class="bi bi-clock me-2"></i>
-                {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}
-              </div>
+            <div class="filter-chip" data-filter="active">
+              <i class="bi bi-check-circle me-1"></i>
+              啟用中
             </div>
-            
-            <!-- 排班詳情 -->
-            <div class="col-md-4">
-              <div class="d-flex gap-2 flex-wrap">
-                <span class="duration-badge">
-                  <i class="bi bi-hourglass me-1"></i>
-                  {{ schedule.appointment_duration }} 分鐘/診
-                </span>
-                <span class="capacity-badge">
-                  <i class="bi bi-people me-1"></i>
-                  最多 {{ schedule.max_appointments_per_slot }} 人/時段
-                </span>
-              </div>
-              {% if schedule.notes %}
-              <div class="mt-2">
-                <small class="text-muted">
-                  <i class="bi bi-note-text me-1"></i>
-                  {{ schedule.notes }}
-                </small>
-              </div>
-              {% endif %}
+            <div class="filter-chip" data-filter="morning">
+              <i class="bi bi-sunrise me-1"></i>
+              上午時段
             </div>
-            
-            <!-- 操作按鈕 -->
-            <div class="col-md-3 text-end">
-              {% if can_edit %}
-              <div class="btn-group" role="group">
-                <a href="{% url 'edit_schedule' schedule.id %}" 
-                   class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-pencil"></i>
-                  編輯
-                </a>
-                <form method="post" action="{% url 'delete_schedule' schedule.id %}" 
-                      class="d-inline"
-                      onsubmit="return confirm('確定要刪除此排班嗎？這將影響未來的預約時段。')">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-trash"></i>
-                    刪除
-                  </button>
-                </form>
-              </div>
-              {% else %}
-              <span class="text-muted small">
-                <i class="bi bi-eye me-1"></i>
-                唯讀檢視
-              </span>
-              {% endif %}
+            <div class="filter-chip" data-filter="evening">
+              <i class="bi bi-sunset me-1"></i>
+              下午時段
             </div>
           </div>
+          
+          <div class="text-muted small" id="scheduleStats">
+            共 {{ schedules.count }} 個排班
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 週行事曆檢視 -->
+  <div id="calendarView" class="schedule-view active">
+    <div class="weekly-calendar">
+      <div class="calendar-header">
+        <div class="time-column-header">時間</div>
+        {% for day_num, day_name in weekdays %}
+        <div class="day-header" data-weekday="{{ day_num }}">
+          <div class="day-name">{{ day_name }}</div>
+          <div class="day-count" id="dayCount{{ day_num }}">0 個排班</div>
         </div>
         {% endfor %}
-        
-      {% else %}
-        <!-- 無排班時的顯示 -->
-        <div class="text-center py-5">
-          <div class="mb-4">
-            <i class="bi bi-clock" style="font-size: 4rem; color: #dee2e6;"></i>
-          </div>
-          <h4 class="text-muted">尚未設定任何排班</h4>
-          <p class="text-muted mb-4">請新增排班時間以開始接受預約</p>
-          {% if can_edit %}
-          <a href="{% url 'add_schedule' doctor.id %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>
-            新增第一個排班
-          </a>
-          {% endif %}
+      </div>
+      
+      <div class="calendar-body">
+        <!-- 時間軸 -->
+        <div class="time-column">
+          {% for hour in time_slots %}
+          <div class="time-slot">{{ hour }}</div>
+          {% endfor %}
         </div>
-      {% endif %}
+        
+        <!-- 週排班格子 -->
+        {% for day_num, day_name in weekdays %}
+        <div class="day-column" data-weekday="{{ day_num }}">
+          {% for hour in time_slots %}
+          <div class="time-cell" data-time="{{ hour }}" data-weekday="{{ day_num }}">
+            <div class="schedule-slot-placeholder">
+              {% if can_edit %}
+              <button class="add-schedule-btn" onclick="quickAddSchedule({{ day_num }}, '{{ hour }}')" title="快速新增排班">
+                <i class="bi bi-plus"></i>
+              </button>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
-  <!-- 排班說明 -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="card bg-light">
-        <div class="card-body">
-          <h6 class="card-title">
-            <i class="bi bi-info-circle me-2"></i>
-            排班說明
-          </h6>
-          <div class="row">
-            <div class="col-md-6">
-              <ul class="mb-0 small">
-                <li><strong>預約時長：</strong>每個預約的看診時間</li>
-                <li><strong>最大預約數：</strong>同一時段可預約的病患數量</li>
-                <li><strong>排班狀態：</strong>只有啟用的排班才會產生預約時段</li>
-              </ul>
+  <!-- 列表檢視 -->
+  <div id="listView" class="schedule-view">
+    <div class="schedules-list">
+      {% for schedule in schedules %}
+      <div class="schedule-card-modern" data-schedule-id="{{ schedule.id }}">
+        
+        <!-- 排班標題列 -->
+        <div class="schedule-header">
+          <div class="schedule-day-badge">
+            {{ schedule.get_weekday_display }}
+          </div>
+          
+          <div class="schedule-time-info">
+            <div class="schedule-time">
+              <i class="bi bi-clock me-2"></i>
+              {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}
             </div>
-            <div class="col-md-6">
-              <ul class="mb-0 small">
-                <li><strong>自動生成：</strong>系統會根據排班自動生成未來30天的預約時段</li>
-                <li><strong>修改影響：</strong>修改排班會重新生成相關的預約時段</li>
-                <li><strong>刪除警告：</strong>刪除排班前請確認沒有未來的預約</li>
-              </ul>
+            <div class="schedule-duration">
+              總時長：
+              {% widthratio schedule.end_time|time:"H" schedule.start_time|time:"H" 1 %}
+              小時
             </div>
           </div>
+          
+          <div class="schedule-status">
+            {% if schedule.is_active %}
+              <span class="status-badge-modern status-active-modern">
+                <i class="bi bi-check-circle"></i>
+                <span>啟用中</span>
+              </span>
+            {% else %}
+              <span class="status-badge-modern status-inactive-modern">
+                <i class="bi bi-pause-circle"></i>
+                <span>已停用</span>
+              </span>
+            {% endif %}
+          </div>
         </div>
+        
+        <!-- 排班詳細資訊 -->
+        <div class="schedule-details">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">預約時長</div>
+              <div class="detail-value">{{ schedule.appointment_duration }} 分鐘</div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-label">每時段最大預約</div>
+              <div class="detail-value">{{ schedule.max_appointments_per_slot }} 人</div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-label">時段總數</div>
+              <div class="detail-value">
+                {% widthratio schedule.end_time|time:"H" schedule.start_time|time:"H" 1 %}個
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-label">建立時間</div>
+              <div class="detail-value">{{ schedule.created_at|date:"m/d H:i" }}</div>
+            </div>
+          </div>
+          
+          {% if schedule.notes %}
+          <div class="schedule-notes">
+            <div class="notes-label">
+              <i class="bi bi-sticky me-1"></i>
+              備註
+            </div>
+            <div class="notes-content">{{ schedule.notes }}</div>
+          </div>
+          {% endif %}
+        </div>
+        
+        <!-- 操作按鈕組 -->
+        {% if can_edit %}
+        <div class="action-buttons-group">
+          <button 
+            class="action-btn btn-edit"
+            onclick="editSchedule({{ schedule.id }})"
+            title="編輯排班"
+          >
+            <i class="bi bi-pencil"></i>
+          </button>
+          
+          <button 
+            class="action-btn btn-copy"
+            onclick="copySchedule({{ schedule.id }})"
+            title="複製排班"
+          >
+            <i class="bi bi-files"></i>
+          </button>
+          
+          {% if schedule.is_active %}
+            <button 
+              class="action-btn btn-toggle-active toggle-schedule-btn"
+              data-schedule-id="{{ schedule.id }}"
+              data-action="deactivate"
+              title="停用排班"
+            >
+              <i class="bi bi-pause"></i>
+              <div class="loading-spinner-modern"></div>
+            </button>
+          {% else %}
+            <button 
+              class="action-btn btn-toggle-inactive toggle-schedule-btn"
+              data-schedule-id="{{ schedule.id }}"
+              data-action="activate"
+              title="啟用排班"
+            >
+              <i class="bi bi-play"></i>
+              <div class="loading-spinner-modern"></div>
+            </button>
+          {% endif %}
+          
+          <button 
+            class="action-btn btn-delete"
+            onclick="deleteSchedule({{ schedule.id }})"
+            title="刪除排班"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        {% endif %}
+        
+      </div>
+      {% empty %}
+      
+      <!-- 空狀態 -->
+      <div class="empty-state-modern">
+        <div class="empty-icon">
+          <i class="bi bi-calendar-x"></i>
+        </div>
+        <h3 class="empty-title">尚未設定任何排班</h3>
+        <p class="empty-description">
+          開始設定您的看診時間吧！<br>
+          設定排班後，病患就能在線上預約您的看診時段。
+        </p>
+        {% if can_edit %}
+        <button class="btn-modern btn-primary-modern" onclick="showAddScheduleModal()">
+          <i class="bi bi-plus-circle"></i>
+          <span>新增第一個排班</span>
+        </button>
+        {% endif %}
+      </div>
+      
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 新增/編輯排班 Modal -->
+  <div id="scheduleModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="modalTitle">新增排班</h3>
+        <button class="modal-close" onclick="closeScheduleModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <form id="scheduleForm" class="modal-body">
+        {% csrf_token %}
+        <input type="hidden" id="scheduleId" name="schedule_id">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="weekday">星期 <span class="required">*</span></label>
+            <select id="weekday" name="weekday" class="form-control" required>
+              <option value="">請選擇星期</option>
+              <option value="0">星期一</option>
+              <option value="1">星期二</option>
+              <option value="2">星期三</option>
+              <option value="3">星期四</option>
+              <option value="4">星期五</option>
+              <option value="5">星期六</option>
+              <option value="6">星期日</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startTime">開始時間 <span class="required">*</span></label>
+            <input type="time" id="startTime" name="start_time" class="form-control" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="endTime">結束時間 <span class="required">*</span></label>
+            <input type="time" id="endTime" name="end_time" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="appointmentDuration">預約時長 <span class="required">*</span></label>
+            <select id="appointmentDuration" name="appointment_duration" class="form-control" required>
+              <option value="15">15 分鐘</option>
+              <option value="20">20 分鐘</option>
+              <option value="30" selected>30 分鐘</option>
+              <option value="45">45 分鐘</option>
+              <option value="60">60 分鐘</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="maxAppointments">每時段最大預約數 <span class="required">*</span></label>
+            <select id="maxAppointments" name="max_appointments_per_slot" class="form-control" required>
+              <option value="1" selected>1 人</option>
+              <option value="2">2 人</option>
+              <option value="3">3 人</option>
+              <option value="4">4 人</option>
+              <option value="5">5 人</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="notes">備註</label>
+          <textarea id="notes" name="notes" class="form-control" rows="3" 
+            placeholder="例如：特殊門診、僅限急診等..."></textarea>
+        </div>
+        
+        <!-- 預計生成的時段預覽 -->
+        <div class="schedule-preview" id="schedulePreview" style="display: none;">
+          <h6>預計生成時段預覽：</h6>
+          <div class="preview-slots" id="previewSlots"></div>
+        </div>
+      </form>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-modern btn-outline-modern" onclick="closeScheduleModal()">
+          取消
+        </button>
+        <button type="button" class="btn-modern btn-primary-modern" onclick="saveSchedule()">
+          <i class="bi bi-check"></i>
+          <span id="saveButtonText">儲存排班</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 複製排班 Modal -->
+  <div id="copyWeekModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h3>複製排班</h3>
+        <button class="modal-close" onclick="closeCopyWeekModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <p>選擇要複製的排班來源：</p>
+        
+        <div class="copy-options">
+          <label class="copy-option">
+            <input type="radio" name="copySource" value="last_week" checked>
+            <div class="option-content">
+              <i class="bi bi-arrow-left-circle"></i>
+              <span>上週排班</span>
+            </div>
+          </label>
+          
+          <label class="copy-option">
+            <input type="radio" name="copySource" value="template">
+            <div class="option-content">
+              <i class="bi bi-bookmark"></i>
+              <span>排班範本</span>
+            </div>
+          </label>
+        </div>
+        
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="overwriteExisting">
+          <label class="form-check-label" for="overwriteExisting">
+            覆蓋現有排班
+          </label>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-modern btn-outline-modern" onclick="closeCopyWeekModal()">
+          取消
+        </button>
+        <button type="button" class="btn-modern btn-primary-modern" onclick="executeCopyWeek()">
+          <i class="bi bi-copy"></i>
+          開始複製
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 操作說明 -->
+  <div class="help-section-modern">
+    <h6 class="help-title">
+      <i class="bi bi-lightbulb"></i>
+      排班設定說明與操作指南
+    </h6>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="text-muted mb-3">📅 排班設定</h6>
+        <ul class="help-list">
+          <li class="help-item">
+            <strong>週行事曆：</strong>直觀顯示一週排班，點擊空白時段快速新增
+          </li>
+          <li class="help-item">
+            <strong>預約時長：</strong>每個預約時段的長度（15-60分鐘）
+          </li>
+          <li class="help-item">
+            <strong>最大預約數：</strong>同一時段可接受的預約人數上限
+          </li>
+          <li class="help-item">
+            <strong>排班狀態：</strong>可隨時啟用或停用，停用後不開放預約
+          </li>
+        </ul>
+      </div>
+      
+      <div class="col-md-6">
+        <h6 class="text-muted mb-3">🛠️ 操作功能</h6>
+        <ul class="help-list">
+          <li class="help-item">
+            <strong>快速新增：</strong>在週行事曆點擊空白時段即可快速設定
+          </li>
+          <li class="help-item">
+            <strong>複製排班：</strong>快速複製上週或範本排班到本週
+          </li>
+          <li class="help-item">
+            <strong>批量管理：</strong>可同時啟用或停用多個排班
+          </li>
+          <li class="help-item">
+            <strong>衝突檢查：</strong>系統自動檢查排班時間是否重疊
+          </li>
+        </ul>
       </div>
     </div>
   </div>
 
 </div>
+
+<!-- 隱藏的表單用於 AJAX 請求 -->
+<form id="ajaxForm" style="display: none;">
+  {% csrf_token %}
+</form>
+
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/clinic/schedule-management.js' %}"></script>
+
 <script>
+// 頁面專用初始化
 document.addEventListener('DOMContentLoaded', function() {
-  // 排班卡片懸停效果
-  const scheduleCards = document.querySelectorAll('.schedule-card');
+  console.log('🎯 排班管理頁面載入完成');
   
-  scheduleCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.style.borderColor = 'var(--primary-orange)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.borderColor = '#e9ecef';
-    });
-  });
+  // 傳遞 Django 數據到 JavaScript
+  window.schedulePageData = {
+    doctorId: {{ doctor.id }},
+    doctorName: '{{ doctor.user.get_full_name|default:doctor.user.username|escapejs }}',
+    canEdit: {{ can_edit|yesno:"true,false" }},
+    csrfToken: '{{ csrf_token }}',
+    schedules: [
+      {% for schedule in schedules %}
+      {
+        id: {{ schedule.id }},
+        weekday: {{ schedule.weekday }},
+        weekdayDisplay: '{{ schedule.get_weekday_display|escapejs }}',
+        startTime: '{{ schedule.start_time|time:"H:i" }}',
+        endTime: '{{ schedule.end_time|time:"H:i" }}',
+        appointmentDuration: {{ schedule.appointment_duration }},
+        maxAppointmentsPerSlot: {{ schedule.max_appointments_per_slot }},
+        notes: '{{ schedule.notes|default:""|escapejs }}',
+        isActive: {{ schedule.is_active|yesno:"true,false" }}
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ],
+    urls: {
+      addSchedule: '{% url "add_schedule" doctor.id %}',
+      editSchedule: '/clinic/schedules/{id}/edit/',
+      deleteSchedule: '/clinic/schedules/{id}/delete/',
+      toggleSchedule: '/clinic/schedules/toggle/{id}/',
+      copyWeek: '{% url "copy_week_schedule" doctor.id %}'
+    }
+  };
   
-  // 時間衝突檢查（可以在新增/編輯時使用）
-  function checkTimeConflict(newStart, newEnd, existingSchedules) {
-    // 這裡可以添加時間衝突檢查邏輯
-    return false;
-  }
+  // 顯示訊息
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'success' %}
+        showSuccessMessage('{{ message|escapejs }}');
+      {% elif message.tags == 'error' %}
+        showErrorMessage('{{ message|escapejs }}');
+      {% endif %}
+    {% endfor %}
+  {% endif %}
   
-  // 週概覽點擊效果
-  const dayColumns = document.querySelectorAll('.day-column');
-  
-  dayColumns.forEach(column => {
-    column.addEventListener('click', function() {
-      const dayHeader = this.querySelector('.day-header').textContent;
-      console.log(`點擊了 ${dayHeader}`);
-      // 可以添加快速新增該天排班的功能
-    });
-  });
+  // 初始化排班系統
+  initializeScheduleManagement();
 });
 </script>
 {% endblock %}
