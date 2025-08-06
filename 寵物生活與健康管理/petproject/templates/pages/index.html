@@ -210,6 +210,23 @@
   </div>
 </section>
 {% endif %}
+
+<!-- AI 客服按鈕 -->
+<div id="chatbot-button" title="AI 客服">💬</div>
+
+<!-- AI 客服對話框 -->
+<div id="chatbot-box">
+    <div id="chatbot-header">
+        AI 客服
+        <span id="chatbot-close">✖</span>
+    </div>
+    <div id="chatbot-messages"></div>
+    <div id="chatbot-input">
+        <input type="text" id="chatbot-text" placeholder="請輸入訊息..." />
+        <button id="chatbot-send">送出</button>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}

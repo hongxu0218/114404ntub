@@ -220,6 +220,9 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static' # 加入 static 路徑
 ]
 
+# 收集靜態檔案的目標資料夾
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # 媒體檔案（使用者上傳檔案）設定
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

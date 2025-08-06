@@ -65,10 +65,65 @@ window.PawDayHomepage = {
     this.setupTouchSupport();
     this.setupAccessibility();
     this.setupPerformanceOptimization();
+    this.setupChatbot();  // 假設有一個聊天機器人功能需要初始化
     
     this.state.isInitialized = true;
     PD.debug.log('✅ 首頁功能初始化完成');
   },
+
+  /**
+   * 設定聊天機器人功能
+   * 假設有一個聊天機器人按鈕和對話框
+   */
+  setupChatbot: function() {
+    const btn = document.getElementById("chatbot-button");
+    const box = document.getElementById("chatbot-box");
+    const closeBtn = document.getElementById("chatbot-close");
+    const sendBtn = document.getElementById("chatbot-send");
+    const input = document.getElementById("chatbot-text");
+    const messagesDiv = document.getElementById("chatbot-messages");
+
+    if (!btn || !box) return;
+
+    btn.addEventListener("click", () => box.style.display = "flex");
+    closeBtn.addEventListener("click", () => box.style.display = "none");
+
+    const appendMessage = (sender, text) => {
+        const msgDiv = document.createElement("div");
+        msgDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    };
+
+    const sendMessage = () => {
+        const text = input.value.trim();
+        if (!text) return;
+        appendMessage("我", text);
+        input.value = "";
+
+        fetch("/chatbot-api/", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.reply) {
+                appendMessage("AI", data.reply);
+            } else {
+                appendMessage("AI", "抱歉，發生錯誤。");
+            }
+        })
+        .catch(() => {
+            appendMessage("AI", "無法連線到伺服器。");
+        });
+    };
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
+},
 
   /**
    * 設定新聞滾動功能
