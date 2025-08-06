@@ -3880,20 +3880,32 @@ def api_emergency_locations(request):
 
 ################################AI聊天功能############################
 
-def ai_chat(request):
-    user_message = request.GET.get("q", "哈囉")
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "你是一個友善的寵物生活顧問"},
-                {"role": "user", "content": user_message}
-            ]
-        )
-        answer = response.choices[0].message["content"]
-        return JsonResponse({"reply": answer})
-    except Exception as e:
-        return JsonResponse({"error": str(e)})
+import openai
+from django.http import JsonResponse
+from django.conf import settings
+
+openai.api_key = settings.OPENAI_API_KEY
+
+def ai_chat_api(request):
+    if request.method == "POST":
+        import json
+        body = json.loads(request.body)
+        user_message = body.get("message", "")
+
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "你是一個友善的寵物生活顧問"},
+                    {"role": "user", "content": user_message}
+                ]
+            )
+            answer = response.choices[0].message["content"]
+            return JsonResponse({"reply": answer})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 ################################AI聊天功能############################
 
