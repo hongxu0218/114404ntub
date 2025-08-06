@@ -3880,32 +3880,34 @@ def api_emergency_locations(request):
 
 ################################AI聊天功能############################
 
-import openai
-from django.http import JsonResponse
-from django.conf import settings
-
 openai.api_key = settings.OPENAI_API_KEY
 
-def ai_chat_api(request):
-    if request.method == "POST":
-        import json
-        body = json.loads(request.body)
-        user_message = body.get("message", "")
+@csrf_exempt  # 讓前端 AJAX 不用帶 CSRF token（如果要加安全驗證可以再補）
+def chatbot_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
 
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "你是一個友善的寵物生活顧問"},
-                    {"role": "user", "content": user_message}
-                ]
-            )
-            answer = response.choices[0].message["content"]
-            return JsonResponse({"reply": answer})
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        user_message = data.get("message", "").strip()
 
-    return JsonResponse({"error": "Invalid request"}, status=400)
+        if not user_message:
+            return JsonResponse({"error": "Empty message"}, status=400)
+
+        # 呼叫 OpenAI Chat API
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "你是一位友善的寵物生活顧問，提供溫暖且專業的毛孩照護與健康建議"},
+                {"role": "user", "content": user_message}
+            ]
+        )
+
+        reply = response.choices[0].message["content"].strip()
+        return JsonResponse({"reply": reply})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 ################################AI聊天功能############################
 
