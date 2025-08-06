@@ -42,6 +42,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from functools import wraps
 
+import openai # 匯入 OpenAI API
+
 # ============ 自定義裝飾器定義 ============
 
 def require_clinic_management(view_func):
@@ -3875,6 +3877,25 @@ def api_emergency_locations(request):
         }, status=500)
 
 ###############################24小時急診地圖############################
+
+################################AI聊天功能############################
+
+def ai_chat(request):
+    user_message = request.GET.get("q", "哈囉")
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "你是一個友善的寵物生活顧問"},
+                {"role": "user", "content": user_message}
+            ]
+        )
+        answer = response.choices[0].message["content"]
+        return JsonResponse({"reply": answer})
+    except Exception as e:
+        return JsonResponse({"error": str(e)})
+
+################################AI聊天功能############################
 
 def custom_400(request, exception=None):
     """自訂 400 錯誤處理器"""
