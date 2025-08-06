@@ -1,0 +1,55 @@
+# === Python & Django ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.so
+*.egg
+*.egg-info/
+*.log
+
+# Django migration cache
+db.sqlite3
+media/
+staticfiles/
+.env
+.env.*
+*.sqlite3
+
+# Cloudflare tunnel binary
+cloudflared.exe
+cloudflared
+
+# === Virtual Environment ===
+venv/
+env/
+.venv/
+
+# === VS Code ===
+.vscode/
+*.code-workspace
+
+# === Windows 系統檔案 ===
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# === OneDrive 暫存檔案 ===
+*.tmp
+*.temp
+*.lnk
+
+# === 本地設定檔（不推到 GitHub）===
+
+
+# === IDE & 編譯快取 ===
+.idea/
+*.iml
+
+# === 測試檔案與報告 ===
+.coverage
+htmlcov/
+.tox/
+pytest_cache/
