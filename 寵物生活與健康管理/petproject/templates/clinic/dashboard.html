@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/clinic/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/clinic/business-hours.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -293,11 +294,7 @@
               </div>
               
               <div class="appointments-body" id="appointmentsList">
-                <!-- 預約列表將透過 AJAX 載入 -->
-                <div class="loading-placeholder">
-                  <div class="loading-spinner"></div>
-                  <span>載入預約資料中...</span>
-                </div>
+                <!-- 預約列表將由JavaScript動態載入 -->
               </div>
             </div>
           </div>
@@ -488,8 +485,178 @@
           </form>
         </div>
         
+        <!-- 營業時間設定標籤頁內容 --->
         <div class="tab-content" id="businessTab" style="display: none;">
-          <p class="text-muted">營業時間設定功能開發中...</p>
+          <div class="business-hours-container">
+            
+            <!-- 營業時間編輯區域 -->
+            <div class="business-hours-editor">
+              <div class="editor-header mb-4">
+                <h5 class="mb-2">
+                  <i class="bi bi-calendar-week me-2"></i>
+                  每週營業時間設定
+                </h5>
+                <p class="text-muted mb-0">設定診所每天的營業時間，可以為每天新增多個時段</p>
+              </div>
+              
+              <div class="days-container">
+                <!-- 週一到週日的設定 -->
+                <div class="day-card" data-day="0">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週一</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled" checked>
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">營業</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(0)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="0"></div>
+                </div>
+
+                <div class="day-card" data-day="1">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週二</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled" checked>
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">營業</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(1)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="1"></div>
+                </div>
+
+                <div class="day-card" data-day="2">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週三</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled" checked>
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">營業</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(2)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="2"></div>
+                </div>
+
+                <div class="day-card" data-day="3">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週四</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled" checked>
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">營業</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(3)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="3"></div>
+                </div>
+
+                <div class="day-card" data-day="4">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週五</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled" checked>
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">營業</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(4)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="4"></div>
+                </div>
+
+                <div class="day-card" data-day="5">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週六</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled" checked>
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">營業</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(5)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="5"></div>
+                </div>
+
+                <div class="day-card" data-day="6">
+                  <div class="day-header">
+                    <div class="day-info">
+                      <h6 class="day-name">週日</h6>
+                      <div class="day-status">
+                        <label class="status-toggle">
+                          <input type="checkbox" class="day-enabled">
+                          <span class="toggle-slider"></span>
+                          <span class="status-text">休息</span>
+                        </label>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary add-period-btn" onclick="addPeriod(6)">
+                      <i class="bi bi-plus"></i>
+                      新增時段
+                    </button>
+                  </div>
+                  <div class="periods-container" data-day="6"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 營業時間預覽 -->
+            <div class="preview-section mt-4">
+              <h5 class="mb-3">
+                <i class="bi bi-eye me-2"></i>
+                營業時間總覽
+              </h5>
+              <div class="preview-card">
+                <div id="businessHoursPreview">
+                  <!-- 預覽內容將由 JavaScript 生成 -->
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
         
         <div class="tab-content" id="notificationTab" style="display: none;">
@@ -520,7 +687,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/clinic/dashboard.js' %}"></script>
-
+<script src="{% static 'js/clinic/business-hours.js' %}"></script>
 <script>
 // 傳遞 Django 數據到 JavaScript
 window.dashboardData = {
@@ -560,6 +727,19 @@ window.dashboardData = {
   {% endfor %}
 {% endif %}
 
-
+// 營業時間初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 當切換到營業時間標籤時初始化
+    const businessTab = document.querySelector('[data-tab="business"]');
+    if (businessTab) {
+        businessTab.addEventListener('click', function() {
+            setTimeout(() => {
+                if (typeof initializeBusinessHours === 'function') {
+                    initializeBusinessHours();
+                }
+            }, 100);
+        });
+    }
+});
 </script>
 {% endblock %}
