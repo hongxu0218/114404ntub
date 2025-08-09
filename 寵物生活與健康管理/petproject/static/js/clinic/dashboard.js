@@ -6,7 +6,7 @@ let appointmentsData = [];
 let currentDateFilter = 'today';
 let refreshInterval = null;
 let businessStatusInterval = null;
-let isInitialized = false; // 防止重複初始化
+let isInitialized = false;
 
 // ========== DOM 載入完成後初始化 ==========
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,10 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeDashboard() {
     console.log('🚀 初始化診所管理中心...');
     
-    // 載入頁面數據
     loadDashboardData();
-    
-    // 初始化各種功能
     initializeStatCards();
     initializeAppointmentsList();
     initializeQuickActions();
@@ -31,8 +28,6 @@ function initializeDashboard() {
     initializeModals();
     initializeRefreshTimer();
     initializeKeyboardShortcuts();
-    
-    // 初始載入數據（暫時停用API調用）
     loadInitialDataSafe();
     
     console.log('✅ 診所管理中心初始化完成');
@@ -48,56 +43,43 @@ function loadDashboardData() {
 
 // ========== 統計卡片功能 ==========
 function initializeStatCards() {
-    // 為統計卡片添加點擊事件
     addStatCardClickHandlers();
-    
-    // 動畫效果
     animateStatCards();
-    
     console.log('📈 統計卡片初始化完成');
 }
 
 function addStatCardClickHandlers() {
-    // 今日預約卡片
     const todayCard = document.querySelector('.stat-card.stat-primary');
     if (todayCard) {
         todayCard.style.cursor = 'pointer';
         todayCard.addEventListener('click', () => {
             viewTodayAppointments();
         });
-        
-        // 添加提示
         todayCard.title = '點擊查看今日預約詳情';
     }
     
-    // 待確認預約卡片
     const pendingCard = document.querySelector('.stat-card.stat-warning');
     if (pendingCard) {
         pendingCard.style.cursor = 'pointer';
         pendingCard.addEventListener('click', () => {
             viewPendingAppointments();
         });
-        
         pendingCard.title = '點擊處理待確認預約';
     }
     
-    // 醫師團隊卡片
     const doctorsCard = document.querySelector('.stat-card.stat-success');
     if (doctorsCard) {
         doctorsCard.style.cursor = 'pointer';
         doctorsCard.addEventListener('click', () => {
             window.location.href = dashboardData.urls.doctors;
         });
-        
         doctorsCard.title = '點擊管理醫師團隊';
     }
 }
 
 function animateStatCards() {
     const statCards = document.querySelectorAll('.stat-card');
-    
     statCards.forEach((card, index) => {
-        // 延遲動畫，創造波浪效果
         setTimeout(() => {
             card.style.animation = 'slideInUp 0.6s ease-out forwards';
         }, index * 100);
@@ -112,7 +94,6 @@ function updateStatCard(cardSelector, newValue, change = null) {
     const changeElement = card.querySelector('.stat-change span');
     
     if (numberElement) {
-        // 數字動畫
         animateNumber(numberElement, parseInt(numberElement.textContent), newValue);
     }
     
@@ -146,85 +127,56 @@ function easeOutQuart(t) {
 
 // ========== 預約列表功能 ==========
 function initializeAppointmentsList() {
-    // 日期篩選按鈕
     const dateButtons = document.querySelectorAll('.date-btn');
     dateButtons.forEach(btn => {
         btn.addEventListener('click', function() {
-            // 更新按鈕狀態
             dateButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             
-            // 載入對應日期的預約
             currentDateFilter = this.dataset.date;
-            // 使用示範資料
-            showAppointmentsSample(currentDateFilter);
+            loadAppointments(currentDateFilter);
         });
     });
     
-    // 直接顯示示範資料
-    showAppointmentsSample('today');
-    
-    console.log('📋 預約列表初始化完成（使用示範資料）');
+    // 初始載入
+    loadAppointments('today');
+    console.log('📋 預約列表初始化完成');
 }
 
-function showAppointmentsSample(dateFilter) {
-    const sampleAppointments = [
-        {
-            id: 1,
-            time: '09:00',
-            owner_name: '王小明',
-            pet_name: '小白',
-            doctor_name: dashboardData?.clinic?.name ? '診所醫師' : '載入中',
-            status: 'confirmed',
-            reason: '定期健檢'
-        },
-        {
-            id: 2,
-            time: '10:30',
-            owner_name: '李小華',
-            pet_name: '咪咪',
-            doctor_name: dashboardData?.clinic?.name ? '診所醫師' : '載入中',
-            status: 'pending',
-            reason: '疫苗接種'
-        }
-    ];
-    
-    if (dateFilter === 'today') {
-        renderAppointments(sampleAppointments);
-    } else {
-        renderAppointments([]);
-    }
-    
-    // 顯示提示訊息
-    setTimeout(() => {
-        const appointmentsList = document.getElementById('appointmentsList');
-        if (appointmentsList && dateFilter === 'today') {
-            const notice = document.createElement('div');
-            notice.className = 'alert alert-info mt-3';
-            notice.style.cssText = `
-                background: rgba(6, 182, 212, 0.1);
-                border: 1px solid rgba(6, 182, 212, 0.3);
-                color: #0891b2;
-                padding: 0.75rem;
-                border-radius: 0.5rem;
-                margin-top: 1rem;
-            `;
-            notice.innerHTML = `
-                <i class="bi bi-info-circle me-2"></i>
-                <small>目前顯示示範資料，完整預約功能需要後端API支援</small>
-            `;
-            appointmentsList.appendChild(notice);
-        }
-    }, 1000);
-}
-
-// 🔧 修正：暫時停用API調用的預約載入函數
 function loadAppointments(dateFilter) {
-    console.log(`📋 載入預約 (${dateFilter})：使用示範資料（API暫未實作）`);
+    console.log(`📋 載入預約 (${dateFilter})`);
     
-    // 直接使用示範資料，不調用API
-    showAppointmentsSample(dateFilter);
-    return;
+    // 顯示載入狀態
+    showAppointmentsLoading();
+    
+    // 🔧 TODO: 啟用真實API調用
+    // 目前直接顯示空狀態，等API準備好後啟用以下代碼：
+    /*
+    fetch(`/api/appointments/list/?date=${dateFilter}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': dashboardData.csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            renderAppointments(data.appointments);
+        } else {
+            showAppointmentsError(data.message || '載入失敗');
+        }
+    })
+    .catch(error => {
+        console.error('載入預約錯誤:', error);
+        showAppointmentsError('載入預約失敗，請稍後重試');
+    });
+    */
+    
+    // 暫時顯示空狀態
+    setTimeout(() => {
+        showEmptyAppointments(dateFilter);
+    }, 500);
 }
 
 function showAppointmentsLoading() {
@@ -233,6 +185,23 @@ function showAppointmentsLoading() {
         <div class="loading-placeholder">
             <div class="loading-spinner"></div>
             <span>載入預約資料中...</span>
+        </div>
+    `;
+}
+
+function showEmptyAppointments(dateFilter) {
+    const appointmentsList = document.getElementById('appointmentsList');
+    
+    const dateText = {
+        'today': '今日',
+        'tomorrow': '明日',
+        'week': '本週'
+    };
+    
+    appointmentsList.innerHTML = `
+        <div class="empty-appointments">
+            <i class="bi bi-calendar-x"></i>
+            <p>${dateText[dateFilter] || '此時段'}暫無預約</p>
         </div>
     `;
 }
@@ -254,7 +223,7 @@ function renderAppointments(appointments) {
         <div class="appointment-item" data-appointment-id="${appointment.id}">
             <div class="appointment-header">
                 <div class="appointment-time">
-                    <i class="bi bi-clock me-2"></i>
+                    <i class="bi bi-clock"></i>
                     ${appointment.time}
                 </div>
                 <div class="appointment-status ${appointment.status}">
@@ -262,21 +231,23 @@ function renderAppointments(appointments) {
                 </div>
             </div>
             <div class="appointment-info">
-                <div class="mb-1">
-                    <i class="bi bi-person me-2"></i>
-                    <strong>${appointment.owner_name}</strong>
-                    <span class="mx-2">•</span>
-                    <i class="bi bi-heart me-1"></i>
-                    ${appointment.pet_name}
+                <div class="appointment-row">
+                    <i class="bi bi-person"></i>
+                    <div class="owner-pet-info">
+                        <span class="owner-name">${appointment.owner_name}</span>
+                        <span class="info-separator">•</span>
+                        <i class="bi bi-heart"></i>
+                        <span class="pet-name">${appointment.pet_name}</span>
+                    </div>
                 </div>
-                <div class="mb-1">
-                    <i class="bi bi-person-badge me-2"></i>
-                    ${appointment.doctor_name}
+                <div class="appointment-row">
+                    <i class="bi bi-person-badge"></i>
+                    <span class="doctor-info">${appointment.doctor_name}</span>
                 </div>
                 ${appointment.reason ? `
-                <div class="text-muted small">
-                    <i class="bi bi-chat-text me-2"></i>
-                    ${appointment.reason}
+                <div class="appointment-row">
+                    <i class="bi bi-chat-text"></i>
+                    <span class="reason-info">${appointment.reason}</span>
                 </div>
                 ` : ''}
             </div>
@@ -300,7 +271,7 @@ function showAppointmentsError(message) {
         <div class="empty-appointments">
             <i class="bi bi-exclamation-triangle"></i>
             <p>${message}</p>
-            <button class="btn-modern btn-primary-modern btn-sm" onclick="loadAppointments('${currentDateFilter}')">
+            <button class="btn-modern btn-primary-modern btn-sm mt-2" onclick="loadAppointments('${currentDateFilter}')">
                 <i class="bi bi-arrow-clockwise"></i>
                 重新載入
             </button>
@@ -322,23 +293,16 @@ function getStatusText(status) {
 
 // ========== 快速操作功能 ==========
 function initializeQuickActions() {
-    // 初始化功能卡片的點擊事件
     initializeFeatureCards();
-    
-    // 初始化快速操作按鈕
     initializeQuickActionButtons();
-    
     console.log('⚡ 快速操作初始化完成');
 }
 
 function initializeFeatureCards() {
-    // 為每個功能卡片添加點擊事件
     const featureCards = document.querySelectorAll('.feature-card');
-    
     featureCards.forEach(card => {
         const actionBtn = card.querySelector('.btn-feature');
         if (actionBtn && actionBtn.href) {
-            // 如果按鈕有href，讓整個卡片都可點擊
             card.style.cursor = 'pointer';
             card.addEventListener('click', function(e) {
                 if (e.target === this || !e.target.closest('.btn-feature')) {
@@ -350,9 +314,7 @@ function initializeFeatureCards() {
 }
 
 function initializeQuickActionButtons() {
-    // 快速操作按鈕事件綁定
     const quickActionBtns = document.querySelectorAll('.quick-action-btn');
-    
     quickActionBtns.forEach(btn => {
         const actionTitle = btn.querySelector('.action-title');
         if (actionTitle) {
@@ -376,34 +338,26 @@ function initializeQuickActionButtons() {
     });
 }
 
-// 新增醫師 Modal
 function showAddDoctorModal() {
-    // 直接跳轉到新增醫師頁面
     window.location.href = dashboardData.urls.addDoctor;
 }
 
-// 新增排班 Modal
 function showAddScheduleModal() {
-    // 跳轉到排班管理頁面
     window.location.href = dashboardData.urls.schedules;
 }
 
-// 查看今日預約
 function viewTodayAppointments() {
     window.location.href = `${dashboardData.urls.appointments}?date=today`;
 }
 
-// 查看待確認預約
 function viewPendingAppointments() {
     window.location.href = `${dashboardData.urls.appointments}?status=pending`;
 }
 
-// 預約詳情
 function viewAppointmentDetail(appointmentId) {
     window.location.href = `${dashboardData.urls.appointments}${appointmentId}/`;
 }
 
-// 顯示通知
 function showNotifications() {
     window.location.href = '/notifications/';
 }
@@ -411,14 +365,10 @@ function showNotifications() {
 // ========== 營業狀態檢查 ==========
 function initializeBusinessStatus() {
     updateBusinessStatusLocal();
-    
-    // 每分鐘檢查一次營業狀態
     businessStatusInterval = setInterval(updateBusinessStatusLocal, 60000);
-    
-    console.log('🏥 營業狀態檢查初始化完成（本地判斷）');
+    console.log('🏥 營業狀態檢查初始化完成');
 }
 
-// 🔧 修正：使用本地時間判斷，避免API錯誤
 function updateBusinessStatusLocal() {
     const statusElement = document.getElementById('businessStatus');
     if (!statusElement) return;
@@ -431,7 +381,6 @@ function updateBusinessStatusLocal() {
     let isOpen = false;
     let statusText = '';
     
-    // 簡單的時間判斷
     if (currentHour >= 9 && currentHour < 12) {
         isOpen = true;
         statusText = '上午診 (09:00-12:00)';
@@ -461,13 +410,10 @@ function updateBusinessStatusLocal() {
     if (text) {
         text.textContent = statusText;
     }
-    
-    console.log(`🏥 營業狀態更新: ${statusText}`);
 }
 
 // ========== Modal 管理 ==========
 function initializeModals() {
-    // Modal 外部點擊關閉
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -476,16 +422,13 @@ function initializeModals() {
         });
     });
     
-    // ESC 鍵關閉 Modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeAllModals();
         }
     });
     
-    // 設定 Modal 標籤頁
     initializeSettingsTabs();
-    
     console.log('🗂️ Modal 管理初始化完成');
 }
 
@@ -497,11 +440,9 @@ function initializeSettingsTabs() {
         button.addEventListener('click', function() {
             const targetTab = this.dataset.tab;
             
-            // 更新按鈕狀態
             tabButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             
-            // 更新內容顯示
             tabContents.forEach(content => {
                 content.style.display = 'none';
             });
@@ -549,31 +490,17 @@ function saveClinicSettings() {
     const form = document.getElementById('clinicSettingsForm');
     const formData = new FormData(form);
     
-    // 顯示儲存狀態
     showSaveLoading(true);
     
-    // 準備資料
     const data = {
         clinic_phone: formData.get('clinic_phone'),
         clinic_email: formData.get('clinic_email'),
         clinic_address: formData.get('clinic_address')
     };
     
-    // 🔧 修正：暫時模擬成功，不調用API
-    setTimeout(() => {
-        showSuccessMessage('設定功能開發中，資料未實際儲存');
-        closeSettingsModal();
-        showSaveLoading(false);
-        
-        // 更新頁面顯示的資料
-        updateClinicInfo(data);
-    }, 1500);
-    
-    return;
-    
-    // ===== 以下代碼暫時停用，等API實作完成後啟用 =====
+    // 🔧 TODO: 啟用真實API調用
+    // 目前模擬成功，等API準備好後啟用以下代碼：
     /*
-    // 發送請求
     fetch('/api/clinic/settings/', {
         method: 'POST',
         headers: {
@@ -600,6 +527,14 @@ function saveClinicSettings() {
         showSaveLoading(false);
     });
     */
+    
+    // 暫時模擬成功
+    setTimeout(() => {
+        showSuccessMessage('設定功能開發中，資料未實際儲存');
+        closeSettingsModal();
+        showSaveLoading(false);
+        updateClinicInfo(data);
+    }, 1500);
 }
 
 function showSaveLoading(show) {
@@ -615,7 +550,6 @@ function showSaveLoading(show) {
 }
 
 function updateClinicInfo(newData) {
-    // 更新 dashboardData
     if (newData.clinic_phone) {
         dashboardData.clinic.phone = newData.clinic_phone;
     }
@@ -629,14 +563,12 @@ function updateClinicInfo(newData) {
     console.log('🔄 診所資訊已更新:', newData);
 }
 
-// ========== 自動刷新功能（暫時停用） ==========
+// ========== 自動刷新功能 ==========
 function initializeRefreshTimer() {
-    // 🔧 暫時停用自動刷新，避免API錯誤
-    console.log('🔄 自動刷新功能初始化完成（暫時停用API調用）');
+    console.log('🔄 自動刷新功能初始化完成');
     
-    // ===== 以下代碼暫時停用 =====
+    // 🔧 TODO: 啟用自動刷新統計數據
     /*
-    // 每5分鐘自動刷新統計數據
     refreshInterval = setInterval(() => {
         refreshDashboardStats();
     }, 5 * 60 * 1000);
@@ -644,32 +576,11 @@ function initializeRefreshTimer() {
 }
 
 function refreshDashboardStats() {
-    console.log('🔄 刷新統計數據（暫時停用）...');
-    return;
-    
-    // ===== 以下代碼暫時停用 =====
-    /*
-    fetch('/api/dashboard/stats/', {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': dashboardData.csrfToken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updateDashboardStats(data.stats);
-        }
-    })
-    .catch(error => {
-        console.error('刷新統計數據錯誤:', error);
-    });
-    */
+    // 🔧 TODO: 啟用真實API調用刷新統計
+    console.log('🔄 刷新統計數據...');
 }
 
 function updateDashboardStats(newStats) {
-    // 更新統計卡片
     if (newStats.todayAppointments !== undefined) {
         updateStatCard('.stat-card.stat-primary', newStats.todayAppointments);
     }
@@ -686,10 +597,8 @@ function updateDashboardStats(newStats) {
         updateStatCard('.stat-card.stat-info', newStats.totalAppointmentsThisMonth);
     }
     
-    // 更新全域資料
     dashboardData.stats = { ...dashboardData.stats, ...newStats };
     
-    // 如果當前顯示今日預約，也一起更新
     if (currentDateFilter === 'today') {
         loadAppointments('today');
     }
@@ -698,31 +607,26 @@ function updateDashboardStats(newStats) {
 // ========== 鍵盤快捷鍵 ==========
 function initializeKeyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + D: Dashboard
         if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
             e.preventDefault();
             window.location.href = '/clinic/dashboard/';
         }
         
-        // Ctrl/Cmd + M: 醫師管理
         if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
             e.preventDefault();
             window.location.href = dashboardData.urls.doctors;
         }
         
-        // Ctrl/Cmd + A: 預約管理
         if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
             e.preventDefault();
             window.location.href = dashboardData.urls.appointments;
         }
         
-        // Ctrl/Cmd + S: 排班管理
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
             window.location.href = dashboardData.urls.schedules;
         }
         
-        // Ctrl/Cmd + ,: 設定
         if ((e.ctrlKey || e.metaKey) && e.key === ',') {
             e.preventDefault();
             showSettingsModal();
@@ -732,34 +636,18 @@ function initializeKeyboardShortcuts() {
     console.log('⌨️ 鍵盤快捷鍵初始化完成');
 }
 
-// ========== 安全的初始資料載入 ==========
+// ========== 初始資料載入 ==========
 function loadInitialDataSafe() {
-    console.log('📊 安全初始資料載入（暫時停用所有API調用）');
+    console.log('📊 安全初始資料載入');
     
-    // 設定預設的排班統計，避免顯示undefined
     updateScheduleStats({ 
         activeSchedules: '--', 
         totalSchedules: '--' 
     });
     
-    // 顯示開發狀態提示
-    setTimeout(() => {
-        console.log('💡 Dashboard已載入，使用示範資料模式');
-        console.log('🚧 以下API端點可用但暫時停用：');
-        console.log('  ✅ /api/schedules/stats/ - 排班統計');
-        console.log('  ✅ /api/appointments/list/ - 預約列表');  
-        console.log('  ✅ /api/clinic/status/ - 診所狀態');
-        console.log('  ✅ /api/dashboard/stats/ - 統計刷新');
-        console.log('  ✅ /api/clinic/settings/ - 診所設定');
-        
-        // 顯示友善提示
-        showInfoMessage('Dashboard 已載入完成，目前使用示範資料模式');
-    }, 2000);
-    
     console.log('📊 安全初始資料載入完成');
 }
 
-// 🔧 移除會造成404錯誤的函數
 function updateScheduleStats(stats) {
     const activeSchedulesElement = document.getElementById('activeSchedulesCount');
     if (activeSchedulesElement && stats.activeSchedules !== undefined) {
@@ -805,7 +693,6 @@ function showMessage(message, type) {
     
     document.body.appendChild(messageEl);
     
-    // 自動移除
     setTimeout(() => {
         if (messageEl.parentNode) {
             messageEl.classList.add('fade-out');
@@ -817,7 +704,6 @@ function showMessage(message, type) {
         }
     }, 5000);
     
-    // 手動關閉
     messageEl.querySelector('.message-close').addEventListener('click', () => {
         messageEl.classList.add('fade-out');
         setTimeout(() => {
@@ -859,7 +745,6 @@ function cleanup() {
     }
 }
 
-// 頁面卸載時清理
 window.addEventListener('beforeunload', cleanup);
 
 // ========== CSS 動畫注入 ==========
@@ -948,7 +833,6 @@ const dashboardAnimationCSS = `
     opacity: 1; 
 }
 
-/* 響應式訊息顯示 */
 @media (max-width: 768px) {
     .message-toast {
         top: 1rem;
@@ -959,7 +843,6 @@ const dashboardAnimationCSS = `
 }
 `;
 
-// 注入 CSS
 if (!document.getElementById('dashboard-animations')) {
     const style = document.createElement('style');
     style.id = 'dashboard-animations';
