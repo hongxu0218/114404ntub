@@ -35,13 +35,18 @@ urlpatterns = [
     path('clinic/schedules/<int:schedule_id>/delete/', views.delete_schedule, name='delete_schedule'),  # 刪除排班
     path('clinic/schedules/toggle/<int:schedule_id>/', views.toggle_schedule_status, name='toggle_schedule_status'),
     path('clinic/schedules/copy-week/<int:doctor_id>/', views.copy_week_schedule, name='copy_week_schedule'),
-    
-    # 診所預約管理
-    path('clinic/appointments/', views.clinic_appointments, name='clinic_appointments'),  # 診所預約管理頁面
-    path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),  # 查看預約詳情
-    path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),  # 確認預約
-    path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),  # 診所取消預約
 
+    # ============ 增強的預約管理系統 ============
+    # 預約管理主頁
+    path('clinic/appointments/', views.clinic_appointments, name='clinic_appointments'),
+    
+    # 預約詳情 - 支援 AJAX
+    path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),
+    
+    # 預約操作 API
+    path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),
+    path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),
+    path('clinic/appointments/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),
 
     # ============ Dashboard API ============
     path('api/dashboard/stats/', views.api_dashboard_stats, name='api_dashboard_stats'),
