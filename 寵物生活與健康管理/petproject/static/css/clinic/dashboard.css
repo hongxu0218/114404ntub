@@ -582,21 +582,25 @@
   color: var(--gray-700);
   cursor: pointer;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .date-btn.active {
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .date-btn:hover:not(.active) {
   background: var(--gray-200);
+  border-color: var(--gray-400);
 }
 
 .appointments-body {
   padding: var(--spacing-lg);
-  min-height: 200px;
+  min-height: 280px;
+  background: white;
 }
 
 .loading-placeholder {
@@ -1044,61 +1048,206 @@
 
 /* ========== 預約項目樣式 ========== */
 .appointment-item {
-  background: white;
+  background: var(--gray-50);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-md);
   border: 1px solid var(--gray-200);
   transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.appointment-item:last-child {
+  margin-bottom: 0;
 }
 
 .appointment-item:hover {
   border-color: var(--primary-color);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  background: white;
 }
 
 .appointment-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .appointment-time {
   font-weight: 700;
   color: var(--primary-color);
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.appointment-time i {
+  font-size: 1rem;
+  opacity: 0.8;
 }
 
 .appointment-status {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-lg);
   font-size: 0.75rem;
   font-weight: 600;
-}
-
-.appointment-status.pending {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning-color);
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 
 .appointment-status.confirmed {
   background: rgba(16, 185, 129, 0.1);
   color: var(--success-color);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.appointment-status.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.appointment-status.completed {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--gray-600);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.appointment-status.cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .appointment-info {
   color: var(--gray-600);
   font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.appointment-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+.appointment-row:last-child {
+  margin-bottom: 0;
+}
+
+.appointment-row i {
+  width: 16px;
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.owner-pet-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.owner-name {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.pet-name {
+  color: var(--gray-600);
+}
+
+.info-separator {
+  color: var(--gray-400);
+  margin: 0 var(--spacing-xs);
+}
+
+.doctor-info {
+  color: var(--gray-600);
+}
+
+.reason-info {
+  color: var(--gray-500);
+  font-style: italic;
 }
 
 .empty-appointments {
   text-align: center;
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-2xl) var(--spacing-lg);
   color: var(--gray-500);
 }
 
 .empty-appointments i {
   font-size: 3rem;
   margin-bottom: var(--spacing-md);
-  opacity: 0.5;
+  opacity: 0.3;
+  color: var(--gray-400);
+}
+
+.empty-appointments p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--gray-500);
+}
+
+.loading-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--gray-500);
+  gap: var(--spacing-md);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--gray-300);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 768px) {
+  .date-selector {
+    flex-wrap: wrap;
+  }
+  
+  .appointment-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+  
+  .appointment-time {
+    font-size: 1rem;
+  }
+  
+  .appointment-info {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .appointments-body {
+    padding: var(--spacing-md);
+  }
+  
+  .appointment-item {
+    padding: var(--spacing-md);
+  }
+  
+  .date-btn {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
 }
