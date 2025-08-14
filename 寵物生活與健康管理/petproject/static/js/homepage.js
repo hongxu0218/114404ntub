@@ -72,58 +72,147 @@ window.PawDayHomepage = {
   },
 
   /**
-   * 設定聊天機器人功能
-   * 假設有一個聊天機器人按鈕和對話框
+   * 設定聊天機器人功能（覆蓋舊版：改用 /api/chat）
    */
   setupChatbot: function() {
-    const btn = document.getElementById("chatbot-button");
-    const box = document.getElementById("chatbot-box");
-    const closeBtn = document.getElementById("chatbot-close");
-    const sendBtn = document.getElementById("chatbot-send");
-    const input = document.getElementById("chatbot-text");
-    const messagesDiv = document.getElementById("chatbot-messages");
+    const $ = (id) => document.getElementById(id);
+    const btn   = $('chatbot-button');
+    const box   = $('chatbot-box');
+    let   closeBtn = $('chatbot-close');
+    let   sendBtn  = $('chatbot-send');
+    let   input    = $('chatbot-text');
+    let   messagesDiv = $('chatbot-messages');
 
-    if (!btn || !box) return;
+    if (!btn || !box || !closeBtn || !sendBtn || !input || !messagesDiv) {
+      (window.PD?.debug?.warn || console.warn)('🔎 找不到 AI 客服 DOM 節點，跳過初始化');
+      return;
+    }
 
-    btn.addEventListener("click", () => box.style.display = "flex");
-    closeBtn.addEventListener("click", () => box.style.display = "none");
+    // ---- 清理舊事件監聽：clone 節點再綁定，確保「覆蓋舊功能」 ----
+    function replaceNodeKeepId(el){
+      if(!el) return el;
+      const clone = el.cloneNode(true);
+      if (el.parentNode) el.parentNode.replaceChild(clone, el);
+      return clone;
+    }
+    closeBtn    = replaceNodeKeepId(closeBtn);
+    sendBtn     = replaceNodeKeepId(sendBtn);
+    input       = replaceNodeKeepId(input);
+    messagesDiv = replaceNodeKeepId(messagesDiv);
 
-    const appendMessage = (sender, text) => {
-        const msgDiv = document.createElement("div");
-        msgDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
-        messagesDiv.appendChild(msgDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    // ---- UI 調整：避免與回到頂部重疊 ----
+    try {
+      const btnStyle = btn.style;
+      const boxStyle = box.style;
+      if (!btnStyle.bottom) btnStyle.bottom = '88px';
+      if (!boxStyle.bottom) boxStyle.bottom = '160px';
+    } catch(_) {}
+
+    // ---- 小工具 ----
+    const history = []; // 只在前端保存，後端僅取最近 6 則
+    let busy = false;
+    const API_PATH = '/api/chat'; // 後端請在 petapp/urls.py 加上 path("api/chat", views.api_chat, ...)
+
+    const addBubble = (sender, text) => {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = 'cb-bubble ' + (sender === 'user' ? 'cb-user' : 'cb-bot');
+      msgDiv.textContent = text;
+      messagesDiv.appendChild(msgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     };
 
-    const sendMessage = () => {
-        const text = input.value.trim();
-        if (!text) return;
-        appendMessage("我", text);
-        input.value = "";
+    const addTyping = () => {
+      const div = document.createElement('div');
+      div.className = 'cb-bubble cb-bot';
+      div.textContent = '輸入中…';
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      return div;
+    };
 
-        fetch("/chatbot-api/", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({message: text})
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.reply) {
-                appendMessage("AI", data.reply);
-            } else {
-                appendMessage("AI", "抱歉，發生錯誤。");
-            }
-        })
-        .catch(() => {
-            appendMessage("AI", "無法連線到伺服器。");
+    const getCSRFToken = () => {
+      const name = 'csrftoken';
+      const cookies = document.cookie ? document.cookie.split(';') : [];
+      for (let c of cookies){
+        c = c.trim();
+        if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length+1));
+      }
+      return null;
+    };
+
+    const openBox = () => {
+      box.style.display = 'flex';
+      box.style.flexDirection = 'column';
+      if (messagesDiv.childElementCount === 0) {
+        addBubble('bot', '哈囉～我是毛日好 AI 客服，要查詢預約、健康紀錄或常見問題嗎？🙂');
+      }
+      input.focus();
+    };
+    const closeBox = () => { box.style.display = 'none'; };
+
+    // ---- 事件 ----
+    btn.addEventListener("click", () => {
+      if (box.style.display === 'flex') closeBox(); else openBox();
+    });
+    closeBtn.addEventListener("click", closeBox);
+
+    const sendMessage = async () => {
+      const text = input.value.trim();
+      if (!text || busy) return;
+      busy = true;
+      input.value = '';
+      sendBtn.setAttribute('disabled', 'disabled');
+
+      addBubble('user', text);
+      const typing = addTyping();
+
+      try {
+        const headers = { "Content-Type": "application/json" };
+        const csrftoken = getCSRFToken();
+        if (csrftoken) headers["X-CSRFToken"] = csrftoken;
+
+        const res = await fetch(API_PATH, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ message: text, history }),
+          credentials: 'same-origin'
         });
+
+        let reply = '（後端沒有回覆）';
+        if (res.ok) {
+          const data = await res.json().catch(() => null);
+          if (data && data.reply) reply = data.reply;
+        } else {
+          reply = `（伺服器錯誤 ${res.status}）`;
+        }
+
+        typing.remove();
+        addBubble('bot', reply);
+        history.push({role:'user', content:text}, {role:'assistant', content:reply});
+      } catch (err) {
+        typing.remove();
+        addBubble('bot', '（連線失敗，請確認 /api/chat 是否可用，以及本機 Ollama 是否啟動）');
+        (window.PD?.debug?.error || console.error)(err);
+      } finally {
+        busy = false;
+        sendBtn.removeAttribute('disabled');
+        input.focus();
+      }
     };
 
     sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") sendMessage();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+      if (e.key === "Escape") closeBox();
     });
-},
+
+    // 鍵盤快速開啟：Alt + /
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === '/') {
+        if (box.style.display === 'flex') closeBox(); else openBox();
+      }
+    });
+  },
 
   /**
    * 設定新聞滾動功能

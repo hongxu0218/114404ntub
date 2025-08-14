@@ -1,6 +1,8 @@
 # petapp/views.py 
 
 from collections import defaultdict
+import os
+import traceback
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
@@ -28,7 +30,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST, require_http_methods ,require_GET
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 匯入發信功能
-import json
+import json, requests, chromadb
 from django.db.models import Q ,Max, F
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -42,7 +44,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from functools import wraps
 
-import openai # 匯入 OpenAI API
+from chromadb.config import Settings # 用於設定向量資料庫
 
 # ============ 自定義裝飾器定義 ============
 
@@ -3880,34 +3882,113 @@ def api_emergency_locations(request):
 
 ################################AI聊天功能############################
 
-openai.api_key = settings.OPENAI_API_KEY
+# chromadb 可能尚未安裝時，避免整體 500
+try:
+    import chromadb
+    from chromadb.config import Settings
+except Exception:
+    chromadb = None
+    Settings = None
 
-@csrf_exempt  # 讓前端 AJAX 不用帶 CSRF token（如果要加安全驗證可以再補）
-def chatbot_api(request):
+# —— 絕對路徑（以 petapp/views.py 為基準，往上一層就是專案根 petproject）——
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_DIR = os.path.join(PROJECT_ROOT, "normalized_tables", "faq_db")
+
+# —— Ollama 設定 ——
+OLLAMA_CHAT_URL = "http://127.0.0.1:11434/api/chat"
+OLLAMA_MODEL = "qwen2.5:3b-instruct"
+
+SYSTEM_PROMPT = (
+    "你是『毛日好 Paw&Day』網站 AI 客服，請一律使用『繁體中文』回覆，"
+    "先釐清使用者需求，再以條列步驟給出精簡可執行的回答。"
+    "若屬於網站功能（註冊/登入/預約/健康紀錄/通知等），請指出頁面與按鈕路徑。"
+    "若用戶問 FAQs，優先引用下方檢索的知識內容；若找不到就基於一般常識回覆，並標示『（一般建議）』。"
+)
+
+def safe_retrieve(query: str, top_k: int = 4) -> str:
+    """向量檢索的安全包裝：套件未裝、路徑錯、collection 不在都直接回空字串。"""
+    if not chromadb or not Settings:
+        print("[api_chat] chromadb 未安裝或無法匯入，略過檢索。")
+        return ""
+    try:
+        client = chromadb.PersistentClient(path=DB_DIR, settings=Settings(anonymized_telemetry=False))
+        try:
+            col = client.get_collection("faq")
+        except Exception:
+            print(f"[api_chat] collection 'faq' 不存在（DB_DIR={DB_DIR}），略過檢索。")
+            return ""
+        res = col.query(query_texts=[query], n_results=top_k)
+        docs = res.get("documents", [[]])[0] or []
+        return "\n\n".join(docs)
+    except Exception as e:
+        print("[api_chat] 檢索錯誤：", e)
+        traceback.print_exc()
+        return ""
+
+def chat_with_ollama(messages):
+    """與 Ollama 對話：容錯並相容不同回傳格式。失敗回可讀訊息而非丟例外。"""
+    try:
+        r = requests.post(
+            OLLAMA_CHAT_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "messages": messages,
+                "stream": False,
+                "options": {"temperature": 0.3}
+            },
+            timeout=60
+        )
+        r.raise_for_status()
+        data = r.json()
+
+        # 常見 2 種格式
+        if isinstance(data, dict):
+            if "message" in data and isinstance(data["message"], dict) and "content" in data["message"]:
+                return data["message"]["content"]
+            if "response" in data:
+                return data["response"]
+
+        return "（一般建議）收到非預期格式回應，請稍後再試。"
+    except requests.exceptions.ConnectionError:
+        return "（一般建議）本機模型尚未啟動，請先在終端機執行：`ollama serve`，並確認已 `ollama pull qwen2.5:3b-instruct`。"
+    except Exception as e:
+        print("[api_chat] 與 Ollama 溝通錯誤：", e)
+        traceback.print_exc()
+        return f"（一般建議）AI 回覆發生錯誤：{e}"
+
+@csrf_exempt
+def api_chat(request):
     if request.method != "POST":
-        return JsonResponse({"error": "Only POST allowed"}, status=405)
+        return JsonResponse({"error": "POST only"}, status=405)
 
+    # 解析 JSON 請求
     try:
         data = json.loads(request.body.decode("utf-8"))
-        user_message = data.get("message", "").strip()
+    except Exception:
+        return JsonResponse({"reply": "（一般建議）請以 JSON 格式傳送：{ message: '...'}"})
 
-        if not user_message:
-            return JsonResponse({"error": "Empty message"}, status=400)
+    user_msg = (data.get("message") or "").strip()
+    history  = data.get("history") or []
 
-        # 呼叫 OpenAI Chat API
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "你是一位友善的寵物生活顧問，提供溫暖且專業的毛孩照護與健康建議"},
-                {"role": "user", "content": user_message}
-            ]
-        )
+    if not user_msg:
+        return JsonResponse({"reply": "（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})
 
-        reply = response.choices[0].message["content"].strip()
-        return JsonResponse({"reply": reply})
+    # RAG 檢索（找不到就回空字串，並在提示中標示一般建議）
+    context = safe_retrieve(user_msg)
+    if context:
+        user_block = f"【站內知識】\n{context}\n\n【使用者問題】{user_msg}"
+    else:
+        user_block = f"【站內知識】（未命中；改以一般建議）\n\n【使用者問題】{user_msg}"
 
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    # 合成訊息（保留最近 6 則歷史以控制長度）
+    messages = [{"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": user_block}]
+    for h in history[-6:]:
+        if isinstance(h, dict) and "role" in h and "content" in h:
+            messages.insert(1, h)
+
+    reply = chat_with_ollama(messages)
+    return JsonResponse({"reply": reply})
 
 ################################AI聊天功能############################
 

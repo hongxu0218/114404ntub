@@ -130,8 +130,8 @@ urlpatterns = [
     path('emergency_map/', views.emergency_map_home, name='emergency_map'),  # 24小時急診地圖首頁
     path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),  # 急診醫院資料API
 
-    # ============ AI 聊天功能（ChatGPT） ============
-    path("chatbot-api/", views.chatbot_api, name="chatbot_api"),
+    # ============ AI 聊天功能（本地模型 + FAQ） ============
+    path("api/chat", views.api_chat, name="api_chat"),
 ]
 
 
