@@ -1,0 +1,94 @@
+:root {
+  --bg-all: #fff8f0;
+  --bg-card: #ffe9c9;
+  --bg-card-hover: #ffdfb2;
+  --bg-input: #ffffff;
+  --text-main: #4a3728;
+  --text-sub: #8a7a6b;
+  --radius-lg: 18px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+  --gap: 16px;
+  --font-zh: "微軟正黑體", "Noto Sans TC", sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg-all);color:var(--text-main);font-family:var(--font-zh);line-height:1.4;}
+img{max-width:100%;display:block;}
+button{font-family:inherit;}
+a{text-decoration:none;color:inherit;}
+header.topbar{
+  width:100%; background:var(--bg-all);
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 24px; gap:16px;
+  border-bottom:1px solid rgba(0,0,0,.05);
+}
+header.topbar .brand-area{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:1.1rem;}
+header.topbar .brand-area img{width:40px;height:40px;border-radius:50%;}
+header.topbar nav a{margin-left:16px;font-size:.95rem;color:#9c45ff;}
+header.topbar nav a:hover{text-decoration:underline;}
+.layout{display:grid;grid-template-columns:260px 1fr;gap:var(--gap);max-width:1440px;margin:0 auto;padding:var(--gap);align-items:start;}
+.sidebar{
+  background:var(--bg-card); padding:24px 16px; border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-sm); position:sticky; top:72px;
+}
+.sidebar h2{font-size:1.05rem;margin:0 0 16px 0;}
+.follow-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+.follow-list li{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:var(--radius-sm);cursor:pointer;}
+.follow-list li:hover{background:var(--bg-card-hover);}
+.follow-list img{width:24px;height:24px;border-radius:50%;}
+.follow-list .name{font-size:.95rem;}
+.feed{display:grid;gap:var(--gap);}
+.post-card{background:var(--bg-card);padding:24px;border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);}
+.post-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.post-header img.avatar{width:48px;height:48px;border-radius:50%;}
+.post-user-info{display:flex;flex-direction:column;line-height:1.1;}
+.post-username{font-weight:bold;font-size:1.05rem;}
+.post-timestamp{font-size:.8rem;color:var(--text-sub);}
+.post-text{margin:12px 0;font-size:1rem;word-break:break-word;}
+.post-media-single{max-width:600px;margin:0 auto;border-radius:var(--radius-lg);overflow:hidden;}
+.carousel-wrapper{position:relative;max-width:600px;margin:0 auto;overflow: hidden;}
+.carousel-wrapper .carousel-track{display:flex;transition:transform .4s ease;}
+.carousel-wrapper .carousel-track img{width:600px;max-width:100%;flex:0 0 100%;object-fit:cover;aspect-ratio:4/3;}
+.carousel-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.8);border:none;padding:4px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:1.25rem;line-height:1;}
+.carousel-btn:hover{background:#fff;}
+.carousel-btn.prev{left:4px;}
+.carousel-btn.next{right:4px;}
+.carousel-indicators{display:flex;justify-content:center;gap:4px;margin-top:8px;}
+.carousel-indicators button{width:8px;height:8px;border-radius:50%;border:none;background:rgba(0,0,0,.15);cursor:pointer;padding:0;}
+.carousel-indicators button.active{background:rgba(0,0,0,.6);}
+.post-actions{display:flex;align-items:center;gap:16px;margin-top:16px;font-size:.95rem;}
+.post-actions button{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;font-size:.95rem;border:none;border-radius:var(--radius-sm);cursor:pointer;background:rgba(0,0,0,.05);}
+.post-actions button:hover{background:rgba(0,0,0,.12);}
+.post-actions button.hearted{color:#e0245e;background:rgba(224,36,94,.15);}
+.comments-wrapper{margin-top:20px;background:rgba(255,255,255,.45);padding:16px;border-radius:var(--radius-lg);}
+.comment-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;}
+.comment-item img{width:28px;height:28px;border-radius:50%;margin-top:2px;}
+.comment-bubble{flex:1;background:var(--bg-input);padding:8px 12px;border-radius:var(--radius-sm);position:relative;}
+.comment-author{font-weight:bold;font-size:.9rem;margin-bottom:2px;}
+.comment-text{font-size:.9rem;}
+.comment-footer{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text-sub);margin-top:4px;}
+.comment-footer button{border:none;background:none;padding:0;margin:0;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:2px;color:inherit;}
+.comment-footer button.liked{color:#e89b00;font-weight:bold;}
+.reply-thread{margin-left:48px;margin-top:8px;display:grid;gap:8px;}
+.add-comment{display:flex;align-items:center;gap:8px;margin-top:12px;}
+.add-comment input[type="text"]{flex:1;padding:8px 12px;border:1px solid rgba(0,0,0,.15);border-radius:var(--radius-sm);font-size:.95rem;background:var(--bg-input);}
+.add-comment button.send{padding:8px 16px;background:#ffb454;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:bold;}
+.add-comment button.send:hover{background:#ff9900;}
+.share-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:1000;padding:16px;}
+.share-overlay.active{display:flex;}
+.share-modal{max-width:90vw;width:480px;max-height:90vh;overflow-y:auto;background:var(--bg-card);padding:24px;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);}
+.share-modal h3{margin-top:0;}
+.share-preview{width:100%;margin-bottom:16px;border-radius:var(--radius-sm);overflow:hidden;}
+.share-channels{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+.share-channels button{flex:0 0 auto;padding:8px 12px;border:none;border-radius:var(--radius-sm);background:rgba(0,0,0,.05);cursor:pointer;font-size:.9rem;}
+.share-channels button:hover{background:rgba(0,0,0,.12);}
+.share-close{position:absolute;top:8px;right:12px;border:none;background:none;font-size:1.25rem;cursor:pointer;}
+.repost-info{font-size:.85rem;color:var(--text-sub);margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+@media (max-width:768px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{position:static;order:2;}
+  .feed{order:1;}
+  .post-header img.avatar{width:40px;height:40px;}
+}
