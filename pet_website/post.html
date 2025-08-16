@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>毛孩社群平台 - 圖一版面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="post.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-area">
+      <img src="images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg" alt="logo" />
+      毛孩社群平台
+    </div>
+    <nav>
+      <a href="#">寵物</a>
+      <a href="#">健康紀錄</a>
+      <a href="#">通知</a>
+      <a href="#">登入</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>追蹤中</h2>
+      <ul class="follow-list" id="followList"></ul>
+    </aside>
+
+    <section class="feed" id="feed"></section>
+  </main>
+
+  <div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="share-modal">
+      <button class="share-close" id="shareClose" aria-label="close">✕</button>
+      <h3>分享貼文</h3>
+      <div class="share-preview"><img id="sharePreviewImg" src="" alt="share preview" /></div>
+      <div class="share-channels" id="shareChannels"></div>
+    </div>
+  </div>
+
+  <script src="post.js"></script>
+</body>
+</html>
