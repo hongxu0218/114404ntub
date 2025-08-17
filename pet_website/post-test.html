@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>毛孩社群平台 - 圖一版面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-all: #fff8f0;       /* 全站底色 */
+      --bg-card: #ffe9c9;      /* 追蹤中欄 + 貼文卡片底色 */
+      --bg-card-hover: #ffdfb2;
+      --bg-input: #ffffff;
+      --text-main: #4a3728;
+      --text-sub: #8a7a6b;
+      --radius-lg: 18px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+      --gap: 16px;
+      --font-zh: "微軟正黑體", "Noto Sans TC", sans-serif;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;background:var(--bg-all);color:var(--text-main);font-family:var(--font-zh);line-height:1.4;}
+    img{max-width:100%;display:block;}
+    button{font-family:inherit;}
+    a{text-decoration:none;color:inherit;}
+
+    /* 頂端導覽列 */
+    header.topbar{
+      width:100%;
+      background:var(--bg-all);
+      position:sticky;top:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:8px 24px;gap:16px;
+      border-bottom:1px solid rgba(0,0,0,.05);
+    }
+    header.topbar .brand-area{display:flex;align-items:center;gap:8px;font-weight:bold;font-size:1.1rem;}
+    header.topbar .brand-area img{width:40px;height:40px;border-radius:50%;}
+    header.topbar nav a{margin-left:16px;font-size:.95rem;color:#9c45ff;}
+    header.topbar nav a:hover{text-decoration:underline;}
+
+    /* 版面主容器 */
+    .layout{display:grid;grid-template-columns:260px 1fr;gap:var(--gap);max-width:1440px;margin:0 auto;padding:var(--gap);align-items:start;}
+
+    /* 左側追蹤中 */
+    .sidebar{
+      background:var(--bg-card);
+      padding:24px 16px;
+      border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-sm);
+      position:sticky;top:72px; /* 放在 header 下 */
+    }
+    .sidebar h2{font-size:1.05rem;margin:0 0 16px 0;}
+    .follow-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+    .follow-list li{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:var(--radius-sm);cursor:pointer;}
+    .follow-list li:hover{background:var(--bg-card-hover);}  
+    .follow-list img{width:24px;height:24px;border-radius:50%;}
+    .follow-list .name{font-size:.95rem;}
+
+    /* 貼文串 */
+    .feed{display:grid;gap:var(--gap);}
+
+    .post-card{
+      background:var(--bg-card);
+      padding:24px;
+      border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-sm);
+    }
+    .post-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .post-header img.avatar{width:48px;height:48px;border-radius:50%;}
+    .post-user-info{display:flex;flex-direction:column;line-height:1.1;}
+    .post-username{font-weight:bold;font-size:1.05rem;}
+    .post-timestamp{font-size:.8rem;color:var(--text-sub);}
+
+    .post-text{margin:12px 0;font-size:1rem;word-break:break-word;}
+
+    /* 單張圖片 */
+    .post-media-single{max-width:600px;margin:0 auto;border-radius:var(--radius-lg);overflow:hidden;}
+
+    /* 多圖走馬燈 */
+    .carousel-wrapper{position:relative;max-width:600px;margin:0 auto;}
+    .carousel-wrapper .carousel-track{display:flex;transition:transform .4s ease;}
+    .carousel-wrapper .carousel-track img{width:600px;max-width:100%;flex:0 0 100%;object-fit:cover;aspect-ratio:4/3;}
+    .carousel-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.8);border:none;padding:4px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:1.25rem;line-height:1;}
+    .carousel-btn:hover{background:#fff;}
+    .carousel-btn.prev{left:4px;}
+    .carousel-btn.next{right:4px;}
+    .carousel-indicators{display:flex;justify-content:center;gap:4px;margin-top:8px;}
+    .carousel-indicators button{width:8px;height:8px;border-radius:50%;border:none;background:rgba(0,0,0,.15);cursor:pointer;padding:0;}
+    .carousel-indicators button.active{background:rgba(0,0,0,.6);}  
+
+    /* 動作列 */
+    .post-actions{display:flex;align-items:center;gap:16px;margin-top:16px;font-size:.95rem;}
+    .post-actions button{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;font-size:.95rem;border:none;border-radius:var(--radius-sm);cursor:pointer;background:rgba(0,0,0,.05);}
+    .post-actions button:hover{background:rgba(0,0,0,.12);}  
+    .post-actions button.hearted{color:#e0245e;background:rgba(224,36,94,.15);}  
+
+    /* 留言區塊 */
+    .comments-wrapper{margin-top:20px;background:rgba(255,255,255,.45);padding:16px;border-radius:var(--radius-lg);}
+    .comment-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;}
+    .comment-item img{width:28px;height:28px;border-radius:50%;margin-top:2px;}
+    .comment-bubble{flex:1;background:var(--bg-input);padding:8px 12px;border-radius:var(--radius-sm);position:relative;}
+    .comment-author{font-weight:bold;font-size:.9rem;margin-bottom:2px;}
+    .comment-text{font-size:.9rem;}
+    .comment-footer{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text-sub);margin-top:4px;}
+    .comment-footer button{border:none;background:none;padding:0;margin:0;cursor:pointer;font-size:.8rem;display:inline-flex;align-items:center;gap:2px;color:inherit;}
+    .comment-footer button.liked{color:#e89b00;font-weight:bold;}
+
+    .reply-thread{margin-left:48px;margin-top:8px;display:grid;gap:8px;}
+
+    .add-comment{display:flex;align-items:center;gap:8px;margin-top:12px;}
+    .add-comment input[type="text"]{flex:1;padding:8px 12px;border:1px solid rgba(0,0,0,.15);border-radius:var(--radius-sm);font-size:.95rem;background:var(--bg-input);}
+    .add-comment button.send{padding:8px 16px;background:#ffb454;border:none;border-radius:var(--radius-sm);cursor:pointer;font-weight:bold;}
+    .add-comment button.send:hover{background:#ff9900;}
+
+    /* 分享覆蓋層 */
+    .share-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:1000;padding:16px;}
+    .share-overlay.active{display:flex;}
+    .share-modal{max-width:90vw;width:480px;max-height:90vh;overflow-y:auto;background:var(--bg-card);padding:24px;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);}
+    .share-modal h3{margin-top:0;}
+    .share-preview{width:100%;margin-bottom:16px;border-radius:var(--radius-sm);overflow:hidden;}
+    .share-channels{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+    .share-channels button{flex:0 0 auto;padding:8px 12px;border:none;border-radius:var(--radius-sm);background:rgba(0,0,0,.05);cursor:pointer;font-size:.9rem;}
+    .share-channels button:hover{background:rgba(0,0,0,.12);}  
+    .share-close{position:absolute;top:8px;right:12px;border:none;background:none;font-size:1.25rem;cursor:pointer;}
+
+    /* 轉發（Repost）顯示 */
+    .repost-info{font-size:.85rem;color:var(--text-sub);margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+
+    /* RWD */
+    @media (max-width:768px){
+      .layout{grid-template-columns:1fr;}
+      .sidebar{position:static;order:2;}
+      .feed{order:1;}
+      .post-header img.avatar{width:40px;height:40px;}
+    }
+  </style>
+</head>
+<body>
+  <!-- 頂端導覽列 -->
+  <header class="topbar">
+    <div class="brand-area">
+      <img src="https://placekitten.com/80/80" alt="logo" />
+      毛孩社群平台
+    </div>
+    <nav>
+      <a href="#">寵物</a>
+      <a href="#">健康紀錄</a>
+      <a href="#">通知</a>
+      <a href="#">登入</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <!-- 左側追蹤中 -->
+    <aside class="sidebar">
+      <h2>追蹤中</h2>
+      <ul class="follow-list" id="followList">
+        <!-- 動態插入 -->
+      </ul>
+    </aside>
+
+    <!-- 貼文串 -->
+    <section class="feed" id="feed">
+      <!-- JS 產生貼文卡片 -->
+    </section>
+  </main>
+
+  <!-- 分享覆蓋層 -->
+  <div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="share-modal">
+      <button class="share-close" id="shareClose" aria-label="close">✕</button>
+      <h3>分享貼文</h3>
+      <div class="share-preview"><img id="sharePreviewImg" src="" alt="share preview" /></div>
+      <div class="share-channels" id="shareChannels">
+        <!-- JS 填入圖四 LOGO (滑動) -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /****************************************************
+   * 假資料：追蹤中清單
+   ****************************************************/
+  const followData = [
+    {name:"Ku's dream酷的夢", avatar:"https://i.pravatar.cc/24?img=1"},
+    {name:"TEEP R 呀啦啦啦", avatar:"https://i.pravatar.cc/24?img=5"},
+    {name:"yyselina", avatar:"https://i.pravatar.cc/24?img=8"},
+    {name:"逗逗", avatar:"https://i.pravatar.cc/24?img=10"},
+  ];
+
+  /****************************************************
+   * 假資料：貼文
+   * type: 'single' | 'carousel'
+   ****************************************************/
+  const postData = [
+    {
+      id:'p1',
+      user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'},
+      ts:'2小時前',
+      text:'噢噢，逗逗啃寵物骨頭的模樣好可愛 🐶',
+      type:'single',
+      media:['https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&w=800&q=80'],
+      likes:20,
+      comments:[
+        {id:'c1', user:{name:'Lydia', avatar:'https://i.pravatar.cc/40?img=12'}, text:'這張真的太可愛了😍', likes:3, replies:[{id:'c1r1',user:{name:'逗逗',avatar:'https://i.pravatar.cc/40?img=10'},text:'謝謝妳～牠超會吃😂',likes:1}]},
+        {id:'c2', user:{name:'Jay', avatar:'https://i.pravatar.cc/40?img=16'}, text:'也太療癒了吧~', likes:1, replies:[]},
+      ],
+      repostFrom:null,
+    },
+    {
+      id:'p2',
+      user:{name:'Ku', avatar:'https://i.pravatar.cc/80?img=1'},
+      ts:'昨天',
+      text:'戶外散步集錦，一次放上四張～',
+      type:'carousel',
+      media:[
+        'https://images.unsplash.com/photo-1525253086316-d0c936c814f8?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1558944351-c334a35dbd72?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1583511655684-270a8f2c49df?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?auto=format&fit=crop&w=800&q=80'
+      ],
+      likes:12,
+      comments:[
+        {id:'c3', user:{name:'MEI', avatar:'https://i.pravatar.cc/40?img=22'}, text:'路邊花也美！', likes:0, replies:[]},
+      ],
+      repostFrom:null,
+    },
+    {
+      id:'p3',
+      user:{name:'yyselina', avatar:'https://i.pravatar.cc/80?img=8'},
+      ts:'3天前',
+      text:'小黑今天去洗澡啦🛁 多圖記錄！',
+      type:'carousel',
+      media:[
+        'https://images.unsplash.com/photo-1612831200243-fe533f5f2e3c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1576502200916-3808e07386a5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1583511655996-6a82aabf6d94?auto=format&fit=crop&w=800&q=80'
+      ],
+      likes:5,
+      comments:[],
+      repostFrom:'p1'  // 轉發自 p1
+    }
+  ];
+
+  /****************************************************
+   * 假資料：分享渠道 (圖四LOGO滑動)
+   ****************************************************/
+  const shareChannels = [
+    {id:'sc1',label:'Line'},
+    {id:'sc2',label:'FB'},
+    {id:'sc3',label:'IG Story'},
+    {id:'sc4',label:'Twitter'},
+    {id:'sc5',label:'Email'},
+    {id:'sc6',label:'複製連結'},
+  ];
+
+  /****************************************************
+   * 初始化：追蹤中
+   ****************************************************/
+  function renderFollowList(){
+    const ul = document.getElementById('followList');
+    ul.innerHTML = '';
+    followData.forEach(f=>{
+      const li = document.createElement('li');
+      li.innerHTML = `<img src="${f.avatar}" alt="${f.name}"><span class="name">${f.name}</span>`;
+      ul.appendChild(li);
+    });
+  }
+
+  /****************************************************
+   * 建立貼文卡片 DOM
+   ****************************************************/
+  function createPostCard(p){
+    const card = document.createElement('article');
+    card.className='post-card';
+    card.dataset.postid = p.id;
+
+    // Repost info (若有)
+    let repostHtml='';
+    if(p.repostFrom){
+      const srcPost = postData.find(x=>x.id===p.repostFrom);
+      if(srcPost){
+        repostHtml = `<div class="repost-info">↻ 轉發自 ${srcPost.user.name}</div>`;
+      }
+    }
+
+    // 媒體
+    let mediaHtml='';
+    if(p.type==='single'){
+      mediaHtml=`<div class="post-media-single"><img src="${p.media[0]}" alt="貼文圖片"></div>`;
+    }else{ // carousel
+      const imgs=p.media.map(url=>`<img src="${url}" alt="carousel-img">`).join('');
+      const ind=p.media.map((_,i)=>`<button data-idx="${i}" aria-label="移動到第${i+1}張"></button>`).join('');
+      mediaHtml=`<div class="carousel-wrapper" data-count="${p.media.length}">
+        <div class="carousel-track">${imgs}</div>
+        <button class="carousel-btn prev" aria-label="上一張">◀</button>
+        <button class="carousel-btn next" aria-label="下一張">▶</button>
+        <div class="carousel-indicators">${ind}</div>
+      </div>`;
+    }
+
+    // 留言列表
+    const commentsHtml = p.comments.map(c=>{
+      const repliesHtml = c.replies.map(r=>commentHtml(r,true)).join('');
+      return commentHtml(c,false)+`<div class="reply-thread">${repliesHtml}</div>`;
+    }).join('');
+
+    card.innerHTML=`
+      <div class="post-header">
+        <img class="avatar" src="${p.user.avatar}" alt="${p.user.name}">
+        <div class="post-user-info">
+          <span class="post-username">${p.user.name}</span>
+          <span class="post-timestamp">${p.ts}</span>
+        </div>
+      </div>
+      ${repostHtml}
+      <div class="post-text">${p.text}</div>
+      ${mediaHtml}
+      <div class="post-actions">
+        <button class="btn-like" aria-label="like"><span class="icon">🖤</span><span class="like-count">${p.likes}</span></button>
+        <button class="btn-comment" aria-label="comment">💬 留言</button>
+        <button class="btn-share" aria-label="share">🔗 分享</button>
+        <button class="btn-repost" aria-label="repost">↻ 轉發</button>
+      </div>
+      <div class="comments-wrapper">
+        ${commentsHtml}
+        <div class="add-comment">
+          <input type="text" placeholder="輸入留言…" aria-label="add comment" />
+          <button class="send">送出</button>
+        </div>
+      </div>
+    `;
+
+    // 初始化輪播 (若有)
+    if(p.type==='carousel') initCarousel(card);
+
+    return card;
+  }
+
+  /****************************************************
+   * 單一留言 / 回覆 HTML
+   ****************************************************/
+  function commentHtml(c,isReply){
+    return `<div class="comment-item" data-commentid="${c.id}">
+      <img src="${c.user.avatar}" alt="${c.user.name}">
+      <div class="comment-bubble">
+        <div class="comment-author">${c.user.name}</div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-footer">
+          <button class="comment-like" aria-label="like comment">👍 <span class="comment-like-count">${c.likes}</span></button>
+          ${!isReply?'<button class="comment-reply">回覆</button>':''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /****************************************************
+   * 渲染貼文串
+   ****************************************************/
+  function renderFeed(){
+    const feedEl = document.getElementById('feed');
+    feedEl.innerHTML='';
+    postData.forEach(p=>feedEl.appendChild(createPostCard(p)));
+  }
+
+  /****************************************************
+   * 點讚 / 取消讚 （貼文）
+   ****************************************************/
+  function togglePostLike(btn){
+    const postCard = btn.closest('.post-card');
+    const postid = postCard.dataset.postid;
+    const post = postData.find(p=>p.id===postid);
+    if(!post) return;
+    const countEl = btn.querySelector('.like-count');
+    const iconEl = btn.querySelector('.icon');
+    const hearted = btn.classList.toggle('hearted');
+    if(hearted){
+      post.likes++;
+      iconEl.textContent='❤️';
+    }else{
+      post.likes = Math.max(0,post.likes-1);
+      iconEl.textContent='🖤';
+    }
+    countEl.textContent=post.likes;
+  }
+
+  /****************************************************
+   * 留言區：點讚留言
+   ****************************************************/
+  function toggleCommentLike(btn){
+    const commentItem = btn.closest('.comment-item');
+    const postCard = btn.closest('.post-card');
+    const post = postData.find(p=>p.id===postCard.dataset.postid);
+    if(!post) return;
+    const cid = commentItem.dataset.commentid;
+    let comment = null, isReply=false;
+    for(const c of post.comments){
+      if(c.id===cid){comment=c;break;}
+      const r = c.replies.find(x=>x.id===cid);
+      if(r){comment=r;isReply=true;break;}
+    }
+    if(!comment) return;
+    const countEl = btn.querySelector('.comment-like-count');
+    const liked = btn.classList.toggle('liked');
+    comment.likes += liked?1:-1;
+    if(comment.likes<0) comment.likes=0;
+    countEl.textContent=comment.likes;
+  }
+
+  /****************************************************
+   * 加入留言 / 回覆
+   ****************************************************/
+  function addComment(postCard,inputEl,isReplyTo){
+    const txt = inputEl.value.trim();
+    if(!txt) return;
+    const post = postData.find(p=>p.id===postCard.dataset.postid);
+    if(!post) return;
+    const newC = {id:'c'+Date.now(),user:{name:'我',avatar:'https://i.pravatar.cc/40?u=me'},text:txt,likes:0,replies:[]};
+    if(isReplyTo){
+      const target = post.comments.find(c=>c.id===isReplyTo);
+      if(target) target.replies.push(newC);
+    }else{
+      post.comments.push(newC);
+    }
+    renderFeed(); // 重新渲染簡單處理
+  }
+
+  /****************************************************
+   * 啟動回覆模式
+   ****************************************************/
+  function startReply(btn){
+    const commentItem = btn.closest('.comment-item');
+    const postCard = btn.closest('.post-card');
+    const cid = commentItem.dataset.commentid;
+    const inputEl = postCard.querySelector('.add-comment input');
+    inputEl.placeholder = '回覆…';
+    inputEl.focus();
+    inputEl.dataset.replyTo = cid;
+  }
+
+  /****************************************************
+   * 分享覆蓋層
+   ****************************************************/
+  const shareOverlay = document.getElementById('shareOverlay');
+  const sharePreviewImg = document.getElementById('sharePreviewImg');
+  const shareChannelsEl = document.getElementById('shareChannels');
+  const shareCloseBtn = document.getElementById('shareClose');
+  let sharePostId=null;
+
+  function openShareModal(post){
+    sharePostId = post.id;
+    sharePreviewImg.src = post.media[0]; // 預覽第一張
+    shareOverlay.classList.add('active');
+    shareOverlay.setAttribute('aria-hidden','false');
+  }
+  function closeShareModal(){
+    sharePostId=null;
+    shareOverlay.classList.remove('active');
+    shareOverlay.setAttribute('aria-hidden','true');
+  }
+  shareCloseBtn.addEventListener('click',closeShareModal);
+  shareOverlay.addEventListener('click',e=>{if(e.target===shareOverlay)closeShareModal();});
+
+  function renderShareChannels(){
+    shareChannelsEl.innerHTML='';
+    shareChannels.forEach(ch=>{
+      const b=document.createElement('button');
+      b.textContent=ch.label; // 可替換為 logo 圖片
+      b.addEventListener('click',()=>{alert(`已分享至 ${ch.label}!`);closeShareModal();});
+      shareChannelsEl.appendChild(b);
+    });
+  }
+
+  /****************************************************
+   * 轉發貼文（在 feed 頂端新增一則）
+   ****************************************************/
+  function repost(post){
+    const newPost = {
+      id:'rp'+Date.now(),
+      user:{name:'我', avatar:'https://i.pravatar.cc/80?u=me'},
+      ts:'剛剛',
+      text:post.text,
+      type:post.type,
+      media:post.media.slice(),
+      likes:0,
+      comments:[],
+      repostFrom:post.id,
+    };
+    postData.unshift(newPost); // 插在最前
+    renderFeed();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  /****************************************************
+   * 貼文事件委派
+   ****************************************************/
+  document.addEventListener('click',function(e){
+    // Like post
+    const likeBtn = e.target.closest('.post-actions .btn-like');
+    if(likeBtn){togglePostLike(likeBtn);return;}
+
+    // Comment -> focus input
+    const commentBtn = e.target.closest('.post-actions .btn-comment');
+    if(commentBtn){
+      const postCard = commentBtn.closest('.post-card');
+      postCard.querySelector('.add-comment input').focus();
+      return;
+    }
+
+    // Share
+    const shareBtn = e.target.closest('.post-actions .btn-share');
+    if(shareBtn){
+      const postCard = shareBtn.closest('.post-card');
+      const post = postData.find(p=>p.id===postCard.dataset.postid);
+      if(post) openShareModal(post);
+      return;
+    }
+
+    // Repost
+    const repostBtn = e.target.closest('.post-actions .btn-repost');
+    if(repostBtn){
+      const postCard = repostBtn.closest('.post-card');
+      const post = postData.find(p=>p.id===postCard.dataset.postid);
+      if(post) repost(post);
+      return;
+    }
+
+    // Comment like
+    const cLikeBtn = e.target.closest('.comment-footer .comment-like');
+    if(cLikeBtn){toggleCommentLike(cLikeBtn);return;}
+
+    // Reply
+    const replyBtn = e.target.closest('.comment-footer .comment-reply');
+    if(replyBtn){startReply(replyBtn);return;}
+
+    // 送出留言
+    const sendBtn = e.target.closest('.add-comment .send');
+    if(sendBtn){
+      const postCard = sendBtn.closest('.post-card');
+      const inputEl = postCard.querySelector('.add-comment input');
+      const replyTo = inputEl.dataset.replyTo;
+      addComment(postCard,inputEl,replyTo);
+      inputEl.value='';
+      inputEl.placeholder='輸入留言…';
+      delete inputEl.dataset.replyTo;
+      return;
+    }
+  });
+
+  /****************************************************
+   * 輪播（每個 post-card 初始化）
+   ****************************************************/
+  function initCarousel(card){
+    const wrap = card.querySelector('.carousel-wrapper');
+    if(!wrap) return;
+    const track = wrap.querySelector('.carousel-track');
+    const prevBtn = wrap.querySelector('.carousel-btn.prev');
+    const nextBtn = wrap.querySelector('.carousel-btn.next');
+    const dots = Array.from(wrap.querySelectorAll('.carousel-indicators button'));
+    let idx=0;
+    function update(){
+      track.style.transform=`translateX(-${idx*100}%)`;
+      dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+    }
+    prevBtn.addEventListener('click',()=>{idx=(idx-1+dots.length)%dots.length;update();});
+    nextBtn.addEventListener('click',()=>{idx=(idx+1)%dots.length;update();});
+    dots.forEach((d,i)=>d.addEventListener('click',()=>{idx=i;update();}));
+    update();
+  }
+
+  /****************************************************
+   * 啟動
+   ****************************************************/
+  renderFollowList();
+  renderShareChannels();
+  renderFeed();
+  </script>
+</body>
+</html>
