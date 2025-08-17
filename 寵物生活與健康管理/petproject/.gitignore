@@ -53,3 +53,9 @@ $RECYCLE.BIN/
 htmlcov/
 .tox/
 pytest_cache/
+
+# === Chroma 向量資料庫 ===
+chroma_db/
+rag/chroma_db/
+*.parquet
+*.duckdb
