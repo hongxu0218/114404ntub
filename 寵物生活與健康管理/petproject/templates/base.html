@@ -100,120 +100,164 @@
           </button>
 
           <!-- 導航選單 -->
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-              {% if user.is_authenticated %}
-                <!-- 飼主專用選單 -->
-                {% if user.profile.account_type == 'owner' %}
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'pet_list' %}" aria-label="管理我的寵物">
-                      <i class="bi bi-heart-fill me-1" aria-hidden="true"></i>我的寵物
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'health_rec' %}" aria-label="查看健康紀錄">
-                      <i class="bi bi-heart-pulse me-1" aria-hidden="true"></i>健康紀錄
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'my_appointments' %}" aria-label="我的預約">
-                      <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>我的預約
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'map' %}" aria-label="搜尋附近醫院">
-                      <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>搜尋附近
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'emergency_map' %}" aria-label="急診醫院地圖">
-                      <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>急診地圖
-                    </a>
-                  </li>
-                
-                <!-- 診所管理員專用選單 -->
-                {% elif user.profile.account_type == 'clinic_admin' %}
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'clinic_dashboard' %}" aria-label="診所管理">
-                      <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所管理
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'clinic_appointments' %}" aria-label="預約管理">
-                      <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>預約管理
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'manage_doctors' %}" aria-label="醫師管理">
-                      <i class="bi bi-people me-1" aria-hidden="true"></i>醫師管理
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'manage_schedules' %}" aria-label="排班管理">
-                      <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>排班管理
-                    </a>
-                  </li>
-                {% endif %}
-
-                <!-- 系統管理員選單 -->
-                {% if user.is_staff %}
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'admin:index' %}" aria-label="系統後台">
-                      <i class="bi bi-gear me-1" aria-hidden="true"></i>後台管理
-                    </a>
-                  </li>
-                {% else %}
-                  <li class="nav-item">
-                    <a class="nav-link" href="{% url 'edit_profile' %}" aria-label="修改個人資料">
-                      <i class="bi bi-person-gear me-1" aria-hidden="true"></i>修改帳號資料
-                    </a>
-                  </li>
-                {% endif %}
-                
-                <!-- 通知 -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'notification_page' %}" id="notification-link" aria-label="查看通知">
-                    <i class="bi bi-bell me-1" aria-hidden="true"></i>通知
-                    <span id="notification-count" class="notification-badge d-none" aria-label="未讀通知數量"></span>
+          {% if user.is_authenticated %}
+            
+            <!-- 診所管理員選單 -->
+            {% if user.profile.account_type == 'clinic_admin' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'clinic_dashboard' %}" aria-label="診所管理">
+                  <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所管理
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'clinic_appointments' %}" aria-label="預約管理">
+                  <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>預約管理
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'manage_doctors' %}" aria-label="醫師管理">
+                  <i class="bi bi-people me-1" aria-hidden="true"></i>醫師管理
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'manage_schedules' %}" aria-label="排班管理">
+                  <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>排班管理
+                </a>
+              </li>
+              
+              <!-- 檢查是否同時是獸醫師 -->
+              {% if user.vet_profile %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-heart-pulse me-1" aria-hidden="true"></i>獸醫功能
                   </a>
-                </li>
-                
-                <!-- 登出 -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'account_logout' %}" aria-label="登出系統">
-                    <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>登出
-                  </a>
-                </li>
-              {% else %}
-                <!-- 未登入用戶選單 -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'map' %}" aria-label="搜尋寵物醫院">
-                    <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>尋找醫院
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'emergency_map' %}" aria-label="急診醫院地圖">
-                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>急診地圖
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'account_login' %}" aria-label="登入系統">
-                    <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>登入
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'account_signup' %}" aria-label="註冊帳號">
-                    <i class="bi bi-person-plus me-1" aria-hidden="true"></i>註冊
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'clinic_registration' %}" aria-label="診所註冊">
-                    <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所註冊
-                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'vet_home' %}">
+                      <i class="bi bi-house me-2"></i>獸醫工作台
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'vet_appointments' %}">
+                      <i class="bi bi-calendar-check me-2"></i>我的預約
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'my_patients' %}">
+                      <i class="bi bi-heart me-2"></i>我的病患
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'create_medical_record' %}">
+                      <i class="bi bi-file-medical me-2"></i>建立記錄
+                    </a></li>
+                  </ul>
                 </li>
               {% endif %}
-            </ul>
-          </div>
+
+            <!-- 純獸醫師選單（如果不是管理員但是獸醫師） -->
+            {% elif user.profile.account_type == 'veterinarian' or user.vet_profile %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'vet_home' %}" aria-label="獸醫工作台">
+                  <i class="bi bi-house me-1" aria-hidden="true"></i>工作台
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'vet_appointments' %}" aria-label="我的預約">
+                  <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>我的預約
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'my_patients' %}" aria-label="我的病患">
+                  <i class="bi bi-heart me-1" aria-hidden="true"></i>我的病患
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'create_medical_record' %}" aria-label="建立醫療記錄">
+                  <i class="bi bi-file-medical me-1" aria-hidden="true"></i>建立記錄
+                </a>
+              </li>
+
+            <!-- 飼主選單 -->
+            {% elif user.profile.account_type == 'owner' %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'pet_list' %}" aria-label="管理我的寵物">
+                  <i class="bi bi-heart-fill me-1" aria-hidden="true"></i>我的寵物
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'health_rec' %}" aria-label="查看健康紀錄">
+                  <i class="bi bi-heart-pulse me-1" aria-hidden="true"></i>健康紀錄
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'my_appointments' %}" aria-label="我的預約">
+                  <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>我的預約
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'map' %}" aria-label="搜尋附近醫院">
+                  <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>搜尋附近
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'emergency_map' %}" aria-label="急診醫院地圖">
+                  <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>急診地圖
+                </a>
+              </li>
+            {% endif %}
+
+            <!-- 共用選單項目 -->
+            {% if user.is_staff %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'admin:index' %}" aria-label="系統後台">
+                  <i class="bi bi-gear me-1" aria-hidden="true"></i>後台管理
+                </a>
+              </li>
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'edit_profile' %}" aria-label="修改個人資料">
+                  <i class="bi bi-person-gear me-1" aria-hidden="true"></i>修改帳號資料
+                </a>
+              </li>
+            {% endif %}
+            
+            <!-- 通知 -->
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'notification_page' %}" id="notification-link" aria-label="查看通知">
+                <i class="bi bi-bell me-1" aria-hidden="true"></i>通知
+                <span id="notification-count" class="notification-badge d-none" aria-label="未讀通知數量"></span>
+              </a>
+            </li>
+            
+            <!-- 登出 -->
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'account_logout' %}" aria-label="登出系統">
+                <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>登出
+              </a>
+            </li>
+
+          {% else %}
+            <!-- 未登入用戶選單保持不變 -->
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'map' %}" aria-label="搜尋寵物醫院">
+                <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>尋找醫院
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'emergency_map' %}" aria-label="急診醫院地圖">
+                <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>急診地圖
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'account_login' %}" aria-label="登入系統">
+                <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>登入
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'account_signup' %}" aria-label="註冊帳號">
+                <i class="bi bi-person-plus me-1" aria-hidden="true"></i>註冊
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'clinic_registration' %}" aria-label="診所註冊">
+                <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所註冊
+              </a>
+            </li>
+          {% endif %}
         </div>
       </nav>
     </div>
@@ -288,9 +332,9 @@
         </div>
         <div class="col-md-6 text-md-end">
           <small class="text-muted">
-            <a href="#" class="text-decoration-none me-3">隱私政策</a>
-            <a href="#" class="text-decoration-none me-3">服務條款</a>
-            <a href="#" class="text-decoration-none">意見回饋</a>
+              <a href="#" class="text-decoration-none me-3">隱私政策</a>
+              <a href="#" class="text-decoration-none me-3">服務條款</a>
+              <a href="#" class="text-decoration-none">意見回饋</a>
           </small>
         </div>
       </div>

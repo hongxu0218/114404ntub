@@ -74,14 +74,22 @@ window.PawDayApp = {
   setupNavigation: function() {
     // 平滑滾動
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', (e) => {
-        e.preventDefault();
-        const target = document.querySelector(anchor.getAttribute('href'));
-        if (target) {
-          PD.dom.scrollTo(target);
-        }
+        anchor.addEventListener('click', (e) => {
+          const href = anchor.getAttribute('href');
+          
+          // 檢查 href 是否只是 "#" 或空值
+          if (!href || href === '#' || href.length <= 1) {
+            e.preventDefault();
+            return; // 直接返回，不執行滾動
+          }
+          
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) {
+            PD.dom.scrollTo(target);
+          }
+        });
       });
-    });
 
     // 導航欄收合（手機版）
     const navbarToggler = document.querySelector('.navbar-toggler');

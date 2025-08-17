@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/clinic/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/clinic/business-hours.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -34,11 +35,11 @@
               {% endif %}
             </div>
             <div class="clinic-meta">
-              <span><i class="bi bi-geo-alt me-1"></i>{{ clinic.clinic_address }}</span>
+              <span><i class="bi bi-geo-alt me-1"></i><span data-clinic-address>{{ clinic.clinic_address }}</span></span>
               <span class="mx-2">•</span>
-              <span><i class="bi bi-telephone me-1"></i>{{ clinic.clinic_phone }}</span>
+              <span><i class="bi bi-telephone me-1"></i><span data-clinic-phone>{{ clinic.clinic_phone }}</span></span>
               <span class="mx-2">•</span>
-              <span><i class="bi bi-envelope me-1"></i>{{ clinic.clinic_email }}</span>
+              <span><i class="bi bi-envelope me-1"></i><span data-clinic-email>{{ clinic.clinic_email }}</span></span>
             </div>
             <div class="admin-info">
               <i class="bi bi-person-badge me-2"></i>
@@ -236,7 +237,7 @@
             
             <!-- 診所設定 -->
             <div class="col-md-6 mb-4">
-              <div class="feature-card">
+              <div class="feature-card settings-card">
                 <div class="feature-icon settings-icon">
                   <i class="bi bi-sliders"></i>
                 </div>
@@ -254,7 +255,7 @@
                   </div>
                 </div>
                 <div class="feature-actions">
-                  <button class="btn-feature btn-secondary" onclick="showSettingsModal()">
+                  <button type="button" class="btn-feature btn-secondary" id="settingsButton">
                     <i class="bi bi-arrow-right"></i>
                     診所設定
                   </button>
@@ -293,11 +294,7 @@
               </div>
               
               <div class="appointments-body" id="appointmentsList">
-                <!-- 預約列表將透過 AJAX 載入 -->
-                <div class="loading-placeholder">
-                  <div class="loading-spinner"></div>
-                  <span>載入預約資料中...</span>
-                </div>
+                <!-- 預約列表將由JavaScript動態載入 -->
               </div>
             </div>
           </div>
@@ -308,7 +305,7 @@
       <!-- 右側：快速資訊 -->
       <div class="col-lg-4">
         
-        <!-- 診所狀態 -->
+        <!-- 診所狀態 - 修正版，支援實時營業狀態 -->
         <div class="clinic-status-card">
           <h3 class="card-title">
             <i class="bi bi-activity me-2"></i>
@@ -417,7 +414,7 @@
                 <i class="bi bi-info-circle"></i>
               </div>
               <div class="tip-content">
-                <strong>排班設定：</strong>建議提前設定未來兩週的排班，讓病患能提前預約。
+                <strong>營業時間：</strong>設置完營業時間會自動儲存，並即時更新首頁的營業狀態顯示。
               </div>
             </div>
             
@@ -445,82 +442,129 @@
     </div>
   </div>
 
-  <!-- 診所設定 Modal -->
+  <!-- 診所設定 Modal - 修正版 -->
   <div id="settingsModal" class="modal-overlay" style="display: none;">
     <div class="modal-container">
-      <div class="modal-header">
-        <h3>診所設定</h3>
-        <button class="modal-close" onclick="closeSettingsModal()">
-          <i class="bi bi-x"></i>
-        </button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="settings-tabs">
-          <button class="tab-btn active" data-tab="basic">基本資料</button>
-          <button class="tab-btn" data-tab="business">營業時間</button>
-          <button class="tab-btn" data-tab="notification">通知設定</button>
+        <div class="modal-header">
+            <h3>
+                <i class="bi bi-gear me-2"></i>
+                診所設定
+            </h3>
+            <button class="modal-close" onclick="closeSettingsModal()">
+                <i class="bi bi-x"></i>
+            </button>
         </div>
         
-        <div class="tab-content" id="basicTab">
-          <form id="clinicSettingsForm">
-            {% csrf_token %}
-            <div class="form-group">
-              <label>診所名稱</label>
-              <input type="text" class="form-control" value="{{ clinic.clinic_name }}" readonly>
-              <small class="form-text">診所名稱需與農委會登記一致，無法修改</small>
+        <div class="modal-tabs-wrapper">
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="basic">
+                    <i class="bi bi-info-circle me-2"></i>
+                    基本資料
+                </button>
+                <button class="tab-btn" data-tab="business">
+                    <i class="bi bi-calendar-week me-2"></i>
+                    營業時間
+                </button>
             </div>
-            
-            <div class="form-group">
-              <label>診所電話</label>
-              <input type="tel" class="form-control" value="{{ clinic.clinic_phone }}" name="clinic_phone">
-            </div>
-            
-            <div class="form-group">
-              <label>診所信箱</label>
-              <input type="email" class="form-control" value="{{ clinic.clinic_email }}" name="clinic_email">
-            </div>
-            
-            <div class="form-group">
-              <label>診所地址</label>
-              <textarea class="form-control" name="clinic_address" rows="2">{{ clinic.clinic_address }}</textarea>
-            </div>
-          </form>
         </div>
         
-        <div class="tab-content" id="businessTab" style="display: none;">
-          <p class="text-muted">營業時間設定功能開發中...</p>
+        <div class="modal-body-scrollable">
+            <!-- 基本資料標籤 -->
+            <div class="tab-content active" id="basicTab">
+                <form id="clinicSettingsForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>
+                            <i class="bi bi-building me-2"></i>
+                            診所名稱
+                        </label>
+                        <input type="text" class="form-control" value="{{ clinic.clinic_name }}" readonly>
+                        <small class="form-text">診所名稱需與農委會登記一致，無法修改</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="bi bi-telephone me-2"></i>
+                            診所電話
+                        </label>
+                        <input type="tel" class="form-control" value="{{ clinic.clinic_phone }}" name="clinic_phone">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="bi bi-envelope me-2"></i>
+                            診所信箱
+                        </label>
+                        <input type="email" class="form-control" value="{{ clinic.clinic_email }}" name="clinic_email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="bi bi-geo-alt me-2"></i>
+                            診所地址
+                        </label>
+                        <textarea class="form-control" name="clinic_address" rows="2">{{ clinic.clinic_address }}</textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 營業時間設定標籤內容 - 修正版 -->
+            <div class="tab-content" id="businessTab">
+              <div class="business-hours-container">
+                  <div class="business-hours-header">
+                      <h5 class="section-title">
+                          <i class="bi bi-calendar-week me-2"></i>
+                          每週營業時間設定
+                      </h5>
+                      <p class="section-description">
+                          設定診所每天的營業時間，可以為每天新增多個時段。
+                          設定完成後會自動儲存，並同步更新首頁的營業狀態顯示。
+                      </p>
+                  </div>
+                  
+                  <div class="business-hours-editor">
+                      <div class="days-container" id="businessHoursDays">
+                          <!-- 天數卡片將由 JavaScript 動態生成 -->
+                      </div>
+                  </div>
+
+                  <!-- 營業時間預覽 -->
+                  <div class="business-hours-preview">
+                      <h6 class="preview-title">
+                          <i class="bi bi-eye me-2"></i>
+                          營業時間總覽
+                      </h6>
+                      <div class="preview-content" id="businessHoursPreview">
+                          <!-- 預覽內容將由 JavaScript 生成 -->
+                      </div>
+                  </div>
+              </div>
+            </div>
         </div>
         
-        <div class="tab-content" id="notificationTab" style="display: none;">
-          <p class="text-muted">通知設定功能開發中...</p>
+        <div class="modal-footer">
+            <button type="button" class="btn-modern btn-outline-modern" onclick="closeSettingsModal()">
+                <i class="bi bi-x me-2"></i>
+                取消
+            </button>
+            <button type="button" class="btn-modern btn-primary-modern" onclick="saveClinicSettings()">
+                <i class="bi bi-check me-2"></i>
+                儲存設定
+            </button>
         </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button type="button" class="btn-modern btn-outline-modern" onclick="closeSettingsModal()">
-          取消
-        </button>
-        <button type="button" class="btn-modern btn-primary-modern" onclick="saveClinicSettings()">
-          <i class="bi bi-check"></i>
-          儲存設定
-        </button>
-      </div>
     </div>
   </div>
-
 </div>
 
 <!-- 隱藏的 CSRF Token -->
 <form id="ajaxForm" style="display: none;">
   {% csrf_token %}
 </form>
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/clinic/dashboard.js' %}"></script>
-
+<script src="{% static 'js/clinic/business-hours.js' %}"></script>
 <script>
 // 傳遞 Django 數據到 JavaScript
 window.dashboardData = {
@@ -560,6 +604,282 @@ window.dashboardData = {
   {% endfor %}
 {% endif %}
 
+// 頁面載入完成後的調試檢查
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 頁面載入完成，開始診斷...');
+    
+    // 檢查關鍵元素
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsModal = document.getElementById('settingsModal');
+    const businessContainer = document.getElementById('businessHoursDays');
+    
+    console.log('✅ 關鍵元素檢查：');
+    console.log('  - 設定按鈕:', settingsButton ? '存在' : '❌ 缺失');
+    console.log('  - 設定Modal:', settingsModal ? '存在' : '❌ 缺失');
+    console.log('  - 營業時間容器:', businessContainer ? '存在' : '❌ 缺失');
+    
+    // 如果按鈕存在但沒有事件，手動添加
+    if (settingsButton && typeof showSettingsModal === 'function') {
+        // 移除可能的舊事件
+        const newButton = settingsButton.cloneNode(true);
+        settingsButton.parentNode.replaceChild(newButton, settingsButton);
+        
+        // 添加新事件
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔧 點擊診所設定');
+            showSettingsModal();
+        });
+        
+        console.log('🔧 已手動添加設定按鈕事件');
+    }
+});
 
+// 兼容性函數（保留原有函數名）
+function applyQuickSettings() {
+    console.log('⚠️ 快速設定功能已移除，請使用個別天數設定');
+}
+
+function clearAllSchedules() {
+    console.log('⚠️ 清除全部功能已移除');
+}
+
+function setMorningAfternoonSchedule() {
+    console.log('📅 設定上下午分段營業時間');
+    
+    if (typeof businessHours !== 'undefined') {
+        for (let day = 0; day < 5; day++) {
+            businessHours.data[day] = [];
+            
+            // 開啟該天營業
+            const checkbox = document.querySelector(`.day-card[data-day="${day}"] input[type="checkbox"]`);
+            const toggleText = document.querySelector(`.day-card[data-day="${day}"] .toggle-text`);
+            const dayCard = document.querySelector(`.day-card[data-day="${day}"]`);
+            
+            if (checkbox && toggleText && dayCard) {
+                checkbox.checked = true;
+                toggleText.textContent = '營業';
+                dayCard.classList.add('active');
+            }
+            
+            // 添加上午時段
+            businessHours.addPeriod(day, '09:00', '12:00');
+            // 添加下午時段
+            businessHours.addPeriod(day, '14:00', '17:00');
+        }
+        
+        businessHours.updatePreview();
+        if (typeof showSuccessMessage === 'function') {
+            showSuccessMessage('已設定週一到週五上下午分段營業時間');
+        }
+    }
+}
+
+function setCommonClinicHours() {
+    if (typeof businessHours !== 'undefined') {
+        // 週一到週五：上午 09:00-12:00，下午 14:00-17:00
+        for (let day = 0; day < 5; day++) {
+            // 清空現有數據
+            businessHours.data[day] = [];
+            
+            // 開啟營業
+            const checkbox = document.querySelector(`.day-card[data-day="${day}"] input[type="checkbox"]`);
+            const toggleText = document.querySelector(`.day-card[data-day="${day}"] .toggle-text`);
+            const dayCard = document.querySelector(`.day-card[data-day="${day}"]`);
+            
+            if (checkbox && toggleText && dayCard) {
+                checkbox.checked = true;
+                toggleText.textContent = '營業';
+                dayCard.classList.add('active');
+            }
+            
+            // 添加上午時段
+            businessHours.addPeriod(day, '09:00', '12:00');
+            // 添加下午時段
+            businessHours.addPeriod(day, '14:00', '17:00');
+        }
+        
+        // 週六半天
+        businessHours.data[5] = [];
+        const satCheckbox = document.querySelector(`.day-card[data-day="5"] input[type="checkbox"]`);
+        const satToggleText = document.querySelector(`.day-card[data-day="5"] .toggle-text`);
+        const satDayCard = document.querySelector(`.day-card[data-day="5"]`);
+        
+        if (satCheckbox && satToggleText && satDayCard) {
+            satCheckbox.checked = true;
+            satToggleText.textContent = '營業';
+            satDayCard.classList.add('active');
+        }
+        
+        businessHours.addPeriod(5, '09:00', '12:00');
+        
+        // 週日休息（默認已經是休息狀態）
+        businessHours.data[6] = [];
+        
+        if (typeof showSuccessMessage === 'function') {
+            showSuccessMessage('已設定常見診所營業時間');
+        }
+    }
+}
+
+function initializeSettingsTabs() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+            
+            // 移除所有活躍狀態
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // 設定當前活躍狀態
+            this.classList.add('active');
+            
+            const targetContent = document.getElementById(targetTab + 'Tab');
+            if (targetContent) {
+                targetContent.classList.add('active');
+                
+                // 如果是營業時間標籤，延遲初始化以確保DOM就緒
+                if (targetTab === 'business') {
+                    console.log('🕘 切換到營業時間標籤，開始初始化...');
+                    setTimeout(() => {
+                        if (typeof businessHours !== 'undefined') {
+                            businessHours.initialize();
+                        } else if (typeof initializeBusinessHours === 'function') {
+                            initializeBusinessHours();
+                        } else {
+                            console.error('❌ businessHours 物件未找到');
+                        }
+                    }, 150); // 減少延遲時間
+                }
+            }
+        });
+    });
+}
+
+// 儲存診所設定函數
+function saveClinicSettings() {
+    console.log('💾 儲存診所設定...');
+    
+    const activeTab = document.querySelector('.tab-btn.active');
+    if (!activeTab) {
+        showErrorMessage('請選擇要儲存的設定分類');
+        return;
+    }
+    
+    const tabType = activeTab.dataset.tab;
+    
+    switch(tabType) {
+        case 'basic':
+            saveBasicSettings();
+            break;
+        case 'business':
+            if (typeof businessHours !== 'undefined') {
+                const result = businessHours.save();
+                if (result) {
+                    // 設定儲存成功後關閉 Modal
+                    setTimeout(() => {
+                        closeSettingsModal();
+                    }, 1500);
+                }
+            } else {
+                showErrorMessage('營業時間系統尚未載入');
+            }
+            break;
+        default:
+            showErrorMessage('未知的設定類型');
+    }
+}
+
+function saveBasicSettings() {
+    console.log('💾 儲存基本設定...');
+    
+    const form = document.getElementById('clinicSettingsForm');
+    if (!form) {
+        showErrorMessage('找不到設定表單');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = {
+        clinic_phone: formData.get('clinic_phone'),
+        clinic_email: formData.get('clinic_email'),
+        clinic_address: formData.get('clinic_address')
+    };
+    
+    // 簡單驗證
+    if (!data.clinic_phone || !data.clinic_email) {
+        showErrorMessage('請填寫所有必填欄位');
+        return;
+    }
+    
+    // 顯示載入狀態
+    showSaveLoading(true);
+    
+    // 暫時模擬成功
+    setTimeout(() => {
+        showSaveLoading(false);
+        showSuccessMessage('基本設定已更新');
+        updateClinicInfo(data);
+        setTimeout(() => {
+            closeSettingsModal();
+        }, 1000);
+    }, 1500);
+}
+
+function updateClinicInfo(data) {
+    try {
+        // 更新電話顯示
+        const phoneElement = document.querySelector('[data-clinic-phone]');
+        if (phoneElement) {
+            phoneElement.textContent = data.clinic_phone;
+        }
+        
+        // 更新信箱顯示
+        const emailElement = document.querySelector('[data-clinic-email]');
+        if (emailElement) {
+            emailElement.textContent = data.clinic_email;
+        }
+        
+        // 更新地址顯示
+        const addressElement = document.querySelector('[data-clinic-address]');
+        if (addressElement) {
+            addressElement.textContent = data.clinic_address;
+        }
+        
+        console.log('✅ 診所資訊顯示已更新');
+    } catch (error) {
+        console.error('❌ 更新診所資訊顯示失敗:', error);
+    }
+}
+
+// 顯示儲存載入狀態
+function showSaveLoading(show) {
+    const saveButton = document.querySelector('.modal-footer .btn-primary-modern');
+    if (!saveButton) return;
+    
+    if (show) {
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 儲存中...';
+        saveButton.style.pointerEvents = 'none';
+    } else {
+        saveButton.disabled = false;
+        saveButton.innerHTML = '<i class="bi bi-check me-2"></i> 儲存設定';
+        saveButton.style.pointerEvents = 'auto';
+    }
+}
+
+// 導出必要的全域函數
+window.saveClinicSettings = saveClinicSettings;
+window.initializeSettingsTabs = initializeSettingsTabs;
+window.applyQuickSettings = applyQuickSettings;
+window.clearAllSchedules = clearAllSchedules;
+window.setMorningAfternoonSchedule = setMorningAfternoonSchedule;
+window.setCommonClinicHours = setCommonClinicHours;
+
+console.log('✅ 修正版診所管理頁面載入完成（支援營業時間儲存和狀態同步）');
 </script>
 {% endblock %}

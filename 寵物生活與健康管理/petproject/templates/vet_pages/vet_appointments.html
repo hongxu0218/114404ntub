@@ -1,108 +1,374 @@
-{% extends "vet_pages/base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}已被預約時段{% endblock %}
+{% block title %}預約管理 - {{ vet_profile.user.get_full_name }}{% endblock %}
 
-{% block back_button %}
-<a href="{% url 'vet_home' %}" class="back-home">← 返回主控台</a>
-{% endblock %}
-
-{% block header %}
-<h1>📅 已被預約的時段</h1>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/vet_pages/vet-appointments.css' %}">
 {% endblock %}
 
 {% block content %}
-<style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  th, td {
-    padding: 12px;
-    border: 1px solid #dee2e6;
-    text-align: center;
-  }
-  th {
-    background-color: #007bff;
-    color: white;
-  }
-  tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-</style>
+<div class="vet-appointments-container">
+  
+  <!-- 返回按鈕 -->
+  <a href="{% url 'vet_home' %}" class="back-home">
+    <i class="bi bi-arrow-left"></i>
+    返回主控台
+  </a>
+  
+  <!-- 頁面標題區域 -->
+  <div class="appointments-header">
+    <h1 class="appointments-title">
+      <i class="bi bi-calendar-check"></i>
+      預約管理
+    </h1>
+    <p class="appointments-subtitle">管理您的預約時段和病患就診記錄</p>
+  </div>
 
-<div style="margin-bottom: 20px;">
-  {% if show_history %}
-      <a href="{% url 'vet_appointments' %}" class="btn btn-primary">🔙 返回未看診時段</a>
-  {% else %}
-      <a href="{% url 'vet_appointments' %}?history=1" class="btn btn-secondary">📜 查看已看診紀錄</a>
-  {% endif %}
-</div>
+  <!-- 統計摘要 -->
+  <div class="appointments-summary">
+    <div class="summary-card">
+      <div class="summary-number" id="totalAppointments">{{ appointments.count|default:0 }}</div>
+      <div class="summary-label">總預約數</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-number" id="todayAppointments">{{ today_appointments_count|default:0 }}</div>
+      <div class="summary-label">今日預約</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-number" id="pendingAppointments">{{ pending_count|default:0 }}</div>
+      <div class="summary-label">待確認</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-number" id="completedAppointments">{{ completed_count|default:0 }}</div>
+      <div class="summary-label">已完成</div>
+    </div>
+  </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>日期</th>
-      <th>時間</th>
-      <th>寵物名稱</th>
-      <th>飼主</th>
-      <th>預約原因</th>
-      {% if not show_history %}
-        <th>操作</th>
+  <!-- 控制按鈕區域 -->
+  <div class="appointments-controls">
+    <div class="view-toggle-buttons">
+      {% if show_history %}
+        <a href="{% url 'vet_appointments' %}" class="btn-vet btn-vet-primary">
+          <i class="bi bi-clock-history"></i>
+          返回未看診時段
+        </a>
+      {% else %}
+        <a href="{% url 'vet_appointments' %}?history=1" class="btn-vet btn-vet-secondary">
+          <i class="bi bi-archive"></i>
+          查看已看診紀錄
+        </a>
       {% endif %}
-    </tr>
-  </thead>
-  <tbody>
-    {% regroup appointments by date as date_groups %}
-    {% for group in date_groups %}
-      <tr>
-        <td colspan="6" style="background-color: #d1ecf1; font-weight: bold;">
-          📅 {{ group.grouper }}（{{ group.grouper|date:"l" }}）
-        </td>
-      </tr>
-      {% for appt in group.list %}
+      
+      <button class="btn-vet btn-vet-secondary" onclick="refreshAppointments()">
+        <i class="bi bi-arrow-clockwise"></i>
+        重新整理
+      </button>
+      
+      <button class="btn-vet btn-vet-secondary" onclick="exportAppointments()">
+        <i class="bi bi-download"></i>
+        匯出資料
+      </button>
+    </div>
+    
+    <div class="appointments-search">
+      <input type="text" class="search-input" id="searchInput" placeholder="搜尋寵物名稱、飼主姓名...">
+      <button class="btn-vet btn-vet-primary" onclick="searchAppointments()">
+        <i class="bi bi-search"></i>
+        搜尋
+      </button>
+    </div>
+  </div>
+
+  <!-- 篩選標籤 -->
+  <div class="filter-tags">
+    <span class="filter-tag active" data-filter="all">全部</span>
+    <span class="filter-tag" data-filter="today">今日</span>
+    <span class="filter-tag" data-filter="week">本週</span>
+    <span class="filter-tag" data-filter="pending">待確認</span>
+    <span class="filter-tag" data-filter="confirmed">已確認</span>
+    {% if show_history %}
+      <span class="filter-tag" data-filter="completed">已完成</span>
+    {% endif %}
+  </div>
+
+  <!-- 預約表格區域 -->
+  <div class="appointments-table-container">
+    <table class="appointments-table" id="appointmentsTable">
+      <thead>
         <tr>
-          <td>{{ appt.date }}</td>
-          <td>{{ appt.time }}</td>
-          <td><a href="{% url 'vet_pet_detail' appt.pet.id %}">{{ appt.pet.name }}</a></td>
-          <td>
-            {% if appt.owner.last_name or appt.owner.first_name %}
-              {{ appt.owner.last_name }}{{ appt.owner.first_name }}
-            {% else %}
-              {{ appt.owner.username }}
-            {% endif %}
-          </td>
-          <td>{{ appt.reason }}</td>
+          <th>日期</th>
+          <th>時間</th>
+          <th>寵物資訊</th>
+          <th>飼主</th>
+          <th>預約原因</th>
+          <th>狀態</th>
           {% if not show_history %}
-          <td>
-            <form method="POST" action="{% url 'vet_cancel_appointment' appt.id %}" onsubmit="return confirm('確定要取消這筆預約嗎？');" style="display: flex; align-items: center; gap: 8px;">
-              {% csrf_token %}
-              <input type="text" name="cancel_reason" placeholder="取消原因" required
-                style="width: 120px; padding: 4px; font-size: 14px;">
-              <button type="submit" style="padding: 6px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px;">取消</button>
-            </form>
-            <a href="{% url 'create_medical_record' appt.pet.id %}" style="
-              display: inline-block;
-              width: 120px;
-              height: 34px;
-              line-height: 34px;
-              text-align: center;
-              margin-top: 6px;
-              background-color: #28a745;
-              color: white;
-              text-decoration: none;
-              border-radius: 4px;
-              font-size: 14px;
-            ">新增病歷</a>
-          </td>
+            <th>操作</th>
           {% endif %}
         </tr>
-      {% endfor %}
-    {% empty %}
-      <tr>
-        <td colspan="6">目前尚無預約</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+      </thead>
+      <tbody id="appointmentsTableBody">
+        {% if appointments %}
+          {% regroup appointments by slot.date as date_groups %}
+          {% for group in date_groups %}
+            <tr class="date-group-row">
+              <td colspan="{% if show_history %}6{% else %}7{% endif %}">
+                <i class="bi bi-calendar3"></i>
+                {{ group.grouper|date:"Y年m月d日" }}（{{ group.grouper|date:"l" }}）
+              </td>
+            </tr>
+            {% for appointment in group.list %}
+              <tr class="appointment-row" data-appointment-id="{{ appointment.id }}" data-status="{{ appointment.status }}" data-date="{{ appointment.slot.date|date:'Y-m-d' }}">
+                <td>{{ appointment.slot.date|date:"m/d" }}</td>
+                <td>
+                  <strong>{{ appointment.slot.start_time|time:"H:i" }}</strong>
+                  -
+                  {{ appointment.slot.end_time|time:"H:i" }}
+                </td>
+                <td>
+                  <div>
+                    <a href="{% url 'pet_detail' appointment.pet.id %}" class="pet-name-link">
+                      {{ appointment.pet.name }}
+                    </a>
+                    <small class="text-muted d-block">
+                      {{ appointment.pet.species }} • {{ appointment.pet.breed|default:"混種" }}
+                    </small>
+                  </div>
+                </td>
+                <td>
+                  <div>
+                    {% if appointment.owner.last_name or appointment.owner.first_name %}
+                      {{ appointment.owner.last_name }}{{ appointment.owner.first_name }}
+                    {% else %}
+                      {{ appointment.owner.username }}
+                    {% endif %}
+                    <small class="text-muted d-block">
+                      <i class="bi bi-telephone"></i>
+                      {{ appointment.owner.profile.phone|default:"未提供" }}
+                    </small>
+                  </div>
+                </td>
+                <td>
+                  <div>{{ appointment.reason|default:"一般檢查" }}</div>
+                  {% if appointment.notes %}
+                    <small class="text-muted">{{ appointment.notes|truncatechars:50 }}</small>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="status-badge {{ appointment.status }}">
+                    {% if appointment.status == 'pending' %}
+                      待確認
+                    {% elif appointment.status == 'confirmed' %}
+                      已確認
+                    {% elif appointment.status == 'completed' %}
+                      已完成
+                    {% elif appointment.status == 'cancelled' %}
+                      已取消
+                    {% else %}
+                      {{ appointment.get_status_display }}
+                    {% endif %}
+                  </span>
+                </td>
+                {% if not show_history %}
+                  <td>
+                    <div class="appointment-actions">
+                      <!-- 取消預約表單 -->
+                      {% if appointment.status != 'cancelled' and appointment.status != 'completed' %}
+                        <form method="POST" 
+                              action="{% url 'vet_cancel_appointment' appointment.id %}" 
+                              class="cancel-form" 
+                              onsubmit="return confirmCancelAppointment(event, '{{ appointment.pet.name }}', '{{ appointment.slot.date|date:"m/d" }}', '{{ appointment.slot.start_time|time:"H:i" }}')">
+                          {% csrf_token %}
+                          <input type="text" 
+                                 name="cancel_reason" 
+                                 class="cancel-reason-input" 
+                                 placeholder="取消原因" 
+                                 required>
+                          <button type="submit" class="btn-vet btn-vet-danger btn-vet-sm">
+                            <i class="bi bi-x-circle"></i>
+                            取消
+                          </button>
+                        </form>
+                      {% endif %}
+                      
+                      <!-- 新增病歷按鈕 -->
+                      {% if appointment.status == 'confirmed' %}
+                        <a href="{% url 'create_medical_record' appointment.pet.id %}" 
+                           class="btn-vet btn-vet-success btn-vet-sm">
+                          <i class="bi bi-file-medical"></i>
+                          新增病歷
+                        </a>
+                      {% endif %}
+                      
+                      <!-- 查看病歷按鈕 -->
+                      {% if appointment.status == 'completed' %}
+                        <a href="{% url 'pet_detail' appointment.pet.id %}" 
+                           class="btn-vet btn-vet-secondary btn-vet-sm">
+                          <i class="bi bi-eye"></i>
+                          查看病歷
+                        </a>
+                      {% endif %}
+                    </div>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="{% if show_history %}6{% else %}7{% endif %}" class="empty-appointments">
+              <i class="bi bi-calendar-x"></i>
+              <h3>
+                {% if show_history %}
+                  尚無看診紀錄
+                {% else %}
+                  目前尚無預約
+                {% endif %}
+              </h3>
+              <p>
+                {% if show_history %}
+                  您還沒有完成的看診記錄
+                {% else %}
+                  目前沒有即將到來的預約
+                {% endif %}
+              </p>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 分頁導航 -->
+  {% if appointments.has_other_pages %}
+    <nav aria-label="預約分頁導航" class="mt-4">
+      <ul class="pagination justify-content-center">
+        {% if appointments.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ appointments.previous_page_number }}{% if show_history %}&history=1{% endif %}">
+              <i class="bi bi-chevron-left"></i>
+              上一頁
+            </a>
+          </li>
+        {% endif %}
+        
+        {% for num in appointments.paginator.page_range %}
+          {% if appointments.number == num %}
+            <li class="page-item active">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% elif num > appointments.number|add:'-3' and num < appointments.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}{% if show_history %}&history=1{% endif %}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if appointments.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ appointments.next_page_number }}{% if show_history %}&history=1{% endif %}">
+              下一頁
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+
+</div>
+
+<!-- 隱藏的 CSRF Token -->
+<form id="vetAppointmentsAjaxForm" style="display: none;">
+  {% csrf_token %}
+</form>
+
+<!-- 載入狀態模態框 -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <div class="loading-spinner mx-auto"></div>
+        <div class="mt-3">處理中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vet_pages/vet-appointments.js' %}"></script>
+<script>
+// 傳遞 Django 數據到 JavaScript
+window.vetAppointmentsData = {
+  vet: {
+    id: {{ vet_profile.id }},
+    name: '{{ vet_profile.user.get_full_name|default:vet_profile.user.username|escapejs }}',
+  },
+  appointments: {
+    total: {{ appointments.count|default:0 }},
+    today: {{ today_appointments_count|default:0 }},
+    pending: {{ pending_count|default:0 }},
+    completed: {{ completed_count|default:0 }}
+  },
+  showHistory: {{ show_history|yesno:"true,false" }},
+  urls: {
+    appointments: '{% url "vet_appointments" %}',
+    cancelAppointment: '/vet/appointments/{id}/cancel/',
+    createRecord: '{% url "create_medical_record" 0 %}'.replace('0', ''),
+    petDetail: '{% url "pet_detail" 0 %}'.replace('0', ''),
+    export: '/api/vet/appointments/export/'
+  },
+  csrfToken: '{{ csrf_token }}',
+  currentPage: {{ appointments.number|default:1 }},
+  totalPages: {{ appointments.paginator.num_pages|default:1 }}
+};
+
+// 顯示訊息
+{% if messages %}
+  {% for message in messages %}
+    {% if message.tags == 'success' %}
+      showSuccessMessage('{{ message|escapejs }}');
+    {% elif message.tags == 'error' %}
+      showErrorMessage('{{ message|escapejs }}');
+    {% elif message.tags == 'warning' %}
+      showWarningMessage('{{ message|escapejs }}');
+    {% elif message.tags == 'info' %}
+      showInfoMessage('{{ message|escapejs }}');
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+// 頁面載入完成後的初始化
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('獸醫師預約管理頁面載入完成');
+    
+    // 檢查關鍵元素
+    const keyElements = {
+        appointmentsTable: document.getElementById('appointmentsTable'),
+        searchInput: document.getElementById('searchInput'),
+        filterTags: document.querySelectorAll('.filter-tag'),
+        appointmentRows: document.querySelectorAll('.appointment-row')
+    };
+    
+    console.log('關鍵元素檢查：');
+    console.log('  - 預約表格:', keyElements.appointmentsTable ? '存在' : '缺失');
+    console.log('  - 搜尋輸入:', keyElements.searchInput ? '存在' : '缺失');
+    console.log('  - 篩選標籤:', keyElements.filterTags.length, '個');
+    console.log('  - 預約行數:', keyElements.appointmentRows.length, '行');
+    
+    // 檢查數據
+    console.log('預約數據:', window.vetAppointmentsData);
+    
+    console.log('獸醫師預約管理系統初始化完成');
+});
+
+// 兼容性函數
+function confirmCancelAppointment(event, petName, date, time) {
+    return confirm(`確定要取消 ${petName} 在 ${date} ${time} 的預約嗎？\n\n請確認已填寫取消原因。`);
+}
+
+console.log('獸醫師預約管理模板載入完成');
+</script>
 {% endblock %}

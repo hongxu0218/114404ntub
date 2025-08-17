@@ -1,0 +1,666 @@
+/* static/css/vet_pages/vet-appointments.css */
+/* 獸醫師預約管理系統 - 專業醫療風格 */
+
+/* ========== 繼承基礎 CSS 變數 ========== */
+:root {
+  /* 主色調 - 專業深藍色 */
+  --primary-color: #1e40af;
+  --primary-light: #3b82f6;
+  --primary-dark: #1e3a8a;
+  --primary-muted: #dbeafe;
+  
+  /* 輔助色調 - 醫療綠色 */
+  --secondary-color: #065f46;
+  --secondary-light: #047857;
+  --secondary-dark: #064e3b;
+  --secondary-muted: #d1fae5;
+  
+  /* 獸醫師專用色彩 */
+  --vet-primary: #1e40af;
+  --vet-primary-light: #3b82f6;
+  --vet-primary-dark: #1e3a8a;
+  --vet-accent: #7c3aed;
+  --vet-accent-light: #8b5cf6;
+  
+  /* 狀態顏色 */
+  --success-color: #047857;
+  --success-light: #059669;
+  --success-muted: #d1fae5;
+  --warning-color: #d97706;
+  --warning-light: #f59e0b;
+  --warning-muted: #fef3c7;
+  --danger-color: #dc2626;
+  --danger-light: #ef4444;
+  --danger-muted: #fee2e2;
+  --info-color: #0369a1;
+  --info-light: #0284c7;
+  --info-muted: #dbeafe;
+  
+  /* 專業背景色調 */
+  --vet-bg: #f8fafc;
+  --vet-card-bg: #ffffff;
+  --vet-card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --vet-card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* 專業灰色系統 */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* 間距與圓角 */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* 陰影與過渡 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* ========== 主容器 ========== */
+.vet-appointments-container {
+  background: var(--vet-bg);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+/* ========== 頁面標題區域 ========== */
+.appointments-header {
+  background: linear-gradient(135deg, #ffffff 0%, var(--gray-50) 100%);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.appointments-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--vet-primary), var(--vet-accent), var(--info-color));
+}
+
+.appointments-title {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--vet-primary), var(--vet-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 var(--spacing-md) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.appointments-subtitle {
+  color: var(--gray-600);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ========== 返回按鈕 ========== */
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--gray-300);
+  margin-bottom: var(--spacing-lg);
+}
+
+.back-home:hover {
+  background: var(--vet-primary);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== 控制按鈕區域 ========== */
+.appointments-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.view-toggle-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.appointments-search {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+/* ========== 按鈕樣式 ========== */
+.btn-vet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.btn-vet-primary {
+  background: linear-gradient(135deg, var(--vet-primary), var(--vet-primary-light));
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-vet-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-vet-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+.btn-vet-secondary:hover {
+  background: var(--gray-200);
+  color: var(--gray-800);
+  text-decoration: none;
+}
+
+.btn-vet-success {
+  background: linear-gradient(135deg, var(--success-color), var(--success-light));
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-vet-success:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-vet-danger {
+  background: linear-gradient(135deg, var(--danger-color), var(--danger-light));
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-vet-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-vet-sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.8rem;
+}
+
+/* ========== 搜尋輸入框 ========== */
+.search-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  transition: all var(--transition-fast);
+  background: white;
+  min-width: 200px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--vet-primary);
+  box-shadow: 0 0 0 3px var(--primary-muted);
+}
+
+/* ========== 預約表格區域 ========== */
+.appointments-table-container {
+  background: var(--vet-card-bg);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--vet-card-shadow);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+
+.appointments-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  background: white;
+}
+
+.appointments-table thead {
+  background: linear-gradient(135deg, var(--vet-primary), var(--vet-primary-light));
+}
+
+.appointments-table th {
+  padding: var(--spacing-lg);
+  text-align: left;
+  font-weight: 700;
+  color: white;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+}
+
+.appointments-table th:first-child {
+  border-top-left-radius: var(--radius-lg);
+}
+
+.appointments-table th:last-child {
+  border-top-right-radius: var(--radius-lg);
+}
+
+.appointments-table tbody tr {
+  border-bottom: 1px solid var(--gray-200);
+  transition: all var(--transition-fast);
+}
+
+.appointments-table tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.appointments-table td {
+  padding: var(--spacing-lg);
+  vertical-align: middle;
+  color: var(--gray-700);
+  border: none;
+}
+
+/* ========== 日期分組行 ========== */
+.date-group-row {
+  background: linear-gradient(135deg, var(--info-muted), var(--primary-muted)) !important;
+}
+
+.date-group-row td {
+  font-weight: 700;
+  color: var(--info-color);
+  font-size: 1rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 2px solid var(--info-light);
+}
+
+/* ========== 寵物名稱連結 ========== */
+.pet-name-link {
+  color: var(--vet-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.pet-name-link:hover {
+  color: var(--vet-accent);
+  text-decoration: underline;
+}
+
+/* ========== 狀態標籤 ========== */
+.status-badge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge.confirmed {
+  background: var(--success-muted);
+  color: var(--success-color);
+  border: 1px solid var(--success-light);
+}
+
+.status-badge.pending {
+  background: var(--warning-muted);
+  color: var(--warning-color);
+  border: 1px solid var(--warning-light);
+}
+
+.status-badge.completed {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-300);
+}
+
+.status-badge.cancelled {
+  background: var(--danger-muted);
+  color: var(--danger-color);
+  border: 1px solid var(--danger-light);
+}
+
+/* ========== 操作區域 ========== */
+.appointment-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+}
+
+.cancel-form {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cancel-reason-input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  min-width: 120px;
+  transition: border-color var(--transition-fast);
+}
+
+.cancel-reason-input:focus {
+  outline: none;
+  border-color: var(--danger-color);
+  box-shadow: 0 0 0 2px var(--danger-muted);
+}
+
+/* ========== 空狀態 ========== */
+.empty-appointments {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--gray-500);
+}
+
+.empty-appointments i {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.3;
+  color: var(--gray-400);
+}
+
+.empty-appointments h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--gray-600);
+  font-weight: 600;
+}
+
+.empty-appointments p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* ========== 載入狀態 ========== */
+.loading-appointments {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  color: var(--gray-500);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--gray-300);
+  border-top: 3px solid var(--vet-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-md);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========== 篩選標籤 ========== */
+.filter-tags {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.filter-tag {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-tag.active {
+  background: var(--vet-primary);
+  color: white;
+  border-color: var(--vet-primary);
+}
+
+.filter-tag:hover:not(.active) {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+}
+
+/* ========== 統計摘要 ========== */
+.appointments-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.summary-card {
+  background: var(--vet-card-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+  box-shadow: var(--vet-card-shadow);
+  border: 1px solid var(--gray-200);
+  text-align: center;
+}
+
+.summary-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--vet-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 1200px) {
+  .vet-appointments-container {
+    padding: var(--spacing-md);
+  }
+  
+  .appointments-header {
+    padding: var(--spacing-xl);
+  }
+  
+  .appointments-table-container {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .appointments-title {
+    font-size: 1.75rem;
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .appointments-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .view-toggle-buttons {
+    justify-content: center;
+  }
+  
+  .appointments-search {
+    justify-content: center;
+  }
+  
+  .search-input {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .appointments-table-container {
+    overflow-x: auto;
+  }
+  
+  .appointments-table {
+    min-width: 800px;
+  }
+  
+  .appointment-actions {
+    min-width: 160px;
+  }
+  
+  .cancel-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .cancel-reason-input {
+    min-width: unset;
+  }
+  
+  .summary-card {
+    padding: var(--spacing-md);
+  }
+  
+  .summary-number {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .appointments-title {
+    font-size: 1.5rem;
+  }
+  
+  .appointments-header,
+  .appointments-table-container {
+    padding: var(--spacing-md);
+  }
+  
+  .btn-vet {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.8rem;
+  }
+  
+  .appointments-table th,
+  .appointments-table td {
+    padding: var(--spacing-md);
+    font-size: 0.8rem;
+  }
+  
+  .date-group-row td {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+/* ========== 列印樣式 ========== */
+@media print {
+  .vet-appointments-container {
+    background: white;
+    padding: 0;
+  }
+  
+  .back-home,
+  .appointments-controls,
+  .appointment-actions {
+    display: none;
+  }
+  
+  .appointments-header {
+    box-shadow: none;
+    border: 1px solid var(--gray-300);
+  }
+  
+  .appointments-table-container {
+    box-shadow: none;
+    border: 1px solid var(--gray-300);
+  }
+  
+  .appointments-table tbody tr:hover {
+    background: transparent;
+  }
+}
+
+/* ========== 無障礙改進 ========== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -54,7 +54,7 @@
             </span>
           {% endif %}
           
-          {% if doctor.is_verified %}
+          {% if doctor.license_verified_with_moa %}
             <span class="status-indicator status-verified">
               <i class="bi bi-shield-check"></i>
               執照已驗證
@@ -77,13 +77,13 @@
       
       <div class="col-lg-4">
         <div class="action-buttons-modern">
-          <a href="{% url 'manage_doctors' %}" class="btn-modern btn-outline-modern">
+          <a href="javascript:history.back()" class="btn-modern btn-outline-modern">
             <i class="bi bi-arrow-left"></i>
             <span>返回列表</span>
           </a>
           
-          {% if doctor.is_verified %}
-          <a href="{% url 'manage_doctor_schedules' doctor.id %}" class="btn-modern btn-info-modern">
+          {% if doctor.license_verified_with_moa %}
+          <a href="#" class="btn-modern btn-info-modern">
             <i class="bi bi-calendar3"></i>
             <span>管理排班</span>
           </a>
@@ -96,19 +96,19 @@
   <!-- 表單標籤頁導航 -->
   <div class="tabs-navigation-modern">
     <div class="nav nav-tabs-modern" role="tablist">
-      <button class="nav-link-modern active" data-tab="basic" type="button" role="tab">
+      <button class="nav-link-modern active" data-tab="basic" type="button" role="tab" aria-selected="true">
         <i class="bi bi-person-badge me-2"></i>
         基本資料
       </button>
-      <button class="nav-link-modern" data-tab="professional" type="button" role="tab">
+      <button class="nav-link-modern" data-tab="professional" type="button" role="tab" aria-selected="false">
         <i class="bi bi-award me-2"></i>
         專業資訊
       </button>
-      <button class="nav-link-modern" data-tab="permissions" type="button" role="tab">
+      <button class="nav-link-modern" data-tab="permissions" type="button" role="tab" aria-selected="false">
         <i class="bi bi-shield-check me-2"></i>
         權限設定
       </button>
-      <button class="nav-link-modern" data-tab="security" type="button" role="tab">
+      <button class="nav-link-modern" data-tab="security" type="button" role="tab" aria-selected="false">
         <i class="bi bi-lock me-2"></i>
         安全設定
       </button>
@@ -121,7 +121,7 @@
       {% csrf_token %}
       
       <!-- 基本資料標籤 -->
-      <div class="tab-content-modern active" data-content="basic">
+      <div class="tab-content-modern active" data-content="basic" aria-hidden="false">
         <div class="section-header">
           <h3 class="section-title">
             <i class="bi bi-person-badge me-2"></i>
@@ -221,7 +221,7 @@
       </div>
 
       <!-- 專業資訊標籤 -->
-      <div class="tab-content-modern" data-content="professional">
+      <div class="tab-content-modern" data-content="professional" aria-hidden="true">
         <div class="section-header">
           <h3 class="section-title">
             <i class="bi bi-award me-2"></i>
@@ -239,7 +239,7 @@
               <i class="bi bi-card-text me-2"></i>
               獸醫師執照驗證
             </h6>
-            {% if doctor.is_verified %}
+            {% if doctor.license_verified_with_moa %}
               <span class="verification-badge verified">
                 <i class="bi bi-shield-check me-1"></i>
                 已通過農委會驗證
@@ -252,54 +252,191 @@
             {% endif %}
           </div>
           
-          <div class="row">
-            <div class="col-md-8">
-              <div class="form-group-modern">
-                <label for="{{ form.vet_license_number.id_for_label }}" class="form-label-modern">
-                  <i class="bi bi-card-text me-1"></i>
-                  {{ form.vet_license_number.label }}
-                </label>
-                {{ form.vet_license_number }}
+          {% if doctor.license_verified_with_moa %}
+            <!-- 已驗證的執照顯示 -->
+            <div class="license-number-protected">
+              <div class="license-info">
+                <div class="license-status-verified">
+                  <i class="bi bi-shield-check-fill me-2"></i>
+                  <span>執照已通過農委會驗證</span>
+                </div>
+                {% if doctor.vet_license_number %}
+                  <div class="license-number-masked">
+                    執照號碼：{{ doctor.vet_license_number|slice:":2" }}****{{ doctor.vet_license_number|slice:"-2:" }}
+                  </div>
+                {% endif %}
                 {% if doctor.moa_license_type %}
-                  <div class="form-help">
+                  <div class="license-type">
                     <i class="bi bi-check-circle text-success me-1"></i>
                     執照類別：{{ doctor.moa_license_type }}
                   </div>
-                {% else %}
-                  <div class="form-help">農委會核發的獸醫師執照號碼</div>
                 {% endif %}
-                <div class="invalid-feedback"></div>
+              </div>
+              <div class="license-actions">
+                {% if doctor.vet_license_number %}
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleLicenseVisibility">
+                  <i class="bi bi-eye"></i> 顯示完整號碼
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-outline-warning" id="updateLicenseBtn">
+                  <i class="bi bi-pencil"></i> 更新執照
+                </button>
               </div>
             </div>
             
-            <div class="col-md-4">
-              {% if not doctor.is_verified and doctor.vet_license_number %}
-                <div class="verify-action">
-                  <button type="button" class="btn-verify-license" id="verifyLicenseBtn">
-                    <i class="bi bi-shield-check"></i>
-                    立即驗證
-                  </button>
-                  <div class="verify-help">點擊進行農委會API驗證</div>
+            <!-- 隱藏的執照輸入框供表單提交使用 -->
+            <input type="hidden" name="vet_license_number" value="{{ doctor.vet_license_number }}">
+            
+            <!-- 驗證詳細資訊 -->
+            <div class="verification-info">
+              <div class="verification-details">
+                <!-- 執照驗證狀態 -->
+                <div class="detail-item verification-status">
+                  <span class="detail-label">
+                    <i class="bi bi-shield-check me-1"></i>
+                    執照驗證狀態：
+                  </span>
+                  <span class="detail-value">
+                    {% if doctor.license_verified_with_moa %}
+                      <span class="status-badge verified">
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                        已通過農委會驗證
+                      </span>
+                    {% else %}
+                      <span class="status-badge pending">
+                        <i class="bi bi-clock me-1"></i>
+                        等待驗證
+                      </span>
+                    {% endif %}
+                  </span>
                 </div>
-              {% endif %}
-            </div>
-          </div>
-          
-          {% if doctor.is_verified %}
-          <div class="verification-info">
-            <div class="verification-details">
-              <div class="detail-item">
-                <span class="detail-label">驗證時間：</span>
-                <span class="detail-value">{{ doctor.verification_date|date:"Y年m月d日 H:i" }}</span>
+                
+                <!-- 驗證時間 -->
+                {% if doctor.license_verified_with_moa and doctor.verification_date %}
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    驗證完成時間：
+                  </span>
+                  <span class="detail-value verification-time">
+                    {{ doctor.verification_date|date:"Y年m月d日 H:i" }}
+                    <small class="text-muted ms-2">
+                      ({{ doctor.verification_date|timesince }}前)
+                    </small>
+                  </span>
+                </div>
+                {% elif not doctor.license_verified_with_moa %}
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="bi bi-info-circle me-1"></i>
+                    驗證說明：
+                  </span>
+                  <span class="detail-value">
+                    {% if doctor.vet_license_number %}
+                      <span class="text-warning">
+                        執照號碼已填寫，等待管理員或本人進行驗證
+                      </span>
+                      <div class="verification-action mt-2">
+                        <button type="button" class="btn btn-sm btn-success" id="verifyLicenseBtn">
+                          <i class="bi bi-shield-check me-1"></i>
+                          立即驗證執照
+                        </button>
+                      </div>
+                    {% else %}
+                      <span class="text-muted">
+                        請先填寫執照號碼才能進行驗證
+                      </span>
+                    {% endif %}
+                  </span>
+                </div>
+                {% endif %}
+                
+                <!-- 執照詳細資訊 (已驗證才顯示) -->
+                {% if doctor.license_verified_with_moa %}
+                  {% if doctor.moa_license_type %}
+                  <div class="detail-item">
+                    <span class="detail-label">
+                      <i class="bi bi-award me-1"></i>
+                      執照類別：
+                    </span>
+                    <span class="detail-value">{{ doctor.moa_license_type }}</span>
+                  </div>
+                  {% endif %}
+                  
+                  {% if doctor.moa_clinic_name %}
+                  <div class="detail-item">
+                    <span class="detail-label">
+                      <i class="bi bi-building me-1"></i>
+                      農委會登記診所：
+                    </span>
+                    <span class="detail-value">{{ doctor.moa_clinic_name }}</span>
+                  </div>
+                  {% endif %}
+                {% endif %}
+                
+                <!-- 帳號時間資訊 -->
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="bi bi-person-plus me-1"></i>
+                    帳號建立時間：
+                  </span>
+                  <span class="detail-value">
+                    {{ doctor.created_at|date:"Y年m月d日 H:i" }}
+                    <small class="text-muted ms-2">
+                      ({{ doctor.created_at|timesince }}前建立)
+                    </small>
+                  </span>
+                </div>
+                
+                {% if doctor.updated_at %}
+                <div class="detail-item">
+                  <span class="detail-label">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    最後更新時間：
+                  </span>
+                  <span class="detail-value">
+                    {{ doctor.updated_at|date:"Y年m月d日 H:i" }}
+                    <small class="text-muted ms-2">
+                      ({{ doctor.updated_at|timesince }}前)
+                    </small>
+                  </span>
+                </div>
+                {% endif %}
               </div>
-              {% if doctor.moa_clinic_name %}
-              <div class="detail-item">
-                <span class="detail-label">登記診所：</span>
-                <span class="detail-value">{{ doctor.moa_clinic_name }}</span>
-              </div>
-              {% endif %}
             </div>
-          </div>
+          {% else %}
+            <!-- 未驗證的執照輸入 -->
+            <div class="row">
+              <div class="col-md-8">
+                <div class="form-group-modern">
+                  <label for="{{ form.vet_license_number.id_for_label }}" class="form-label-modern">
+                    <i class="bi bi-card-text me-1"></i>
+                    {{ form.vet_license_number.label }}
+                  </label>
+                  <input type="text" 
+                         name="vet_license_number" 
+                         id="id_vet_license_number"
+                         class="form-control" 
+                         value="{{ doctor.vet_license_number|default:'' }}"
+                         placeholder="請輸入完整執照號碼，例如：**府農**字第****號"
+                         {% if not doctor.vet_license_number %}required{% endif %}>
+                  <div class="form-help privacy-protected">農委會核發的獸醫師執照號碼（隱私保護）</div>
+                  <div class="invalid-feedback"></div>
+                </div>
+              </div>
+              
+              <div class="col-md-4">
+                {% if doctor.vet_license_number and not doctor.license_verified_with_moa %}
+                  <div class="verify-action">
+                    <button type="button" class="btn-verify-license" id="verifyLicenseBtn">
+                      <i class="bi bi-shield-check"></i>
+                      立即驗證
+                    </button>
+                    <div class="verify-help">點擊進行農委會API驗證</div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
           {% endif %}
         </div>
         
@@ -311,7 +448,6 @@
                 {{ form.specialization.label }}
               </label>
               {{ form.specialization }}
-              <div class="form-help">例如：小動物內科、外科、皮膚科等</div>
               <div class="invalid-feedback"></div>
             </div>
           </div>
@@ -348,7 +484,7 @@
       </div>
 
       <!-- 權限設定標籤 -->
-      <div class="tab-content-modern" data-content="permissions">
+      <div class="tab-content-modern" data-content="permissions" aria-hidden="true">
         <div class="section-header">
           <h3 class="section-title">
             <i class="bi bi-shield-check me-2"></i>
@@ -360,6 +496,7 @@
         </div>
         
         <div class="permission-cards">
+          <!-- 預約管理權限 -->
           <div class="permission-card">
             <div class="permission-header">
               <h4 class="permission-title">
@@ -394,7 +531,7 @@
             </div>
           </div>
           
-          {% if vet_profile.can_manage_doctors %}
+          <!-- 診所管理員權限 -->
           <div class="permission-card admin-permission">
             <div class="permission-header">
               <h4 class="permission-title">
@@ -415,8 +552,8 @@
               </div>
             </div>
             <div class="permission-description">
-              <i class="bi bi-exclamation-triangle text-warning me-1"></i>
-              管理員權限將允許此醫師管理診所的所有設定和其他醫師帳號。請謹慎授予。
+              <i class="bi bi-info-circle text-info me-1"></i>
+              管理員權限將允許此醫師管理診所的所有設定和其他醫師帳號。醫師可以同時具有管理員和執業醫師身份。
             </div>
             <div class="permission-features">
               <div class="feature-item">
@@ -431,9 +568,12 @@
                 <i class="bi bi-check text-warning"></i>
                 查看所有預約記錄
               </div>
+              <div class="feature-item">
+                <i class="bi bi-check text-warning"></i>
+                管理診所基本設定
+              </div>
             </div>
           </div>
-          {% endif %}
         </div>
         
         <!-- 權限變更記錄 -->
@@ -448,13 +588,19 @@
               <div class="history-action">帳號建立</div>
               <div class="history-by">系統自動</div>
             </div>
-            <!-- 這裡可以添加更多權限變更記錄 -->
+            {% if doctor.is_clinic_admin %}
+            <div class="history-item">
+              <div class="history-date">{{ doctor.updated_at|date:"Y年m月d日" }}</div>
+              <div class="history-action">授予管理員權限</div>
+              <div class="history-by">{{ user.get_full_name|default:user.username }}</div>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
 
       <!-- 安全設定標籤 -->
-      <div class="tab-content-modern" data-content="security">
+      <div class="tab-content-modern" data-content="security" aria-hidden="true">
         <div class="section-header">
           <h3 class="section-title">
             <i class="bi bi-lock me-2"></i>
@@ -604,7 +750,7 @@
             <strong>基本資料：</strong>修改信箱後醫師會收到通知
           </li>
           <li class="help-item">
-            <strong>執照驗證：</strong>更新執照號碼後需重新驗證
+            <strong>執照驗證：</strong>已驗證的執照會自動隱藏號碼保護隱私
           </li>
           <li class="help-item">
             <strong>權限變更：</strong>變更會立即生效，請謹慎操作
@@ -615,10 +761,10 @@
       <div class="col-md-6">
         <ul class="help-list">
           <li class="help-item">
-            <strong>帳號狀態：</strong>停用帳號不會刪除資料
+            <strong>管理員身份：</strong>可與執業醫師身份並存
           </li>
           <li class="help-item">
-            <strong>密碼重設：</strong>醫師會收到重設連結信件
+            <strong>帳號狀態：</strong>停用帳號不會刪除資料
           </li>
           <li class="help-item">
             <strong>自動儲存：</strong>表單會自動儲存您的變更
@@ -638,22 +784,30 @@
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🎯 編輯醫師頁面載入完成');
   
-  // 初始化醫師資料
+  // 初始化醫師資料（隱私保護）
   window.doctorData = {
     id: {{ doctor.id }},
     isActive: {{ doctor.is_active|yesno:"true,false" }},
-    isVerified: {{ doctor.is_verified|yesno:"true,false" }},
+    isVerified: {{ doctor.license_verified_with_moa|yesno:"true,false" }},
     isAdmin: {{ doctor.is_clinic_admin|yesno:"true,false" }},
     name: '{% if doctor.user.first_name %}{{ doctor.user.first_name|escapejs }}{% else %}{{ doctor.user.username|escapejs }}{% endif %}',
     email: '{{ doctor.user.email|escapejs }}',
-    licenseNumber: '{{ doctor.vet_license_number|default:""|escapejs }}'
+    // 隱私保護：只在已驗證且需要時才包含執照號碼
+    {% if doctor.license_verified_with_moa and doctor.vet_license_number %}
+    licenseNumber: '{{ doctor.vet_license_number|escapejs }}',
+    licenseNumberMasked: '{{ doctor.vet_license_number|slice:":2"|escapejs }}****{{ doctor.vet_license_number|slice:"-2:"|escapejs }}',
+    {% else %}
+    licenseNumber: '{% if doctor.vet_license_number %}{{ doctor.vet_license_number|escapejs }}{% endif %}',
+    licenseNumberMasked: '',
+    {% endif %}
+    verificationDate: '{% if doctor.verification_date %}{{ doctor.verification_date|date:"Y年m月d日 H:i"|escapejs }}{% elif doctor.license_verified_with_moa %}{{ doctor.updated_at|date:"Y年m月d日 H:i"|escapejs }}{% endif %}'
   };
   
   // 顯示表單錯誤（如果有）
   {% if form.errors %}
     {% for field, errors in form.errors.items %}
       {% for error in errors %}
-        showFieldError('{{ field }}', '{{ error|escapejs }}');
+        showFieldError('{{ field|escapejs }}', '{{ error|escapejs }}');
       {% endfor %}
     {% endfor %}
   {% endif %}
@@ -665,9 +819,14 @@ document.addEventListener('DOMContentLoaded', function() {
         showSuccessMessage('{{ message|escapejs }}');
       {% elif message.tags == 'error' %}
         showErrorMessage('{{ message|escapejs }}');
+      {% elif message.tags == 'info' %}
+        showInfoMessage('{{ message|escapejs }}');
       {% endif %}
     {% endfor %}
   {% endif %}
 });
 </script>
+
+<!-- 無障礙支援 -->
+<div id="aria-live-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 {% endblock %}

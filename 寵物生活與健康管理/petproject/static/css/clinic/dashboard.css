@@ -289,7 +289,7 @@
 
 .stat-content {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -372,6 +372,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 
 .feature-card::before {
@@ -393,6 +394,34 @@
 }
 
 .feature-card:hover::before {
+  opacity: 1;
+}
+
+/* 特殊的設定卡片樣式 */
+.feature-card.settings-card {
+  position: relative;
+}
+
+.feature-card.settings-card:hover {
+  border-color: var(--info-color);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15);
+}
+
+.feature-card.settings-card::after {
+  content: '點擊進入設定';
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--info-color);
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.feature-card.settings-card:hover::after {
   opacity: 1;
 }
 
@@ -532,7 +561,7 @@
 
 .section-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-xl);
 }
@@ -582,21 +611,25 @@
   color: var(--gray-700);
   cursor: pointer;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .date-btn.active {
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .date-btn:hover:not(.active) {
   background: var(--gray-200);
+  border-color: var(--gray-400);
 }
 
 .appointments-body {
   padding: var(--spacing-lg);
-  min-height: 200px;
+  min-height: 280px;
+  background: white;
 }
 
 .loading-placeholder {
@@ -829,10 +862,11 @@
   background: white;
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xl);
-  max-width: 600px;
-  width: 90%;
+  max-width: 800px;
+  width: 95%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   transform: scale(0.9);
   transition: transform var(--transition-normal);
 }
@@ -846,7 +880,8 @@
   border-bottom: 1px solid var(--gray-200);
   display: flex;
   align-items: center;
-  justify-content: between;
+  justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -855,6 +890,8 @@
   font-weight: 700;
   color: var(--gray-800);
   flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .modal-close {
@@ -864,14 +901,72 @@
   cursor: pointer;
   color: var(--gray-400);
   transition: color var(--transition-fast);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
 }
 
 .modal-close:hover {
   color: var(--gray-600);
+  background: var(--gray-100);
 }
 
-.modal-body {
+/* 標籤頁容器 */
+.modal-tabs-wrapper {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+
+.settings-tabs {
+  display: flex;
+  padding: 0 var(--spacing-xl);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  color: var(--gray-600);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  background: white;
+}
+
+.tab-btn:hover:not(.active) {
+  color: var(--gray-800);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 可滾動的內容區域 */
+.modal-body-scrollable {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.tab-content {
+  display: none;
   padding: var(--spacing-xl);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-footer {
@@ -880,42 +975,8 @@
   display: flex;
   gap: var(--spacing-md);
   justify-content: flex-end;
-}
-
-/* ========== 設定 Modal 專用 ========== */
-.settings-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--gray-200);
-  margin-bottom: var(--spacing-xl);
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  padding: var(--spacing-md) var(--spacing-lg);
-  color: var(--gray-600);
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all var(--transition-fast);
-}
-
-.tab-btn.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-}
-
-.tab-btn:hover:not(.active) {
-  color: var(--gray-800);
-}
-
-.tab-content {
-  animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  flex-shrink: 0;
+  background: var(--gray-50);
 }
 
 /* ========== 表單樣式 ========== */
@@ -928,6 +989,8 @@
   font-weight: 600;
   color: var(--gray-700);
   margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
 }
 
 .form-control {
@@ -947,10 +1010,349 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.form-control[readonly] {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  cursor: not-allowed;
+}
+
 .form-text {
   font-size: 0.75rem;
   color: var(--gray-500);
   margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ========== 通知設定樣式 ========== */
+.notification-settings {
+  max-width: 600px;
+}
+
+.setting-group {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.setting-group h6 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.setting-item {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--gray-200);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.toggle-label input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: var(--gray-300);
+  border-radius: 12px;
+  transition: all var(--transition-normal);
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label input:checked + .toggle-slider {
+  background: var(--success-color);
+}
+
+.toggle-label input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+.setting-text {
+  font-weight: 600;
+  color: var(--gray-800);
+  flex: 1;
+}
+
+.setting-desc {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ========== 預約項目樣式 ========== */
+.appointment-item {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.appointment-item:last-child {
+  margin-bottom: 0;
+}
+
+.appointment-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  background: white;
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.appointment-time {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.appointment-time i {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.appointment-status {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.appointment-status.confirmed {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.appointment-status.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.appointment-status.completed {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--gray-600);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.appointment-status.cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.appointment-info {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.appointment-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+.appointment-row:last-child {
+  margin-bottom: 0;
+}
+
+.appointment-row i {
+  width: 16px;
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.owner-pet-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.owner-name {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.pet-name {
+  color: var(--gray-600);
+}
+
+.info-separator {
+  color: var(--gray-400);
+  margin: 0 var(--spacing-xs);
+}
+
+.doctor-info {
+  color: var(--gray-600);
+}
+
+.reason-info {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.empty-appointments {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  color: var(--gray-500);
+}
+
+.empty-appointments i {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.3;
+  color: var(--gray-400);
+}
+
+.empty-appointments p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--gray-500);
+}
+
+/* ========== 訊息提示系統 ========== */
+.message-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  max-width: 400px;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--gray-200);
+  z-index: 1050;
+  animation: slideInRight 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+}
+
+.message-toast.message-success {
+  border-left: 4px solid var(--success-color);
+}
+
+.message-toast.message-error {
+  border-left: 4px solid var(--danger-color);
+}
+
+.message-toast.message-warning {
+  border-left: 4px solid var(--warning-color);
+}
+
+.message-toast.message-info {
+  border-left: 4px solid var(--info-color);
+}
+
+.message-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.message-content i {
+  font-size: 1.25rem;
+}
+
+.message-toast.message-success .message-content i {
+  color: var(--success-color);
+}
+
+.message-toast.message-error .message-content i {
+  color: var(--danger-color);
+}
+
+.message-toast.message-warning .message-content i {
+  color: var(--warning-color);
+}
+
+.message-toast.message-info .message-content i {
+  color: var(--info-color);
+}
+
+.message-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--gray-400);
+  padding: var(--spacing-xs);
+  margin-left: var(--spacing-md);
+}
+
+.message-close:hover {
+  color: var(--gray-600);
+}
+
+.message-toast.fade-out {
+  animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
 /* ========== 響應式設計 ========== */
@@ -965,6 +1367,10 @@
   
   .management-section {
     padding: var(--spacing-xl);
+  }
+  
+  .modal-container {
+    max-width: 90%;
   }
 }
 
@@ -1013,6 +1419,36 @@
   .quick-actions {
     text-align: center;
   }
+  
+  .settings-tabs {
+    flex-direction: column;
+    padding: 0;
+  }
+  
+  .tab-btn {
+    text-align: center;
+    border-bottom: none;
+    border-right: 3px solid transparent;
+  }
+  
+  .tab-btn.active {
+    border-right-color: var(--primary-color);
+    border-bottom-color: transparent;
+  }
+  
+  .appointment-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+  
+  .appointment-time {
+    font-size: 1rem;
+  }
+  
+  .appointment-info {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1021,13 +1457,17 @@
   }
   
   .modal-container {
-    width: 95%;
-    margin: var(--spacing-md);
+    width: 98%;
+    margin: var(--spacing-sm);
+    max-height: 95vh;
   }
   
   .modal-header,
-  .modal-body,
   .modal-footer {
+    padding: var(--spacing-lg);
+  }
+  
+  .tab-content {
     padding: var(--spacing-lg);
   }
   
@@ -1040,65 +1480,23 @@
     height: 50px;
     font-size: 1.25rem;
   }
-}
-
-/* ========== 預約項目樣式 ========== */
-.appointment-item {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
-  border: 1px solid var(--gray-200);
-  transition: all var(--transition-fast);
-}
-
-.appointment-item:hover {
-  border-color: var(--primary-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.appointment-header {
-  display: flex;
-  justify-content: between;
-  align-items: center;
-  margin-bottom: var(--spacing-sm);
-}
-
-.appointment-time {
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.appointment-status {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.appointment-status.pending {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning-color);
-}
-
-.appointment-status.confirmed {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
-}
-
-.appointment-info {
-  color: var(--gray-600);
-  font-size: 0.875rem;
-}
-
-.empty-appointments {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--gray-500);
-}
-
-.empty-appointments i {
-  font-size: 3rem;
-  margin-bottom: var(--spacing-md);
-  opacity: 0.5;
+  
+  .appointments-body {
+    padding: var(--spacing-md);
+  }
+  
+  .appointment-item {
+    padding: var(--spacing-md);
+  }
+  
+  .date-btn {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+  
+  .message-toast {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
 }
