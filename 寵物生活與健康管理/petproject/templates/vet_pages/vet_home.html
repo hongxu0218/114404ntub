@@ -1,28 +1,427 @@
-{% extends "vet_pages/base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}獸醫主控台{% endblock %}
+{% block title %}獸醫師工作台 - {{ vet_profile.user.get_full_name }}{% endblock %}
 
-{% block header %}獸醫主控台{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/vet_pages/vet-home.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="card-container">
-    <a href="{% url 'vet_availability_settings' %}">
-        <div class="card">
-            <div class="card-title">🕒 設定可預約時段</div>
-            <div class="card-desc">選擇您開診的起始與結束時間。</div>
+<div class="vet-home-container">
+  
+  <!-- 獸醫師個人信息頭部 -->
+  <div class="vet-header-modern">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h1 class="vet-welcome-title">
+          <i class="bi bi-heart-pulse"></i>
+          歡迎回來，Dr. {{ vet_profile.user.get_full_name|default:vet_profile.user.username }}
+        </h1>
+        
+        <div class="vet-info-header">
+          <div class="vet-avatar">
+            {% if vet_profile.user.get_full_name %}
+              {{ vet_profile.user.get_full_name|first }}
+            {% else %}
+              {{ vet_profile.user.username|first|upper }}
+            {% endif %}
+          </div>
+          <div class="vet-details">
+            <div class="vet-name">
+              <span>{{ vet_profile.user.get_full_name|default:vet_profile.user.username }}</span>
+              {% if vet_profile.license_verified %}
+                <span class="vet-badge">
+                  <i class="bi bi-patch-check"></i>
+                  執照已驗證
+                </span>
+              {% endif %}
+            </div>
+            <div class="vet-speciality">
+              <i class="bi bi-award me-1"></i>
+              <span>專科：{{ vet_profile.speciality|default:"一般獸醫" }}</span>
+              {% if vet_profile.years_of_experience %}
+                <span class="mx-2">•</span>
+                <span>{{ vet_profile.years_of_experience }}年經驗</span>
+              {% endif %}
+            </div>
+            <div class="vet-clinic-info">
+              <i class="bi bi-building me-2"></i>
+              <span>{{ vet_profile.clinic.clinic_name }}</span>
+              <span class="mx-2">•</span>
+              <span>{{ vet_profile.clinic.clinic_address }}</span>
+            </div>
+          </div>
         </div>
-    </a>
-    <a href="{% url 'vet_appointments' %}">
-        <div class="card">
-            <div class="card-title">📅 查看預約時段</div>
-            <div class="card-desc">檢視目前有哪些時段已被飼主預約。</div>
+      </div>
+      
+      <div class="col-lg-4">
+        <div class="vet-actions">
+          <div class="vet-action-buttons">
+            <a href="{% url 'vet_appointments' %}" class="btn-vet-modern btn-vet-primary">
+              <i class="bi bi-calendar-check"></i>
+              <span>我的預約</span>
+            </a>
+            <a href="{% url 'my_patients' %}" class="btn-vet-modern btn-vet-accent">
+              <i class="bi bi-heart"></i>
+              <span>我的病患</span>
+            </a>
+          </div>
         </div>
-    </a>
-    <a href="{% url 'my_patients' %}">
-        <div class="card">
-            <div class="card-title">🐾 我的看診寵物</div>
-            <div class="card-desc">為看診過的寵物新增或編輯病例記錄。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統計數據區域 -->
+  <div class="vet-stats-section">
+    <div class="row">
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+        <div class="vet-stat-card stat-appointments">
+          <div class="vet-stat-card-body">
+            <div class="vet-stat-content">
+              <div class="vet-stat-info">
+                <h3 class="vet-stat-number" id="todayAppointmentsCount">{{ today_appointments_count|default:0 }}</h3>
+                <p class="vet-stat-label">今日預約</p>
+                <div class="vet-stat-change positive">
+                  <i class="bi bi-arrow-up"></i>
+                  <span>比昨日 +{{ appointments_change|default:0 }}</span>
+                </div>
+              </div>
+              <div class="vet-stat-icon">
+                <i class="bi bi-calendar-day"></i>
+              </div>
+            </div>
+          </div>
         </div>
-    </a>
+      </div>
+      
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+        <div class="vet-stat-card stat-patients">
+          <div class="vet-stat-card-body">
+            <div class="vet-stat-content">
+              <div class="vet-stat-info">
+                <h3 class="vet-stat-number" id="totalPatientsCount">{{ total_patients_count|default:0 }}</h3>
+                <p class="vet-stat-label">我的病患</p>
+                <div class="vet-stat-change positive">
+                  <i class="bi bi-heart"></i>
+                  <span>本月新增 {{ new_patients_this_month|default:0 }}</span>
+                </div>
+              </div>
+              <div class="vet-stat-icon">
+                <i class="bi bi-heart-pulse"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+        <div class="vet-stat-card stat-records">
+          <div class="vet-stat-card-body">
+            <div class="vet-stat-content">
+              <div class="vet-stat-info">
+                <h3 class="vet-stat-number" id="medicalRecordsCount">{{ medical_records_count|default:0 }}</h3>
+                <p class="vet-stat-label">醫療記錄</p>
+                <div class="vet-stat-change positive">
+                  <i class="bi bi-file-medical"></i>
+                  <span>本週新增 {{ records_this_week|default:0 }}</span>
+                </div>
+              </div>
+              <div class="vet-stat-icon">
+                <i class="bi bi-clipboard-data"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+        <div class="vet-stat-card stat-schedule">
+          <div class="vet-stat-card-body">
+            <div class="vet-stat-content">
+              <div class="vet-stat-info">
+                <h3 class="vet-stat-number" id="workingHoursCount">{{ working_hours_this_week|default:0 }}</h3>
+                <p class="vet-stat-label">本週工時</p>
+                <div class="vet-stat-change">
+                  <i class="bi bi-clock"></i>
+                  <span>標準工時</span>
+                </div>
+              </div>
+              <div class="vet-stat-icon">
+                <i class="bi bi-alarm"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主要內容區域 -->
+  <div class="row">
+    
+    <!-- 左側：今日行程 -->
+    <div class="col-lg-8">
+      
+      <!-- 今日行程區域 -->
+      <div class="today-schedule-section">
+        <div class="schedule-header">
+          <h2 class="section-title-vet">
+            <i class="bi bi-calendar-event me-2"></i>
+            今日行程
+          </h2>
+          <div class="schedule-date">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ today_date|date:"Y年m月d日 l" }}
+          </div>
+        </div>
+        
+        <div class="schedule-timeline">
+          <!-- 行程項目將由 JavaScript 動態載入 -->
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>載入今日行程中...</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 快速功能區域 -->
+      <div class="vet-quick-actions-section">
+        <h2 class="section-title-vet">
+          <i class="bi bi-lightning me-2"></i>
+          快速功能
+        </h2>
+        
+        <div class="quick-actions-grid">
+          <!-- 我的病患 -->
+          <div class="quick-action-card" data-action="patients">
+            <div class="quick-action-icon patients">
+              <i class="bi bi-heart"></i>
+            </div>
+            <div class="quick-action-content">
+              <h4 class="quick-action-title">我的病患</h4>
+              <p class="quick-action-desc">查看和管理您負責的所有病患資料</p>
+            </div>
+          </div>
+          
+          <!-- 建立醫療記錄 -->
+          <div class="quick-action-card" data-action="records">
+            <div class="quick-action-icon records">
+              <i class="bi bi-file-medical"></i>
+            </div>
+            <div class="quick-action-content">
+              <h4 class="quick-action-title">建立記錄</h4>
+              <p class="quick-action-desc">為病患建立新的醫療記錄和診斷</p>
+            </div>
+          </div>
+          
+          <!-- 預約管理 -->
+          <div class="quick-action-card" data-action="appointments">
+            <div class="quick-action-icon appointments">
+              <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="quick-action-content">
+              <h4 class="quick-action-title">預約管理</h4>
+              <p class="quick-action-desc">查看和管理您的預約安排</p>
+            </div>
+          </div>
+          
+          <!-- 個人檔案 -->
+          <div class="quick-action-card" data-action="profile">
+            <div class="quick-action-icon profile">
+              <i class="bi bi-person-gear"></i>
+            </div>
+            <div class="quick-action-content">
+              <h4 class="quick-action-title">個人檔案</h4>
+              <p class="quick-action-desc">編輯您的專業資料和偏好設定</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- 右側：病患概覽 -->
+    <div class="col-lg-4">
+      
+      <!-- 我的病患概覽 -->
+      <div class="patients-overview-section">
+        <div class="patients-header">
+          <h3 class="section-title-vet">
+            <i class="bi bi-heart me-2"></i>
+            我的病患
+          </h3>
+          <a href="{% url 'my_patients' %}" class="btn-vet-modern btn-vet-outline btn-sm">
+            <i class="bi bi-arrow-right"></i>
+            查看全部
+          </a>
+        </div>
+        
+        <div class="patients-filters">
+          <button class="filter-btn active" data-filter="all">
+            全部
+          </button>
+          <button class="filter-btn" data-filter="recent">
+            最近就診
+          </button>
+          <button class="filter-btn" data-filter="followup">
+            需追蹤
+          </button>
+          <button class="filter-btn" data-filter="new">
+            新病患
+          </button>
+        </div>
+        
+        <div class="patients-list">
+          <!-- 病患列表將由 JavaScript 動態載入 -->
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>載入病患資料中...</span>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
 </div>
+
+<!-- 隱藏的 CSRF Token -->
+<form id="vetAjaxForm" style="display: none;">
+  {% csrf_token %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vet_pages/vet-home.js' %}"></script>
+<script>
+// 傳遞 Django 數據到 JavaScript
+window.vetData = {
+  vet: {
+    id: {{ vet_profile.id }},
+    name: '{{ vet_profile.user.get_full_name|default:vet_profile.user.username|escapejs }}',
+    email: '{{ vet_profile.user.email|escapejs }}',
+    speciality: '{{ vet_profile.speciality|default:"一般獸醫"|escapejs }}',
+    licenseVerified: {{ vet_profile.license_verified|yesno:"true,false" }},
+    yearsOfExperience: {{ vet_profile.years_of_experience|default:0 }},
+    clinic: {
+      id: {{ vet_profile.clinic.id }},
+      name: '{{ vet_profile.clinic.clinic_name|escapejs }}',
+      address: '{{ vet_profile.clinic.clinic_address|escapejs }}'
+    }
+  },
+  stats: {
+    todayAppointments: {{ today_appointments_count|default:0 }},
+    totalPatients: {{ total_patients_count|default:0 }},
+    medicalRecords: {{ medical_records_count|default:0 }},
+    workingHours: {{ working_hours_this_week|default:0 }},
+    appointmentsChange: {{ appointments_change|default:0 }},
+    newPatientsThisMonth: {{ new_patients_this_month|default:0 }},
+    recordsThisWeek: {{ records_this_week|default:0 }}
+  },
+  urls: {
+    appointments: '{% url "vet_appointments" %}',
+    myPatients: '{% url "my_patients" %}',
+    createRecord: '{% url "create_medical_record" %}',
+    medicalRecords: '{% url "vet_appointments" %}', // 暫時指向預約頁面
+    scheduleManagement: '{% url "vet_appointments" %}', // 暫時指向預約頁面
+    profileEdit: '/vet/profile/edit/', // 需要實際的 URL
+    patientDetail: '{% url "pet_detail" 0 %}'.replace('0', ''), // 移除數字以備後續替換
+    todaySchedule: '/api/vet/today-schedule/' // API 端點
+  },
+  csrfToken: '{{ csrf_token }}',
+  today: '{{ today_date|date:"Y-m-d" }}'
+};
+
+// 顯示訊息
+{% if messages %}
+  {% for message in messages %}
+    {% if message.tags == 'success' %}
+      showSuccessMessage('{{ message|escapejs }}');
+    {% elif message.tags == 'error' %}
+      showErrorMessage('{{ message|escapejs }}');
+    {% elif message.tags == 'warning' %}
+      showWarningMessage('{{ message|escapejs }}');
+    {% elif message.tags == 'info' %}
+      showInfoMessage('{{ message|escapejs }}');
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+// 頁面載入完成後的調試檢查
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🏥 獸醫師主頁載入完成，開始診斷...');
+    
+    // 檢查關鍵元素
+    const keyElements = {
+        statsCards: document.querySelectorAll('.vet-stat-card'),
+        scheduleTimeline: document.querySelector('.schedule-timeline'),
+        patientsList: document.querySelector('.patients-list'),
+        quickActions: document.querySelectorAll('.quick-action-card'),
+        filterButtons: document.querySelectorAll('.filter-btn')
+    };
+    
+    console.log('✅ 關鍵元素檢查：');
+    console.log('  - 統計卡片:', keyElements.statsCards.length, '個');
+    console.log('  - 行程時間軸:', keyElements.scheduleTimeline ? '存在' : '⚠ 缺失');
+    console.log('  - 病患列表:', keyElements.patientsList ? '存在' : '⚠ 缺失');
+    console.log('  - 快速操作:', keyElements.quickActions.length, '個');
+    console.log('  - 篩選按鈕:', keyElements.filterButtons.length, '個');
+    
+    // 檢查數據
+    console.log('📊 獸醫師數據:', window.vetData);
+    
+    // 檢查關鍵功能
+    const functions = [
+        'viewMyPatients',
+        'createMedicalRecord', 
+        'viewTodayAppointments',
+        'loadTodaySchedule',
+        'loadPatientsOverview'
+    ];
+    
+    console.log('🔧 功能檢查：');
+    functions.forEach(func => {
+        console.log(`  - ${func}:`, typeof window[func] === 'function' ? '可用' : '⚠ 缺失');
+    });
+    
+    console.log('🎉 獸醫師主頁診斷完成');
+});
+
+// 歡迎訊息
+setTimeout(() => {
+    const currentHour = new Date().getHours();
+    let greeting = '';
+    
+    if (currentHour < 12) {
+        greeting = '早安，Dr. {{ vet_profile.user.get_full_name|default:vet_profile.user.username }}！準備開始新的一天了嗎？';
+    } else if (currentHour < 18) {
+        greeting = '午安，Dr. {{ vet_profile.user.get_full_name|default:vet_profile.user.username }}！今天辛苦了！';
+    } else {
+        greeting = '晚安，Dr. {{ vet_profile.user.get_full_name|default:vet_profile.user.username }}！感謝您的付出！';
+    }
+    
+    showInfoMessage(greeting);
+}, 2000);
+
+// 兼容性函數（保留原有函數名）
+function viewVetAppointments() {
+    viewTodayAppointments();
+}
+
+function viewVetPatients() {
+    viewMyPatients();
+}
+
+function openCreateRecord() {
+    createMedicalRecord();
+}
+
+// 導出必要的全域函數
+window.viewVetAppointments = viewVetAppointments;
+window.viewVetPatients = viewVetPatients;
+window.openCreateRecord = openCreateRecord;
+
+console.log('✅ 獸醫師主頁模板載入完成（支援完整功能和數據同步）');
+</script>
 {% endblock %}
