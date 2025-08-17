@@ -131,7 +131,7 @@ class VetClinic(models.Model):
 
 
 class VetDoctor(models.Model):
-    """獸醫師模型 - 最簡化版"""
+    """獸醫師模型 - 支援雙重身份"""
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vet_profile')
     clinic = models.ForeignKey(VetClinic, on_delete=models.CASCADE, related_name='doctors')
@@ -139,9 +139,10 @@ class VetDoctor(models.Model):
     # 🎯 獸醫師驗證資訊（核心欄位）
     vet_license_number = models.CharField(max_length=50, blank=True, verbose_name='獸醫師執照號碼')
     license_verified_with_moa = models.BooleanField(default=False, verbose_name='農委會執照驗證')
+    verification_date = models.DateTimeField(null=True, blank=True, verbose_name='執照驗證時間')
     
     # 🆕 從農委會API取得的關鍵資料
-    moa_license_type = models.CharField(max_length=20, blank=True, verbose_name='執照類別')  # 獸醫師/獸醫佐
+    moa_license_type = models.CharField(max_length=20, blank=True, verbose_name='執照類別')
     moa_clinic_name = models.CharField(max_length=100, blank=True, verbose_name='診所名稱')
     
     # 個人資訊
@@ -149,28 +150,47 @@ class VetDoctor(models.Model):
     years_of_experience = models.IntegerField(default=0, verbose_name='執業年資')
     bio = models.TextField(blank=True, verbose_name='個人簡介')
     
-     # 狀態
-    is_active = models.BooleanField(default=True, verbose_name='啟用狀態')
+    # 🔄 改進：支援雙重身份的權限欄位
+    is_active_veterinarian = models.BooleanField(default=True, verbose_name='獸醫師身份啟用')
+    is_active_admin = models.BooleanField(default=False, verbose_name='管理員身份啟用')
     
+    # 狀態
+    is_active = models.BooleanField(default=True, verbose_name='帳號啟用狀態')
     created_at = models.DateTimeField(auto_now_add=True)
-    
-    # 🔑 權限屬性 - 基於 Profile.account_type
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # 🔒 改進的權限屬性
     @property
     def is_clinic_admin(self):
-        """是否為診所管理員"""
-        try:
-            return self.user.profile.account_type == 'clinic_admin'
-        except:
-            return False
+        """是否為診所管理員 - 基於專門的管理員欄位"""
+        return self.is_active and self.is_active_admin
     
     @property
-    def can_manage_appointments(self):
-        """能否管理預約 - 管理員和獸醫師都可以"""
-        try:
-            account_type = self.user.profile.account_type
-            return account_type in ['clinic_admin', 'veterinarian']
-        except:
+    def is_veterinarian(self):
+        """是否為執業獸醫師 - 基於執照驗證和獸醫師身份"""
+        return (self.is_active and 
+                self.is_active_veterinarian and 
+                self.license_verified_with_moa)
+    
+    @property
+    def is_verified(self):
+        #\"\"\"是否已驗證\"\"\"
+        # 診所管理員如果有執照驗證，視為已驗證
+        if self.is_clinic_admin and self.license_verified_with_moa:
+            return True
+        # 一般獸醫師需要執照驗證
+        elif not self.is_clinic_admin and self.license_verified_with_moa:
+            return True
+        # 診所管理員沒有執照驗證的話，暫時也允許（但不能填寫醫療記錄）
+        elif self.is_clinic_admin:
+            return True
+        else:
             return False
+
+    @property
+    def can_manage_appointments(self):
+        """能否管理預約 - 獸醫師和管理員都可以"""
+        return self.is_veterinarian or self.is_clinic_admin
     
     @property
     def can_manage_doctors(self):
@@ -179,67 +199,59 @@ class VetDoctor(models.Model):
     
     @property
     def can_write_medical_records(self):
-        """能否填寫醫療記錄 - 只有有執照驗證的才能寫"""
-        return self.license_verified_with_moa
+        """能否填寫醫療記錄 - 只有有執照驗證的獸醫師才能寫"""
+        return self.is_veterinarian
     
     @property
-    def is_verified(self):
-        """是否已驗證"""
+    def can_manage_schedules(self):
+        """能否管理排程 - 管理員可以管理所有，獸醫師只能管理自己的"""
+        return self.is_veterinarian or self.is_clinic_admin
+    
+    @property
+    def can_view_clinic_data(self):
+        """能否查看診所數據 - 管理員可以看全部，獸醫師只能看相關的"""
+        return self.is_clinic_admin or self.is_veterinarian
+    
+    @property
+    def roles(self):
+        """取得所有啟用的角色"""
+        roles = []
+        if self.is_veterinarian:
+            roles.append('veterinarian')
         if self.is_clinic_admin:
-            return True  # 管理員預設驗證通過
-        else:
-            return self.license_verified_with_moa  # 獸醫師需要執照驗證
+            roles.append('clinic_admin')
+        return roles
     
-    def verify_vet_license_with_moa(self):
-        """透過農委會API驗證獸醫師執照"""
-        if not self.vet_license_number:
-            return False, "請先填寫執照號碼"
-            
-        try:
-            import requests
-            
-            api_url = "https://data.moa.gov.tw/Service/OpenData/DataFileService.aspx?UnitId=078"
-            response = requests.get(api_url, timeout=30)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # 🎯 精確匹配執照號碼
-                for record in data:
-                    if record.get('字號') == self.vet_license_number:
-                        
-                        # 檢查開業狀態
-                        if record.get('狀態') != '開業':
-                            return False, f"執照狀態為：{record.get('狀態')}，必須為開業狀態"
-                        
-                        # 🆕 儲存農委會驗證資料（僅核心資訊）
-                        self.moa_license_type = record.get('執照類別', '')
-                        self.moa_clinic_name = record.get('機構名稱', '')
-                        
-                        # 🎯 驗證成功
-                        self.license_verified_with_moa = True
-                        self.save()
-                        
-                        return True, f"驗證成功！執照類別：{self.moa_license_type}"
-                
-                return False, "未找到匹配的執照號碼，請確認號碼是否正確"
-            else:
-                return False, f"無法連接農委會API (狀態碼: {response.status_code})"
-                
-        except requests.Timeout:
-            return False, "連接農委會API逾時，請稍後重試"
-        except Exception as e:
-            return False, f"驗證失敗：{str(e)}"
-    
+    @property
+    def role_display(self):
+        """角色顯示名稱"""
+        roles = []
+        if self.is_veterinarian:
+            roles.append('獸醫師')
+        if self.is_clinic_admin:
+            roles.append('診所管理員')
+        return ' / '.join(roles) if roles else '無啟用角色'
+
     def __str__(self):
         name = self.user.get_full_name() or self.user.username
-        verified_status = "✅" if self.license_verified_with_moa else "⏳"
-        role = "👔" if self.is_clinic_admin else "👨‍⚕️"
-        return f"{role} {name} {verified_status} - {self.clinic.clinic_name}"
+        return f"{name} ({self.role_display})"
+
+    class Meta:
+        verbose_name = "獸醫師"
+        verbose_name_plural = "獸醫師"
 
 
-
-
+class BusinessHoursRecord(models.Model):
+    clinic = models.OneToOneField(VetClinic, on_delete=models.CASCADE, related_name='business_hours_record')
+    hours_data = models.JSONField(default=dict)
+    is_active = models.BooleanField(default=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = '診所營業時間'
+        verbose_name_plural = '診所營業時間'
 
 class VetSchedule(models.Model):
     """獸醫師排班表"""

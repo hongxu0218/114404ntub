@@ -488,7 +488,86 @@ class VetLicenseVerificationForm(forms.ModelForm):
         return password
 
 
-class EditVetDoctorForm(forms.ModelForm):
+class EditDoctorForm(forms.ModelForm):
+    """編輯醫師表單 - 支援雙重身份"""
+    
+    # 基本資訊
+    first_name = forms.CharField(
+        label='姓名',
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '請輸入醫師姓名'
+        })
+    )
+    
+    email = forms.EmailField(
+        label='電子郵件',
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'doctor@example.com'
+        })
+    )
+    
+    phone_number = forms.CharField(
+        label='聯絡電話',
+        max_length=15,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '09xxxxxxxx'
+        })
+    )
+    
+    # 🔄 改進：分離的身份權限欄位
+    is_active_veterinarian = forms.BooleanField(
+        label='啟用獸醫師身份',
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        help_text='允許此帳號執行獸醫師相關功能（需要通過執照驗證）'
+    )
+    
+    is_active_admin = forms.BooleanField(
+        label='啟用管理員身份',
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        }),
+        help_text='允許此帳號管理診所設定和其他醫師'
+    )
+
+    class Meta:
+        model = VetDoctor
+        fields = [
+            'vet_license_number', 'specialization', 'years_of_experience', 
+            'bio', 'is_active_veterinarian', 'is_active_admin'
+        ]
+        widgets = {
+            'vet_license_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '例如：**府農**字第****號'
+            }),
+            'specialization': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '例如：小動物內科、外科等'
+            }),
+            'years_of_experience': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 0,
+                'max': 50
+            }),
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'maxlength': 500,
+                'placeholder': '醫師的專業背景和治療理念介紹...'
+            }),
+        }
+
     """編輯獸醫師表單 """
     
     # 額外的 User 和 Profile 欄位
@@ -704,6 +783,8 @@ class VetScheduleExceptionForm(forms.ModelForm):
                 raise forms.ValidationError('替代結束時間必須晚於替代開始時間')
         
         return cleaned_data
+
+
 
 
 # ===== 飼主預約表單 =====
