@@ -4,6 +4,8 @@ from django.db import models
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from datetime import date
+
 
 # 使用者資料擴充：Profile 模型，用於區分飼主與獸醫，並儲存聯絡與診所資訊
 class Profile(models.Model):
@@ -33,9 +35,9 @@ class RegisterForm(UserCreationForm):
 
 # 以下為各種 Enum 選單：種類、絕育、性別
 class Species(models.TextChoices):
-    DOG = 'dog','狗'
-    CAT = 'cat','貓'
-    OTHER = 'other','其他'
+    DOG = '狗','狗'
+    CAT = '貓','貓'
+    OTHER = '其他','其他'
 
 class SterilizationStatus(models.TextChoices):
     YES = 'sterilized','已絕育'
@@ -50,16 +52,20 @@ class Gender(models.TextChoices):
 # 寵物基本資料
 class Pet(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets', verbose_name='飼主')
-    species = models.CharField(max_length=10, choices=Species.choices)
-    breed = models.CharField(max_length=100)
+    species = models.TextField(max_length=50, verbose_name='種類')  # 不再使用 choices
+    breed = models.TextField(max_length=50, verbose_name='品種')
     name = models.CharField(max_length=100)
     sterilization_status = models.CharField(max_length=20, choices=SterilizationStatus.choices)
-    chip = models.CharField(max_length=100, blank=True, null=True)
+    chip = models.CharField(max_length=100, blank=True, null=True, unique=True)
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, choices=Gender.choices)
     weight = models.FloatField(null=True, blank=True)
     feature = models.TextField(blank=True)
     picture = models.ImageField(upload_to='pet_pictures/', blank=True, null=True)
+
+    is_adoption_only = models.BooleanField(default=False)  # 是否正在送養中
+    is_adopted = models.BooleanField(default=False)       # 是否已完成送養（被領養）
+
 
     def __str__(self):
         return self.name
@@ -347,10 +353,91 @@ class BusinessHours(models.Model):
         indexes = [
             models.Index(fields=['location', 'day_of_week'], name='business_hours_idx'),
         ]
-
     def __str__(self):
         if not self.open_time or not self.close_time:
             return f"{self.location.name} - {self.get_day_of_week_display()} (休息)"
         period_text = f" ({self.period_name})" if self.period_name else f" (時段{self.period_order})"
         return f"{self.location.name} - {self.get_day_of_week_display()}{period_text} {self.open_time}-{self.close_time}"
-    
+
+
+REGION_CHOICES = [
+        ('north', '北部地區'),
+        ('central', '中部地區'),
+        ('south', '南部地區'),
+        ('east', '東部地區'),
+        ('island', '離島地區'),
+    ]
+
+class AdoptionPet(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='adoptions', verbose_name='飼主', )
+    species = models.TextField(max_length=50, verbose_name='種類')  # 不再使用 choices
+    breed = models.TextField(max_length=50, verbose_name='品種')
+    name = models.CharField(max_length=20)
+    sterilization_status = models.CharField(max_length=20, choices=SterilizationStatus.choices)
+    chip = models.CharField(max_length=15, blank=True, null=True, unique=True)
+    birth_date = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=Gender.choices)
+    weight = models.FloatField(null=True, blank=True)
+    vaccine = models.TextField(max_length=20, blank=True)
+    feature = models.TextField(max_length=100, blank=True)
+
+    adopt_picture1 = models.ImageField(upload_to='pet_pictures/', blank=True, null=True)
+
+    is_adopted = models.BooleanField(default=False)
+    posted_date = models.DateTimeField(auto_now_add=True)
+    physical_condition = models.TextField(max_length=100,blank=True)
+    adoption_condition = models.TextField(max_length=100,blank=True)
+    adopt_picture2 = models.ImageField(upload_to='pet_pictures/', blank=True, null=True)
+    adopt_picture3 = models.ImageField(upload_to='pet_pictures/', blank=True, null=True)
+    adopt_picture4 = models.ImageField(upload_to='pet_pictures/', blank=True, null=True)
+    phone = models.CharField("手機號碼", max_length=20, blank=True)
+    line_id = models.CharField("LINE ID", max_length=50, blank=True)
+    adopt_place = models.CharField("領養地點", max_length=100, blank=True,choices=REGION_CHOICES)
+    original_pet = models.ForeignKey(Pet, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} 的送養紀錄（{self.posted_date.date()}）"
+
+
+
+    @property
+    def age(self):
+        if not self.birth_date:
+            return None
+
+        today = date.today()
+        years = today.year - self.birth_date.year
+        months = today.month - self.birth_date.month
+        days = today.day - self.birth_date.day
+
+        # 調整月份與天數（例如生日還沒過）
+        if days < 0:
+            months -= 1
+        if months < 0:
+            years -= 1
+            months += 12
+
+        total_months = years * 12 + months
+
+        if total_months < 1:
+            return "未滿 1 個月"
+        elif total_months < 12:
+            return f"{total_months} 個月"
+        else:
+            return f"{years} 歲"
+
+# 更改飼主
+class TransferRequest(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
+    from_owner = models.ForeignKey(User, related_name='sent_transfers', on_delete=models.CASCADE)
+    to_email = models.EmailField()
+    to_phone = models.CharField(max_length=20)
+    to_user = models.ForeignKey(User, null=True, blank=True, related_name='received_transfers', on_delete=models.SET_NULL)
+    status = models.CharField(max_length=20, choices=[
+        ('pending', '待確認'),
+        ('accepted', '已接受'),
+        ('rejected', '已拒絕'),
+    ], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    from_owner_has_seen = models.BooleanField(default=False) # 原飼主是否已讀過此轉讓結果
+    to_user_has_seen = models.BooleanField(default=False)    # 新飼主是否已讀過此轉讓結果

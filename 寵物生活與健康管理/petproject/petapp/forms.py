@@ -3,10 +3,17 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, WEEKDAYS, TIME_SLOTS, MedicalRecord
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, \
+    WEEKDAYS, TIME_SLOTS, MedicalRecord, AdoptionPet, Species, SterilizationStatus, Gender, TransferRequest, \
+    REGION_CHOICES
 from allauth.account.forms import SignupForm
-import re
+import re,json
 from datetime import date, time, datetime, timedelta
+from django.core.exceptions import ValidationError
+from .utils import get_species_choices
+from .choices import  (FEATURE_CHOICES, PHYSICAL_CHOICES, ADOPTCONDITION_CHOICES, DOG_CHOICES, CAT_CHOICES,
+                       DOGVACCINE_CHOICES,CATVACCINE_CHOICES)
+
 
 # 縣市選項常數
 CITY_CHOICES = [
@@ -214,27 +221,37 @@ class RegisterForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'password1', 'password2']
 
+
 # 寵物資料管理用表單
 class PetForm(forms.ModelForm):
+    species_other = forms.CharField(
+        required=False,
+        label="其他種類",
+        widget=forms.TextInput(attrs={'id': 'id_species_other', 'placeholder': '請輸入寵物的種類'})
+    )
+    breed_other = forms.CharField(
+        required=False,
+        label="其他品種",
+        widget=forms.TextInput(attrs={'id': 'id_breed_other', 'placeholder': '請輸入寵物的品種'})
+    )
     class Meta:
         model = Pet
         fields = [
-            'species', 'breed', 'name', 'sterilization_status', 'chip',
-            'gender', 'weight', 'feature', 'picture','birth_date',
+            'species', 'breed', 'breed_other','species_other','name', 'sterilization_status', 'chip',
+            'gender', 'weight', 'feature', 'birth_date','picture',
         ]
         labels = {
             'species': '種類', 'breed': '品種', 'name': '名字',
             'sterilization_status': '絕育狀態', 'chip': '晶片號碼',
-            'gender': '性別', 'weight': '體重（公斤）', 'feature': '特徵',
-            'picture': '圖片', 'birth_date': '出生日期',
+            'gender': '性別', 'weight': '體重（公斤）', 'feature': '個性特徵',
+             'birth_date': '出生日期','picture': '圖片',
         }
         widgets = {
-            'breed': forms.TextInput(attrs={'maxlength': 50}),
+            'species': forms.HiddenInput(),
+            'breed': forms.HiddenInput(),
             'name': forms.TextInput(attrs={'maxlength': 50}),
-            'chip': forms.NumberInput(attrs={'class': 'form-control'}),
-
+            'chip': forms.TextInput(attrs={'class': 'form-control'}),
             'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
-
             'weight': forms.NumberInput(attrs={'class': 'form-control'}),
             'feature': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'picture': forms.ClearableFileInput(attrs={'class': 'form-control'}),
@@ -243,12 +260,22 @@ class PetForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.owner = kwargs.pop('owner', None)
         super().__init__(*args, **kwargs)
-        self.fields['picture'].required = True
-        for field_name in ['breed', 'name', 'chip', 'weight', 'feature','birth_date']:
-            self.fields[field_name].required = True
-            # 設定 date 預設為今天（僅在初次載入表單時）
-        if not self.initial.get('date'):
-            self.initial['date'] = date.today()
+
+        # 🔧 設定 hidden input 的初始值
+        self.fields['species'].widget = forms.HiddenInput()
+        self.fields['breed'].widget = forms.HiddenInput()
+        if self.instance and self.instance.pk:
+            self.fields['species'].initial = self.instance.species
+            self.fields['breed'].initial = self.instance.breed
+
+        # 設定必填欄位
+        for f in ['name', 'chip', 'weight', 'feature', 'birth_date', 'picture', 'sterilization_status', 'gender']:
+            self.fields[f].required = True
+
+        # 設定下拉選單
+        self.fields['sterilization_status'].choices = [('', '請選擇')] + list(SterilizationStatus.choices)
+        self.fields['gender'].choices = [('', '請選擇')] + list(Gender.choices)
+
 
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')
@@ -271,14 +298,47 @@ class PetForm(forms.ModelForm):
             if qs.exists():
                 raise forms.ValidationError("已有這個寵物的資料")
         if len(name) > 20:
-            raise forms.ValidationError("名字最多只能輸入 50 個字元。")
+            raise forms.ValidationError("名字最多只能輸入 20 個字元。")
         return name
 
-    def clean_breed(self):
-        breed = self.cleaned_data.get('breed')
-        if len(breed) > 30:
-            raise forms.ValidationError("品種最多只能輸入 50 個字元。")
-        return breed
+    def clean_chip(self):
+        chip = self.cleaned_data.get('chip')
+        if chip:
+            # 排除自己（編輯時）
+            qs = Pet.objects.filter(chip=chip)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            # 檢查是否已存在
+            if qs.exists():
+                raise forms.ValidationError("此晶片號碼已被其他寵物使用！")
+        return chip
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # 種類
+        species = cleaned_data.get('species') or ''
+        species_other = cleaned_data.get('species_other') or ''
+        if not species:
+            self.add_error('species', "請選擇寵物種類！")
+        elif species == '其他':
+            if not species_other.strip():
+                self.add_error('species_other', "請填寫自訂種類！")
+            else:
+                cleaned_data['species'] = species_other.strip()
+
+        # 品種
+        breed = cleaned_data.get('breed') or ''
+        breed_other = cleaned_data.get('breed_other') or ''
+        if not breed:
+            self.add_error('breed', "請選擇寵物品種！")
+        elif breed == '其他':
+            if not breed_other.strip():
+                self.add_error('breed_other', "請填寫自訂品種！")
+            else:
+                cleaned_data['breed'] = breed_other.strip()
+
+        return cleaned_data
+
 
 # 健康紀錄輸入表單
 class DailyRecordForm(forms.ModelForm):
@@ -467,3 +527,378 @@ class MedicalRecordForm(forms.ModelForm):
             'treatment': forms.Textarea(attrs={'rows': 3}),
             'notes': forms.Textarea(attrs={'rows': 2}),
         }
+
+
+    #二手領養
+class AdoptionForm(forms.ModelForm):
+    feature_choice = forms.ChoiceField(
+        choices=FEATURE_CHOICES,
+        widget=forms.Select(attrs={'id': 'id_feature_choice','class': 'form-control',}),
+        required=False,
+        label="個性特徵"
+    )
+    feature_other = forms.CharField(
+        required=False,
+        label="其他個性",
+        widget=forms.TextInput(attrs={'id': 'id_feature_other','placeholder': '請輸入個性特徵'})
+    )
+    physical_condition_choice = forms.ChoiceField(
+        choices=PHYSICAL_CHOICES,
+        widget=forms.Select(attrs={'id': 'id_physical_condition_choice', 'class': 'form-control'}),
+        required=False,
+        label="健康狀況"
+    )
+    physical_condition_other = forms.CharField(
+        required=False,
+        label="其他健康狀況",
+        widget=forms.TextInput(attrs={'id': 'id_physical_condition_other',
+            'class': 'form-control',
+            'placeholder': '請輸入其他健康狀況'})
+    )
+    adoption_condition_choice = forms.ChoiceField(
+        choices=ADOPTCONDITION_CHOICES,
+        widget=forms.Select(attrs={'id': 'id_adoption_condition_choice', 'class': 'form-control'}),
+        required=False,
+        label="領養條件"
+    )
+    adoption_condition_other = forms.CharField(
+        required=False,
+        label="其他領養條件",
+        widget=forms.TextInput(attrs={'id': 'id_adoption_condition_other',
+                                      'class': 'form-control',
+                                      'placeholder': '請輸入其他領養條件'})
+    )
+    species_other = forms.CharField(
+        required=False,
+        label="其他種類",
+        widget=forms.TextInput(attrs={'id': 'id_species_other', 'placeholder': '請輸入寵物的種類'})
+    )
+    breed_other = forms.CharField(
+        required=False,
+        label="其他品種",
+        widget=forms.TextInput(attrs={'id': 'id_breed_other', 'placeholder': '請輸入寵物的品種'})
+    )
+    vaccine_other = forms.CharField(
+        required=False,
+        label="其他疫苗",
+        widget=forms.TextInput(attrs={'id': 'id_vaccine_other', 'placeholder': '請輸入其他疫苗'})
+    )
+    class Meta:
+        model = AdoptionPet
+        fields = ['species', 'breed', 'breed_other','species_other','vaccine_other',
+                  'name', 'sterilization_status', 'chip',
+                    'gender', 'weight', 'vaccine','feature','birth_date',
+                  'physical_condition','adoption_condition','adopt_place',
+                  'phone', 'line_id',
+                  'adopt_picture1','adopt_picture2','adopt_picture3','adopt_picture4',
+                  ]
+        widgets = {
+            'species': forms.HiddenInput(),
+            'breed': forms.HiddenInput(),
+            "vaccine": forms.HiddenInput(),
+            'name': forms.TextInput(attrs={'maxlength': 20,'placeholder':'請填寫寵物的名字','autocomplete': 'name'}),
+            'chip': forms.TextInput(attrs={'class': 'form-control','maxlength': '15','placeholder':'請填寫寵物的晶片號碼','autocomplete': 'off'}),
+            'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'autocomplete': 'off'}, format='%Y-%m-%d'),
+            'gender' : forms.Select(attrs={'class': 'form-select', 'autocomplete': 'off'}),
+            'weight': forms.NumberInput(attrs={'class': 'form-control','maxlength': 5,'placeholder':'請填寫寵物的重量','autocomplete': 'off'}),
+            'feature': forms.Textarea(attrs={'class': 'form-control','rows': 3,'maxlength': 300, 'placeholder':'請填寫寵物的個性特征'}),
+            'physical_condition': forms.Textarea(attrs={'class': 'form-control','rows': 3,'maxlength': 300, 'placeholder':'請填寫寵物的健康狀況'}),
+            'adoption_condition': forms.Textarea(attrs={'rows': 3,'maxlength': 300, 'placeholder':'請填寫寵物的領養條件'}),
+            'adopt_place': forms.Select(attrs={'class': 'form-select','autocomplete': 'street-address'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'請填寫手機號碼或line_id','autocomplete': 'tel'}),
+            'line_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder':'請填寫手機號碼或line_id','autocomplete': 'off'}),
+
+            'adopt_picture1': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'adopt_picture2': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'adopt_picture3': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'adopt_picture4': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+
+        }
+        labels = {
+            'species': '種類', 'breed': '品種', 'name': '名字',
+            'sterilization_status': '絕育狀態', 'chip': '晶片號碼',
+            'gender': '性別', 'weight': '體重（公斤）','vaccine':'疫苗', 'feature': '個性特徵',
+            'birth_date': '出生日期','physical_condition': '健康狀況','adoption_condition': '領養條件',
+            'adopt_place':'領養地點',
+
+            'adopt_picture1': '圖片1',
+            'adopt_picture2': '圖片2','adopt_picture3': '圖片3',
+            'adopt_picture4': '圖片4',
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.owner = kwargs.pop('owner', None)
+        super().__init__(*args, **kwargs)
+
+        # 🔧 設定 hidden input 的初始值
+        self.fields['species'].widget = forms.HiddenInput()
+        self.fields['breed'].widget = forms.HiddenInput()
+        self.fields['vaccine'].widget = forms.HiddenInput()
+        if self.instance and self.instance.pk:
+            self.fields['species'].initial = self.instance.species
+            self.fields['breed'].initial = self.instance.breed
+            self.fields['vaccine'].initial = self.instance.vaccine
+
+
+        # 🔧 不直接顯示模型欄位但仍要儲存
+        self.fields['feature'].required = False
+        self.fields['feature'].widget = forms.HiddenInput()
+        self.fields['physical_condition'].required = False
+        self.fields['physical_condition'].widget = forms.HiddenInput()
+        self.fields['adoption_condition'].required = False
+        self.fields['adoption_condition'].widget = forms.HiddenInput()
+
+        for field_name in ['name', 'chip', 'weight', 'birth_date',
+                           'adopt_place','adopt_picture1',]:
+            self.fields[field_name].required = True
+
+        # 為 ChoiceField 手動插入空白選項
+        self.fields['sterilization_status'].choices = [('', '請選擇')] + list(SterilizationStatus.choices)
+        self.fields['gender'].choices = [('', '請選擇')] + list(Gender.choices)
+        self.fields['feature_choice'].choices = [('', '請選擇')] + FEATURE_CHOICES
+        self.fields['physical_condition_choice'].choices = [('', '請選擇')] + PHYSICAL_CHOICES
+        self.fields['adoption_condition_choice'].choices = [('', '請選擇')] + ADOPTCONDITION_CHOICES
+        self.fields['adopt_place'].choices = [('', '請選擇')] + REGION_CHOICES
+
+
+        # 預設 feature_choice 和 feature_other 從 JSON 解析
+        if self.instance and self.instance.feature:
+            try:
+                data = json.loads(self.instance.feature)
+                if isinstance(data, dict):
+                    self.initial['feature_choice'] = data.get('feature_choice', '')
+                    self.initial['feature_other'] = data.get('feature_other', '')
+                else:
+                    # 若非 dict，當作其他
+                    self.initial['feature_choice'] = '其他'
+                    self.initial['feature_other'] = self.instance.feature
+            except (json.JSONDecodeError, TypeError):
+                self.initial['feature_choice'] = '其他'
+                self.initial['feature_other'] = self.instance.feature
+
+
+        # 回填 physical_condition_choice
+        if self.instance and self.instance.physical_condition:
+            try:
+                condition_data = json.loads(self.instance.physical_condition)
+                if isinstance(condition_data, dict):
+                    self.initial['physical_condition_choice'] = condition_data.get('physical_condition_choice', '')
+                    self.initial['physical_condition_other'] = condition_data.get('physical_condition_other', '')
+                else:
+                    # 如果不是 dict（可能只是單一字串），退回預設值
+                    self.initial['physical_condition_choice'] = ''
+                    self.initial['physical_condition_other'] = ''
+            except (json.JSONDecodeError, TypeError):
+                self.initial['physical_condition_choice'] = ''
+                self.initial['physical_condition_other'] = ''
+
+        # 回填 adoption_condition_choice
+        if self.instance and self.instance.adoption_condition:
+            try:
+                condition_data = json.loads(self.instance.adoption_condition)
+                if isinstance(condition_data, dict):
+                    self.initial['adoption_condition_choice'] = condition_data.get('adoption_condition_choice',
+                                                                                   '')
+                    self.initial['adoption_condition_other'] = condition_data.get('adoption_condition_other',
+                                                                                  '')
+                else:
+                    # 如果不是 dict（可能只是單一字串），退回預設值
+                    self.initial['adoption_condition_choice'] = ''
+                    self.initial['adoption_condition_other'] = ''
+            except (json.JSONDecodeError, TypeError):
+                self.initial['adoption_condition_choice'] = ''
+                self.initial['adoption_condition_other'] = ''
+
+        # 設定 date 預設為今天（僅在初次載入表單時）
+        if not self.initial.get('birth_date'):
+            self.initial['birth_date'] = date.today()
+
+    def clean_weight(self):
+        weight = self.cleaned_data.get('weight')
+        if weight is None or weight <= 0 or weight > 1000:
+            raise forms.ValidationError("請輸入合理的體重（1~1000公斤）")
+        return weight
+
+    def clean_birth_date(self):
+        record_date = self.cleaned_data.get('birth_date')
+        if record_date and record_date > date.today():
+            raise forms.ValidationError("日期不能是未來")
+        return record_date
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            qs = AdoptionPet.objects.filter(name=name, owner=self.owner)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)  # 編輯時排除自己
+            if qs.exists():
+                raise forms.ValidationError("已有這個寵物的資料")
+        return name
+
+    def clean_chip(self):
+        chip = self.cleaned_data.get('chip')
+        if chip:
+            # 排除自己（編輯時）
+            qs = AdoptionPet.objects.filter(chip=chip)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            # 檢查是否已存在
+            if qs.exists():
+                raise forms.ValidationError("此晶片號碼已被其他寵物使用！")
+        return chip
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # ✅ 電話或 LINE 檢查
+        phone = cleaned_data.get('phone')
+        line_id = cleaned_data.get('line_id')
+        if not phone and not line_id:
+            self.add_error('phone', "請填寫手機號碼或 LINE ID 至少一項")
+            self.add_error('line_id', "請填寫 LINE ID 或手機號碼至少一項")
+
+        # ✅ 特徵處理
+        feature_choice = cleaned_data.get('feature_choice')
+        feature_other = cleaned_data.get('feature_other', '')
+
+        if not feature_choice:
+            self.add_error('feature_choice', "這個欄位是必須的。")
+            feature_data  = {'feature_choice': '', 'feature_other': ''}
+        elif feature_choice == '其他':
+            if not feature_other:
+                self.add_error('feature_other', "請輸入其他特徵描述")
+            feature_data = {
+                'feature_choice': '其他',
+                'feature_other': feature_other
+            }
+        else:
+            feature_data = {
+                'feature_choice': feature_choice,
+                'feature_other': ''
+            }
+        #  不論是否有錯都先寫入（確保不報錯）
+        cleaned_data['feature'] = json.dumps(feature_data, ensure_ascii=False)
+
+        # ✅健康狀況處理
+        physical_choice = cleaned_data.get('physical_condition_choice')
+        physical_other = cleaned_data.get('physical_condition_other', '')
+
+        if not physical_choice:
+            self.add_error('physical_condition_choice', "這個欄位是必須的。")
+            physical_data = {'physical_condition_choice': '', 'physical_condition_other': ''}
+        elif physical_choice == '其他':
+            if not physical_other:
+                self.add_error('physical_condition_other', "請輸入其他健康狀況描述")
+            physical_data = {
+                'physical_condition_choice': '其他',
+                'physical_condition_other': physical_other
+            }
+        else:
+            physical_data = {
+                'physical_condition_choice': physical_choice,
+                'physical_condition_other': ''
+            }
+        # 檢查是否為字串，不是 dict 就不覆蓋
+        if not isinstance(physical_data, dict):
+            physical_data = {
+                'physical_condition_choice': '',
+                'physical_condition_other': ''
+            }
+        cleaned_data['physical_condition'] = json.dumps(physical_data, ensure_ascii=False)
+
+
+        # ✅領養條件處理
+        adoption_condition_choice = cleaned_data.get('adoption_condition_choice')
+        adoption_condition_other = cleaned_data.get('adoption_condition_other', '')
+
+        if not adoption_condition_choice:
+            self.add_error('adoption_condition_choice', "這個欄位是必須的。")
+            adoptcondition_data = {'adoption_condition_choice': '', 'adoption_condition_other': ''}
+        elif adoption_condition_choice == '其他':
+            if not adoption_condition_other:
+                self.add_error('adoption_condition_other', "請輸入其他領養條件描述")
+            adoptcondition_data = {
+                'adoption_condition_choice': '其他',
+                'adoption_condition_other': adoption_condition_other
+            }
+        else:
+            adoptcondition_data = {
+                'adoption_condition_choice': adoption_condition_choice,
+                'adoption_condition_other': ''
+            }
+        # 檢查是否為字串，不是 dict 就不覆蓋
+        if not isinstance(adoptcondition_data, dict):
+            adoptcondition_data = {
+                'adoption_condition_choice': '',
+                'adoption_condition_other': ''
+            }
+        cleaned_data['adoption_condition'] = json.dumps(adoptcondition_data, ensure_ascii=False)
+
+
+        # 種類
+        species = cleaned_data.get('species') or ''
+        species_other = cleaned_data.get('species_other') or ''
+        if not species:
+            self.add_error('species', "請選擇寵物種類！")
+        elif species == '其他':
+            if not species_other.strip():
+                self.add_error('species_other', "請填寫自訂種類！")
+            else:
+                cleaned_data['species'] = species_other.strip()
+
+        # 品種
+        breed = cleaned_data.get('breed') or ''
+        breed_other = cleaned_data.get('breed_other') or ''
+        if not breed:
+            self.add_error('breed', "請選擇寵物品種！")
+        elif breed == '其他':
+            if not breed_other.strip():
+                self.add_error('breed_other', "請填寫自訂品種！")
+            else:
+                cleaned_data['breed'] = breed_other.strip()
+
+        # 疫苗
+        vaccine = cleaned_data.get('vaccine') or ''
+        vaccine_other = cleaned_data.get('vaccine_other') or ''
+        if not vaccine:
+            self.add_error('vaccine', "請選擇寵物施打過的疫苗！")
+        elif vaccine == '其他':
+            if not vaccine_other.strip():
+                self.add_error('vaccine_other', "請填寫寵物施打過的疫苗！")
+            else:
+                cleaned_data['vaccine'] = vaccine_other.strip()
+
+        return cleaned_data
+
+
+
+# 更改飼主
+class TransferRequestForm(forms.Form):
+    to_email = forms.EmailField(label='新飼主的郵箱',max_length=30)
+    to_phone = forms.CharField(label='新飼主的手機號碼', max_length=10)
+
+    def __init__(self, *args, current_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.current_user = current_user
+
+    def clean(self):
+        cleaned_data = super().clean()
+        to_email = cleaned_data.get('to_email')
+        to_phone = cleaned_data.get('to_phone')
+
+        if self.current_user:
+            # 檢查 email
+            if to_email and to_email == self.current_user.email:
+                self.add_error('to_email', '不能填寫自己的郵箱。')
+
+            # 檢查手機號碼
+            user_phone = None
+            try:
+                user_phone = self.current_user.profile.phone_number
+            except Profile.DoesNotExist:
+                user_phone = None
+
+            if to_phone and user_phone and to_phone == user_phone:
+                self.add_error('to_phone', '不能填寫自己的手機號碼。')
+
+        return cleaned_data

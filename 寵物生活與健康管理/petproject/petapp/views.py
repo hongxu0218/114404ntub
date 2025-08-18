@@ -5,8 +5,10 @@ from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, MedicalRecord,PetLocation,ServiceType, PetType,BusinessHours
-from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm, MedicalRecordForm
+from .models import Profile, Pet, DailyRecord, VetAppointment, VaccineRecord, DewormRecord, Report, VetAvailableTime, MedicalRecord,PetLocation,ServiceType, PetType,BusinessHours, AdoptionPet, TransferRequest
+from .forms import EditProfileForm, SocialSignupExtraForm, PetForm, TemperatureEditForm, WeightEditForm, VetAppointmentForm, VaccineRecordForm, DewormRecordForm, ReportForm, VetAvailableTimeForm, MedicalRecordForm, AdoptionForm, TransferRequestForm
+from .choices import  FEATURE_CHOICES, PHYSICAL_CHOICES, ADOPTCONDITION_CHOICES, DOG_CHOICES, CAT_CHOICES,DOGVACCINE_CHOICES,CATVACCINE_CHOICES
+
 from allauth.account.views import SignupView
 from allauth.socialaccount.views import SignupView as SocialSignupView
 from django.views.decorators.csrf import csrf_exempt
@@ -17,21 +19,21 @@ from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 新增：匯入發信功能
 import json
 from django.db.models import Q ,Max
+import os
 
 from calendar import monthrange
 import calendar
-from django.utils.timezone import localtime
+from django.utils.timezone import localtime,now
 from .utils import get_temperature_data, get_weight_data
 from dateutil.relativedelta import relativedelta
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
+from .utils import get_species_choices
 
-
-
-# 首頁
 
 def home(request):
-    return render(request, 'pages/index.html')  # 渲染首頁
+    return render(request, 'pages/index.html')
+
 
 # 使用者一般註冊流程覆寫
 class CustomSignupView(SignupView):
@@ -229,33 +231,130 @@ from datetime import date as dt_date
 def add_pet(request):
     if request.method == 'POST':
         form = PetForm(request.POST, request.FILES, owner=request.user)
-        if form.is_valid():
-            pet = form.save(commit=False)  # 不馬上存進資料庫
-            pet.owner = request.user  # 指定目前登入使用者為飼主
-            pet.save()  # 現在儲存到資料庫
 
-            # 🔽 初始化 6 筆分類 DailyRecord（日期可為 today，content 可為空）
+        if form.is_valid():
+            pet = form.save(commit=False)
+            pet.owner = request.user
+
+            pet.save()
+
+            # 初始化 DailyRecord
             categories = ['temperature', 'weight', 'diet', 'exercise', 'allergen', 'other']
             for cat in categories:
                 DailyRecord.objects.create(
                     pet=pet,
                     category=cat,
                     content='',
-                    date=date.today()
+                    date=dt_date.today()
                 )
             return redirect('pet_list')
+        else:
+            print(form.errors.as_json())
     else:
-        form = PetForm()
+        form = PetForm(owner=request.user)
+
     return render(request, 'pet_info/add_pet.html', {
         'form': form,
+        'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
+        'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
     })
 
 
+# 新增送養寵物資料  測試
+@login_required
+def add_adoptpet(request):
+    other_pet_names = list(
+        AdoptionPet.objects.filter(owner=request.user).values_list("name", flat=True)
+    )
+    if request.method == 'POST':
+        form = AdoptionForm(request.POST, request.FILES, owner=request.user)
+
+        if form.is_valid():
+            adoption = form.save(commit=False)
+            adoption.owner = request.user
+
+            adoption.save()
+            return redirect('adoption')
+        else:
+            print(form.errors.as_json())
+    else:
+        form = AdoptionForm(owner=request.user)
+
+    return render(request, 'adoptions/add_adoptpet.html', {
+        'adoption_form': form,
+        'other_pet_names': other_pet_names,
+        'feature_choices': FEATURE_CHOICES,
+        'physical_choices': PHYSICAL_CHOICES,
+        'adoptcondition_choices' : ADOPTCONDITION_CHOICES,
+        'dog_choices': DOG_CHOICES,
+        'cat_choices': CAT_CHOICES,
+        'dogvaccine_choices': DOGVACCINE_CHOICES,
+        'catvaccine_choices': CATVACCINE_CHOICES,
+    })
+
+
+
 # 寵物列表
+@login_required
 def pet_list(request):
     pets = Pet.objects.filter(owner=request.user)
     today = date.today()
     now = datetime.now()
+
+    # 針對每隻寵物檢查轉讓狀態（A飼主自己送出的轉讓請求）
+    for pet in pets:
+        pet.has_pending_transfer = TransferRequest.objects.filter(
+            pet=pet,
+            from_owner=request.user,  # 原飼主自己送出的請求
+            status='pending'
+        ).exists()
+
+    # 找出每組 (from_owner, pet) 的最新轉讓請求 ID
+    latest_transfer_ids = (
+        TransferRequest.objects
+        .filter(to_email__iexact=request.user.email, status='pending')
+        .values('from_owner', 'pet')
+        .annotate(latest_id=Max('id'))
+        .values_list('latest_id', flat=True)
+    )
+    pending_transfers = TransferRequest.objects.filter(id__in=latest_transfer_ids)
+
+    # 取出該用戶是原飼主，且已完成的（accepted 或 rejected）轉讓請求，且尚未標示為已讀
+    unread_transfers = TransferRequest.objects.filter(
+        from_owner=request.user,
+        status__in=['accepted', 'rejected'],
+        from_owner_has_seen=False,
+        created_at__gte=timezone.now() - timedelta(days=30),  # 例如只管最近30天
+    ).order_by('-created_at')
+
+    # 顯示訊息，並標示為已讀
+    for transfer in unread_transfers:
+        if transfer.status == 'accepted':
+            messages.info(request, f"您的寵物 {transfer.pet.name} 的更改飼主請求已被接受。")
+        elif transfer.status == 'rejected':
+            messages.info(request, f"您的寵物 {transfer.pet.name} 的更改飼主請求已被拒絕。")
+
+        # 標示已讀
+        transfer.from_owner_has_seen = True
+        transfer.save()
+
+    adopting_pet_ids = AdoptionPet.objects.filter(
+        owner=request.user,
+        is_adopted=False
+    ).values_list('name', 'chip')
+
+    adopted_pet_ids = AdoptionPet.objects.filter(
+        owner=request.user,
+        is_adopted=True
+    ).values_list('name', 'chip')
+
+    adopting_set = set(adopting_pet_ids)
+    adopted_set = set(adopted_pet_ids)
+
+    for pet in pets:
+        pet.is_adoption_only = (pet.name, pet.chip) in adopting_set  # 待領養
+        pet.is_adopted = (pet.name, pet.chip) in adopted_set  # 已送養
+
 
     # 預約資料
     for pet in pets:
@@ -272,7 +371,7 @@ def pet_list(request):
         ).order_by('time')
     else:
         tomorrow_appointments = []
-    
+
     appointment_digest = "|".join([
         f"{appt.date.isoformat()}_{appt.time.strftime('%H:%M')}_{appt.vet_id}_{appt.pet_id}"
         for appt in tomorrow_appointments
@@ -285,24 +384,35 @@ def pet_list(request):
         'tomorrow_appointments': tomorrow_appointments,
         'notif_count': notif_count,
         'appointment_digest': appointment_digest,
+        'pending_transfers': pending_transfers,
+        'latest_transfer_ids': latest_transfer_ids,
     })
 
 
+
 # 編輯寵物
+@login_required
 def edit_pet(request, pet_id):
-    pet = get_object_or_404(Pet, id=pet_id)
+    pet = get_object_or_404(Pet, id=pet_id,  owner=request.user)
     if request.method == 'POST':
         form = PetForm(request.POST, request.FILES, instance=pet, owner=request.user)
         if form.is_valid():
-            form.save()
+            # 儲存表單資料
+            pet = form.save(commit=False)
+            pet.owner = request.user  # 若你想確認 owner 沒被改動
+            pet.save()
             messages.info(request, f"寵物 {pet.name} 資料已更新。")
             return redirect('pet_list')
     else:
-        form = PetForm(instance=pet)
-    return render(request, 'pet_info/edit_pet.html', {'form': form, 'pet': pet})
+        form = PetForm(instance=pet, owner=request.user)
+    return render(request, 'pet_info/edit_pet.html', {
+        'form': form,
+        'pet': pet,
+        'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
+        'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
+    })
 
 # 刪除寵物
-
 def delete_pet(request, pet_id):
     pet = get_object_or_404(Pet, id=pet_id)
     if request.method == 'POST':
@@ -317,6 +427,23 @@ def health_rec(request):
     pets = Pet.objects.filter(owner=request.user).prefetch_related(
         'vaccine_records', 'deworm_records', 'reports'
     )
+    # 送養狀態
+    adopting_pet_ids = AdoptionPet.objects.filter(
+        owner=request.user,
+        is_adopted=False
+    ).values_list('name', 'chip')
+
+    adopted_pet_ids = AdoptionPet.objects.filter(
+        owner=request.user,
+        is_adopted=True
+    ).values_list('name', 'chip')
+
+    adopting_set = set(adopting_pet_ids)
+    adopted_set = set(adopted_pet_ids)
+
+    for pet in pets:
+        pet.is_adoption_only = (pet.name, pet.chip) in adopting_set
+        pet.is_adopted = (pet.name, pet.chip) in adopted_set
 
     # 健康記錄 撈資料
     records = DailyRecord.objects.filter(pet__in=pets).select_related('pet').order_by('date')
@@ -2012,5 +2139,563 @@ def api_emergency_locations(request):
             'type': 'server_error',
             'emergency_contact': '119'  # 提供緊急聯絡方式
         }, status=500)
-
 ###############################24小時急診地圖############################
+
+
+# 二手領養頁面
+def adoption(request):
+    adoptions = AdoptionPet.objects.filter(is_adopted=False)
+
+    location = request.GET.get('adopt_place')
+    species = request.GET.get('species')
+    gender = request.GET.get('gender')
+    age_group = request.GET.get('age_group')
+    keyword = request.GET.get('keyword')
+
+    if location:
+        adoptions = adoptions.filter(adopt_place=location)
+    if species:
+        adoptions = adoptions.filter(species=species)
+    if gender:
+        adoptions = adoptions.filter(gender=gender)
+    if age_group:
+        if age_group == "0-1":
+            adoptions = adoptions.filter(age__lte=1)
+        elif age_group == "1-3":
+            adoptions = adoptions.filter(age__gt=1, age__lte=3)
+        elif age_group == "3-6":
+            adoptions = adoptions.filter(age__gt=3, age__lte=6)
+        elif age_group == "6+":
+            adoptions = adoptions.filter(age__gt=6)
+    if keyword:
+        adoptions = adoptions.filter(
+            Q(name__icontains=keyword) |
+            Q(breed__icontains=keyword) |
+            Q(feature__icontains=keyword)
+        )
+
+    order = request.GET.get('order', 'newest')
+    if order == 'oldest':
+        adoptions = adoptions.order_by('posted_date')
+    else:
+        adoptions = adoptions.order_by('-posted_date')
+
+    # 將 feature 欄位 JSON 字串轉換為 dict
+    for adoption in adoptions:
+        try:
+            parsed = json.loads(adoption.feature)
+            if not isinstance(parsed, dict):
+                parsed = {'feature_choice': '', 'feature_other': ''}
+        except Exception:
+            parsed = {'feature_choice': '', 'feature_other': ''}
+        adoption.parsed_feature = parsed
+
+        try:
+            parsed = json.loads(adoption.breed)
+            if not isinstance(parsed, dict):
+                parsed = {'breed_choice': '', 'breed_other': ''}
+        except Exception:
+            parsed = {'breed_choice': '', 'breed_other': ''}
+        adoption.parsed_breed = parsed
+
+    return render(request, 'adoptions/adoption.html', {
+        'adoptions': adoptions,
+    })
+
+
+# 飼主的二手領養
+@login_required
+def my_adoption(request):
+    adoptions = AdoptionPet.objects.filter(owner=request.user)
+
+    user = request.user
+    filter_option = request.GET.get('filter', 'all')
+
+    if filter_option == 'available':
+        adoptions = AdoptionPet.objects.filter(owner=user, is_adopted=False)
+    elif filter_option == 'adopted':
+        adoptions = AdoptionPet.objects.filter(owner=user, is_adopted=True)
+    else:
+        adoptions = AdoptionPet.objects.filter(owner=user)
+
+    # 將 feature 欄位 JSON 字串轉換為 dict
+    for adoption in adoptions:
+        try:
+            parsed = json.loads(adoption.feature)
+            if not isinstance(parsed, dict):
+                parsed = {'feature_choice': '', 'feature_other': ''}
+        except Exception:
+            parsed = {'feature_choice': '', 'feature_other': ''}
+        adoption.parsed_feature = parsed
+
+        try:
+            parsed = json.loads(adoption.breed)
+            if not isinstance(parsed, dict):
+                parsed = {'breed_choice': '', 'breed_other': ''}
+        except Exception:
+            parsed = {'breed_choice': '', 'breed_other': ''}
+        adoption.parsed_breed = parsed
+
+    return render(request, 'adoptions/my_adoption.html', {
+        'adoptions': adoptions
+    })
+
+# 動態更新品種、疫苗表單
+def get_choices(request):
+    species = request.GET.get('species')
+
+    if species == '狗':
+        breed_choices = DOG_CHOICES
+        vaccine_choices = DOGVACCINE_CHOICES
+    elif species == '貓':
+        breed_choices = CAT_CHOICES
+        vaccine_choices = CATVACCINE_CHOICES
+    else:  # 其他
+        breed_choices = ['其他']  # 讓下拉有「其他」選項
+        vaccine_choices = ['其他']
+
+    return JsonResponse({
+        'breed_choices': breed_choices,
+        'vaccine_choices': vaccine_choices,
+    })
+
+@login_required
+def add_adoption(request):
+    other_pet_names = list(
+        AdoptionPet.objects.filter(owner=request.user).values_list("name", flat=True)
+    )
+    if request.method == 'POST':
+        form = AdoptionForm(request.POST, request.FILES, owner=request.user)
+        if form.is_valid():
+            adoption = form.save(commit=False)
+            adoption.owner = request.user
+            adoption.save()
+            return redirect('adoption')
+    else:
+        form = AdoptionForm(owner=request.user)
+        print(DOG_CHOICES, CAT_CHOICES)
+
+    return render(request, 'adoptions/add_adoption.html', {
+        'adoption_form': form,
+        'other_pet_names': other_pet_names,
+        'feature_choices': FEATURE_CHOICES,
+        'physical_choices': PHYSICAL_CHOICES,
+        'adoptcondition_choices' : ADOPTCONDITION_CHOICES,
+        'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
+        'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
+        'dogvaccine_choices': json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
+        'catvaccine_choices': json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+    })
+
+
+
+
+
+
+# 寵物的詳細資料頁面
+def adoption_petDetail(request, adoption_id):
+    adoption = get_object_or_404(AdoptionPet, id=adoption_id)
+    image_urls = []
+
+    for i in range(1, 5):  # 你可以改成 range(1, 6) 支援5張圖
+        image_field = getattr(adoption, f'adopt_picture{i}', None)
+        if image_field and hasattr(image_field, 'url'):
+            image_urls.append(image_field.url)
+
+    is_owner = False
+    if request.user.is_authenticated and adoption.owner == request.user:
+        is_owner = True
+
+
+    # 將 feature 欄位 JSON 字串轉換為 dict
+    try:
+        parsed_feature = json.loads(adoption.feature)
+        if not isinstance(parsed_feature, dict):
+            parsed_feature = {'feature_choice': '', 'feature_other': ''}
+    except Exception:
+        parsed_feature = {'feature_choice': '', 'feature_other': ''}
+
+    # 將 physical_condition 欄位 JSON 字串轉換為 dict
+    try:
+        parsed_physical_condition = json.loads(adoption.physical_condition)
+        if not isinstance(parsed_physical_condition, dict):
+            parsed_physical_condition = {'physical_condition_choice': '', 'physical_condition_other': ''}
+    except Exception:
+        parsed_physical_condition = {'physical_condition_choice': '', 'physical_condition_other': ''}
+
+
+    # 將 adoption_condition 欄位 JSON 字串轉換為 dict
+    try:
+        parsed_adoption_condition = json.loads(adoption.adoption_condition)
+        if not isinstance(parsed_adoption_condition, dict):
+            parsed_adoption_condition = {'adoption_condition_choice': '', 'adoption_condition_other': ''}
+    except Exception:
+        parsed_adoption_condition = {'adoption_condition_choice': '', 'adoption_condition_other': ''}
+
+    # 將 breed品種 欄位 JSON 字串轉換為 dict
+    try:
+        parsed_breed = json.loads(adoption.breed)
+        if not isinstance(parsed_breed, dict):
+            parsed_breed = {'breed_choice': '', 'breed_other': ''}
+    except Exception:
+        parsed_breed = {'breed_choice': '', 'breed_other': ''}
+
+    # 將 vaccine疫苗 欄位 JSON 字串轉換為 dict
+    try:
+        parsed_vaccine = json.loads(adoption.vaccine)
+        if not isinstance(parsed_vaccine, dict):
+            parsed_vaccine = {'vaccine_choice': '', 'vaccine_other': ''}
+    except Exception:
+        parsed_vaccine = {'vaccine_choice': '', 'vaccine_other': ''}
+
+    return render(request, 'adoptions/adoption_petDetail.html', {
+        'adoption': adoption,
+        'is_owner': is_owner,
+        'image_urls': image_urls,
+        'parsed_feature': parsed_feature,
+        'parsed_physical_condition': parsed_physical_condition,
+        'parsed_adoption_condition': parsed_adoption_condition,
+        'parsed_breed' : parsed_breed,
+        'parsed_vaccine' : parsed_vaccine,
+    })
+
+# 從‘我的寵物’ 送養
+@login_required
+def send_for_adoption(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
+
+
+
+    # 避免重複送養：用 name + chip + is_adopted=False 當作唯一條件
+    exists = AdoptionPet.objects.filter(
+        name=pet.name,
+        chip=pet.chip,
+        is_adopted=False,
+        owner=request.user
+    ).exists()
+    if exists:
+        messages.warning(request, '這隻寵物已經在送養名單中。')
+        return redirect('pet_list')
+    # 建立新的送養資料（copy 寵物資料）
+    adoption = AdoptionPet.objects.create(
+        owner=request.user,
+        species=pet.species,
+        breed=pet.breed,
+        name=pet.name,
+        sterilization_status=pet.sterilization_status,
+        chip=pet.chip,
+        birth_date=pet.birth_date,
+        gender=pet.gender,
+        weight=pet.weight,
+        feature=pet.feature,
+        adopt_picture1=pet.picture,  # 假設 Pet.picture 是 ImageField
+        posted_date=timezone.now(),
+        is_adopted=False,  # 預設送養狀態是False，直到有人領養
+        original_pet=pet,
+    )
+    # 在你的 Pet 模型加個欄位 is_adoption_only 或 is_adopted 來標示送養狀態
+    pet.is_adoption_only = True  # 或 pet.is_adopted = True，視你的欄位名稱
+    pet.save()
+    messages.success(request, f'「{pet.name}」已加入送養名單。')
+    return redirect('edit_adoption', pk=adoption.id)  # 或你想要導向的頁面
+
+
+
+
+def safe_json_loads(value):
+    if not value:
+        return {}
+    if isinstance(value, dict):
+        return value
+    try:
+        loaded = json.loads(value)
+        if isinstance(loaded, dict):
+            return loaded
+        else:
+            return {}
+    except (json.JSONDecodeError, TypeError):
+        return {}
+
+@login_required
+def edit_adoption(request, pk):
+    adoption = get_object_or_404(AdoptionPet, pk=pk)
+
+    vaccine_records = []
+    if adoption.original_pet:
+        vaccine_records = adoption.original_pet.vaccine_records.all()
+
+    if adoption.owner != request.user:
+        return redirect('adoption_petDetail', adoption_id=pk)
+
+    picture_fields = [
+        {'index': i, 'name': f'adopt_picture{i}', 'image': getattr(adoption, f'adopt_picture{i}')}
+        for i in range(1, 5)
+    ]
+
+    if request.method == 'POST':
+        form = AdoptionForm(request.POST, request.FILES, instance=adoption)
+
+        if form.is_valid():
+            # 處理圖片刪除
+            old_adoption = AdoptionPet.objects.get(pk=pk)
+            for field in ['adopt_picture1', 'adopt_picture2', 'adopt_picture3', 'adopt_picture4']:
+                new_image = form.cleaned_data.get(field)
+                old_image = getattr(old_adoption, field)
+                if new_image and old_image and old_image.name != new_image.name:
+                    old_path = os.path.join(settings.MEDIA_ROOT, old_image.name)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+            # 儲存表單資料
+            adoption = form.save(commit=False)
+            adoption.feature = form.cleaned_data['feature']
+            adoption.physical_condition = form.cleaned_data['physical_condition']
+            adoption.adoption_condition = form.cleaned_data['adoption_condition']
+            adoption.breed = form.cleaned_data['breed']
+            adoption.vaccine = form.cleaned_data['vaccine']
+            adoption.save()
+
+            return redirect('adoption_petDetail', adoption_id=pk)
+
+        else:
+            # 表單錯誤時
+            return render(request, 'adoptions/edit_adoption.html', {
+                'adoption_form': form,
+                'adoption': adoption,
+                'picture_fields': picture_fields,
+                'feature_choices': FEATURE_CHOICES,
+                'physical_choices': PHYSICAL_CHOICES,
+                'adoptcondition_choices': ADOPTCONDITION_CHOICES,
+                'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
+                'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
+                'dogvaccine_choices':json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
+                'catvaccine_choices':json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+            })
+
+    else:
+        # GET 初始值，記得處理 physical_condition
+        feature_data = safe_json_loads(adoption.feature)
+        physical_data = safe_json_loads(adoption.physical_condition)
+        adoptcondition_data = safe_json_loads(adoption.adoption_condition)
+        breed_data = safe_json_loads(adoption.breed)
+        vaccine_data = safe_json_loads(adoption.vaccine)
+
+        # 預設 vaccine_other
+        vaccine_other_initial = vaccine_data.get('vaccine_other', '')
+
+        # 如果有 original_pet，從疫苗紀錄取並整理
+        if hasattr(adoption, 'original_pet') and adoption.original_pet:
+            vaccine_names = set()
+            for record in adoption.original_pet.vaccine_records.all():
+                if record.name:
+                    vaccine_names.add(record.name.strip())
+            if vaccine_names:
+                vaccine_other_initial = "，".join(sorted(vaccine_names))
+
+        # 先取得原本的選擇值
+        initial_vaccine_choice = vaccine_data.get('vaccine_choice', '')
+        # 如果有疫苗記錄，vaccine_choice 就改成「其他」
+        if vaccine_other_initial:
+            initial_vaccine_choice = '其他'
+
+        form = AdoptionForm(instance=adoption, initial={
+            'feature_choice': feature_data.get('feature_choice', ''),
+            'feature_other': feature_data.get('feature_other', ''),
+            'physical_condition_choice': physical_data.get('physical_condition_choice', ''),
+            'physical_condition_other': physical_data.get('physical_condition_other', ''),
+            'adoption_condition_choice': adoptcondition_data.get('adoption_condition_choice', ''),
+            'adoption_condition_other': adoptcondition_data.get('adoption_condition_other', ''),
+            'breed_choice': breed_data.get('breed_choice', ''),
+            'breed_other': breed_data.get('breed_other', ''),
+            'vaccine_choice': initial_vaccine_choice,
+            'vaccine_other': vaccine_other_initial,
+        })
+        return render(request, 'adoptions/edit_adoption.html', {
+            'adoption_form': form,
+            'adoption': adoption,
+            'picture_fields': picture_fields,
+            'feature_choices': FEATURE_CHOICES,
+            'feature_initial': feature_data,
+            'physical_choices': PHYSICAL_CHOICES,
+            'adoptcondition_choices': ADOPTCONDITION_CHOICES,
+            'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
+            'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
+            'dogvaccine_choices':json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
+            'catvaccine_choices':json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+            'vaccine_records': vaccine_records,
+        })
+
+
+# 切換領養狀態
+@login_required
+def toggle_adoption_status(request, pk):
+    adoption = get_object_or_404(AdoptionPet, pk=pk, owner=request.user)
+    adoption.is_adopted = not adoption.is_adopted
+    adoption.save()
+    return redirect('adoption_petDetail', adoption_id=pk)  # 回到詳細頁
+
+@login_required
+def delete_adoption_image(request, adoption_id, picture_field):
+    # 僅接受 POST
+    if request.method != 'POST':
+        return HttpResponseBadRequest('Invalid request method')
+
+    adoption = get_object_or_404(AdoptionPet, pk=adoption_id)
+
+    # 權限檢查：只有擁有者可以刪
+    if adoption.owner != request.user:
+        return HttpResponseForbidden('Permission denied')
+
+    # 安全檢查，只允許特定欄位名稱
+    allowed_fields = ['adopt_picture1', 'adopt_picture2', 'adopt_picture3', 'adopt_picture4']
+    if picture_field not in allowed_fields:
+        return HttpResponseBadRequest('Invalid picture field')
+
+    image_field = getattr(adoption, picture_field, None)
+
+    if image_field:
+        try:
+            image_path = image_field.path
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+        # 清空欄位並存檔
+        setattr(adoption, picture_field, None)
+        adoption.save()
+        return JsonResponse({'status': 'ok'})
+
+    return JsonResponse({'status': 'no image'}, status=400)
+
+ # 刪除 送養寵物的 資料
+@login_required
+def delete_adoption(request, pk):
+    adoption = get_object_or_404(AdoptionPet, pk=pk)
+    if adoption.owner != request.user:
+        return redirect('adoption_petDetail', adoption_id=pk)
+
+    if request.method == 'POST':
+        adoption.delete()
+        return redirect('adoption')  # 刪除後導回列表頁
+
+    # 非POST就導回詳細頁（防止GET誤觸）
+    return redirect('adoption_petDetail', adoption_id=pk)
+
+# 更改飼主
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+@login_required
+def change_owner(request, pet_id):
+    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
+    form = TransferRequestForm(request.POST or None, current_user=request.user)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            to_email = form.cleaned_data['to_email']
+            to_phone = form.cleaned_data['to_phone']
+
+            try:
+                # 同時根據 email 與手機號碼找出同一個用戶
+                new_owner = User.objects.get(
+                    email=to_email,
+                    profile__phone_number=to_phone
+                )
+            except User.DoesNotExist:
+                messages.error(request, "沒有找到這個飼主，請重新輸入郵箱或手機號碼。")
+                return render(request, 'adoptions/change_owner.html', {'form': form, 'pet': pet})
+
+            # 檢查是否已有相同目標的新請求
+            existing_request = TransferRequest.objects.filter(
+                pet=pet,
+                from_owner=request.user,
+                to_user=new_owner,
+                status='pending'
+            ).exists()
+
+            if existing_request:
+                messages.warning(request, "已有一筆送給該飼主的待確認轉讓請求，請等待對方回應。")
+                return redirect('pet_list')
+
+            TransferRequest.objects.create(
+                pet=pet,
+                from_owner=request.user,
+                to_email=to_email,
+                to_phone=to_phone,
+                to_user=new_owner,
+                status='pending',
+            )
+
+            send_mail(
+                subject=f"飼主權更改通知 - {pet.name}",
+                message=f"{request.user.username} 將寵物 '{pet.name}' 的飼主權更改給您，請登入確認轉讓請求。",
+                from_email='noreply@example.com',
+                recipient_list=[to_email],
+            )
+
+            messages.success(request, "更改飼主請求已發送，等待新飼主確認。")
+            return redirect('pet_list')
+        # 阻止繞過前端的惡意請求
+        existing_request = TransferRequest.objects.filter(
+            pet=pet,
+            status='pending'
+        ).exists()
+
+        if existing_request:
+            messages.warning(request, f"{pet.name} 已有一筆進行中的轉讓，請等待新飼主回應。")
+            return redirect('pet_list')
+
+    return render(request, 'adoptions/change_owner.html', {
+        'form': form,
+        'pet': pet,
+    })
+
+@login_required
+def transfer_confirm(request, transfer_id):
+    transfer = get_object_or_404(TransferRequest, id=transfer_id, status='pending')
+
+    if not transfer.to_user or request.user != transfer.to_user:
+        messages.error(request, "您無權確認此轉讓請求。")
+        return redirect('home')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        pet = transfer.pet
+
+        if action == 'accept':
+            pet.owner = request.user
+            pet.save()
+
+            transfer.status = 'accepted'
+            transfer.to_user_has_seen = True  # 直接標示新飼主已讀（剛操作過）
+            transfer.save()
+
+            send_mail(
+                subject=f"（寵物） {pet.name} 飼主更改已被接受",
+                message=f"{request.user.username} 已接受您的飼主更改，（寵物） {pet.name} 現已成為他的寵物。",
+                from_email='noreply@example.com',
+                recipient_list=[transfer.from_owner.email],
+            )
+
+            messages.success(request, f"您已成功接受（寵物） {pet.name} 的飼主更改。")
+            return redirect('pet_list')
+
+        elif action == 'reject':
+            transfer.status = 'rejected'
+            transfer.to_user_has_seen = True  # 標示新飼主已讀
+            transfer.save()
+
+            send_mail(
+                subject=f"（寵物） {pet.name} 的飼主更改被拒絕",
+                message=f"（飼主）{request.user.username} 拒絕了您的飼主更改請求。",
+                from_email='noreply@example.com',
+                recipient_list=[transfer.from_owner.email],
+            )
+
+            messages.info(request, f"您已拒絕 {transfer.from_owner.username} 這位飼主的更改請求。")
+            return redirect('home')
+
+        else:
+            messages.error(request, "請選擇有效操作。")
+
+    return render(request, 'adoptions/transfer_confirm.html', {'transfer': transfer})

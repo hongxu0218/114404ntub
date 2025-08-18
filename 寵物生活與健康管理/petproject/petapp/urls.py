@@ -86,6 +86,24 @@ urlpatterns = [
     # 🚨 24小時急診地圖功能
     path('emergency_map/', views.emergency_map_home, name='emergency_map'),  # 24小時急診地圖首頁
     path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),  # 急診醫院資料 API
+
+    # 二手領養
+    path('adoption/', views.adoption, name='adoption'),  # 二手領養頁面
+    path('adoption/user/', views.my_adoption, name='my_adoption'),  # 飼主的送養記錄
+    path('get_choices/', views.get_choices, name='get_choices'),  #動態更新品種、疫苗表單
+    path('adoption/add/', views.add_adoption, name='add_adoption'), # 新增送養寵物
+    path('adoption/addpet/', views.add_adoptpet, name='add_adoptpet'), # 新增送養寵物 測試
+    path('adoption/pet/<int:adoption_id>/', views.adoption_petDetail, name='adoption_petDetail'), #寵物的詳細資料頁面
+    path('pet/<int:pet_id>/send_for_adoption/', views.send_for_adoption, name='send_for_adoption'),# 從‘我的寵物’ 送養
+    path('adoption/<int:pk>/toggle-status/', views.toggle_adoption_status, name='toggle_adoption_status'), #切換領養狀態
+
+    path('adoption/<int:pk>/edit/', views.edit_adoption, name='edit_adoption'), # 編輯資料頁面
+    path('adoption/<int:adoption_id>/delete_image/<str:picture_field>/', views.delete_adoption_image, name='delete_adoption_image'), # 刪除 寵物資料的 圖片
+    path('adoption/<int:pk>/delete/', views.delete_adoption, name='delete_adoption'), # 刪除資料（可用 GET 確認或 POST 真的刪除）
+
+    path('pet/<int:pet_id>/change_owner/', views.change_owner, name='change_owner'),  # (寵物)更改飼主
+    path('transfer/confirm/<int:transfer_id>/', views.transfer_confirm, name='transfer_confirm'), # 飼主確認被轉讓之寵物
+
 ]
 
 
