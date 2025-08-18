@@ -18,7 +18,10 @@ form {
     margin: auto;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
-
+.form-other-group{
+  display:none;
+  margin-bottom:0px;
+}
 label {
     display: block;
     margin-top: 1em;
@@ -85,81 +88,103 @@ input, select, textarea {
 <form method="post" enctype="multipart/form-data" id="add-form">
     {% csrf_token %}
 
-    <label for="id_species">種類</label>
-    {{ form.species }}
+{% if form.errors %}
+  <div class="text-danger">
+    <h4>整體表單錯誤：</h4>
+    {{ form.errors }}
+  </div>
+{% endif %}
+
+  <!-- 種類 -->
+  <div class="form-group">
+    <label for="species_select"><strong>種類</strong></label>
+    <select id="species_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <option value="狗">狗</option>
+      <option value="貓">貓</option>
+      <option value="其他">其他</option>
+    </select>
+  </div>
+  <!-- 其他種類 -->
+  <div id="species_other_group" class="form-other-group" required>
+    {{ form.species_other }}
+    {% if form.species_other.errors %}
+    <div class="text-danger">{{ form.species_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端隱藏欄位 -->
+  {{ form.species }}
     {% if form.species.errors %}
-        <div class="text-danger">
-            {% for error in form.species.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.species.errors }}</div>
     {% endif %}
 
-    <label for="id_breed">品種</label>
-    {{ form.breed }}
-    {% if form.breed.errors %}
-        <div class="text-danger">
-            {% for error in form.breed.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+  <!-- 品種 (前端顯示) -->
+  <div class="form-group">
+    <label for="breed_select"><strong>品種</strong></label>
+    <select id="breed_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <!-- 預設先空，會依種類動態更新 -->
+    </select>
+  </div>
+  <!-- 其他品種 -->
+  <div id="breed_other_group" class="form-other-group" required>
+    {{ form.breed_other }}
+    {% if form.breed_other.errors %}
+    <div class="text-danger">{{ form.breed_other.errors }}</div>
     {% endif %}
+  </div>
+  <!-- 後端實際存的 breed（隱藏） -->
+  {{ form.breed }}
+    {% if form.breed.errors %}
+    <div class="text-danger">{{ form.breed.errors }}</div>
+    {% endif %}
+
 
     <label for="id_name">名字</label>
     {{ form.name }}
     {% if form.name.errors %}
-        <div class="text-danger">
-            {% for error in form.name.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.name.errors }}</div>
     {% endif %}
 
     <label for="id_sterilization_status">絕育狀態</label>
     {{ form.sterilization_status }}
     {% if form.sterilization_status.errors %}
-        <div class="text-danger">
-            {% for error in form.sterilization_status.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.sterilization_status.errors }}</div>
     {% endif %}
 
     <label for="id_chip">晶片號碼</label>
     {{ form.chip }}
     {% if form.chip.errors %}
-        <div class="text-danger">
-            {% for error in form.chip.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.chip.errors }}</div>
     {% endif %}
 
     <label for="id_birth_date">出生日期</label>
     {{ form.birth_date }}
     {% if form.birth_date.errors %}
-        <div class="text-danger">
-            {% for error in form.birth_date.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.birth_date.errors }}</div>
     {% endif %}
 
     <label for="id_gender">性別</label>
     {{ form.gender }}
     {% if form.gender.errors %}
-        <div class="text-danger">
-            {% for error in form.gender.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.gender.errors }}</div>
     {% endif %}
 
     <label for="id_weight">體重（公斤）</label>
     {{ form.weight }}
     {% if form.weight.errors %}
-        <div class="text-danger">
-            {% for error in form.weight.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.weight.errors }}</div>
     {% endif %}
 
     <label for="id_feature">特徵</label>
     {{ form.feature }}
     {% if form.feature.errors %}
-        <div class="text-danger">
-            {% for error in form.feature.errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
+    <div class="text-danger">{{ form.feature.errors }}</div>
     {% endif %}
 
-    <label for="id_picture">圖片</label>
-    {{ form.picture }}{% if form.picture.errors %}<div class="text-danger">{% for error in form.picture.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
 
+    <label for="id_picture">圖片</label>
+    {{ form.picture }}
     <img id="image-preview" src="#" alt="預覽圖片">
 
     <div class="button-row">
@@ -172,6 +197,8 @@ input, select, textarea {
 {% block extra_js %}
     {{ block.super }}
 <script>
+    document.getElementById('id_picture').addEventListener('change', previewImage);
+
 function previewImage(event) {
     const input = event.target;
     const preview = document.getElementById('image-preview');
@@ -185,5 +212,103 @@ function previewImage(event) {
         reader.readAsDataURL(input.files[0]);
     }
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  // 種類、品種 後端預填值
+  const speciesSelect = document.getElementById('species_select');
+  const speciesOtherGroup = document.getElementById('species_other_group');
+  const speciesOtherInput = document.getElementById('id_species_other');
+  const hiddenSpecies = document.getElementById('id_species');
+
+  const breedSelect = document.getElementById('breed_select');
+  const breedOtherGroup = document.getElementById('breed_other_group');
+  const breedOtherInput = document.getElementById('id_breed_other');
+  const hiddenBreed = document.getElementById('id_breed');
+
+  const dogBreeds = {{ dog_choices|safe }};
+  const catBreeds = {{ cat_choices|safe }};
+
+  // 後端傳進來的原始值
+  const initialSpecies = hiddenSpecies.value;
+  const initialBreed = hiddenBreed.value;
+
+  function updateSpecies(setInitial=false) {
+      const value = speciesSelect.value;
+      hiddenSpecies.value = value;
+
+      speciesOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+      if (value === '其他') {
+        speciesOtherInput.setAttribute("required", "required");  // ⭐ 其他才必填
+      } else {
+        speciesOtherInput.removeAttribute("required");
+        if (!setInitial) speciesOtherInput.value = '';
+      }
+
+      let breeds = [['', '請選擇']];
+      if (value === '狗') breeds = breeds.concat(dogBreeds);
+      if (value === '貓') breeds = breeds.concat(catBreeds);
+      if (value === '其他') breeds.push(['其他', '其他']);
+
+      breedSelect.innerHTML = breeds.map(o =>
+          `<option value="${o[0]}">${o[1]}</option>`
+      ).join('');
+
+      if (setInitial && initialBreed) {
+          breedSelect.value = initialBreed;
+      }
+      updateBreed(setInitial);
+  }
+
+  function updateBreed(setInitial=false) {
+      const value = breedSelect.value;
+      hiddenBreed.value = value;
+
+      breedOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+      if (value === '其他') {
+        breedOtherInput.setAttribute("required", "required"); // ⭐ 其他才必填
+      } else {
+        breedOtherInput.removeAttribute("required");
+        if (!setInitial) breedOtherInput.value = '';
+      }
+  }
+
+  // ⭐ 把事件綁定放在外面（不是 submit 裡）
+  speciesSelect.addEventListener('change', () => updateSpecies(false));
+  breedSelect.addEventListener('change', () => updateBreed(false));
+
+  // 初始化選項
+  if (initialSpecies) {
+      if (initialSpecies === '狗' || initialSpecies === '貓' || initialSpecies === '其他') {
+          speciesSelect.value = initialSpecies;
+      } else {
+          // 如果是使用者自填的
+          speciesSelect.value = '其他';
+          hiddenSpecies.value = '其他';
+          speciesOtherInput.value = initialSpecies;  // 顯示到「其他種類」輸入框
+      }
+  }
+  updateSpecies(true);
+
+  if (initialBreed) {
+      const dogBreeds = {{ dog_choices|safe }};
+      const catBreeds = {{ cat_choices|safe }};
+      const validBreeds = dogBreeds.concat(catBreeds).map(b => b[0]).concat(['其他']);
+
+      if (validBreeds.includes(initialBreed)) {
+          breedSelect.value = initialBreed;
+      } else {
+          breedSelect.value = '其他';
+          hiddenBreed.value = '其他';
+          breedOtherInput.value = initialBreed;  // 顯示到「其他品種」輸入框
+      }
+  }
+  updateBreed(true);
+
+  // ⭐ 不要用 alert 攔截，讓瀏覽器原生驗證跑
+  // → 這樣 required 會自動滾到沒填的欄位
+
+});
+
 </script>
 {% endblock %}
