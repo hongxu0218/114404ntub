@@ -545,7 +545,15 @@
   flex: 1; padding: 12px; overflow: auto;
   scrollbar-width: thin;
 }
-.cb-bubble{ padding: 10px 12px; border-radius: 12px; margin: 8px 0; line-height: 1.55; word-wrap: break-word; }
+.cb-bubble {
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin: 8px 0;
+  line-height: 1.55;
+  word-wrap: break-word;
+  white-space: pre-wrap;   /* ⭐ 保留換行與空白 */
+}
+
 .cb-user{ background:#2563eb; color:#fff; border-bottom-right-radius:4px; margin-left: 48px; }
 .cb-bot{ background:#1f2937; color:#fff; border-bottom-left-radius:4px; margin-right: 48px; }
 
