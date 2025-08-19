@@ -2190,14 +2190,6 @@ def adoption(request):
             parsed = {'feature_choice': '', 'feature_other': ''}
         adoption.parsed_feature = parsed
 
-        try:
-            parsed = json.loads(adoption.breed)
-            if not isinstance(parsed, dict):
-                parsed = {'breed_choice': '', 'breed_other': ''}
-        except Exception:
-            parsed = {'breed_choice': '', 'breed_other': ''}
-        adoption.parsed_breed = parsed
-
     return render(request, 'adoptions/adoption.html', {
         'adoptions': adoptions,
     })
@@ -2228,35 +2220,8 @@ def my_adoption(request):
             parsed = {'feature_choice': '', 'feature_other': ''}
         adoption.parsed_feature = parsed
 
-        try:
-            parsed = json.loads(adoption.breed)
-            if not isinstance(parsed, dict):
-                parsed = {'breed_choice': '', 'breed_other': ''}
-        except Exception:
-            parsed = {'breed_choice': '', 'breed_other': ''}
-        adoption.parsed_breed = parsed
-
     return render(request, 'adoptions/my_adoption.html', {
         'adoptions': adoptions
-    })
-
-# 動態更新品種、疫苗表單
-def get_choices(request):
-    species = request.GET.get('species')
-
-    if species == '狗':
-        breed_choices = DOG_CHOICES
-        vaccine_choices = DOGVACCINE_CHOICES
-    elif species == '貓':
-        breed_choices = CAT_CHOICES
-        vaccine_choices = CATVACCINE_CHOICES
-    else:  # 其他
-        breed_choices = ['其他']  # 讓下拉有「其他」選項
-        vaccine_choices = ['其他']
-
-    return JsonResponse({
-        'breed_choices': breed_choices,
-        'vaccine_choices': vaccine_choices,
     })
 
 @login_required
@@ -2281,10 +2246,10 @@ def add_adoption(request):
         'feature_choices': FEATURE_CHOICES,
         'physical_choices': PHYSICAL_CHOICES,
         'adoptcondition_choices' : ADOPTCONDITION_CHOICES,
-        'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
-        'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
-        'dogvaccine_choices': json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
-        'catvaccine_choices': json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+        'dog_choices': DOG_CHOICES,
+        'cat_choices': CAT_CHOICES,
+        'dogvaccine_choices': DOGVACCINE_CHOICES,
+        'catvaccine_choices': CATVACCINE_CHOICES,
     })
 
 
@@ -2332,22 +2297,6 @@ def adoption_petDetail(request, adoption_id):
     except Exception:
         parsed_adoption_condition = {'adoption_condition_choice': '', 'adoption_condition_other': ''}
 
-    # 將 breed品種 欄位 JSON 字串轉換為 dict
-    try:
-        parsed_breed = json.loads(adoption.breed)
-        if not isinstance(parsed_breed, dict):
-            parsed_breed = {'breed_choice': '', 'breed_other': ''}
-    except Exception:
-        parsed_breed = {'breed_choice': '', 'breed_other': ''}
-
-    # 將 vaccine疫苗 欄位 JSON 字串轉換為 dict
-    try:
-        parsed_vaccine = json.loads(adoption.vaccine)
-        if not isinstance(parsed_vaccine, dict):
-            parsed_vaccine = {'vaccine_choice': '', 'vaccine_other': ''}
-    except Exception:
-        parsed_vaccine = {'vaccine_choice': '', 'vaccine_other': ''}
-
     return render(request, 'adoptions/adoption_petDetail.html', {
         'adoption': adoption,
         'is_owner': is_owner,
@@ -2355,8 +2304,7 @@ def adoption_petDetail(request, adoption_id):
         'parsed_feature': parsed_feature,
         'parsed_physical_condition': parsed_physical_condition,
         'parsed_adoption_condition': parsed_adoption_condition,
-        'parsed_breed' : parsed_breed,
-        'parsed_vaccine' : parsed_vaccine,
+
     })
 
 # 從‘我的寵物’ 送養
@@ -2416,10 +2364,13 @@ def safe_json_loads(value):
     except (json.JSONDecodeError, TypeError):
         return {}
 
+
 @login_required
 def edit_adoption(request, pk):
     adoption = get_object_or_404(AdoptionPet, pk=pk)
-
+    other_pet_names = list(
+        AdoptionPet.objects.filter(owner=request.user).values_list("name", flat=True)
+    )
     vaccine_records = []
     if adoption.original_pet:
         vaccine_records = adoption.original_pet.vaccine_records.all()
@@ -2461,14 +2412,15 @@ def edit_adoption(request, pk):
             return render(request, 'adoptions/edit_adoption.html', {
                 'adoption_form': form,
                 'adoption': adoption,
-                'picture_fields': picture_fields,
+                'other_pet_names': other_pet_names,
                 'feature_choices': FEATURE_CHOICES,
                 'physical_choices': PHYSICAL_CHOICES,
-                'adoptcondition_choices': ADOPTCONDITION_CHOICES,
+                'adoptcondition_choices' : ADOPTCONDITION_CHOICES,
                 'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
                 'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
-                'dogvaccine_choices':json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
-                'catvaccine_choices':json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+                'dogvaccine_choices': json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
+                'catvaccine_choices': json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+                'vaccine_records': vaccine_records,
             })
 
     else:
@@ -2476,38 +2428,8 @@ def edit_adoption(request, pk):
         feature_data = safe_json_loads(adoption.feature)
         physical_data = safe_json_loads(adoption.physical_condition)
         adoptcondition_data = safe_json_loads(adoption.adoption_condition)
-        breed_data = safe_json_loads(adoption.breed)
-        vaccine_data = safe_json_loads(adoption.vaccine)
-
-        # 預設 vaccine_other
-        vaccine_other_initial = vaccine_data.get('vaccine_other', '')
-
-        # 如果有 original_pet，從疫苗紀錄取並整理
-        if hasattr(adoption, 'original_pet') and adoption.original_pet:
-            vaccine_names = set()
-            for record in adoption.original_pet.vaccine_records.all():
-                if record.name:
-                    vaccine_names.add(record.name.strip())
-            if vaccine_names:
-                vaccine_other_initial = "，".join(sorted(vaccine_names))
-
-        # 先取得原本的選擇值
-        initial_vaccine_choice = vaccine_data.get('vaccine_choice', '')
-        # 如果有疫苗記錄，vaccine_choice 就改成「其他」
-        if vaccine_other_initial:
-            initial_vaccine_choice = '其他'
 
         form = AdoptionForm(instance=adoption, initial={
-            'feature_choice': feature_data.get('feature_choice', ''),
-            'feature_other': feature_data.get('feature_other', ''),
-            'physical_condition_choice': physical_data.get('physical_condition_choice', ''),
-            'physical_condition_other': physical_data.get('physical_condition_other', ''),
-            'adoption_condition_choice': adoptcondition_data.get('adoption_condition_choice', ''),
-            'adoption_condition_other': adoptcondition_data.get('adoption_condition_other', ''),
-            'breed_choice': breed_data.get('breed_choice', ''),
-            'breed_other': breed_data.get('breed_other', ''),
-            'vaccine_choice': initial_vaccine_choice,
-            'vaccine_other': vaccine_other_initial,
         })
         return render(request, 'adoptions/edit_adoption.html', {
             'adoption_form': form,
@@ -2516,12 +2438,17 @@ def edit_adoption(request, pk):
             'feature_choices': FEATURE_CHOICES,
             'feature_initial': feature_data,
             'physical_choices': PHYSICAL_CHOICES,
-            'adoptcondition_choices': ADOPTCONDITION_CHOICES,
+            'other_pet_names': other_pet_names,
+            'adoptcondition_choices' : ADOPTCONDITION_CHOICES,
             'dog_choices': json.dumps(DOG_CHOICES, ensure_ascii=False),
             'cat_choices': json.dumps(CAT_CHOICES, ensure_ascii=False),
-            'dogvaccine_choices':json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
-            'catvaccine_choices':json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
+            'dogvaccine_choices': json.dumps(DOGVACCINE_CHOICES, ensure_ascii=False),
+            'catvaccine_choices': json.dumps(CATVACCINE_CHOICES, ensure_ascii=False),
             'vaccine_records': vaccine_records,
+
+            'initial_species': adoption.species,
+            'initial_breed': adoption.breed,
+            'initial_vaccine': adoption.vaccine,
         })
 
 
