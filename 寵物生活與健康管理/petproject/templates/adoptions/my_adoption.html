@@ -155,16 +155,7 @@
                         <i class="bi bi-calendar-heart me-1"></i>{{ adoption.age|default:"未知" }}
                       </span>
                       <span>
-                        <i class="bi bi-tag me-1"></i>
-                        {% if adoption.parsed_breed.breed_choice %}
-                        {% if adoption.parsed_breed.breed_choice == "其他" %}
-                          <span>{{ adoption.parsed_breed.breed_other }}</span>
-                        {% else %}
-                          <span>{{ adoption.parsed_breed.breed_choice }}</span>
-                        {% endif %}
-                      {% else %}
-                        <span class="badge bg-light text-muted" style="font-size: 14px;">尚無資料</span>
-                      {% endif %}
+                        <i class="bi bi-tag me-1"></i>{{ adoption.breed |default:"-" }}
                       </span>
                     </p>
 

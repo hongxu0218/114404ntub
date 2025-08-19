@@ -98,7 +98,7 @@ input, select, textarea {
 {% endblock %}
 
 {% block content %}
-<h2 style="text-align: center;">新增寵物資料</h2>
+<h2 style="text-align: center;">新增送養寵物資料</h2>
 
 <!-- JSON script 安全輸出 -->
 {{ dog_choices|json_script:"dogBreedsData" }}
@@ -108,13 +108,13 @@ input, select, textarea {
 {{ other_pet_names|default:"[]"|json_script:"otherPetNamesData" }}
 
 
-<form method="post" enctype="multipart/form-data" id="add-form">
+<form method="post" enctype="multipart/form-data" id="add-adoption-form">
     {% csrf_token %}
 
-{% if form.errors %}
+{% if adoption_form.errors %}
   <div class="text-danger">
     <h4>整體表單錯誤：</h4>
-    {{ form.errors }}
+    {{ adoption_form.errors }}
   </div>
 {% endif %}
 

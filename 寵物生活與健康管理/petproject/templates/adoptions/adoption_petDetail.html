@@ -322,7 +322,6 @@
    {{ adoption.name }} 的資料介紹   <i class="bi bi-card-text ms-2"></i>
 
 </div>
-
 <div class="adopt-card-container">
   <div class="side-by-side">
     <div class="pet-photo">
@@ -457,19 +456,43 @@
 
 {% block extra_js %}
 
+
 <script>
   const images = [
     {% for url in image_urls %}"{{ url }}"{% if not forloop.last %},{% endif %}{% endfor %}
   ];
 
   let currentIndex = 0;
+  let slideInterval = null;
+  let pauseTimeout = null;
+  let countdownInterval = null; // 秒錶計時器
+  let countdownValue = 0; // 剩餘秒數
+  const mainImage = document.getElementById('mainImage');
+  const countdownEl = document.getElementById('countdown');
+
+  function updateCountdownDisplay() {
+    countdownEl.textContent = countdownValue;
+  }
+
+  function setCountdown(seconds) {
+    clearInterval(countdownInterval);
+    countdownValue = seconds;
+    updateCountdownDisplay();
+    countdownInterval = setInterval(() => {
+      if (countdownValue > 0) {
+        countdownValue--;
+        updateCountdownDisplay();
+      }
+    }, 1000);
+  }
 
   function setMainImage(index) {
     currentIndex = index;
-    document.getElementById('mainImage').src = images[index];
+    mainImage.src = images[currentIndex];
     document.querySelectorAll('.thumbs img').forEach((img, i) => {
       img.classList.toggle('selected', i === index);
     });
+    pauseAutoSlide(); // 每次手動切換都重新計算 10 秒
   }
 
   function navigateSlide(direction) {
@@ -477,8 +500,35 @@
     setMainImage(currentIndex);
   }
 
+  function startAutoSlide() {
+    slideInterval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % images.length;
+      mainImage.src = images[currentIndex];
+      document.querySelectorAll('.thumbs img').forEach((img, i) => {
+        img.classList.toggle('selected', i === currentIndex);
+      });
+      setCountdown(5); // 每次自動切換，倒數 5 秒
+    }, 5000);
+    setCountdown(5); // 初始化倒數 5 秒
+  }
+
+  function pauseAutoSlide() {
+    clearInterval(slideInterval);
+    clearTimeout(pauseTimeout);
+    // 暫停 10 秒後再啟動自動切換
+    pauseTimeout = setTimeout(() => {
+      startAutoSlide();
+    }, 10000);
+    setCountdown(10); // 暫停期間倒數 10 秒
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    if (images.length > 0) setMainImage(0);
+    if (images.length > 0) {
+      setMainImage(0);
+      startAutoSlide();
+    }
   });
 </script>
+
+
 {% endblock %}

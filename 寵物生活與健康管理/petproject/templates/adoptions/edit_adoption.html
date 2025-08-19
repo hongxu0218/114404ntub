@@ -56,6 +56,7 @@ input, select, textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 0 0 3px rgba(0,0,0,0.1);
+    max-height: 120px;
 }
 .filename {
     font-size: 0.9em;
@@ -101,12 +102,6 @@ input, select, textarea {
   display: inline-block;
 }
 
-.preview-img {
-  max-height: 120px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
 .delete-img-btn {
   position: absolute;
   top: -8px;
@@ -122,8 +117,32 @@ input, select, textarea {
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
+.form-other-group{
+  display:none;
+  margin-bottom:0px;
+}
+#feature-other-group label {
+  font-size: 0;     /* 文字大小為 0，不會顯示文字 */
+  margin: 0;        /* 移除外距 */
+  padding: 0;       /* 移除內距 */
+  height: 0;        /* 高度壓縮 */
+  line-height: 0;   /* 行高壓縮 */
+}
 
-
+#physical-condition-other-group label {
+  font-size: 0;     /* 文字大小為 0，不會顯示文字 */
+  margin: 0;        /* 移除外距 */
+  padding: 0;       /* 移除內距 */
+  height: 0;        /* 高度壓縮 */
+  line-height: 0;   /* 行高壓縮 */
+}
+#adoption-condition-other-group label {
+  font-size: 0;     /* 文字大小為 0，不會顯示文字 */
+  margin: 0;        /* 移除外距 */
+  padding: 0;       /* 移除內距 */
+  height: 0;        /* 高度壓縮 */
+  line-height: 0;   /* 行高壓縮 */
+}
 
 
 </style>
@@ -140,49 +159,75 @@ input, select, textarea {
     </div>
   {% endif %}
 
-
 <form method="post" enctype="multipart/form-data" id="edit-adoption-form">
   {% csrf_token %}
 
-<!-- 種類 (前端顯示) -->
-<div class="form-group">
-  <label for="species_select"><strong>種類</strong></label>
-  <select id="species_select" class="form-control" style=margin-bottom:3px;">
-    <option value="">請選擇</option>
-    {% for value, label in species.choices %}
-      <option value="{{ value }}" {% if adoption_form.instance.species == value %}selected{% endif %}>
-        {{ label }}
-      </option>
-    {% endfor %}
-  </select>
-</div>
-<!-- 其他種類 -->
-<div id="species_other_group" style="display:none;">
-  <input type="text" id="id_species_other" name="species_other"
-         value="{{ adoption_form.species_other.value|default_if_none:'' }}"
-         placeholder="請輸入寵物的種類">
-</div>
-<!-- 隱藏欄位存後端實際值 -->
-<input type="hidden" id="initial_species" value="{{ adoption_form.species.value }}">
-<input type="hidden" id="hiddenSpecies" name="species">
+  <!-- 種類 -->
+  <div class="form-group">
+    <label for="species_select"><strong>種類</strong></label>
+    <select id="species_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <option value="狗">狗</option>
+      <option value="貓">貓</option>
+      <option value="其他">其他</option>
+    </select>
+  </div>
+  <!-- 其他種類 -->
+  <div id="species_other_group" class="form-other-group">
+    {{ adoption_form.species_other }}
+    {% if adoption_form.species_other.errors %}
+    <div class="text-danger">{{ adoption_form.species_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端隱藏欄位 -->
+  <input type="hidden" name="species" id="id_species" value="{{ adoption_form.species.value|default_if_none:'' }}">
+  {% if adoption_form.species.errors %}
+    <div class="text-danger">{{ adoption_form.species.errors }}</div>
+  {% endif %}
+
+  <!-- 品種 (前端顯示) -->
+  <div class="form-group">
+    <label for="breed_select"><strong>品種</strong></label>
+    <select id="breed_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <!-- 預設先空，會依種類動態更新 -->
+    </select>
+  </div>
+  <!-- 其他品種 -->
+  <div id="breed_other_group" class="form-other-group">
+    {{ adoption_form.breed_other }}
+    {% if adoption_form.breed_other.errors %}
+    <div class="text-danger">{{ adoption_form.breed_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端實際存的 breed（隱藏） -->
+  <input type="hidden" name="breed" id="id_breed" value="{{ adoption_form.breed.value|default_if_none:'' }}">
+    {% if adoption_form.breed.errors %}
+    <div class="text-danger">{{ adoption_form.breed.errors }}</div>
+    {% endif %}
 
 
-<!-- 品種 (前端顯示) -->
-<div class="form-group">
-  <label for="breed_select"><strong>品種</strong></label>
-  <select id="breed_select" class="form-control" style=margin-bottom:3px;">
-    <option value="">請選擇</option>
-  </select>
-</div>
-<!-- 其他品種 -->
-<div id="breed_other_group" style="display:none;">
-  <input type="text" id="id_breed_other" name="breed_other"
-         value="{{ adoption_form.breed_other.value|default_if_none:'' }}"
-         placeholder="請輸入寵物的品種">
-</div>
-<!-- 隱藏欄位存後端實際值 -->
-<input type="hidden" id="initial_breed" value="{{ adoption_form.breed.value }}">
-<input type="hidden" id="hiddenBreed" name="breed">
+  <!-- 疫苗 vaccine (前端顯示) -->
+  <div class="form-group">
+    <label for="vaccine_select"><strong>疫苗</strong></label>
+    <select id="vaccine_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <!-- 預設先空，會依種類動態更新 -->
+    </select>
+  </div>
+  <!-- 其他疫苗 -->
+  <div id="vaccine_other_group" class="form-other-group">
+    {{ adoption_form.vaccine_other }}
+    {% if adoption_form.vaccine_other.errors %}
+    <div class="text-danger">{{ adoption_form.vaccine_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端實際存的 vaccine（隱藏） -->
+  <input type="hidden" name="vaccine" id="id_vaccine" value="{{ adoption_form.vaccine.value|default_if_none:'' }}">
+    {% if adoption_form.vaccine.errors %}
+    <div class="text-danger">{{ adoption_form.vaccine.errors }}</div>
+    {% endif %}
+
 
 
   <!-- 名字 -->
@@ -213,28 +258,14 @@ input, select, textarea {
   {{ adoption_form.weight }}<div class="text-danger">{{ adoption_form.weight.errors }}</div>
 
 <!-- 疫苗 vaccine -->
+
+
+
+
+
+<!-- 個性特徵 -->
 <div class="form-group">
-  <label for="vaccine_select"><strong>疫苗</strong></label>
-  <select id="vaccine_select" class="form-control" style=margin-bottom:3px;">
-    <option value="">請選擇</option>
-  </select>
-</div>
-<!-- 其他疫苗 -->
-<div id="vaccine_other_group" style="display:none;">
-  <input type="text" id="id_vaccine_other" name="vaccine_other"
-         value="{{ adoption_form.vaccine_other.value|default_if_none:'' }}"
-         placeholder="請輸入寵物的疫苗">
-</div>
-<!-- 隱藏欄位存後端實際值 -->
-<input type="hidden" id="initial_vaccine" value="{{ adoption_form.vaccine.value }}">
-<input type="hidden" id="hiddenVaccine" name="vaccine">
-
-
-
-
-  <!-- 個性特徵 -->
-<div class="form-group">
-  <label for="id_feature_choice">個性特徵：</label>
+  <label for="id_feature_choice"><strong>個性特徵</strong></label>
   {{ adoption_form.feature_choice }}
   {% if adoption_form.feature_choice.errors %}
   <div class="text-danger">
@@ -242,10 +273,10 @@ input, select, textarea {
   </div>
   {% endif %}
 </div>
-<!-- 這段會在選「其他」時顯示 -->
-<div id="other-feature-block" style="display: none; margin-top: -45px;">
-  <label for="id_feature_other">
-  {{ adoption_form.feature_other }}</label>
+<!-- 其他說明輸入框（初始隱藏） -->
+<div class="form-group" id="feature-other-group" style="display: none;">
+  <label for="id_feature_other"></label>
+  {{ adoption_form.feature_other }}
   {% if adoption_form.feature_other.errors %}
     <div class="text-danger">
       {% for error in adoption_form.feature_other.errors %}
@@ -256,9 +287,9 @@ input, select, textarea {
 </div>
 
 
-  <!-- 健康狀況 -->
+<!-- 健康狀況 -->
 <div class="form-group">
-  <label for="id_physical_condition_choice">健康狀況：</label>
+  <label for="id_physical_condition_choice"><strong>健康狀況</strong></label>
   {{ adoption_form.physical_condition_choice }}
   {% if adoption_form.physical_condition_choice.errors %}
   <div class="text-danger">
@@ -266,10 +297,10 @@ input, select, textarea {
   </div>
   {% endif %}
 </div>
-<!-- 這段會在選「其他」時顯示 -->
-<div id="other-physical-condition-block" style="display: none; margin-top: -38px;">
-  <label for="id_physical_condition_other">
-  {{ adoption_form.physical_condition_other }}</label>
+<!-- 其他說明輸入框（初始隱藏） -->
+<div class="form-group" id="physical-condition-other-group" style="display: none;">
+  <label for="id_physical_condition_other"></label>
+  {{ adoption_form.physical_condition_other }}
   {% if adoption_form.physical_condition_other.errors %}
     <div class="text-danger">
       {% for error in adoption_form.physical_condition_other.errors %}
@@ -279,9 +310,10 @@ input, select, textarea {
   {% endif %}
 </div>
 
-  <!-- 領養條件 -->
+
+<!-- 領養條件 -->
 <div class="form-group">
-  <label for="id_adoption_condition_choice">領養條件：</label>
+  <label for="id_adoption_condition_choice"><strong>領養條件</strong></label>
   {{ adoption_form.adoption_condition_choice }}
   {% if adoption_form.adoption_condition_choice.errors %}
   <div class="text-danger">
@@ -289,10 +321,10 @@ input, select, textarea {
   </div>
   {% endif %}
 </div>
-<!-- 這段會在選「其他」時顯示 -->
-<div id="other-adoption-condition-block" style="display: none; margin-top: -38px;">
-  <label for="id_adoption_condition_other">
-  {{ adoption_form.adoption_condition_other }}</label>
+<!-- 其他說明輸入框（初始隱藏） -->
+<div class="form-group" id="adoption-condition-other-group" style="display: none;">
+  <label for="id_adoption_condition_other"></label>
+  {{ adoption_form.adoption_condition_other }}
   {% if adoption_form.adoption_condition_other.errors %}
     <div class="text-danger">
       {% for error in adoption_form.adoption_condition_other.errors %}
@@ -333,7 +365,7 @@ input, select, textarea {
 
 
 {% for pic in picture_fields %}
-  <label class="label-bold">圖片 {{ pic.index }}</label>
+  <label class="label-bold" for="id_{{ pic.name }}">圖片 {{ pic.index }}</label>
   <div class="current-image">
     <img id="preview{{ pic.index }}" class="preview-img"
          {% if pic.image and pic.image.name %}
@@ -374,252 +406,224 @@ input, select, textarea {
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  for (let i = 1; i <= 4; i++) {
-    const input = document.getElementById('id_adopt_picture' + i);
-    const preview = document.getElementById('preview' + i);
-    const filenameSpan = document.getElementById('filename' + i);
+{{ block.super }}
 
-    if (input) {
-      input.addEventListener('change', function (event) {
-        const file = event.target.files[0];
-        if (file) {
+<script>
+  window.dog_choices = JSON.parse('{{ dog_choices|escapejs }}');
+  window.cat_choices = JSON.parse('{{ cat_choices|escapejs }}');
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  const form = document.querySelector('edit-adoption-form');
+
+// 種類、品種 後端預填值
+    const speciesSelect = document.getElementById('species_select');
+    const speciesOtherGroup = document.getElementById('species_other_group');
+    const speciesOtherInput = document.getElementById('id_species_other');
+    const hiddenSpecies = document.getElementById('id_species');
+
+    const breedSelect = document.getElementById('breed_select');
+    const breedOtherGroup = document.getElementById('breed_other_group');
+    const breedOtherInput = document.getElementById('id_breed_other');
+    const hiddenBreed = document.getElementById('id_breed');
+
+    const vaccineSelect = document.getElementById('vaccine_select');
+    const vaccineOtherGroup = document.getElementById('vaccine_other_group');
+    const vaccineOtherInput = document.getElementById('id_vaccine_other');
+    const hiddenVaccine = document.getElementById('id_vaccine');
+
+    const dogBreeds = {{ dog_choices|safe }};
+    const catBreeds = {{ cat_choices|safe }};
+    const dogVaccines = {{ dogvaccine_choices|safe }};
+    const catVaccines = {{ catvaccine_choices|safe }};
+
+    // 後端傳進來的原始值
+    const initialSpecies = hiddenSpecies.value;
+    const initialBreed = hiddenBreed.value;
+    const initialVaccine = hiddenVaccine.value;
+
+    function updateSpecies(setInitial=false) {
+        const value = speciesSelect.value;
+        hiddenSpecies.value = value;
+
+        speciesOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+        if (value !== '其他' && !setInitial) speciesOtherInput.value = '';
+
+        let breeds = [['', '請選擇']];
+        if (value === '狗') breeds = breeds.concat(dogBreeds);
+        if (value === '貓') breeds = breeds.concat(catBreeds);
+        if (value === '其他') breeds.push(['其他', '其他']);
+
+        breedSelect.innerHTML = breeds.map(o =>
+            `<option value="${o[0]}">${o[1]}</option>`
+        ).join('');
+
+        if (setInitial && initialBreed) {
+            breedSelect.value = initialBreed;
+        }
+
+        let vaccines = [['', '請選擇']];
+        if (value === '狗') vaccines = vaccines.concat(dogVaccines);
+        if (value === '貓') vaccines = vaccines.concat(catVaccines);
+        if (value === '其他') vaccines.push(['其他', '其他']);
+
+        vaccineSelect.innerHTML = vaccines.map(o =>
+            `<option value="${o[0]}">${o[1]}</option>`
+        ).join('');
+
+        if (setInitial && initialVaccine) {
+            vaccineSelect.value = initialVaccine;
+        }
+
+        updateBreed(setInitial);
+        updateVaccine(setInitial);
+    }
+
+    function updateBreed(setInitial=false) {
+        const value = breedSelect.value;
+        hiddenBreed.value = value;
+
+        breedOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+        if (value !== '其他' && !setInitial) breedOtherInput.value = '';
+    }
+    function updateVaccine(setInitial=false) {
+        const value = vaccineSelect.value;
+        hiddenVaccine.value = value;
+
+        vaccineOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+        if (value !== '其他' && !setInitial) vaccineOtherInput.value = '';
+    }
+
+    speciesSelect.addEventListener('change', () => updateSpecies(false));
+    breedSelect.addEventListener('change', () => updateBreed(false));
+    vaccineSelect.addEventListener('change', () => updateVaccine(false));
+
+// 初始化選項
+if (initialSpecies) {
+    if (initialSpecies === '狗' || initialSpecies === '貓' || initialSpecies === '其他') {
+        speciesSelect.value = initialSpecies;
+    } else {
+        // 如果是使用者自填的
+        speciesSelect.value = '其他';
+        hiddenSpecies.value = '其他';
+        speciesOtherInput.value = initialSpecies;  // 顯示到「其他種類」輸入框
+    }
+}
+updateSpecies(true);
+
+if (initialBreed) {
+    const dogBreeds = {{ dog_choices|safe }};
+    const catBreeds = {{ cat_choices|safe }};
+    const validBreeds = dogBreeds.concat(catBreeds).map(b => b[0]).concat(['其他']);
+
+    if (validBreeds.includes(initialBreed)) {
+        breedSelect.value = initialBreed;
+    } else {
+        breedSelect.value = '其他';
+        hiddenBreed.value = '其他';
+        breedOtherInput.value = initialBreed;  // 顯示到「其他品種」輸入框
+    }
+}
+updateBreed(true);
+
+if (initialVaccine) {
+    const dogVaccines = {{ dogvaccine_choices|safe }};
+    const catVaccines = {{ catvaccine_choices|safe }};
+    const validVaccines = dogVaccines.concat(catVaccines).map(b => b[0]).concat(['其他']);
+
+    if (validVaccines.includes(initialVaccine)) {
+        vaccineSelect.value = initialVaccine;
+    } else {
+        vaccineSelect.value = '其他';
+        hiddenVaccine.value = '其他';
+        vaccineOtherInput.value = initialVaccine;  // 顯示到「其他品種」輸入框
+    }
+}
+updateVaccine(true);
+
+
+    // ===== 提交前同步 hidden =====
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            hiddenSpecies.value = speciesSelect.value === '其他' ? speciesOtherInput.value.trim() : speciesSelect.value;
+            hiddenBreed.value = breedSelect.value === '其他' ? breedOtherInput.value.trim() : breedSelect.value;
+            hiddenVaccine.value = vaccineSelect.value === '其他' ? vaccineOtherInput.value.trim() : vaccineSelect.value;
+
+            const enteredName = nameInput.value.trim().toLowerCase();
+            if (otherPetNames.includes(enteredName)) {
+                const confirmAdd = confirm("已有這個名字的毛孩，還是確定新增嗎？");
+                if (!confirmAdd) e.preventDefault();
+            }
+        });
+    }
+
+
+    // ===== 圖片預覽 =====
+  // 圖片預覽，支援多張圖片預覽
+  const previewMap = {
+    'id_adopt_picture1': 'preview1',
+    'id_adopt_picture2': 'preview2',
+    'id_adopt_picture3': 'preview3',
+    'id_adopt_picture4': 'preview4'
+  };
+
+  Object.entries(previewMap).forEach(([inputId, previewId]) => {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+
+    if (input && preview) {
+      input.addEventListener('change', function () {
+        if (input.files && input.files[0]) {
           const reader = new FileReader();
           reader.onload = function (e) {
-            if (preview) {
-              preview.src = e.target.result;
-              preview.style.display = 'block';
-            }
-            if (filenameSpan) {
-              filenameSpan.textContent = file.name;
-            }
+            preview.src = e.target.result;
+            preview.style.display = 'block';
           };
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(input.files[0]);
         }
       });
     }
-  }
-
-  // ✅ feature_choice: 顯示或隱藏「其他」輸入欄
-  const featureChoice = document.getElementById("id_feature_choice");
-  const otherFeatureBlock = document.getElementById("other-feature-block");  // ✅ 正確 ID
-
-  function toggleFeatureOtherField() {
-    if (featureChoice.value === "其他") {
-      otherFeatureBlock.style.display = "block";
-    } else {
-      otherFeatureBlock.style.display = "none";
-    }
-  }
-  featureChoice.addEventListener("change", toggleFeatureOtherField);
-  toggleFeatureOtherField(); // 初始呼叫一次
-
-
-// ✅ physical_condition_choice: 顯示或隱藏「其他」輸入欄
-const physicalChoice = document.getElementById("id_physical_condition_choice");
-const otherPhysicalBlock = document.getElementById("other-physical-condition-block");  // ✅ 正確 ID
-
-function togglePhysicalOtherField() {
-  if (physicalChoice.value === "其他") {
-    otherPhysicalBlock.style.display = "block";
-  } else {
-    otherPhysicalBlock.style.display = "none";
-  }
-}
-physicalChoice.addEventListener("change", togglePhysicalOtherField);
-togglePhysicalOtherField(); // 初始呼叫一次
-
-
-// ✅ adoption_condition_choice: 顯示或隱藏「其他」輸入欄
-const adoptconditionChoice = document.getElementById("id_adoption_condition_choice");
-const otherAdoptconditionBlock = document.getElementById("other-adoption-condition-block");  // ✅ 正確 ID
-
-function toggleAdoptconditionOtherField() {
-  if (adoptconditionChoice.value === "其他") {
-    otherAdoptconditionBlock.style.display = "block";
-  } else {
-    otherAdoptconditionBlock.style.display = "none";
-  }
-}
-adoptconditionChoice.addEventListener("change", toggleAdoptconditionOtherField);
-toggleAdoptconditionOtherField(); // 初始呼叫一次
-
-
-
-// ✅ 種類、品種、疫苗 顯示或隱藏「其他」輸入欄
-  const speciesSelect = document.getElementById('species_select');
-  const speciesOtherGroup = document.getElementById('species_other_group');
-  const speciesOtherInput = document.getElementById('id_species_other');
-  const hiddenSpecies = document.getElementById('id_species');
-
-  const breedSelect = document.getElementById('breed_select');
-  const breedOtherGroup = document.getElementById('breed_other_group');
-  const breedOtherInput = document.getElementById('id_breed_other');
-  const hiddenBreed = document.getElementById('id_breed');
-
-  const vaccineSelect = document.getElementById('vaccine_select');
-  const vaccineOtherGroup = document.getElementById('vaccine_other_group');
-  const vaccineOtherInput = document.getElementById('id_vaccine_other');
-  const hiddenVaccine = document.getElementById('id_vaccine');
-
-  // 從 Django 傳入的選項
-  const dogBreeds = {{ dog_choices|safe }};
-  const catBreeds = {{ cat_choices|safe }};
-  const dogVaccine = {{ dogvaccine_choices|safe }};
-  const catVaccine = {{ catvaccine_choices|safe }};
-
-  // 儲存後端的初始值（用於編輯時預填）
-  const initialSpecies = hiddenSpecies.value || '';
-  const initialBreed = hiddenBreed.value || '';
-  const initialVaccine = hiddenVaccine.value || '';
-
-  function updateSpecies() {
-    const value = speciesSelect.value;
-    hiddenSpecies.value = value;
-
-    // 顯示 / 隱藏「其他種類」文字框
-    speciesOtherGroup.style.display = value === '其他' ? 'block' : 'none';
-    if (value !== '其他') speciesOtherInput.value = '';
-
-    // 更新品種下拉選單
-    let breeds = [['', '請選擇']];
-    if (value === '狗') breeds = breeds.concat(dogBreeds);
-    if (value === '貓') breeds = breeds.concat(catBreeds);
-    if (value === '其他') breeds.push(['其他','其他']);
-    breedSelect.innerHTML = breeds.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('');
-
-    // 編輯時，若後端有值，嘗試選中
-    if (initialBreed && breeds.some(b => b[0] === initialBreed)) {
-      breedSelect.value = initialBreed;
-    } else if (initialBreed) {
-      // 後端值不在選項中，選「其他」並填入文字框
-      breedSelect.value = '其他';
-      breedOtherGroup.style.display = 'block';
-      breedOtherInput.value = initialBreed;
-    } else {
-      breedSelect.value = '';
-    }
-    updateBreed();
-
-    // 更新疫苗下拉選單
-    let vaccines = [['', '請選擇']];
-    if (value === '狗') vaccines = vaccines.concat(dogVaccine);
-    if (value === '貓') vaccines = vaccines.concat(catVaccine);
-    if (value === '其他') vaccines.push(['其他','其他']);
-    vaccineSelect.innerHTML = vaccines.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('');
-
-    // 編輯時預填疫苗
-    if (initialVaccine && vaccines.some(v => v[0] === initialVaccine)) {
-      vaccineSelect.value = initialVaccine;
-    } else if (initialVaccine) {
-      vaccineSelect.value = '其他';
-      vaccineOtherGroup.style.display = 'block';
-      vaccineOtherInput.value = initialVaccine;
-    } else {
-      vaccineSelect.value = '';
-    }
-    updateVaccine();
-  }
-
-  function updateBreed() {
-    const value = breedSelect.value;
-    hiddenBreed.value = value;
-    breedOtherGroup.style.display = value === '其他' ? 'block' : 'none';
-    if (value !== '其他') breedOtherInput.value = '';
-  }
-
-  function updateVaccine() {
-    const value = vaccineSelect.value;
-    hiddenVaccine.value = value;
-    vaccineOtherGroup.style.display = value === '其他' ? 'block' : 'none';
-    if (value !== '其他') vaccineOtherInput.value = '';
-  }
-
-  // 事件綁定
-  speciesSelect.addEventListener('change', updateSpecies);
-  breedSelect.addEventListener('change', updateBreed);
-  vaccineSelect.addEventListener('change', updateVaccine);
-
-  // 初始化（先選種類，再自動選品種與疫苗）
-  if (initialSpecies) {
-    speciesSelect.value = initialSpecies;
-  }
-  updateSpecies();
-
-
-
-
-// ✅ 清除圖片預覽與 input
-function clearImage(index) {
-  const input = document.getElementById('id_adopt_picture' + index);
-  const preview = document.getElementById('preview' + index);
-  const filenameSpan = document.getElementById('filename' + index);
-
-  if (input) input.value = '';  // 清除檔案選取
-  if (preview) {
-    preview.src = '';
-    preview.style.display = 'none';
-  }
-  if (filenameSpan) filenameSpan.textContent = '';
-}
-
-// ✅ 刪除伺服器端舊圖片
-function confirmDeleteImage(adoptionId, pictureField) {
-  if (confirm("你確定要刪除這張舊圖片嗎？")) {
-    fetch(`/adoption/${adoptionId}/delete_image/${pictureField}/`, {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': '{{ csrf_token }}',
-      }
-    })
-    .then(response => {
-      if (response.ok) {
-        location.reload();
-      } else {
-        alert('刪除失敗');
-      }
-    });
-  }
-}
-
-
-let formChanged = false;
-  const form = document.getElementById('edit-adoption-form');
-
-  // 偵測表單有改動
-  form.addEventListener('change', () => {
-    formChanged = true;
   });
+function setupOtherToggle(selectId, groupId, inputId) {
+    const selectEl = document.getElementById(selectId);
+    const groupEl = document.getElementById(groupId);
+    const inputEl = document.getElementById(inputId);
 
-  // 判斷表單資料是否完整（可依需求調整欄位）
-  function isFormComplete() {
-    // 範例：檢查幾個必填欄位（可以擴充）
-    const requiredIds = [
-      'id_species', 'id_breed_choice', 'id_name', 'id_chip', 'id_birth_date', 'id_gender'
-    ];
-    for (const id of requiredIds) {
-      const el = document.getElementById(id);
-      if (!el) continue;
-      if (!el.value || el.value.trim() === '') {
-        return false;
-      }
+    if (!selectEl || !groupEl || !inputEl) {
+        console.warn("⚠️ 找不到元素:", selectId, groupId, inputId);
+        return;
     }
-    return true;
-  }
 
-  window.addEventListener('beforeunload', function (e) {
-    if (formChanged && !isFormComplete()) {
-      const confirmationMessage = '寵物資料不完整，會導致送養失敗，確定離開編輯頁面嗎？';
-      e.preventDefault();
-      e.returnValue = confirmationMessage; // Chrome 需要設定這個
-      return confirmationMessage;
+    function toggle() {
+        let value = selectEl.value ? selectEl.value.trim() : "";
+
+        // 抓取目前 <select> 的所有 option
+        const options = Array.from(selectEl.options).map(o => o.value.trim());
+
+        // 規則：
+        // 1. 選到 "其他" → 顯示輸入框
+        // 2. 或者選到的值不在 options 裡 → 當作 "其他"
+        if (value === "其他" || (value && !options.includes(value))) {
+            groupEl.style.display = "block";
+            if (value !== "其他") inputEl.value = value; // 預填原始值
+        } else {
+            groupEl.style.display = "none";
+            inputEl.value = "";
+        }
     }
-  });
+
+    selectEl.addEventListener("change", toggle);
+    toggle(); // 初次載入
+}
+
+    setupOtherToggle('id_feature_choice', 'feature-other-group', 'id_feature_other');
+    setupOtherToggle('id_physical_condition_choice', 'physical-condition-other-group', 'id_physical_condition_other');
+    setupOtherToggle('id_adoption_condition_choice', 'adoption-condition-other-group', 'id_adoption_condition_other');
 
 
- });
+
+});
 </script>
-
-
 {% endblock %}

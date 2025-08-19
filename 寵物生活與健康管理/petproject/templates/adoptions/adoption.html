@@ -135,7 +135,6 @@
     <h2><img src="{% static 'images/icon-adoption.png' %}" alt="領養圖示" class="icon-adoption-adopt"> 領養專區</h2>
     <a href="{% url 'my_adoption' %}" class="btn btn-publish"><i class="bi-pencil-square me-1"></i>
       我要刊登</a>
-    <a href="{% url 'add_adoptpet' %}" class="add-btn text-decoration-none"> 新增測試 </a>
   </div>
 <form method="get" class="mb-4 search-bar rounded px-3 py-3">
   <div class="row g-2">
@@ -237,16 +236,7 @@
                         <i class="bi bi-calendar-heart me-1"></i>{{ adoption.age|default:"未知" }}
                       </span>
                       <span>
-                        <i class="bi bi-tag me-1"></i>
-                        {% if adoption.parsed_breed.breed_choice %}
-                        {% if adoption.parsed_breed.breed_choice == "其他" %}
-                          <span>{{ adoption.parsed_breed.breed_other }}</span>
-                        {% else %}
-                          <span>{{ adoption.parsed_breed.breed_choice }}</span>
-                        {% endif %}
-                      {% else %}
-                        <span class="badge bg-light text-muted" style="font-size: 14px;">尚無資料</span>
-                      {% endif %}
+                        <i class="bi bi-tag me-1"></i>{{ adoption.breed |default:"-" }}
                       </span>
                     </p>
 
