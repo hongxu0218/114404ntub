@@ -111,7 +111,7 @@ window.PawDayHomepage = {
     // ---- 小工具 ----
     const history = []; // 只在前端保存，後端僅取最近 6 則
     let busy = false;
-    const API_PATH = '/api/chat'; // 後端請在 petapp/urls.py 加上 path("api/chat", views.api_chat, ...)
+    const API_PATH = '/api/chat/'; // 後端請在 petapp/urls.py 加上 path("api/chat/", views.api_chat, ...)
 
     const addBubble = (sender, text) => {
       const msgDiv = document.createElement("div");

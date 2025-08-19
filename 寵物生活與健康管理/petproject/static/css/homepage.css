@@ -501,75 +501,69 @@
   }
 }
 
-/* ===== AI 客服對話框 ===== */
-#chatbot-button {
-    position: fixed;
-    bottom: 80px;  /* 原本是 20px，往上移 */
-    right: 20px;
-    background: var(--primary-orange);
-    color: white;
-    border-radius: 50%;
-    padding: 15px;
-    cursor: pointer;
-    font-size: 20px;
-    box-shadow: 0px 2px 10px rgba(0,0,0,0.3);
-    z-index: 999;
-    transition: transform 0.2s ease;
-}
-#chatbot-button:hover {
-    transform: scale(1.1);
+/* === AI 客服懸浮元件 === */
+#chatbot-button{
+  position: fixed;
+  right: 20px;
+  bottom: 88px;                 /* 預留 88px，避免壓到回到頂部按鈕 */
+  width: 56px; height: 56px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #0b0b0b;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  cursor: pointer;
+  z-index: 9999;
 }
 
-#chatbot-box {
-    display: none;
-    position: fixed;
-    bottom: 140px; /* 原本是 80px，跟按鈕保持間距 */
-    right: 20px;
-    width: 320px;
-    height: 420px;
-    background: var(--warm-bg);
-    border-radius: 10px;
-    box-shadow: 0px 2px 10px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-    overflow: hidden;
+#chatbot-box{
+  position: fixed;
+  right: 20px;
+  bottom: 160px;                /* 與按鈕垂直錯開 */
+  width: 360px; max-width: 92vw;
+  height: 520px; max-height: 75vh;
+  background: #0f1115; color: #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  display: none; flex-direction: column; overflow: hidden;
+  z-index: 10000;
+  border: 1px solid rgba(255,255,255,.06);
 }
 
-#chatbot-header {
-    background: var(--text-dark);
-    color: white;
-    padding: 10px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+#chatbot-header{
+  padding: 12px 14px;
+  font-weight: 700;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+  display: flex; align-items: center; justify-content: space-between;
 }
+#chatbot-close{ cursor: pointer; opacity: .8; }
+#chatbot-close:hover{ opacity: 1; }
 
-#chatbot-messages {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-    font-size: 14px;
-    background: #fffaf2;
+#chatbot-messages{
+  flex: 1; padding: 12px; overflow: auto;
+  scrollbar-width: thin;
 }
+.cb-bubble{ padding: 10px 12px; border-radius: 12px; margin: 8px 0; line-height: 1.55; word-wrap: break-word; }
+.cb-user{ background:#2563eb; color:#fff; border-bottom-right-radius:4px; margin-left: 48px; }
+.cb-bot{ background:#1f2937; color:#fff; border-bottom-left-radius:4px; margin-right: 48px; }
 
-#chatbot-input {
-    display: flex;
-    border-top: 1px solid #ddd;
+#chatbot-input{
+  display: flex; gap: 8px; padding: 12px; border-top: 1px solid #1f2937; background: #0b0c10;
 }
-
-#chatbot-input input {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    font-size: 14px;
+#chatbot-text{
+  flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #273042;
+  background:#0f172a; color:#e5e7eb; outline: none;
 }
+#chatbot-send{
+  padding: 10px 14px; border-radius: 10px; border: none;
+  background:#22c55e; color:#0b0b0b; font-weight: 800; cursor: pointer;
+}
+#chatbot-send[disabled]{ opacity:.6; cursor: not-allowed; }
 
-#chatbot-input button {
-    background: var(--primary-orange);
-    border: none;
-    color: white;
-    padding: 10px;
-    cursor: pointer;
+/* 手機優化：把元件往上挪，避免壓到系統導覽列 */
+@media (max-width: 576px){
+  #chatbot-button{ bottom: 96px; right: 14px; }
+  #chatbot-box{ width: calc(100vw - 24px); right: 12px; bottom: 168px; height: 60vh; }
 }

@@ -131,7 +131,7 @@ urlpatterns = [
     path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),  # 急診醫院資料API
 
     # ============ AI 聊天功能（本地模型 + FAQ） ============
-    path("api/chat", views.api_chat, name="api_chat"),
+    path("api/chat/", views.api_chat, name="api_chat"),
 ]
 
 
