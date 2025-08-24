@@ -74,145 +74,194 @@ window.PawDayHomepage = {
   /**
    * 設定聊天機器人功能（覆蓋舊版：改用 /api/chat）
    */
-  setupChatbot: function() {
-    const $ = (id) => document.getElementById(id);
-    const btn   = $('chatbot-button');
-    const box   = $('chatbot-box');
-    let   closeBtn = $('chatbot-close');
-    let   sendBtn  = $('chatbot-send');
-    let   input    = $('chatbot-text');
-    let   messagesDiv = $('chatbot-messages');
+  /**
+ * 設定聊天機器人功能（串流版：/api/chat/stream/ 以 NDJSON 回傳）
+ * 只改這個函式，其他不動
+ */
+setupChatbot: function() {
+  const $ = (id) => document.getElementById(id);
+  const btn   = $('chatbot-button');
+  const box   = $('chatbot-box');
+  let   closeBtn = $('chatbot-close');
+  let   sendBtn  = $('chatbot-send');
+  let   input    = $('chatbot-text');
+  let   messagesDiv = $('chatbot-messages');
 
-    if (!btn || !box || !closeBtn || !sendBtn || !input || !messagesDiv) {
-      (window.PD?.debug?.warn || console.warn)('🔎 找不到 AI 客服 DOM 節點，跳過初始化');
-      return;
+  if (!btn || !box || !closeBtn || !sendBtn || !input || !messagesDiv) {
+    (window.PD?.debug?.warn || console.warn)('🔎 找不到 AI 客服 DOM 節點，跳過初始化');
+    return;
+  }
+
+  // ---- 清理舊事件監聽：clone 節點再綁定，確保覆蓋舊功能 ----
+  function replaceNode(el){
+    if(!el) return el;
+    const clone = el.cloneNode(true);
+    if (el.parentNode) el.parentNode.replaceChild(clone, el);
+    return clone;
+  }
+  closeBtn    = replaceNode(closeBtn);
+  sendBtn     = replaceNode(sendBtn);
+  input       = replaceNode(input);
+  messagesDiv = replaceNode(messagesDiv);
+
+  // ---- UI 調整：避免與回到頂部重疊 ----
+  try {
+    if (!btn.style.bottom) btn.style.bottom = '88px';
+    if (!box.style.bottom) box.style.bottom = '160px';
+  } catch(_) {}
+
+  // ---- 小工具 ----
+  const STREAM_URL = '/api/chat/stream/';  // 串流端點（Django）
+  const history = []; // 只在前端保存，後端僅取最近 6 則
+  let busy = false;
+
+  const addBubble = (sender, textOrHtml, asHTML = false) => {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = 'cb-bubble ' + (sender === 'user' ? 'cb-user' : 'cb-bot');
+    if (asHTML) msgDiv.innerHTML = textOrHtml;
+    else msgDiv.textContent = textOrHtml;
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return msgDiv;
+  };
+
+  const getCSRFToken = () => {
+    const name = 'csrftoken';
+    const cookies = document.cookie ? document.cookie.split(';') : [];
+    for (let c of cookies){
+      c = c.trim();
+      if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length+1));
     }
+    return null;
+  };
 
-    // ---- 清理舊事件監聽：clone 節點再綁定，確保「覆蓋舊功能」 ----
-    function replaceNodeKeepId(el){
-      if(!el) return el;
-      const clone = el.cloneNode(true);
-      if (el.parentNode) el.parentNode.replaceChild(clone, el);
-      return clone;
+  const openBox = () => {
+    box.style.display = 'flex';
+    box.style.flexDirection = 'column';
+    if (messagesDiv.childElementCount === 0) {
+      addBubble('bot', '哈囉～我是毛日好 AI 客服，要查詢預約、健康紀錄或常見問題嗎？🙂');
     }
-    closeBtn    = replaceNodeKeepId(closeBtn);
-    sendBtn     = replaceNodeKeepId(sendBtn);
-    input       = replaceNodeKeepId(input);
-    messagesDiv = replaceNodeKeepId(messagesDiv);
+    input.focus();
+  };
+  const closeBox = () => { box.style.display = 'none'; };
 
-    // ---- UI 調整：避免與回到頂部重疊 ----
-    try {
-      const btnStyle = btn.style;
-      const boxStyle = box.style;
-      if (!btnStyle.bottom) btnStyle.bottom = '88px';
-      if (!boxStyle.bottom) boxStyle.bottom = '160px';
-    } catch(_) {}
+  // ---- 串流呼叫：逐行解析 NDJSON（meta / delta / done / error）----
+  async function askRAGStream(message, historyArr) {
+    const headers = { "Content-Type": "application/json" };
+    const csrftoken = getCSRFToken();
+    if (csrftoken) headers["X-CSRFToken"] = csrftoken;
 
-    // ---- 小工具 ----
-    const history = []; // 只在前端保存，後端僅取最近 6 則
-    let busy = false;
-    const API_PATH = '/api/chat/'; // 後端請在 petapp/urls.py 加上 path("api/chat/", views.api_chat, ...)
-
-    const addBubble = (sender, text) => {
-      const msgDiv = document.createElement("div");
-      msgDiv.className = 'cb-bubble ' + (sender === 'user' ? 'cb-user' : 'cb-bot');
-      msgDiv.textContent = text;
-      messagesDiv.appendChild(msgDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    };
-
-    const addTyping = () => {
-      const div = document.createElement('div');
-      div.className = 'cb-bubble cb-bot';
-      div.textContent = '輸入中…';
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      return div;
-    };
-
-    const getCSRFToken = () => {
-      const name = 'csrftoken';
-      const cookies = document.cookie ? document.cookie.split(';') : [];
-      for (let c of cookies){
-        c = c.trim();
-        if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length+1));
-      }
-      return null;
-    };
-
-    const openBox = () => {
-      box.style.display = 'flex';
-      box.style.flexDirection = 'column';
-      if (messagesDiv.childElementCount === 0) {
-        addBubble('bot', '哈囉～我是毛日好 AI 客服，要查詢預約、健康紀錄或常見問題嗎？🙂');
-      }
-      input.focus();
-    };
-    const closeBox = () => { box.style.display = 'none'; };
-
-    // ---- 事件 ----
-    btn.addEventListener("click", () => {
-      if (box.style.display === 'flex') closeBox(); else openBox();
+    const res = await fetch(STREAM_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ message, history: historyArr }),
+      credentials: 'same-origin'
     });
-    closeBtn.addEventListener("click", closeBox);
+    if (!res.ok || !res.body) throw new Error("stream response error");
 
-    const sendMessage = async () => {
-      const text = input.value.trim();
-      if (!text || busy) return;
-      busy = true;
-      input.value = '';
-      sendBtn.setAttribute('disabled', 'disabled');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
 
-      addBubble('user', text);
-      const typing = addTyping();
-
-      try {
-        const headers = { "Content-Type": "application/json" };
-        const csrftoken = getCSRFToken();
-        if (csrftoken) headers["X-CSRFToken"] = csrftoken;
-
-        const res = await fetch(API_PATH, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ message: text, history }),
-          credentials: 'same-origin'
-        });
-
-        let reply = '（後端沒有回覆）';
-        if (res.ok) {
-          const data = await res.json().catch(() => null);
-          if (data && data.reply) reply = data.reply;
-        } else {
-          reply = `（伺服器錯誤 ${res.status}）`;
+    // 回傳 async 迭代器
+    return {
+      async *[Symbol.asyncIterator]() {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              yield JSON.parse(line);
+            } catch {
+              yield { type: "delta", text: line };
+            }
+          }
         }
-
-        typing.remove();
-        addBubble('bot', reply);
-        history.push({role:'user', content:text}, {role:'assistant', content:reply});
-      } catch (err) {
-        typing.remove();
-        addBubble('bot', '（連線失敗，請確認 /api/chat 是否可用，以及本機 Ollama 是否啟動）');
-        (window.PD?.debug?.error || console.error)(err);
-      } finally {
-        busy = false;
-        sendBtn.removeAttribute('disabled');
-        input.focus();
+        if (buffer.trim()) {
+          try { yield JSON.parse(buffer); } catch { yield { type: "delta", text: buffer }; }
+        }
       }
     };
+  }
 
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendMessage();
-      if (e.key === "Escape") closeBox();
-    });
+  // ---- 送出訊息（串流版）----
+  const sendMessageStream = async () => {
+    const text = input.value.trim();
+    if (!text || busy) return;
+    busy = true;
+    input.value = '';
+    sendBtn.setAttribute('disabled', 'disabled');
 
-    // 鍵盤快速開啟：Alt + /
-    window.addEventListener('keydown', (e) => {
-      if (e.altKey && e.key === '/') {
-        if (box.style.display === 'flex') closeBox(); else openBox();
+    // 使用者泡泡
+    addBubble('user', text);
+
+    // 機器人泡泡（會持續追加）
+    const botDiv = addBubble('bot', '<em>輸入中…</em>', true);
+
+    try {
+      const stream = await askRAGStream(text, history.slice(-6)); // 傳最近 6 則上下文
+      let started = false;
+      let sourcesHTML = "";
+
+      for await (const evt of stream) {
+        if (evt.type === "meta") {
+          const srcList = (evt.sources || []).map(s => `<li>${(s.source || '來源')}</li>`).join("");
+          if (srcList) sourcesHTML = `<details class="cb-sources"><summary>來源</summary><ul>${srcList}</ul></details>`;
+        } else if (evt.type === "delta") {
+          const piece = (evt.text || "").replace(/\n/g, "<br>");
+          if (!started) {
+            botDiv.innerHTML = piece;
+            started = true;
+          } else {
+            botDiv.innerHTML += piece;
+          }
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } else if (evt.type === "error") {
+          botDiv.textContent = evt.message || "（一般建議）發生錯誤";
+        } else if (evt.type === "done") {
+          // 串流結束：附上來源
+          if (sourcesHTML) botDiv.innerHTML += sourcesHTML;
+        }
       }
-    });
-  },
+
+      // 更新前端歷史（用於下次串流）
+      history.push(
+        { role: 'user', content: text },
+        { role: 'assistant', content: (botDiv.textContent || botDiv.innerText || '') }
+      );
+    } catch (err) {
+      botDiv.textContent = '（一般建議）連線失敗，請確認 /api/chat/stream 是否可用，以及本機 Ollama 是否啟動';
+      (window.PD?.debug?.error || console.error)(err);
+    } finally {
+      busy = false;
+      sendBtn.removeAttribute('disabled');
+      input.focus();
+    }
+  };
+
+  // ---- 事件 ----
+  btn.addEventListener("click", () => {
+    if (box.style.display === 'flex') closeBox(); else openBox();
+  });
+  closeBtn.addEventListener("click", closeBox);
+  sendBtn.addEventListener("click", sendMessageStream);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessageStream();
+    if (e.key === "Escape") closeBox();
+  });
+
+  // 鍵盤快速開啟：Alt + /
+  window.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key === '/') {
+      if (box.style.display === 'flex') closeBox(); else openBox();
+    }
+  });
+},
+
 
   /**
    * 設定新聞滾動功能

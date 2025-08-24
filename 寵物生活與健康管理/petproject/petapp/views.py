@@ -1,9 +1,8 @@
 # petapp/views.py 
 
 from collections import defaultdict
-import os
-import traceback
-from django.http import HttpResponseRedirect, JsonResponse
+import os, re, traceback, json, requests, chromadb
+from django.http import HttpResponseRedirect, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -30,7 +29,6 @@ from django.contrib import messages
 from django.views.decorators.http import require_POST, require_http_methods ,require_GET
 from datetime import date, datetime, timedelta, time
 from django.core.mail import send_mail  # 匯入發信功能
-import json, requests, chromadb
 from django.db.models import Q ,Max, F
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -3880,88 +3878,248 @@ def api_emergency_locations(request):
 
 ###############################24小時急診地圖############################
 
-################################AI聊天功能############################
+################################AI聊天功能###############################
 
-# chromadb 可能尚未安裝時，避免整體 500
+# ====== 可選：環境變數覆蓋 ======
+OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
+OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "qwen2.5:3b-instruct")  # 建議先 3B 穩定
+TOP_K           = int(os.getenv("RAG_TOP_K", "4"))
+SNIPPET_CHARS   = int(os.getenv("RAG_SNIPPET_CHARS", "800"))  # >0 時截斷每段脈絡長度
+
+# 小聊/寒暄判定與相似度門檻（可用環境變數調）
+MIN_GREETING_LEN = int(os.getenv("RAG_MIN_GREETING_LEN", "4"))   # 長度 < 4 視為可能寒暄
+MIN_SIM          = float(os.getenv("RAG_MIN_SIM", "0.60"))       # 0~1；低於此視為未命中
+
+# ====== 專案路徑 / 向量庫路徑 ======
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_DIR = os.path.join(PROJECT_ROOT, "rag", "chroma_db")   # ← 指向你的向量庫資料夾
+COLLECTION_NAME = os.getenv("RAG_COLLECTION", "faq")      # ← 和你匯入的 collection 一致
+
+# ====== 防 500：條件性載入 ======
 try:
     import chromadb
     from chromadb.config import Settings
 except Exception:
-    chromadb = None
-    Settings = None
+    chromadb, Settings = None, None
 
-# —— 絕對路徑（以 petapp/views.py 為基準，往上一層就是專案根 petproject）——
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_DIR = os.path.join(PROJECT_ROOT, "normalized_tables", "faq_db")
+# 512 維中文嵌入（與你建庫相同）
+try:
+    from sentence_transformers import SentenceTransformer
+    _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")
+except Exception:
+    _embedder = None
 
-# —— Ollama 設定 ——
-OLLAMA_CHAT_URL = "http://127.0.0.1:11434/api/chat"
-OLLAMA_MODEL = "qwen2.5:3b-instruct"
-
+# ====== 回覆風格與格式 ======
+FORMAT_INSTRUCTIONS = (
+    "【輸出格式要求】\n"
+    "若有命中知識片段：第一句以「根據提供的知識片段，」起頭；"
+    "若無命中：第一句以「（一般建議）」起頭。\n"
+    "接著輸出：\n"
+    "1) 以條列步驟（1., 2., 3.）提供可執行指引；\n"
+    "2) 接一個『注意事項：』小節，至少 2 點；\n"
+)
 SYSTEM_PROMPT = (
     "你是『毛日好 Paw&Day』網站 AI 客服，請一律使用『繁體中文』回覆，"
     "先釐清使用者需求，再以條列步驟給出精簡可執行的回答。"
     "若屬於網站功能（註冊/登入/預約/健康紀錄/通知等），請指出頁面與按鈕路徑。"
     "若用戶問 FAQs，優先引用下方檢索的知識內容；若找不到就基於一般常識回覆，並標示『（一般建議）』。"
+    "\n\n" + FORMAT_INSTRUCTIONS
 )
 
-def safe_retrieve(query: str, top_k: int = 4) -> str:
-    """向量檢索的安全包裝：套件未裝、路徑錯、collection 不在都直接回空字串。"""
+def _truncate(text: str, n: int) -> str:
+    if not n or n <= 0 or len(text) <= n:
+        return text
+    return text[:n] + "…"
+
+# ====== 小聊/寒暄偵測 ======
+_GREETING_PAT = re.compile(
+    r"^(你好|您好|哈囉|嗨|hi|hello|hey|早安|午安|晚安|在嗎|有人在嗎|測試|test|今天好嗎|最近如何|最近怎樣|你開心嗎|你今天開心嗎)$",
+    re.IGNORECASE
+)
+def is_low_intent_smalltalk(text: str) -> bool:
+    if not text:
+        return True
+    t = (text or "").strip()
+    if len(t) < MIN_GREETING_LEN:
+        return True
+    if _GREETING_PAT.match(t):
+        return True
+    # 簡單的「你…嗎？」寒暄型句子（長度不長）
+    if len(t) <= 10 and re.search(r"(開心|在嗎|好嗎|如何|怎樣|怎麼樣).*嗎[？?]?$", t):
+        return True
+    return False
+
+def smalltalk_reply() -> str:
+    return (
+        "哈囉～我在這！🙂\n"
+        "想查詢預約、健康紀錄或常見問題嗎？你可以試試：\n"
+        "1. 如何新增寵物？\n"
+        "2. 預約洗澡的流程？\n"
+        "3. 狗狗疫苗時程怎麼看？"
+    )
+
+# ====== 向量檢索：固定用 bge-small-zh-v1.5 的 query_embeddings + 相似度門檻 ======
+def safe_retrieve(query: str, top_k: int = TOP_K):
+    """
+    回傳：(context_text, sources)；若無結果或低於相似度門檻回 ("", [])。
+    sources: [{"id": 1, "source": "source_file｜sheet｜列row"} ...]
+    """
     if not chromadb or not Settings:
         print("[api_chat] chromadb 未安裝或無法匯入，略過檢索。")
-        return ""
+        return "", []
+
+    if _embedder is None:
+        print("[api_chat] _embedder 缺失，無法檢索（避免維度不符）。請安裝 sentence-transformers 並下載 BAAI/bge-small-zh-v1.5。")
+        return "", []
+
     try:
         client = chromadb.PersistentClient(path=DB_DIR, settings=Settings(anonymized_telemetry=False))
+        # ★ 不傳 embedding_function，沿用既有 collection 設定，避免衝突
         try:
-            col = client.get_collection("faq")
+            col = client.get_collection(COLLECTION_NAME)
         except Exception:
-            print(f"[api_chat] collection 'faq' 不存在（DB_DIR={DB_DIR}），略過檢索。")
-            return ""
-        res = col.query(query_texts=[query], n_results=top_k)
-        docs = res.get("documents", [[]])[0] or []
-        return "\n\n".join(docs)
+            col = client.get_or_create_collection(COLLECTION_NAME)
+    except Exception as e:
+        print(f"[api_chat] 取得 collection 失敗（COLLECTION_NAME={COLLECTION_NAME} / DB_DIR={DB_DIR}）:", e)
+        return "", []
+
+    try:
+        q_emb = _embedder.encode([query], normalize_embeddings=True).tolist()
+        res = col.query(
+            query_embeddings=q_emb,
+            n_results=top_k,
+            include=["documents", "metadatas", "distances"]   # 取距離以便做門檻
+        )
+
+        docs  = (res or {}).get("documents", [[]])[0] or []
+        metas = (res or {}).get("metadatas", [[]])[0] or []
+        dists = (res or {}).get("distances", [[]])[0] or []
+
+        # 距離 → 相似度（cosine distance ~= 1 - cosine similarity）
+        pairs = []
+        for d, m, dist in zip(docs, metas, dists):
+            try:
+                sim = 1.0 - float(dist)
+            except Exception:
+                sim = 0.0
+            if sim >= MIN_SIM:
+                pairs.append((d, m, sim))
+
+        if not pairs:
+            return "", []
+
+        # 依相似度由高到低
+        pairs.sort(key=lambda x: x[2], reverse=True)
+        docs, metas, _ = zip(*pairs)
+
+        blocks, sources = [], []
+        for i, (d, m) in enumerate(zip(docs, metas), start=1):
+            src = (
+                (m.get("source") if isinstance(m, dict) else None)
+                or "｜".join(filter(None, [
+                    m.get("source_file") if isinstance(m, dict) else None,
+                    m.get("sheet") if isinstance(m, dict) else None,
+                    f"列{m.get('row_index')}" if isinstance(m, dict) and m.get("row_index") is not None else None
+                ]))
+                or (m.get("id") if isinstance(m, dict) else None)
+                or f"doc_{i}"
+            )
+            snippet = _truncate(d, SNIPPET_CHARS) if SNIPPET_CHARS > 0 else d
+            blocks.append(f"[來源：{src}]\n{snippet}".strip())
+            sources.append({"id": i, "source": src})
+        return "\n\n---\n\n".join(blocks), sources
+
     except Exception as e:
         print("[api_chat] 檢索錯誤：", e)
         traceback.print_exc()
-        return ""
+        return "", []
 
+# ====== 與 Ollama 對話（一次回傳版） ======
 def chat_with_ollama(messages):
-    """與 Ollama 對話：容錯並相容不同回傳格式。失敗回可讀訊息而非丟例外。"""
+    """
+    失敗時回可讀訊息；使用保守生成參數降低超時。
+    """
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": messages,
+        "stream": False,
+        "options": {
+            "temperature": 0.3,
+            "num_ctx": 2048,
+            "num_predict": 256,
+            "keep_alive": "5m",
+        }
+    }
     try:
-        r = requests.post(
-            OLLAMA_CHAT_URL,
-            json={
-                "model": OLLAMA_MODEL,
-                "messages": messages,
-                "stream": False,
-                "options": {"temperature": 0.3}
-            },
-            timeout=60
-        )
+        r = requests.post(OLLAMA_CHAT_URL, json=payload, timeout=120)
         r.raise_for_status()
         data = r.json()
-
-        # 常見 2 種格式
         if isinstance(data, dict):
-            if "message" in data and isinstance(data["message"], dict) and "content" in data["message"]:
+            if isinstance(data.get("message"), dict) and "content" in data["message"]:
                 return data["message"]["content"]
             if "response" in data:
                 return data["response"]
-
         return "（一般建議）收到非預期格式回應，請稍後再試。"
     except requests.exceptions.ConnectionError:
-        return "（一般建議）本機模型尚未啟動，請先在終端機執行：`ollama serve`，並確認已 `ollama pull qwen2.5:3b-instruct`。"
+        return "（一般建議）本機模型尚未啟動，請先執行：`ollama serve`，並確認已 `ollama pull qwen2.5:3b-instruct`。"
     except Exception as e:
         print("[api_chat] 與 Ollama 溝通錯誤：", e)
         traceback.print_exc()
         return f"（一般建議）AI 回覆發生錯誤：{e}"
 
+# ====== 與 Ollama 串流對話（NDJSON） ======
+def chat_with_ollama_stream(messages):
+    """
+    yield NDJSON lines:
+      {"type":"delta","text":"..."} 逐段文字
+      {"type":"error","message":"..."} 錯誤
+      {"type":"done"} 結束
+    """
+    import json as _json
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": messages,
+        "stream": True,   # ★ 串流
+        "options": {
+            "temperature": 0.3,
+            "num_ctx": 2048,
+            "num_predict": 256,
+            "keep_alive": "5m",
+        }
+    }
+    try:
+        with requests.post(OLLAMA_CHAT_URL, json=payload, timeout=120, stream=True) as r:
+            r.raise_for_status()
+            for line in r.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                try:
+                    piece = json.loads(line)
+                except Exception:
+                    yield json.dumps({"type": "delta", "text": line}) + "\n"
+                    continue
+                delta = ""
+                if isinstance(piece.get("message"), dict):
+                    delta = piece["message"].get("content", "") or ""
+                if not delta and "response" in piece:
+                    delta = piece.get("response") or ""
+                if delta:
+                    yield json.dumps({"type": "delta", "text": delta}) + "\n"
+        # 正常結束
+        yield json.dumps({"type": "done"}) + "\n"
+    except requests.exceptions.ConnectionError:
+        yield json.dumps({"type": "error", "message": "（一般建議）本機模型尚未啟動，請先執行：ollama serve，並確認已 pull 模型。"}) + "\n"
+        yield json.dumps({"type": "done"}) + "\n"
+    except Exception as e:
+        yield json.dumps({"type": "error", "message": f"（一般建議）AI 回覆發生錯誤：{e}"}) + "\n"
+        yield json.dumps({"type": "done"}) + "\n"
+
+# ====== 非串流端點：/api/chat/ ======
 @csrf_exempt
 def api_chat(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST only"}, status=405)
 
-    # 解析 JSON 請求
     try:
         data = json.loads(request.body.decode("utf-8"))
     except Exception:
@@ -3969,18 +4127,21 @@ def api_chat(request):
 
     user_msg = (data.get("message") or "").strip()
     history  = data.get("history") or []
-
     if not user_msg:
         return JsonResponse({"reply": "（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})
 
-    # RAG 檢索（找不到就回空字串，並在提示中標示一般建議）
-    context = safe_retrieve(user_msg)
-    if context:
-        user_block = f"【站內知識】\n{context}\n\n【使用者問題】{user_msg}"
-    else:
-        user_block = f"【站內知識】（未命中；改以一般建議）\n\n【使用者問題】{user_msg}"
+    # ★ 寒暄/低意圖：直接回覆，不檢索、不叫模型
+    if is_low_intent_smalltalk(user_msg):
+        return JsonResponse({"reply": smalltalk_reply(), "sources": []})
 
-    # 合成訊息（保留最近 6 則歷史以控制長度）
+    context, sources = safe_retrieve(user_msg)
+    opening = "根據提供的知識片段，" if context else "（一般建議）"
+    user_block = (
+        f"{opening}請回答下列問題。\n\n"
+        f"【站內知識】\n{context if context else '（未命中）'}\n\n"
+        f"【使用者問題】{user_msg}"
+    )
+
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": user_block}]
     for h in history[-6:]:
@@ -3988,7 +4149,69 @@ def api_chat(request):
             messages.insert(1, h)
 
     reply = chat_with_ollama(messages)
-    return JsonResponse({"reply": reply})
+
+    if isinstance(reply, str) and reply.strip().endswith("參考來源：無"):
+        reply = reply.rsplit("參考來源：無", 1)[0].rstrip()
+
+    return JsonResponse({"reply": reply, "sources": sources})
+
+# ====== 串流端點：/api/chat/stream/（NDJSON） ======
+@csrf_exempt
+def api_chat_stream(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return StreamingHttpResponse(
+            iter([json.dumps({"type":"error","message":"（一般建議）請以 JSON 傳送：{ message: '...'}"})+"\n",
+                  json.dumps({"type":"done"})+"\n"]),
+            content_type="application/x-ndjson; charset=utf-8"
+        )
+
+    user_msg = (data.get("message") or "").strip()
+    history  = data.get("history") or []
+    if not user_msg:
+        return StreamingHttpResponse(
+            iter([json.dumps({"type":"error","message":"（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})+"\n",
+                  json.dumps({"type":"done"})+"\n"]),
+            content_type="application/x-ndjson; charset=utf-8"
+        )
+
+    # ★ 寒暄/低意圖：直接回串流問候
+    if is_low_intent_smalltalk(user_msg):
+        def _greet_gen():
+            yield json.dumps({"type":"meta","sources":[]}) + "\n"
+            yield json.dumps({"type":"delta","text": smalltalk_reply()}) + "\n"
+            yield json.dumps({"type":"done"}) + "\n"
+        return StreamingHttpResponse(_greet_gen(), content_type="application/x-ndjson; charset=utf-8")
+
+    # 1) RAG 檢索（含相似度門檻）
+    context, sources = safe_retrieve(user_msg)
+    opening = "根據提供的知識片段，" if context else "（一般建議）"
+    user_block = (
+        f"{opening}請回答下列問題。\n\n"
+        f"【站內知識】\n{context if context else '（未命中）'}\n\n"
+        f"【使用者問題】{user_msg}"
+    )
+
+    # 2) 拼訊息（保留 6 則歷史）
+    messages = [{"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": user_block}]
+    for h in history[-6:]:
+        if isinstance(h, dict) and "role" in h and "content" in h:
+            messages.insert(1, h)
+
+    # 3) 產生器：先吐 meta，再串流 delta
+    def _generator():
+        yield json.dumps({"type":"meta","sources": sources}) + "\n"
+        for chunk in chat_with_ollama_stream(messages):
+            yield chunk
+
+    resp = StreamingHttpResponse(_generator(), content_type="application/x-ndjson; charset=utf-8")
+    resp["Cache-Control"] = "no-cache"
+    return resp
 
 ################################AI聊天功能############################
 

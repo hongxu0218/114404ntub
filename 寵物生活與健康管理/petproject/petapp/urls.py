@@ -132,6 +132,7 @@ urlpatterns = [
 
     # ============ AI 聊天功能（本地模型 + FAQ） ============
     path("api/chat/", views.api_chat, name="api_chat"),
+    path("api/chat/stream/", views.api_chat_stream, name="api_chat_stream"),
 ]
 
 
