@@ -3880,15 +3880,12 @@ def api_emergency_locations(request):
 
 ################################AI聊天功能###############################
 
+
 # ====== 可選：環境變數覆蓋 ======
 OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "qwen2.5:3b-instruct")  # 建議先 3B 穩定
 TOP_K           = int(os.getenv("RAG_TOP_K", "4"))
 SNIPPET_CHARS   = int(os.getenv("RAG_SNIPPET_CHARS", "800"))  # >0 時截斷每段脈絡長度
-
-# 小聊/寒暄判定與相似度門檻（可用環境變數調）
-MIN_GREETING_LEN = int(os.getenv("RAG_MIN_GREETING_LEN", "4"))   # 長度 < 4 視為可能寒暄
-MIN_SIM          = float(os.getenv("RAG_MIN_SIM", "0.60"))       # 0~1；低於此視為未命中
 
 # ====== 專案路徑 / 向量庫路徑 ======
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -3923,6 +3920,8 @@ SYSTEM_PROMPT = (
     "先釐清使用者需求，再以條列步驟給出精簡可執行的回答。"
     "若屬於網站功能（註冊/登入/預約/健康紀錄/通知等），請指出頁面與按鈕路徑。"
     "若用戶問 FAQs，優先引用下方檢索的知識內容；若找不到就基於一般常識回覆，並標示『（一般建議）』。"
+    "無論知識片段或產出中出現簡體或錯字，輸出給使用者前一律轉為正確的繁體中文（台灣用語），"
+    "並自動校正常見錯字（如：'按鈍'→'按鈕'，'寻找/尋找'→'尋找'，'注册/注冊'→'註冊'，'登录/登錄'→'登入'）。"
     "\n\n" + FORMAT_INSTRUCTIONS
 )
 
@@ -3931,38 +3930,225 @@ def _truncate(text: str, n: int) -> str:
         return text
     return text[:n] + "…"
 
-# ====== 小聊/寒暄偵測 ======
+# ====== 繁體（台灣用語）＋常見錯字校正 ======
+try:
+    from opencc import OpenCC
+    _cc_s2twp = OpenCC('s2twp')  # 簡 → 台灣繁體
+    _cc_t2twp = OpenCC('t2twp')  # 繁 → 台灣用語
+except Exception:
+    _cc_s2twp = _cc_t2twp = None  # 沒裝 opencc 也不會當
+
+_CUSTOM_REPLACE = {
+    "按鈍": "按鈕",
+    "寻找": "尋找",
+    "注册": "註冊",
+    "注冊": "註冊",
+    "会员": "會員",
+    "登录": "登入",
+    "登錄": "登入",
+    "菜單": "選單",  # 依站內用語可調整
+}
+
+def normalize_zh_tw(text: str) -> str:
+    if not isinstance(text, str) or not text:
+        return text
+    t = text
+    if _cc_s2twp and _cc_t2twp:
+        t = _cc_s2twp.convert(t)
+        t = _cc_t2twp.convert(t)
+    for bad, good in _CUSTOM_REPLACE.items():
+        t = t.replace(bad, good)
+    return t
+
+# ====== 小聊/寒暄偵測（關鍵詞法；避免長度誤判） ======
 _GREETING_PAT = re.compile(
-    r"^(你好|您好|哈囉|嗨|hi|hello|hey|早安|午安|晚安|在嗎|有人在嗎|測試|test|今天好嗎|最近如何|最近怎樣|你開心嗎|你今天開心嗎)$",
+    r"^(你好|您好|哈囉|嗨|hi|hello|hey|早安|午安|晚安|在嗎|有人在嗎|測試|test)$",
     re.IGNORECASE
 )
+_SMALLTALK_HINTS = [
+    "無聊", "難過", "好累", "壓力", "焦慮", "生氣", "好開心",
+    "不想上班", "不想工作", "想請假", "好懶"
+]
+
 def is_low_intent_smalltalk(text: str) -> bool:
     if not text:
         return True
     t = (text or "").strip()
-    if len(t) < MIN_GREETING_LEN:
-        return True
     if _GREETING_PAT.match(t):
         return True
-    # 簡單的「你…嗎？」寒暄型句子（長度不長）
-    if len(t) <= 10 and re.search(r"(開心|在嗎|好嗎|如何|怎樣|怎麼樣).*嗎[？?]?$", t):
+    if any(k in t for k in _SMALLTALK_HINTS):
         return True
     return False
 
-def smalltalk_reply() -> str:
-    return (
-        "哈囉～我在這！🙂\n"
-        "想查詢預約、健康紀錄或常見問題嗎？你可以試試：\n"
-        "1. 如何新增寵物？\n"
-        "2. 預約洗澡的流程？\n"
-        "3. 狗狗疫苗時程怎麼看？"
+def smalltalk_reply(user_text: str = "") -> str:
+    t = (user_text or "").strip()
+
+    # A) 無聊
+    if "無聊" in t:
+        return normalize_zh_tw(
+            "有點無聊嗎？來幾個和毛孩的輕鬆小任務：\n"
+            "1. 零食嗅聞遊戲：把小零食藏在紙杯或毛巾底下，讓牠用鼻子找。\n"
+            "2. 腦力玩具：用益智玩具（或寶特瓶戳洞自製）讓飼料慢慢掉出來。\n"
+            "3. 快速放電：室內 5 分鐘逗貓棒／拋接玩具，消耗精力。\n"
+            "4. 新把戲：練「坐下/碰拳/旋轉」，每次 1–2 分鐘，高價值獎勵。\n"
+            "5. 嗅聞散步：散步時允許慢慢聞（聞=工作），回家更放鬆。\n\n"
+            "需要我把這些加入『每日任務』清單，或依你家毛孩年齡與體力量身調整嗎？🙂"
+        )
+
+    # B) 壓力/焦慮/難過
+    if any(k in t for k in ["壓力", "焦慮", "難過", "心情不好"]):
+        return normalize_zh_tw(
+            "先深呼吸一下～也許和毛孩做點安定的小事會有幫助：\n"
+            "1. 壓力釋放：3–5 分鐘規律撫摸胸前/肩頸，維持慢速與一定方向。\n"
+            "2. 低刺激散步：選安靜路線，讓牠多嗅聞、少衝刺。\n"
+            "3. 穩定儀式：固定的點心/喝水/回籠休息順序，給彼此安全感。\n\n"
+            "如果你願意，我也能幫你整理一份更長期的放鬆計畫。"
+        )
+
+    # C) 不想上班/工作
+    if any(k in t for k in ["不想上班", "不想工作", "想請假", "好懶"]):
+        return normalize_zh_tw(
+            "看起來你現在真的不太想上班～先讓自己深呼吸一下吧。\n"
+            "小建議：\n"
+            "1. 想像下班後可以做的開心小事（看電影、陪毛孩散步）。\n"
+            "2. 若壓力太大，安排 3–5 分鐘走動與喝水，再回到手邊小任務。\n"
+            "3. 和毛孩互動一下（摸摸、陪玩），有助於減壓。\n\n"
+            "若真的疲憊，也可以和主管溝通，給自己一點緩衝時間 🙂"
+        )
+
+    # D) 純招呼
+    if _GREETING_PAT.match(t):
+        return normalize_zh_tw(
+            "哈囉～我在這！🙂\n"
+            "想查詢預約、健康紀錄或常見問題嗎？你可以試試：\n"
+            "1. 如何新增寵物？\n"
+            "2. 預約洗澡的流程？\n"
+            "3. 狗狗疫苗時程怎麼看？"
+        )
+
+    # E) 預設兜底
+    return normalize_zh_tw(
+        "嗨～我在這。如果你願意，我可以：\n"
+        "• 依毛孩年齡/體力安排每日互動清單\n"
+        "• 幫你查常見問題或預約流程\n"
+        "• 紀錄今天的散步/飲水/便便狀況\n"
+        "告訴我你想先做哪一個？🙂"
     )
 
-# ====== 向量檢索：固定用 bge-small-zh-v1.5 的 query_embeddings + 相似度門檻 ======
+# ====== 意圖分流：每日互動清單 ======
+_INTENT_PATTERNS = {
+    "activity_plan": [
+        "依毛孩年齡/體力安排每日互動清單",
+        "每日互動清單",
+        "互動清單",
+        "活動清單",
+        "每日任務",
+    ]
+}
+
+def detect_intent(text: str) -> str:
+    t = (text or "").strip()
+    for intent, phrases in _INTENT_PATTERNS.items():
+        if any(p in t for p in phrases):
+            return intent
+    return ""
+
+def generate_activity_plan(
+    species: str = "", age_years: float = None, weight_kg: float = None,
+    energy: str = "", notes: str = ""
+) -> str:
+    """依物種/年齡/能量輸出簡易每日互動清單（離線規則；可直接用）。"""
+    sp = species or ""
+    eg = (energy or "中").strip()
+    try:
+        age = float(age_years) if age_years is not None else None
+    except Exception:
+        age = None
+
+    stage = "成齡"
+    if age is not None:
+        if age < 1:
+            stage = "幼齡"
+        elif age >= 7 and sp == "狗":
+            stage = "熟齡"
+        elif age >= 10 and sp == "貓":
+            stage = "熟齡"
+
+    mult = {"低": 0.7, "中": 1.0, "高": 1.3}.get(eg, 1.0)
+
+    def mins(base):
+        import math
+        return int(5 * round((base * mult) / 5.0))
+
+    if sp == "狗":
+        walk_main = 25 if stage == "幼齡" else (35 if stage == "成齡" else 20)
+        brain = 8 if stage == "幼齡" else (10 if stage == "成齡" else 8)
+        play = 10 if stage == "幼齡" else (12 if stage == "成齡" else 8)
+
+        plan = [
+            f"1) 早晨：嗅聞散步＋如廁（{mins(walk_main)} 分）— 放慢速度，允許嗅聞；回家喝水伸展。",
+            f"2) 上午：益智找食／嗅聞盒（{mins(brain)} 分）— 用毛巾或紙杯藏零食。",
+            f"3) 下午：基礎訓練（{mins(brain)} 分）— 坐下、等待、回呼；成功給小點心。",
+            f"4) 傍晚：互動遊戲（{mins(play)} 分）— 拋接、拉扯；控制節奏，避免過度亢奮。",
+            f"5) 晚間：短程舒緩散步（{mins(15)} 分）— 低刺激路線，回家腳掌擦拭、補水。",
+            f"6) 安定儀式（{mins(8)} 分）— 規律撫摸胸前/肩頸，慢速同方向；進籠休息。",
+        ]
+        guard = [
+            "注意事項：",
+            "• 若天氣炎熱或雨天，將戶外散步改為室內嗅聞與找食遊戲。",
+            "• 若出現喘氣過快、跛行或不願互動，立即降強度；必要時諮詢獸醫。",
+            "• 零食總量控制在每日熱量的 10% 內；水碗保持清潔。"
+        ]
+    elif sp == "貓":
+        hunt = 8 if stage == "幼齡" else (10 if stage == "成齡" else 6)
+        plan = [
+            f"1) 早晨：逗貓棒狩獵循環（{mins(hunt)} 分）— 追逐→撲擊→啃咬→舔毛→喝水。",
+            f"2) 上午：嗅聞找食（{mins(8)} 分）— 紙箱迷宮或益智食具。",
+            "3) 下午：環境探索（即時）— 替換紙箱/跳台位置，增加新鮮感。",
+            f"4) 傍晚：逗貓棒第二回合（{mins(hunt)} 分）— 結束後給少量濕食。",
+            f"5) 晚間：梳理＋安定撫摸（{mins(6)} 分）— 從頭頂到背部，避開敏感腹部。",
+            "6) 貓砂巡檢（即時）— 清理結團並記錄便尿次數（可用健康紀錄）。",
+        ]
+        guard = [
+            "注意事項：",
+            "• 若出現喘氣、持續張口呼吸或躲藏不出，立即停止並評估壓力源。",
+            "• 玩具收納避免誤食；使用逗貓棒時避免高處跳躍導致扭傷。",
+            "• 濕食增加攝水量可降低泌尿風險；水碗與飲水機每日清洗。"
+        ]
+    else:
+        plan = [
+            "1) 早晨：簡短互動（10–15 分）— 嗅聞/找食或輕度遊戲。",
+            "2) 上午：腦力小任務（5–10 分）— 基礎口令/探索新物件。",
+            "3) 傍晚：主要活動（15–25 分）— 依物種選擇散步或追逐遊戲。",
+            "4) 晚間：安定儀式（5–10 分）— 規律撫摸或梳理、補水與休息。"
+        ]
+        guard = [
+            "注意事項：",
+            "• 任何喘氣、跛行、拒食、嘔吐等異常應減量並視情況就醫。",
+            "• 活動總量依年齡與能量調整；每日至少一次腦力任務以降低破壞行為。"
+        ]
+
+    header = f"（一般建議）已為你生成**每日互動清單**（{sp or '通用'}｜能量：{eg}）"
+    if age is not None:
+        header += f"｜年齡：約 {age} 歲"
+    extra = []
+    if weight_kg:
+        extra.append(f"體重：約 {weight_kg} kg")
+    if notes:
+        extra.append(f"備註：{notes}")
+    if extra:
+        header += "（" + "；".join(extra) + "）"
+
+    return normalize_zh_tw(
+        header + "\n" + "\n".join(plan) + "\n\n" + "\n".join(guard) +
+        "\n\n需要我把這份清單存到你的『健康紀錄／每日任務』，或依你的毛孩（物種、年齡、體力、體重）再微調嗎？"
+    )
+
+# ====== 向量檢索（不回來源） ======
 def safe_retrieve(query: str, top_k: int = TOP_K):
     """
-    回傳：(context_text, sources)；若無結果或低於相似度門檻回 ("", [])。
-    sources: [{"id": 1, "source": "source_file｜sheet｜列row"} ...]
+    回傳：(context_text, sources)；若無結果或低於門檻回 ("", [])。
+    此版本不再拼接 [來源：...]，且 sources 一律回空清單。
     """
     if not chromadb or not Settings:
         print("[api_chat] chromadb 未安裝或無法匯入，略過檢索。")
@@ -3974,7 +4160,6 @@ def safe_retrieve(query: str, top_k: int = TOP_K):
 
     try:
         client = chromadb.PersistentClient(path=DB_DIR, settings=Settings(anonymized_telemetry=False))
-        # ★ 不傳 embedding_function，沿用既有 collection 設定，避免衝突
         try:
             col = client.get_collection(COLLECTION_NAME)
         except Exception:
@@ -3988,46 +4173,34 @@ def safe_retrieve(query: str, top_k: int = TOP_K):
         res = col.query(
             query_embeddings=q_emb,
             n_results=top_k,
-            include=["documents", "metadatas", "distances"]   # 取距離以便做門檻
+            include=["documents", "metadatas", "distances"]
         )
 
         docs  = (res or {}).get("documents", [[]])[0] or []
         metas = (res or {}).get("metadatas", [[]])[0] or []
         dists = (res or {}).get("distances", [[]])[0] or []
 
-        # 距離 → 相似度（cosine distance ~= 1 - cosine similarity）
         pairs = []
         for d, m, dist in zip(docs, metas, dists):
             try:
                 sim = 1.0 - float(dist)
             except Exception:
                 sim = 0.0
-            if sim >= MIN_SIM:
+            if sim >= 0.60:
                 pairs.append((d, m, sim))
 
         if not pairs:
             return "", []
 
-        # 依相似度由高到低
         pairs.sort(key=lambda x: x[2], reverse=True)
         docs, metas, _ = zip(*pairs)
 
-        blocks, sources = [], []
-        for i, (d, m) in enumerate(zip(docs, metas), start=1):
-            src = (
-                (m.get("source") if isinstance(m, dict) else None)
-                or "｜".join(filter(None, [
-                    m.get("source_file") if isinstance(m, dict) else None,
-                    m.get("sheet") if isinstance(m, dict) else None,
-                    f"列{m.get('row_index')}" if isinstance(m, dict) and m.get("row_index") is not None else None
-                ]))
-                or (m.get("id") if isinstance(m, dict) else None)
-                or f"doc_{i}"
-            )
+        blocks = []
+        for d, m in zip(docs, metas):
             snippet = _truncate(d, SNIPPET_CHARS) if SNIPPET_CHARS > 0 else d
-            blocks.append(f"[來源：{src}]\n{snippet}".strip())
-            sources.append({"id": i, "source": src})
-        return "\n\n---\n\n".join(blocks), sources
+            blocks.append(snippet.strip())
+
+        return "\n\n---\n\n".join(blocks), []  # sources 永遠空清單
 
     except Exception as e:
         print("[api_chat] 檢索錯誤：", e)
@@ -4036,9 +4209,6 @@ def safe_retrieve(query: str, top_k: int = TOP_K):
 
 # ====== 與 Ollama 對話（一次回傳版） ======
 def chat_with_ollama(messages):
-    """
-    失敗時回可讀訊息；使用保守生成參數降低超時。
-    """
     payload = {
         "model": OLLAMA_MODEL,
         "messages": messages,
@@ -4069,17 +4239,11 @@ def chat_with_ollama(messages):
 
 # ====== 與 Ollama 串流對話（NDJSON） ======
 def chat_with_ollama_stream(messages):
-    """
-    yield NDJSON lines:
-      {"type":"delta","text":"..."} 逐段文字
-      {"type":"error","message":"..."} 錯誤
-      {"type":"done"} 結束
-    """
     import json as _json
     payload = {
         "model": OLLAMA_MODEL,
         "messages": messages,
-        "stream": True,   # ★ 串流
+        "stream": True,
         "options": {
             "temperature": 0.3,
             "num_ctx": 2048,
@@ -4096,7 +4260,8 @@ def chat_with_ollama_stream(messages):
                 try:
                     piece = json.loads(line)
                 except Exception:
-                    yield json.dumps({"type": "delta", "text": line}) + "\n"
+                    raw = normalize_zh_tw(line)
+                    yield json.dumps({"type": "delta", "text": raw}) + "\n"
                     continue
                 delta = ""
                 if isinstance(piece.get("message"), dict):
@@ -4104,8 +4269,8 @@ def chat_with_ollama_stream(messages):
                 if not delta and "response" in piece:
                     delta = piece.get("response") or ""
                 if delta:
+                    delta = normalize_zh_tw(delta)
                     yield json.dumps({"type": "delta", "text": delta}) + "\n"
-        # 正常結束
         yield json.dumps({"type": "done"}) + "\n"
     except requests.exceptions.ConnectionError:
         yield json.dumps({"type": "error", "message": "（一般建議）本機模型尚未啟動，請先執行：ollama serve，並確認已 pull 模型。"}) + "\n"
@@ -4130,11 +4295,18 @@ def api_chat(request):
     if not user_msg:
         return JsonResponse({"reply": "（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})
 
-    # ★ 寒暄/低意圖：直接回覆，不檢索、不叫模型
+    # ★ 小聊：情境化回覆（不走 RAG）
     if is_low_intent_smalltalk(user_msg):
-        return JsonResponse({"reply": smalltalk_reply(), "sources": []})
+        return JsonResponse({"reply": smalltalk_reply(user_msg), "sources": []})
 
-    context, sources = safe_retrieve(user_msg)
+    # ★ 意圖攔截：每日互動清單（不走 RAG）
+    intent = detect_intent(user_msg)
+    if intent == "activity_plan":
+        reply = generate_activity_plan()  # 之後可帶入會員寵物資料
+        return JsonResponse({"reply": reply, "sources": []})
+
+    # 1) RAG 檢索
+    context, _ = safe_retrieve(user_msg)  # ← 忽略 sources
     opening = "根據提供的知識片段，" if context else "（一般建議）"
     user_block = (
         f"{opening}請回答下列問題。\n\n"
@@ -4142,18 +4314,21 @@ def api_chat(request):
         f"【使用者問題】{user_msg}"
     )
 
+    # 2) 拼訊息（保留 6 則歷史）
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": user_block}]
     for h in history[-6:]:
         if isinstance(h, dict) and "role" in h and "content" in h:
             messages.insert(1, h)
 
+    # 3) 呼叫模型
     reply = chat_with_ollama(messages)
+    reply = normalize_zh_tw(reply)
 
     if isinstance(reply, str) and reply.strip().endswith("參考來源：無"):
         reply = reply.rsplit("參考來源：無", 1)[0].rstrip()
 
-    return JsonResponse({"reply": reply, "sources": sources})
+    return JsonResponse({"reply": reply, "sources": []})  # 固定空清單
 
 # ====== 串流端點：/api/chat/stream/（NDJSON） ======
 @csrf_exempt
@@ -4179,16 +4354,25 @@ def api_chat_stream(request):
             content_type="application/x-ndjson; charset=utf-8"
         )
 
-    # ★ 寒暄/低意圖：直接回串流問候
+    # ★ 小聊：情境化回覆（串流，不走 RAG）
     if is_low_intent_smalltalk(user_msg):
         def _greet_gen():
-            yield json.dumps({"type":"meta","sources":[]}) + "\n"
-            yield json.dumps({"type":"delta","text": smalltalk_reply()}) + "\n"
+            yield json.dumps({"type":"meta","sources": []}) + "\n"
+            yield json.dumps({"type":"delta","text": smalltalk_reply(user_msg)}) + "\n"
             yield json.dumps({"type":"done"}) + "\n"
         return StreamingHttpResponse(_greet_gen(), content_type="application/x-ndjson; charset=utf-8")
 
-    # 1) RAG 檢索（含相似度門檻）
-    context, sources = safe_retrieve(user_msg)
+    # ★ 意圖攔截：每日互動清單（串流，不走 RAG）
+    intent = detect_intent(user_msg)
+    if intent == "activity_plan":
+        def _plan_gen():
+            yield json.dumps({"type":"meta","sources": []}) + "\n"
+            yield json.dumps({"type":"delta","text": generate_activity_plan()}) + "\n"
+            yield json.dumps({"type":"done"}) + "\n"
+        return StreamingHttpResponse(_plan_gen(), content_type="application/x-ndjson; charset=utf-8")
+
+    # 1) RAG 檢索
+    context, _ = safe_retrieve(user_msg)  # ← 忽略 sources
     opening = "根據提供的知識片段，" if context else "（一般建議）"
     user_block = (
         f"{opening}請回答下列問題。\n\n"
@@ -4203,9 +4387,9 @@ def api_chat_stream(request):
         if isinstance(h, dict) and "role" in h and "content" in h:
             messages.insert(1, h)
 
-    # 3) 產生器：先吐 meta，再串流 delta
+    # 3) 串流輸出
     def _generator():
-        yield json.dumps({"type":"meta","sources": sources}) + "\n"
+        yield json.dumps({"type":"meta","sources": []}) + "\n"  # 固定空清單
         for chunk in chat_with_ollama_stream(messages):
             yield chunk
 
