@@ -3,6 +3,7 @@
 from django.urls import path, include  # 匯入 path，用來定義每個 URL 與對應的 view 函數
 from . import views  # 匯入目前資料夾下的 views 模組
 from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
+from . import chat_service   # 👈 引入新的檔案
 from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 from django.contrib import admin
@@ -131,8 +132,10 @@ urlpatterns = [
     path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),  # 急診醫院資料API
 
     # ============ AI 聊天功能（本地模型 + FAQ） ============
-    path("api/chat/", views.api_chat, name="api_chat"),
-    path("api/chat/stream/", views.api_chat_stream, name="api_chat_stream"),
+    path("api/chat/", chat_service.api_chat),
+    path("api/chat/stream/", chat_service.api_chat_stream),
+    path("api/handoff/request/", chat_service.api_handoff_request),
+    path("api/chat/kb_status", chat_service.api_kb_status),  # ← 健康檢查
 ]
 
 
