@@ -2,16 +2,22 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <title>毛孩社群平台 - 圖一版面</title>
+  <title>毛日好</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="post.css" />
 </head>
 <body>
   <header class="topbar">
+    <!-- 🔍 搜尋列（向右移一些） -->
+    <div class="search-inline">
+      <input type="text" id="searchInput" placeholder="🔍 搜尋" />
+    </div>
+
     <div class="brand-area">
       <img src="images/pngtree-cute-and-cute-cat-and-dog-image_2297890.jpg" alt="logo" />
-      毛孩社群平台
+      Paw&Day
     </div>
+
     <nav>
       <a href="#">寵物</a>
       <a href="#">健康紀錄</a>
@@ -29,6 +35,7 @@
     <section class="feed" id="feed"></section>
   </main>
 
+  <!-- 分享彈窗 -->
   <div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="share-modal">
       <button class="share-close" id="shareClose" aria-label="close">✕</button>
