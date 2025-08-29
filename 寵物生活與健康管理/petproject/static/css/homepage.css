@@ -575,3 +575,25 @@
   #chatbot-button{ bottom: 96px; right: 14px; }
   #chatbot-box{ width: calc(100vw - 24px); right: 12px; bottom: 168px; height: 60vh; }
 }
+
+/* === 內嵌「轉人工客服」按鈕樣式 === */
+.cb-inline-btn{
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e5e7eb;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  margin: 0 2px;
+  font-size: 0.9em;
+}
+.cb-inline-btn:hover{
+  background: #111827;
+  border-color: #475569;
+}
+.cb-inline-btn:active{
+  transform: translateY(1px);
+}

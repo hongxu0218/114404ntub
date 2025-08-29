@@ -2,12 +2,23 @@
 import os, re, json, requests, traceback, time
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 # ====== 可選：環境變數覆蓋 ======
 OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "qwen2.5:3b-instruct")  # 建議先 3B 穩定
 TOP_K           = int(os.getenv("RAG_TOP_K", "4"))
 SNIPPET_CHARS   = int(os.getenv("RAG_SNIPPET_CHARS", "800"))  # >0 時截斷每段脈絡長度
+
+# 模型與網路參數（可環境變數化）
+OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "120"))
+OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "256"))
+OLLAMA_TEMP        = float(os.getenv("OLLAMA_TEMP", "0.3"))
+
+# 是否把 sources 顯示給使用者（預設關閉）
+_SHOW_SOURCES_ENV = os.getenv("SHOW_SOURCES_TO_USER", "0").lower()
+SHOW_SOURCES_TO_USER = _SHOW_SOURCES_ENV in ("1", "true", "yes", "y")
 
 # ====== 專案路徑 / 向量庫路徑 ======
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +47,7 @@ FORMAT_INSTRUCTIONS = (
     "接著輸出：\n"
     "1) 以條列步驟（1., 2., 3.）提供可執行指引；\n"
     "2) 接一個『注意事項：』小節，至少 2 點；\n"
+    "請勿在最終輸出中主動加入「來源／參考來源」等字樣或清單。\n"
 )
 SYSTEM_PROMPT = (
     "你是『毛日好 Paw&Day』網站 AI 客服，請一律使用『繁體中文』回覆，"
@@ -82,8 +94,10 @@ def normalize_zh_tw(text: str) -> str:
         t = t.replace(bad, good)
     return t
 
-# ====== 後處理：條列與注意事項換行 ======
-_LINE_ITEM_RE = re.compile(r'(?<!\n)(\s*\d{1,2}\.)')
+# ====== 後處理：條列與注意事項換行（更嚴謹）＋來源段落移除 ======
+_LINE_ITEM_RE = re.compile(r'(?<!\S)(\d{1,2}\.)')  # 行首或空白邊界的「1.」「2.」
+_SOURCE_LINE_PAT = re.compile(r"^\s*(參考來源|來源|資料來源)\s*[:：]?\s*$")
+
 def _force_linebreaks(text: str) -> str:
     if not isinstance(text, str) or not text.strip():
         return text
@@ -93,6 +107,31 @@ def _force_linebreaks(text: str) -> str:
     t = re.sub(r'[ \t]+', ' ', t)
     t = re.sub(r'\n{3,}', '\n\n', t)
     return t.strip()
+
+def _strip_source_section(text: str) -> str:
+    """
+    移除模型正文裡以「來源：」「參考來源：」等開頭的段落與條列。
+    也移除結尾殘留的「參考來源：無」。
+    """
+    if not isinstance(text, str) or not text.strip():
+        return text
+    t = text.replace("參考來源：無", "").rstrip()
+
+    lines = t.splitlines()
+    new_lines, skip = [], False
+    for ln in lines:
+        if _SOURCE_LINE_PAT.match(ln):
+            skip = True
+            continue
+        if skip:
+            if not ln.strip():  # 空行當作段落結束
+                skip = False
+            continue
+        if ln.strip() in ("來源", "參考來源", "資料來源"):
+            continue
+        new_lines.append(ln)
+    t = "\n".join(new_lines).rstrip()
+    return t
 
 # ====== 轉人工客服：連續失敗判斷 ======
 HANDOFF_THRESHOLD = int(os.getenv("HANDOFF_THRESHOLD", "3"))
@@ -205,6 +244,11 @@ def smalltalk_reply(user_text: str = "") -> str:
         "• 紀錄今天的散步/飲水/便便狀況"
     )
 
+# ====== 「不要/不用了」快捷出口 ======
+NEGATIVE_EXIT_WORDS = {"不要", "不用了", "算了", "先這樣", "不需要", "no", "No", "NO"}
+def is_negative_exit(text: str) -> bool:
+    return (text or "").strip() in NEGATIVE_EXIT_WORDS
+
 # ====== 意圖分流：每日互動清單 ======
 _INTENT_PATTERNS = {
     "activity_plan": [
@@ -309,11 +353,11 @@ def generate_activity_plan(
         "\n\n需要我把這份清單存到你的『健康紀錄／每日任務』嗎？"
     )
 
-# ====== 向量檢索（不回來源；自動降門檻） ======
+# ====== 向量檢索（回 context_text 與 sources） ======
 def safe_retrieve(query: str, top_k: int = TOP_K):
     """
-    回傳：(context_text, sources)；若無結果或低於門檻回 ("", [])。
-    自動降門檻：先 0.60；無命中則降 0.50；仍無則視為未命中。
+    回傳：(context_text, sources: List[Dict])。
+    自動降門檻：先 0.60；無命中則降 0.50；仍無則視為未命中 → ("", [])。
     """
     if not chromadb or not Settings:
         print("[api_chat] chromadb 未安裝或無法匯入，略過檢索。")
@@ -338,7 +382,7 @@ def safe_retrieve(query: str, top_k: int = TOP_K):
         res = col.query(
             query_embeddings=q_emb,
             n_results=top_k,
-            include=["documents", "metadatas", "distances"]
+            include=["documents", "metadatas", "distances"]  # 不含 ids（避免版本相容問題）
         )
 
         docs  = (res or {}).get("documents", [[]])[0] or []
@@ -358,15 +402,22 @@ def safe_retrieve(query: str, top_k: int = TOP_K):
                 except Exception:
                     sim = 0.0
                 if sim >= th:
-                    pairs.append((d, m, sim))
+                    pairs.append((d, m or {}, sim))
             if pairs:
                 pairs.sort(key=lambda x: x[2], reverse=True)
-                blocks = []
-                for d, m, _ in pairs:
+
+                blocks, sources = [], []
+                for i, (d, m, sim) in enumerate(pairs, start=1):
                     snippet = _truncate(d, SNIPPET_CHARS) if SNIPPET_CHARS > 0 else d
                     blocks.append(snippet.strip())
+                    sources.append({
+                        "id": (m.get("id") or f"rank-{i}"),
+                        "title": (m.get("title") or m.get("source") or "片段"),
+                        "score": round(sim, 4),
+                    })
+
                 print(f"[api_chat] 命中 {len(pairs)} 筆；採用相似度門檻 {th}")
-                return "\n\n---\n\n".join(blocks), []
+                return "\n\n---\n\n".join(blocks), sources
             else:
                 print(f"[api_chat] 門檻 {th} 無命中，嘗試較低門檻...")
 
@@ -385,14 +436,14 @@ def chat_with_ollama(messages):
         "messages": messages,
         "stream": False,
         "options": {
-            "temperature": 0.3,
-            "num_ctx": 2048,
-            "num_predict": 256,
+            "temperature": OLLAMA_TEMP,
+            "num_ctx": OLLAMA_NUM_CTX,
+            "num_predict": OLLAMA_NUM_PREDICT,
             "keep_alive": "5m",
         }
     }
     try:
-        r = requests.post(OLLAMA_CHAT_URL, json=payload, timeout=120)
+        r = requests.post(OLLAMA_CHAT_URL, json=payload, timeout=OLLAMA_TIMEOUT_SEC)
         r.raise_for_status()
         data = r.json()
         if isinstance(data, dict):
@@ -410,20 +461,19 @@ def chat_with_ollama(messages):
 
 # ====== 與 Ollama 串流對話（NDJSON） ======
 def chat_with_ollama_stream(messages):
-    import json as _json  # 可留作保險
     payload = {
         "model": OLLAMA_MODEL,
         "messages": messages,
         "stream": True,
         "options": {
-            "temperature": 0.3,
-            "num_ctx": 2048,
-            "num_predict": 256,
+            "temperature": OLLAMA_TEMP,
+            "num_ctx": OLLAMA_NUM_CTX,
+            "num_predict": OLLAMA_NUM_PREDICT,
             "keep_alive": "5m",
         }
     }
     try:
-        with requests.post(OLLAMA_CHAT_URL, json=payload, timeout=120, stream=True) as r:
+        with requests.post(OLLAMA_CHAT_URL, json=payload, timeout=OLLAMA_TIMEOUT_SEC, stream=True) as r:
             r.raise_for_status()
             for line in r.iter_lines(decode_unicode=True):
                 if not line:
@@ -444,7 +494,7 @@ def chat_with_ollama_stream(messages):
                     yield json.dumps({"type": "delta", "text": delta}) + "\n"
         yield json.dumps({"type": "done"}) + "\n"
     except requests.exceptions.ConnectionError:
-        yield json.dumps({"type": "error","message":"（一般建議）本機模型尚未啟動，請先執行：ollama serve，並確認已 pull 模型。"}) + "\n"
+        yield json.dumps({"type":"error","message":"（一般建議）本機模型尚未啟動，請先執行：ollama serve，並確認已 pull 模型。"}) + "\n"
         yield json.dumps({"type":"done"}) + "\n"
     except Exception as e:
         yield json.dumps({"type":"error","message":f"（一般建議）AI 回覆發生錯誤：{e}"}) + "\n"
@@ -452,10 +502,8 @@ def chat_with_ollama_stream(messages):
 
 # ====== 非串流端點：/api/chat/ ======
 @csrf_exempt
+@require_POST
 def api_chat(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST only"}, status=405)
-
     try:
         data = json.loads(request.body.decode("utf-8"))
     except Exception:
@@ -465,6 +513,19 @@ def api_chat(request):
     history  = data.get("history") or []
     if not user_msg:
         return JsonResponse({"reply": "（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})
+
+    # ✅ 使用者明確說「不要/不用了…」→ 立刻收尾並建議轉人工
+    if is_negative_exit(user_msg):
+        return JsonResponse({
+            "reply": "了解～那我就不再建議囉。如需協助可以隨時點選【轉人工客服】🙂",
+            "sources": [],
+            "handoff": {
+                "count": 0,
+                "threshold": HANDOFF_THRESHOLD,
+                "cooldown_sec": HANDOFF_COOLDOWN_SEC,
+                "suggest": True
+            }
+        })
 
     # 小聊
     if is_low_intent_smalltalk(user_msg):
@@ -477,12 +538,13 @@ def api_chat(request):
     if intent == "activity_plan":
         reply = generate_activity_plan()
         reply = _force_linebreaks(reply)
+        reply = _strip_source_section(reply)
         return JsonResponse({"reply": reply, "sources": [], "handoff": {
             "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False
         }})
 
     # RAG 檢索
-    context, _ = safe_retrieve(user_msg)
+    context, sources = safe_retrieve(user_msg)
     if not context:
         return JsonResponse({
             "reply": "目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。",
@@ -506,25 +568,25 @@ def api_chat(request):
     reply = chat_with_ollama(messages)
     reply = normalize_zh_tw(reply)
     reply = _force_linebreaks(reply)
+    reply = _strip_source_section(reply)
 
     if isinstance(reply, str) and reply.strip().endswith("參考來源：無"):
         reply = reply.rsplit("參考來源：無", 1)[0].rstrip()
 
     # 既然有命中 context，就不視為失敗
-    suggest, handoff_meta = _update_handoff_state(request, failed=False)
+    _, handoff_meta = _update_handoff_state(request, failed=False)
 
+    debug = bool(data.get("debug"))
     return JsonResponse({
         "reply": reply,
-        "sources": [],
+        "sources": (sources if (SHOW_SOURCES_TO_USER or debug) else []),
         "handoff": handoff_meta,
     })
 
 # ====== 串流端點：/api/chat/stream/（NDJSON） ======
 @csrf_exempt
+@require_POST
 def api_chat_stream(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST only"}, status=405)
-
     try:
         data = json.loads(request.body.decode("utf-8"))
     except Exception:
@@ -543,6 +605,17 @@ def api_chat_stream(request):
             content_type="application/x-ndjson; charset=utf-8"
         )
 
+    # ✅ 使用者明確說「不要/不用了…」→ 立刻收尾並建議轉人工
+    if is_negative_exit(user_msg):
+        def _bye_gen():
+            yield json.dumps({"type":"meta","sources": []}) + "\n"
+            yield json.dumps({"type":"delta","text":"了解～那我就不再建議囉。如需協助可以隨時點選【轉人工客服】🙂"}) + "\n"
+            yield json.dumps({"type":"handoff","payload":{
+                "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": True
+            }}) + "\n"
+            yield json.dumps({"type":"done"}) + "\n"
+        return StreamingHttpResponse(_bye_gen(), content_type="application/x-ndjson; charset=utf-8")
+
     # 小聊
     if is_low_intent_smalltalk(user_msg):
         def _greet_gen():
@@ -560,6 +633,7 @@ def api_chat_stream(request):
             yield json.dumps({"type":"meta","sources": []}) + "\n"
             text = generate_activity_plan()
             text = _force_linebreaks(text)
+            text = _strip_source_section(text)
             yield json.dumps({"type":"delta","text": text}) + "\n"
             payload = {"count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False}
             yield json.dumps({"type":"handoff","payload": payload}) + "\n"
@@ -567,7 +641,7 @@ def api_chat_stream(request):
         return StreamingHttpResponse(_plan_gen(), content_type="application/x-ndjson; charset=utf-8")
 
     # RAG 檢索
-    context, _ = safe_retrieve(user_msg)
+    context, sources = safe_retrieve(user_msg)
     if not context:
         def _nohit_gen():
             yield json.dumps({"type":"meta","sources": []}) + "\n"
@@ -592,25 +666,44 @@ def api_chat_stream(request):
             messages.insert(1, h)
 
     def _generator():
-        yield json.dumps({"type":"meta","sources": []}) + "\n"
-        full_text = []
-        for line in chat_with_ollama_stream(messages):
-            try:
-                piece = json.loads(line)
-                if piece.get("type") == "delta" and "text" in piece:
-                    full_text.append(piece["text"])
-            except Exception:
-                pass
-            # 原樣轉發模型的 delta/error/done
-            yield line
+        debug = bool((data or {}).get("debug"))
+        # 把 sources 先丟到前端（依環境開關/除錯開關）
+        yield json.dumps({"type":"meta","sources": (sources if (SHOW_SOURCES_TO_USER or debug) else [])}) + "\n"
 
-        # 串流結束後做換行與 handoff 事件
+        full_text = []
+        in_source_block = False  # 串流即時過濾「來源」區塊
+        for raw in chat_with_ollama_stream(messages):
+            try:
+                piece = json.loads(raw)
+            except Exception:
+                # 非 JSON（保險）—直接略過或照舊轉發？
+                continue
+
+            if piece.get("type") == "delta":
+                txt = piece.get("text") or ""
+                # 觸發來源段落開始？
+                if _SOURCE_LINE_PAT.match(txt.strip()) or txt.strip() in ("來源", "參考來源", "資料來源"):
+                    in_source_block = True
+                    continue
+                # 若正在來源段落中，直到遇到空行才恢復
+                if in_source_block:
+                    if not txt.strip():
+                        in_source_block = False
+                    continue
+
+                # 正常輸出 delta
+                full_text.append(txt)
+                yield json.dumps({"type":"delta","text": txt}) + "\n"
+
+            elif piece.get("type") in ("error", "done"):
+                # 直接轉發
+                yield raw
+
+        # 串流結束後做換行與 handoff 事件（僅用於計算與整潔，不補發內容）
         merged = normalize_zh_tw("".join(full_text))
         merged = _force_linebreaks(merged)
-        if merged:
-            yield json.dumps({"type":"delta","text":_force_linebreaks("")}) + "\n"  # no-op，保留接口一致性
+        merged = _strip_source_section(merged)
 
-        # 命中 context 視為成功，不累積失敗
         _, handoff_meta = _update_handoff_state(request, failed=False)
         yield json.dumps({"type":"handoff","payload": handoff_meta}) + "\n"
         yield json.dumps({"type":"done"}) + "\n"
@@ -621,13 +714,12 @@ def api_chat_stream(request):
 
 # ====== 建立人工客服請求端點：/api/handoff/request/ ======
 @csrf_exempt
+@require_POST
 def api_handoff_request(request):
     """
     POST JSON: { "name": "...", "contact": "...", "last_question": "...", "channel": "web|app|line" }
     目前先寫入伺服器 log；未來可改成存 DB / 寄信 / 串客服系統。
     """
-    if request.method != "POST":
-        return JsonResponse({"error": "POST only"}, status=405)
     try:
         data = json.loads(request.body.decode("utf-8"))
     except Exception:

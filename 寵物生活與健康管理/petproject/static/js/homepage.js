@@ -74,10 +74,7 @@ window.PawDayHomepage = {
   /**
    * 設定聊天機器人功能（覆蓋舊版：改用 /api/chat）
    */
-  /**
- * 設定聊天機器人功能（串流版：/api/chat/stream/ 以 NDJSON 回傳）
- * 只改這個函式，其他不動
- */
+
 setupChatbot: function() {
   const $ = (id) => document.getElementById(id);
   const btn   = $('chatbot-button');
@@ -111,9 +108,11 @@ setupChatbot: function() {
   } catch(_) {}
 
   // ---- 小工具 ----
-  const STREAM_URL = '/api/chat/stream/';  // 串流端點（Django）
+  const STREAM_URL  = '/api/chat/stream/';      // 串流端點（Django）
+  const HANDOFF_URL = '/api/handoff/request/';  // 轉人工端點
   const history = []; // 只在前端保存，後端僅取最近 6 則
   let busy = false;
+  let lastUserText = ''; // 記錄最後一次提問，提交轉人工用
 
   const addBubble = (sender, textOrHtml, asHTML = false) => {
     const msgDiv = document.createElement("div");
@@ -144,6 +143,70 @@ setupChatbot: function() {
     input.focus();
   };
   const closeBox = () => { box.style.display = 'none'; };
+
+  // ✅ 將回覆中的「【轉人工客服】/轉人工客服」替換成可點擊的內嵌按鈕（更寬鬆的比對）
+  function injectHandoffButton(botDiv){
+    if (!botDiv) return;
+
+    // 已經替換過就不重複
+    if (botDiv.querySelector('[data-action="handoff"]')) return;
+
+    // 使用 innerText 以忽略 <br> 等標籤影響
+    const textNow = (botDiv.innerText || '').trim();
+    const hasKeyword = textNow.includes('轉人工客服'); // 包含「轉人工客服」四字即可
+
+    if (!hasKeyword) return;
+
+    // 僅替換目標詞，不動其它內容；先優先替換含全形書名號版本
+    let html = botDiv.innerHTML;
+
+    // 1) 【轉人工客服】 → button
+    html = html.replace(
+      /【\s*轉人工客服\s*】/g,
+      '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
+    );
+    // 2) 若沒有全形括號版本，退而求其次替換單獨文字（避免誤傷，僅替換第一個）
+    if (!/data-action="handoff"/.test(html)) {
+      html = html.replace(
+        /轉人工客服(?![^<]*>)/, // 避免替換到標籤內的字
+        '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
+      );
+    }
+
+    botDiv.innerHTML = html;
+  }
+
+  // ✅ 送出人工客服請求
+  const submitHandoff = async () => {
+    const name = (window.prompt('請輸入稱呼（可留空）：', '') || '匿名').trim() || '匿名';
+    const contact = (window.prompt('請留下聯絡方式（Email/手機/LINE ID，可留空）：', '') || '').trim();
+
+    const headers = { "Content-Type": "application/json" };
+    const csrftoken = getCSRFToken();
+    if (csrftoken) headers["X-CSRFToken"] = csrftoken;
+
+    try {
+      const res = await fetch(HANDOFF_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name,
+          contact,
+          last_question: lastUserText || '',
+          channel: 'web'
+        }),
+        credentials: 'same-origin'
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        addBubble('bot', '✅ 已提交人工客服請求，我們將盡快聯絡你。');
+      } else {
+        addBubble('bot', '（一般建議）提交失敗，請稍後再試或改用其他聯絡方式。');
+      }
+    } catch (e) {
+      addBubble('bot', '（一般建議）目前無法提交人工客服，請稍後再試。');
+    }
+  };
 
   // ---- 串流呼叫：逐行解析 NDJSON（meta / delta / done / error）----
   async function askRAGStream(message, historyArr) {
@@ -198,6 +261,7 @@ setupChatbot: function() {
 
     // 使用者泡泡
     addBubble('user', text);
+    lastUserText = text;
 
     // 機器人泡泡（會持續追加）
     const botDiv = addBubble('bot', '<em>輸入中…</em>', true);
@@ -223,8 +287,9 @@ setupChatbot: function() {
         } else if (evt.type === "error") {
           botDiv.textContent = evt.message || "（一般建議）發生錯誤";
         } else if (evt.type === "done") {
-          // 串流結束：附上來源
+          // 串流結束：附上來源，並在最後檢查是否要插入「轉人工客服」按鈕
           if (sourcesHTML) botDiv.innerHTML += sourcesHTML;
+          injectHandoffButton(botDiv);
         }
       }
 
@@ -252,6 +317,14 @@ setupChatbot: function() {
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessageStream();
     if (e.key === "Escape") closeBox();
+  });
+
+  // ✅ 在訊息區委派事件 → 點擊「轉人工客服」按鈕時觸發 submitHandoff
+  messagesDiv.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.matches('[data-action="handoff"]')) {
+      submitHandoff();
+    }
   });
 
   // 鍵盤快速開啟：Alt + /
