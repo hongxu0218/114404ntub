@@ -37,6 +37,7 @@ body {
 
         h2 {
             text-align: center;
+            margin-top: 30px;
             margin-bottom: 30px;
             color: #333;
         }
@@ -64,7 +65,12 @@ body {
         .btn-deworm { background-color: #d7b49e; color: white; }
         .btn-report { background-color: #b3c99c; color: white; }
         .btn-daily { background-color: #6d9773; color: white; }
-        .btn-reminder { background-color: #f9c784; color: black; }
+
+        .btn-vaccine:hover { background-color: #e0a94f; }
+        .btn-deworm:hover { background-color: #c59a7d;}
+        .btn-report:hover { background-color: #9dbf80;}
+        .btn-daily:hover { background-color: #557a5a;}
+
 
         .tab-content {
             display: none;
@@ -182,7 +188,7 @@ body {
             color: white;
             padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s ease;
@@ -201,7 +207,20 @@ body {
             padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
+            outline: red !important;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
+        .pet-name-btn:focus {
+            outline: white;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+        .pet-name-btn:hover {
+            transform: scale(1.05); /* 放大 5% */
+            transition: transform 0.2s ease; /* 動畫平滑 */
+        }
+
 
         .record-details {
             display: flex;
@@ -341,7 +360,7 @@ body {
 {% endblock %}
 
 {% block content %}
-<h2>健康記錄</h2>
+<h2><i class="bi bi-heart-pulse me-3"></i>健康記錄</h2>
 
 <div class="tab-buttons">
     <button class="tab-btn btn-info" onclick="showTab('medical')">🩺 看診紀錄</button>
@@ -355,9 +374,9 @@ body {
 <div id="medical" class="tab-content">
   {% for pet in pets %}
     <h3>
-      <button
+      <button class="pet-name-btn"
         onclick="toggleDetails('medical', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+        style="background-color: #6d9773;"
       >
         {{ pet.name }} 的看診紀錄
       </button>
@@ -388,9 +407,9 @@ body {
 <div id="vaccine" class="tab-content">
   {% for pet in pets %}
     <h3>
-      <button
+      <button class="pet-name-btn"
         onclick="toggleDetails('vaccine', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+        style="background-color: #f5b971;"
       >
         {{ pet.name }} 的疫苗記錄
       </button>
@@ -403,7 +422,7 @@ body {
               <strong>疫苗名稱：</strong>{{ record.name }}<br>
               <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
               <strong>施打地點：</strong>{{ record.location }}<br>
-              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
+              <strong>施打獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}<br>
               <a href="{% url 'delete_vaccine' record.id %}" onclick="return confirm('確定刪除這筆疫苗紀錄嗎？')">🗑️刪除</a>
               <hr>
             </li>
@@ -420,9 +439,9 @@ body {
 <div id="deworm" class="tab-content">
   {% for pet in pets %}
     <h3>
-      <button
+      <button class="pet-name-btn"
         onclick="toggleDetails('deworm', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+        style="background-color: #d7b49e; "
       >
         {{ pet.name }} 的驅蟲記錄
       </button>
@@ -454,9 +473,9 @@ body {
 <div id="report" class="tab-content">
   {% for pet in pets %}
     <h3>
-      <button
+      <button class="pet-name-btn"
         onclick="toggleDetails('report', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
+        style="background-color: #b3c99c;"
       >
         {{ pet.name }} 的報告
       </button>
@@ -485,14 +504,14 @@ body {
 
 <!-- 生活記錄區塊 -->
 <div id="daily" class="tab-content">
-    <h3>📘 生活記錄</h3>
+
 
     {% if grouped_records %}
-        <p>已載入 {{ grouped_records|length }} 筆寵物的生活記錄。</p>
         {% for group in grouped_records %}
             <h4>
                 <button class="pet-name-btn" onclick="toggleRecordVisibility('records-{{ group.pet.id }}')">
-                     {{  group.pet.name  }}
+                     {{  group.pet.name  }}的生活記錄
+
                 </button>
             </h4>
 

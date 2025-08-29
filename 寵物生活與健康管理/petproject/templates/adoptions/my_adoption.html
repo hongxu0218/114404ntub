@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/adoptions.css' %}">
+{% endblock %}
+
+{% block content %}
+<style>
+  /* 頂部固定標題列 */
+  .fixed-header {
+       /* 建議改 sticky 才能真的「固定」在頂部 */
+    top: 0;
+    background: var(--warm-bg);
+    z-index: 1100;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 3rem;
+    flex-wrap: wrap; /* 讓小螢幕能自動換行 */
+  }
+  .fixed-header h2 {
+    margin: 0;
+  }
+  .btn-group {
+    display: flex;
+    gap: 0rem; /* 按鈕之間留距離 */
+    margin-bottom: 30px;
+    margin-top: 30px;
+    padding: 10px;
+
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    background-color: none;
+  }
+  .card-img-top {
+    height: 180px;
+    object-fit: cover;
+  }
+
+  .card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: 0.2s ease-in-out;
+  }
+
+  .add-btn {
+    position: sticky important!;
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    line-height: 24px;
+    text-align: center;
+    background-color: #FFF8F0;
+    color: #ffb703;
+    border: 1px solid #ffb703;
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap; /* 讓小螢幕能自動換行 */
+  }
+
+  .add-btn:hover {
+    position: sticky;
+    background-color: #f9a602;
+    color: white;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    transform: scale(1.05);
+  }
+  .add-btn:active {
+      background-color: #e68900;   /* 比 hover 再深一點 */
+      color: white;
+      border-color: #e68900 ;
+  }
+
+  .card-footer {
+      position: absolute;
+      bottom: 0.3rem;
+      left: 0.5rem;
+      right: 0.5rem;
+      background-color: transparent;
+      border-top: none;
+      padding: 0;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .posted-date {
+      color: #999 !important;
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.3em 0.5em;
+    }
+
+  .adoption-filter-btn {
+    padding: 4px 10px;
+    font-size: 0.875rem;
+    border: 1.5px solid #5F8089;
+    color: #5F8089;
+    background-color: white;
+    border-radius: 5px;
+    margin-right: 0px;
+    text-decoration: none;
+    transition: 0.2s ease;
+    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);  /* 陰影效果 */
+  }
+
+  .adoption-filter-btn:hover {
+    background-color: #5F8089;
+    color: #fff;
+    border-color: #5F8089;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.25);  /* 滑過時更明顯的陰影 */
+  }
+
+  .adoption-filter-btn.active {
+    background-color: #5F8089;
+    color: white;
+    border-color: #5F8089;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.25);  /* 被選中也有陰影 */
+  }
+
+
+
+</style>
+
+<div class="container mt-4">
+
+  <!-- 頂部固定標題列 + 按鈕 -->
+  <div class="fixed-header">
+    <h2 class="mb-0">我的送養紀錄</h2>
+
+      <a href="{% url 'add_adoption' %}" class="add-btn text-decoration-none" style="position: sticky;"> + </a>
+  </div>
+<div class="mb-4 btn-group  rounded px-3 py-3">
+      <a href="?filter=all" class="adoption-filter-btn {% if request.GET.filter == 'all' or not request.GET.filter %}active{% endif %}"
+         style="margin-left: 25px;">全部</a>
+      <a href="?filter=available" class="adoption-filter-btn {% if request.GET.filter == 'available' %}active{% endif %}">待領養</a>
+      <a href="?filter=adopted" class="adoption-filter-btn {% if request.GET.filter == 'adopted' %}active{% endif %}">已送養</a>
+      <a href="?filter=unpublished" class="adoption-filter-btn {% if filter_option == 'unpublished' %}active{% endif %}">暫不刊登</a>
+
+    </div>
+  {% if adoptions %}
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+      {% for adoption in adoptions %}
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <a href="{% url 'adoption_petDetail' adoption.id %}" class="text-decoration-none text-dark">
+              {% if adoption.adopt_picture1 %}
+                <img src="{{ adoption.adopt_picture1.url }}" class="card-img-top" alt="{{ adoption.name }}">
+              {% else %}
+                <img src="{% static 'default_pet.jpg' %}" class="card-img-top" alt="預設圖片">
+              {% endif %}
+              <div class="card-body">
+                <h5 class="card-title">{{ adoption.name }}
+                  <p class="card-text">
+                      <span class="me-3">
+                        <i class="bi bi-gender-ambiguous me-1"></i>{{ adoption.get_gender_display|default:"無" }}
+                      </span>
+                      <span class="me-3">
+                        <i class="bi bi-calendar-heart me-1"></i>{{ adoption.age|default:"未知" }}
+                      </span>
+                      <span>
+                        <i class="bi bi-tag me-1"></i>{{ adoption.breed |default:"-" }}
+                      </span>
+                    </p>
+
+                </h5>
+                <p class="card-text" >
+                  <strong style="color : grey;">個性特徵：</strong>
+                  <span class="feature-limit">
+                    {% if adoption.parsed_feature.feature_choice %}
+                      {% if adoption.parsed_feature.feature_choice == "其他" %}
+                        <span class="badge text-dark" style="font-size: 14px;">{{ adoption.parsed_feature.feature_other }}</span>
+                      {% else %}
+                        <span class="badge text-dark" style="font-size: 14px;" >{{ adoption.parsed_feature.feature_choice }}</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="badge bg-light text-muted" style="font-size: 14px;">尚無資料</span>
+                    {% endif %}
+                  </span><br>
+                </p>
+              </div>
+              <div class="card-footer d-flex justify-content-between align-items-center">
+                <span class="adopt-status">
+                  {% if adoption.is_publish %}
+                    {% if adoption.is_adopted %}
+                      <span class="badge bg-secondary">已送養</span>
+                    {% else %}
+                      <span class="badge bg-success">待領養</span>
+                    {% endif %}
+                  {% endif %}
+                  {% if adoption.is_publish %}
+                  {% else %}
+                    <span class="badge bg-danger">暫不刊登</span>
+                  {% endif %}
+                </span>
+                <span class="posted-date">{{ adoption.posted_date|date:"Y-m-d" }}</span>
+              </div>
+
+            </a>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% if request.GET %}
+      <div class="alert alert-warning mt-3">
+        找不到符合條件的寵物，請嘗試其他搜尋條件。
+      </div>
+    {% else %}
+      <p>你尚未刊登任何送養資訊。</p>
+    {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

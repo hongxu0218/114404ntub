@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}新增送養寵物資料 測試{% endblock %}
+
+{% block extra_css %}
+<style>
+main {
+    padding: 40px 20px;
+    background-color: #fff8f0;
+}
+
+form {
+    background: white;
+    padding: 2em;
+    border-radius: 10px;
+    max-width: 700px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 1em;
+}
+
+label {
+    display: block;
+    margin-top: 2.5em;
+    font-weight: bold;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.5em;
+    margin-top: 0.5em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.text-danger {
+    color: red;
+    font-size: 0.9em;
+}
+
+#image-preview {
+    display: none;
+    margin-top: 1em;
+    max-width: 100%;
+    max-height: 300px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.button-row {
+    display: flex;
+    gap: 1em;
+    margin-top: 2em;
+}
+
+.button-row .back-btn {
+    flex: 1;
+    background-color: #aaa;
+    color: #fff;
+}
+
+.button-row .submit-btn {
+    flex: 8;
+    background-color: #ffaa00;
+    color: #fff;
+}
+
+.button-row button {
+    padding: 0.6em 1.5em;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-row button:hover {
+    opacity: 0.9;
+}
+
+  .preview-img {
+    display: none;
+    max-height: 120px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+.form-other-group{
+  display:none;
+  margin-bottom:0px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center;">新增送養寵物資料</h2>
+
+<!-- JSON script 安全輸出 -->
+{{ dog_choices|json_script:"dogBreedsData" }}
+{{ cat_choices|json_script:"catBreedsData" }}
+{{ dogvaccine_choices|json_script:"dogVaccinesData" }}
+{{ catvaccine_choices|json_script:"catVaccinesData" }}
+{{ other_pet_names|default:"[]"|json_script:"otherPetNamesData" }}
+
+
+<form method="post" enctype="multipart/form-data" id="add-adoption-form">
+    {% csrf_token %}
+
+{% if adoption_form.errors %}
+  <div class="text-danger">
+    <h4>整體表單錯誤：</h4>
+    {{ adoption_form.errors }}
+  </div>
+{% endif %}
+
+  <!-- 種類 -->
+  <div class="form-group">
+    <label for="species_select"><strong>種類</strong></label>
+    <select id="species_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <option value="狗">狗</option>
+      <option value="貓">貓</option>
+      <option value="其他">其他</option>
+    </select>
+  </div>
+  <!-- 其他種類 -->
+  <div id="species_other_group" class="form-other-group">
+    {{ adoption_form.species_other }}
+    {% if adoption_form.species_other.errors %}
+    <div class="text-danger">{{ adoption_form.species_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端隱藏欄位 -->
+  {{ adoption_form.species }}
+    {% if adoption_form.species.errors %}
+    <div class="text-danger">{{ adoption_form.species.errors }}</div>
+    {% endif %}
+
+  <!-- 品種 (前端顯示) -->
+  <div class="form-group">
+    <label for="breed_select"><strong>品種</strong></label>
+    <select id="breed_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <!-- 預設先空，會依種類動態更新 -->
+    </select>
+  </div>
+  <!-- 其他品種 -->
+  <div id="breed_other_group" class="form-other-group">
+    {{ adoption_form.breed_other }}
+    {% if adoption_form.breed_other.errors %}
+    <div class="text-danger">{{ adoption_form.breed_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端實際存的 breed（隱藏） -->
+  {{ adoption_form.breed }}
+    {% if adoption_form.breed.errors %}
+    <div class="text-danger">{{ adoption_form.breed.errors }}</div>
+    {% endif %}
+
+
+  <!-- 疫苗 vaccine (前端顯示) -->
+  <div class="form-group">
+    <label for="vaccine_select"><strong>疫苗</strong></label>
+    <select id="vaccine_select" class="form-control" required>
+      <option value="">請選擇</option>
+      <!-- 預設先空，會依種類動態更新 -->
+    </select>
+  </div>
+  <!-- 其他疫苗 -->
+  <div id="vaccine_other_group" class="form-other-group">
+    {{ adoption_form.vaccine_other }}
+    {% if adoption_form.vaccine_other.errors %}
+    <div class="text-danger">{{ adoption_form.vaccine_other.errors }}</div>
+    {% endif %}
+  </div>
+  <!-- 後端實際存的 breed（隱藏） -->
+  {{ adoption_form.vaccine }}
+    {% if adoption_form.vaccine.errors %}
+    <div class="text-danger">{{ adoption_form.vaccine.errors }}</div>
+    {% endif %}
+
+
+  <!-- 名字 -->
+  <div class="form-group">
+    {{ adoption_form.name.label_tag }}
+    {{ adoption_form.name}}<div class="text-danger">{{ adoption_form.name.errors }}</div>
+  </div>
+
+  <!-- 絕育狀態 -->
+  <div class="form-group">
+    {{ adoption_form.sterilization_status.label_tag }}
+    {{ adoption_form.sterilization_status }}
+    <div class="text-danger">{{ adoption_form.sterilization_status.errors }}</div>
+  </div>
+
+  <!-- 晶片號碼 -->
+  <div class="form-group">
+    {{ adoption_form.chip.label_tag }}
+    {{ adoption_form.chip }}<div class="text-danger">{{ adoption_form.chip.errors }}</div>
+  </div>
+
+  <!-- 生日 -->
+  <div class="form-group">
+    {{ adoption_form.birth_date.label_tag }}
+    {{ adoption_form.birth_date }}
+    <div class="text-danger">{{ adoption_form.birth_date.errors }}</div>
+  </div>
+
+  <!-- 性別 -->
+  <div class="form-group">
+    {{ adoption_form.gender.label_tag }}
+    {{ adoption_form.gender }}<div class="text-danger">{{ adoption_form.gender.errors }}</div>
+  </div>
+
+  <!-- 體重 -->
+  <div class="form-group">
+    {{ adoption_form.weight.label_tag }}
+    {{ adoption_form.weight }}<div class="text-danger">{{ adoption_form.weight.errors }}</div>
+  </div>
+
+
+
+<!-- 疫苗 vaccine-->
+
+
+
+<!-- 個性特徵 -->
+<div class="form-group">
+  <label for="id_feature_choice"><strong>個性特徵</strong></label>
+  {{ adoption_form.feature_choice }}
+  {% if adoption_form.feature_choice.errors %}
+  <div class="text-danger">
+    {{ adoption_form.feature_choice.errors }}
+  </div>
+  {% endif %}
+</div>
+<!-- 其他說明輸入框（初始隱藏） -->
+<div class="form-group" id="feature-other-group" style="display: none;">
+  {{ adoption_form.feature_other }}
+  {% if adoption_form.feature_other.errors %}
+    <div class="text-danger">
+      {% for error in adoption_form.feature_other.errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+
+<!-- 健康狀況 -->
+<div class="form-group">
+  <label for="id_physical_condition_choice"><strong>健康狀況</strong></label>
+  {{ adoption_form.physical_condition_choice }}
+  {% if adoption_form.physical_condition_choice.errors %}
+  <div class="text-danger">
+    {{ adoption_form.physical_condition_choice.errors }}
+  </div>
+  {% endif %}
+</div>
+<!-- 其他說明輸入框（初始隱藏） -->
+<div class="form-group" id="physical-condition-other-group" style="display: none;">
+  {{ adoption_form.physical_condition_other }}
+  {% if adoption_form.physical_condition_other.errors %}
+    <div class="text-danger">
+      {% for error in adoption_form.physical_condition_other.errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+
+<!-- 領養條件 -->
+<div class="form-group">
+  <label for="id_adoption_condition_choice"><strong>領養條件</strong></label>
+  {{ adoption_form.adoption_condition_choice }}
+  {% if adoption_form.adoption_condition_choice.errors %}
+  <div class="text-danger">
+    {{ adoption_form.adoption_condition_choice.errors }}
+  </div>
+  {% endif %}
+</div>
+<!-- 其他說明輸入框（初始隱藏） -->
+<div class="form-group" id="adoption-condition-other-group" style="display: none;">
+  {{ adoption_form.adoption_condition_other }}
+  {% if adoption_form.adoption_condition_other.errors %}
+    <div class="text-danger">
+      {% for error in adoption_form.adoption_condition_other.errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+
+  <!-- 領養地點 -->
+  <div class="form-group">
+    {{ adoption_form.adopt_place.label_tag }}
+    {{ adoption_form.adopt_place }}
+    {% if adoption_form.adopt_place.errors %}
+    <div class="text-danger">
+      {{ adoption_form.adopt_place.errors }}
+    </div>
+  {% endif %}
+  </div>
+
+
+
+
+
+  <!-- 手機號碼 -->
+  <div class="form-group">
+    {{ adoption_form.phone.label_tag }}
+    {{ adoption_form.phone }}
+    {% if adoption_form.phone.errors %}
+    <div class="text-danger">
+      {{ adoption_form.phone.errors }}
+    </div>
+  {% endif %}
+  </div>
+
+  <!-- line_id -->
+  <div class="form-group">
+    {{ adoption_form.line_id.label_tag }}
+    {{ adoption_form.line_id }}
+    {% if adoption_form.line_id.errors %}
+    <div class="text-danger">
+      {{ adoption_form.line_id.errors }}
+    </div>
+  {% endif %}
+  </div>
+
+
+  <!-- 圖片1 -->
+  <div class="form-group">
+    {{ adoption_form.adopt_picture1.label_tag }}
+    <img class="preview-img" id="preview1" src="#" alt="預覽圖片">
+    {{ adoption_form.adopt_picture1 }}
+    {% if adoption_form.adopt_picture1.errors %}
+    <div class="text-danger">
+      {{ adoption_form.adopt_picture1.errors }}
+    </div>
+  {% endif %}
+  </div>
+   <!-- 圖片2 -->
+  <div class="form-group">
+    {{ adoption_form.adopt_picture2.label_tag }}
+    <img class="preview-img" id="preview2" src="#" alt="預覽圖片">
+    {{ adoption_form.adopt_picture2 }}
+  </div>
+   <!-- 圖片3 -->
+  <div class="form-group">
+    {{ adoption_form.adopt_picture3.label_tag }}
+    <img class="preview-img" id="preview3" src="#" alt="預覽圖片">
+
+    {{ adoption_form.adopt_picture3 }}
+  </div>
+   <!-- 圖片4 -->
+  <div class="form-group">
+    {{ adoption_form.adopt_picture4.label_tag }}
+      <img class="preview-img" id="preview4" src="#" alt="預覽圖片">
+    {{ adoption_form.adopt_picture4 }}
+  </div>
+
+
+  <div class="button-row">
+    <button type="button" onclick="location.href='{% url 'my_adoption' %}'" class="back-btn">返回</button>
+    <button type="submit" class="submit-btn">新增並刊登</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'js/add_adoption.js' %}">
+
+</script>
+{% endblock %}
