@@ -3,6 +3,8 @@ from datetime import date
 from calendar import monthrange
 from django.utils.timezone import localtime
 from .models import DailyRecord
+from .choices import DOG_CHOICES, CAT_CHOICES, DOGVACCINE_CHOICES, CATVACCINE_CHOICES
+import json
 
 # （體溫）共用程式
 def get_temperature_data(pet, year, month):
@@ -65,3 +67,21 @@ def get_weight_data(pet, year, month):
             'raw_content': rec.content,
         })
     return records
+
+# （品種/疫苗）切換表單的共用程式
+def get_species_choices(species_json):
+    try:
+        species_data = json.loads(species_json)
+        species_choice = species_data.get('species_choice', '')
+    except Exception:
+        species_choice = ''
+
+    if species_choice == '狗':
+        return DOG_CHOICES, DOGVACCINE_CHOICES
+    elif species_choice == '貓':
+        return CAT_CHOICES, CATVACCINE_CHOICES
+    elif species_choice == '其他':
+        breed_other = species_data.get('breed_other', '其他')
+        vaccine_other = species_data.get('vaccine_other', '其他')
+        return [(breed_other, breed_other)], [(vaccine_other, vaccine_other)]
+    return [('', '請先選擇'), ('其他', '其他')], [('', '請先選擇'), ('其他', '其他')]
