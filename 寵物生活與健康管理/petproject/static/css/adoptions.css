@@ -1,0 +1,78 @@
+/* 領養寵物小卡 */
+
+.card {
+    position: relative;
+    overflow: hidden;
+    border: 6px solid;
+    border-image: linear-gradient(135deg, #ffd280, #ffb347, #ffc107) 1;
+    border-radius: 20px;
+    background-color: var(--card-bg);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+    font-family: 'Noto Sans TC', 'Segoe UI', sans-serif;
+    height: 420px; /* 你可以依內容微調，比如 400px～480px */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 確保 footer 在底部 */
+  }
+
+  .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+    background-color: var(--card-hover);
+  }
+
+  .card-img-top {
+    object-fit: cover;
+    height: 200px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    color: var(--orange-accent);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-text {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    max-height: 100px;           /* 限制高度 */
+    overflow: hidden;            /* 超出隱藏 */
+    text-overflow: ellipsis;
+    margin-top: 0.3rem;     /* 上方間距 */
+    margin-bottom: 0.3rem;  /* 下方間距 */
+  }
+  .card-text .feature-limit {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;     /* 限制顯示 2 行 */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.7;
+      margin-top: 0.3rem;     /* 上方間距 */
+      margin-bottom: 0.3rem;  /* 下方間距 */
+      text-overflow: ellipsis;
+    }
+
+  .card-footer {
+    position: absolute;         /* ✅ 絕對定位 */
+    bottom: 0.1rem;             /* 離底邊一點距離 */
+    right: 0.1rem;
+    background-color: transparent;
+    border-top: none;
+    text-align: right;
+  }
+
+  .posted-date {
+    color: #999 !important;
+    font-size: 0.85rem;
+  }
+

@@ -629,6 +629,19 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* ===== 領養按鈕狀態 ===== */
+.action-btn.btn-adoption {
+  color: white;  /* 改成白色字 */
+  background-color: #fcbf49;  /* 橘色背景 */
+  border: none;
+}
+/* ===== 更改飼主按鈕狀態 ===== */
+.action-btn.btn-changeowner {
+  color: white;  /* 改成白色字 */
+  background-color: #f0ad4e;  /* 橘色背景 */
+  border: none;
+}
+
 
 /* ===== 空狀態 ===== */
 .empty-state {
@@ -786,6 +799,7 @@
     width: 44px;
     height: 44px;
   }
+
 
   .message-popup {
     left: 10px;
