@@ -252,6 +252,19 @@ setupOtherToggle('id_adoption_condition_choice', 'adoption-condition-other-group
 // ===== 選擇「我的寵物」 =====
 // 通用函式：填入基本欄位
 function fillPetForm(selectedPet) {
+    // 只清空圖片 2 ~ 4，其餘交給 updatePicturePreview 處理
+    for (let i = 2; i <= 4; i++) {
+        const fileInput = document.getElementById(`id_adopt_picture${i}`);
+        const fakeInput = document.getElementById(`id_adopt_picture${i}_fake`);
+        const previewImg = document.getElementById(`preview${i}`);
+
+        if (fileInput) fileInput.value = "";
+        if (fakeInput) fakeInput.value = "沒有選擇檔案";
+        if (previewImg) {
+            previewImg.src = "";
+            previewImg.style.display = "none";
+        }
+    }
     const fieldMap = {
         'name': 'id_name',
         "species":"id_species",
@@ -264,7 +277,6 @@ function fillPetForm(selectedPet) {
         'sterilization_status': 'id_sterilization_status',
         'picture': 'preview1'  // 假設第一張圖片預覽用 preview1
     };
-
     Object.entries(fieldMap).forEach(([key, elId]) => {
         const el = document.getElementById(elId);
         if (!el || selectedPet[key] === undefined) return;
@@ -428,10 +440,41 @@ petSelect.addEventListener("change", function() {
     fillPetForm(selectedPet);
 });
 
-
 fakeInput.addEventListener("click", () => {
     fileInput.click();
 });
+
+//圖片2~4 圖片預覽
+function setupSimplePreview(fileInputId, previewId) {
+        const fileInput = document.getElementById(fileInputId);
+        const previewImg = document.getElementById(previewId);
+
+        if (!fileInput || !previewImg) return;
+
+        fileInput.addEventListener("change", function () {
+            if (fileInput.files && fileInput.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = "block";
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                previewImg.src = "#";
+                previewImg.style.display = "none";
+            }
+        });
+
+        // 預設隱藏
+        previewImg.style.display = "none";
+    }
+
+    // 套用到圖片 2 ~ 4
+    setupSimplePreview("id_adopt_picture2", "preview2");
+    setupSimplePreview("id_adopt_picture3", "preview3");
+    setupSimplePreview("id_adopt_picture4", "preview4");
+
+
 
             // 預設顯示「沒有選擇檔案」
             updateFakeInput(null);
