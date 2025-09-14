@@ -966,3 +966,30 @@ class BusinessHours(models.Model):
         period_text = f" ({self.period_name})" if self.period_name else f" (時段{self.period_order})"
         return f"{self.location.name} - {self.get_day_of_week_display()}{period_text} {self.open_time}-{self.close_time}"
     
+# 線上客服交接系統模型
+# ===== 轉人工客服：工單與訊息 =====
+class HandoffTicket(models.Model):
+    session_key = models.CharField(max_length=64, db_index=True)
+    name = models.CharField(max_length=64, blank=True)
+    contact = models.CharField(max_length=128, blank=True)
+    channel = models.CharField(max_length=32, default='web')
+    is_open = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-is_open', '-created_at']
+
+    def __str__(self):
+        return f'#{self.id} {self.session_key} ({ "OPEN" if self.is_open else "CLOSED"})'
+
+class HandoffMessage(models.Model):
+    ticket = models.ForeignKey('HandoffTicket', on_delete=models.CASCADE, related_name='messages')
+    sender = models.CharField(max_length=16, choices=[('user','user'),('agent','agent'),('system','system')])
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f'[{self.created_at:%Y-%m-%d %H:%M:%S}] {self.sender}: {self.text[:30]}'

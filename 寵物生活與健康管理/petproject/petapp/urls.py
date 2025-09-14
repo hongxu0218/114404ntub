@@ -3,8 +3,9 @@
 from django.urls import path, include  # 匯入 path，用來定義每個 URL 與對應的 view 函數
 from . import views  # 匯入目前資料夾下的 views 模組
 from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
-from . import chat_service   # 👈 引入新的檔案
+from . import chat_service, views_handoff, views_staff   # 👈 引入新的檔案
 from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
+from django.contrib.admin.views.decorators import staff_member_required
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 from django.contrib import admin
 
@@ -134,8 +135,35 @@ urlpatterns = [
     # ============ AI 聊天功能（本地模型 + FAQ） ============
     path("api/chat/", chat_service.api_chat),
     path("api/chat/stream/", chat_service.api_chat_stream),
-    path("api/handoff/request/", chat_service.api_handoff_request),
     path("api/chat/kb_status", chat_service.api_kb_status),  # ← 健康檢查
+
+    # ===== 轉人工客服（前台 API）— 只綁到 views_handoff 這一份 =====
+    path("api/handoff/request/",  views_handoff.api_handoff_request,   name="handoff_request"),
+    path("api/handoff/message/",  views_handoff.api_handoff_user_send, name="handoff_message"),
+    path("api/handoff/poll/",     views_handoff.api_handoff_poll,      name="handoff_poll"),
+
+    # ===== Staff Console（職員端頁面 & 動作）— 雙重保護 =====
+    path(
+        "staff/handoff/",
+        staff_member_required(views_handoff.handoff_console, login_url="account_login"),
+        name="handoff_console",
+    ),
+    path(
+        "staff/handoff/<int:ticket_id>/",
+        staff_member_required(views_handoff.handoff_console, login_url="account_login"),
+        name="handoff_console_ticket",
+    ),
+    path(
+        "staff/handoff/<int:ticket_id>/reply/",
+        staff_member_required(views_handoff.handoff_agent_reply, login_url="account_login"),
+        name="handoff_agent_reply",
+    ),
+    path(
+        "staff/handoff/<int:ticket_id>/close/",
+        staff_member_required(views_handoff.handoff_agent_close, login_url="account_login"),
+        name="handoff_agent_close",
+    ),
+
 ]
 
 

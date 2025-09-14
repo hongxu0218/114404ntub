@@ -215,7 +215,7 @@ ADMIN_EMAIL = config('ADMIN_EMAIL')
 
 # ===== 靜態與媒體檔案設定 =====
 # 靜態檔案設定（CSS、JS）
-STATIC_URL = 'static/'  # 靜態檔案 URL 路徑前綴
+STATIC_URL = '/static/'  # 靜態檔案 URL 路徑前綴
 STATICFILES_DIRS = [
     BASE_DIR / 'static' # 加入 static 路徑
 ]

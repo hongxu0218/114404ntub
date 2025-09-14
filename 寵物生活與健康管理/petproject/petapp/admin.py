@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile,VetDoctor,VetClinic
+from .models import Profile,VetDoctor,VetClinic, HandoffTicket, HandoffMessage
 from django.utils.html import format_html
 
 from allauth.account.models import EmailAddress
@@ -82,3 +82,17 @@ class VetClinicAdmin(admin.ModelAdmin):
 for model in [EmailAddress, SocialAccount, SocialApp, SocialToken]:
     if model in admin.site._registry:
         admin.site.unregister(model)
+
+# 轉接客服系統管理介面
+@admin.register(HandoffTicket)
+class HandoffTicketAdmin(admin.ModelAdmin):
+    list_display = ('id','name','contact','channel','session_key','is_open','created_at')
+    list_filter = ('channel','is_open','created_at')
+    search_fields = ('name','contact','session_key','id')
+
+@admin.register(HandoffMessage)
+class HandoffMessageAdmin(admin.ModelAdmin):
+    list_display = ('id','ticket','sender','short_text','created_at')
+    list_filter = ('sender','created_at')
+    search_fields = ('text',)
+    def short_text(self, obj): return (obj.text[:40] + '…') if len(obj.text) > 40 else obj.text

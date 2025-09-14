@@ -71,10 +71,9 @@ window.PawDayHomepage = {
     PD.debug.log('✅ 首頁功能初始化完成');
   },
 
-  /**
-   * 設定聊天機器人功能（覆蓋舊版：改用 /api/chat）
-   */
-
+/**
+ * 設定聊天機器人功能（覆蓋舊版：/api/chat 串流 + 轉人工 handoff）
+ */
 setupChatbot: function() {
   const $ = (id) => document.getElementById(id);
   const btn   = $('chatbot-button');
@@ -107,13 +106,21 @@ setupChatbot: function() {
     if (!box.style.bottom) box.style.bottom = '160px';
   } catch(_) {}
 
-  // ---- 小工具 ----
-  const STREAM_URL  = '/api/chat/stream/';      // 串流端點（Django）
-  const HANDOFF_URL = '/api/handoff/request/';  // 轉人工端點
+  // ---- 常數與狀態 ----
+  const STREAM_URL   = '/api/chat/stream/';      // 串流端點（Django）
+  const HANDOFF_URL  = '/api/handoff/request/';  // 轉人工：建立/沿用工單
+  const MESSAGE_URL  = '/api/handoff/message/';  // 轉人工後，使用者發訊息給座席
+  const POLL_URL     = '/api/handoff/poll/';     // 輪詢座席/系統訊息
+
   const history = []; // 只在前端保存，後端僅取最近 6 則
   let busy = false;
   let lastUserText = ''; // 記錄最後一次提問，提交轉人工用
+  let inHandoff = false; // 是否已轉人工
+  let lastMsgId = 0;     // 追蹤最後一則訊息 ID（避免重覆）
+  let pollTimer = null;
+  let ticketId = null;   // 保存工單 id
 
+  // ---- 泡泡小工具 ----
   const addBubble = (sender, textOrHtml, asHTML = false) => {
     const msgDiv = document.createElement("div");
     msgDiv.className = 'cb-bubble ' + (sender === 'user' ? 'cb-user' : 'cb-bot');
@@ -147,19 +154,11 @@ setupChatbot: function() {
   // ✅ 將回覆中的「【轉人工客服】/轉人工客服」替換成可點擊的內嵌按鈕（更寬鬆的比對）
   function injectHandoffButton(botDiv){
     if (!botDiv) return;
-
-    // 已經替換過就不重複
-    if (botDiv.querySelector('[data-action="handoff"]')) return;
-
-    // 使用 innerText 以忽略 <br> 等標籤影響
+    if (botDiv.querySelector('[data-action="handoff"]')) return; // 已替換過就不重複
     const textNow = (botDiv.innerText || '').trim();
-    const hasKeyword = textNow.includes('轉人工客服'); // 包含「轉人工客服」四字即可
+    if (!textNow.includes('轉人工客服')) return;
 
-    if (!hasKeyword) return;
-
-    // 僅替換目標詞，不動其它內容；先優先替換含全形書名號版本
     let html = botDiv.innerHTML;
-
     // 1) 【轉人工客服】 → button
     html = html.replace(
       /【\s*轉人工客服\s*】/g,
@@ -168,45 +167,141 @@ setupChatbot: function() {
     // 2) 若沒有全形括號版本，退而求其次替換單獨文字（避免誤傷，僅替換第一個）
     if (!/data-action="handoff"/.test(html)) {
       html = html.replace(
-        /轉人工客服(?![^<]*>)/, // 避免替換到標籤內的字
+        /轉人工客服(?![^<]*>)/,
         '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
       );
     }
-
     botDiv.innerHTML = html;
   }
 
-  // ✅ 送出人工客服請求
+  // ---- 狀態碼對應的明確提示 ----
+  const STATUS_HINT = {
+    400: "欄位有誤，請確認必填內容（例如：訊息不可為空）。",
+    401: "需要登入才能提交，請先登入後再試。",
+    403: "沒有操作權限（僅限客服/管理員）。",
+    404: "找不到資源，服務暫時不可用。",
+    409: "目前無法建立新工單，請稍後再試。",
+    413: "內容過大，請精簡後再送出。",
+    429: "操作過於頻繁，請稍後再試。",
+    500: "系統暫時異常，請稍後再試或改用其他聯絡方式。"
+  };
+
+  // ---- 通用 JSON POST（含 CSRF、非 JSON/被轉導偵測）----
+  async function apiPost(endpoint, payload) {
+    const headers = { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" };
+    const csrftoken = getCSRFToken();
+    if (csrftoken) headers["X-CSRFToken"] = csrftoken;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload || {}),
+      credentials: "same-origin"
+    });
+
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      // 可能是被權限轉導到登入頁或回傳了 HTML 錯誤頁
+      throw { status: res.status || 500, message: null };
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) {
+      throw { status: res.status || 500, message: data.error || null };
+    }
+    return data; // 正常回傳 JSON
+  }
+
+  // ---- 統一顯示錯誤（取代「（一般建議）提交失敗…」）----
+  function showSubmitError(status, fallbackMsg) {
+    addBubble('bot', `❌ ${STATUS_HINT[status] || fallbackMsg || STATUS_HINT[500]}`);
+  }
+
+  // ---- 顯示「轉人工客服」CTA（按鈕直接沿用委派事件）----
+  function showHandoffCTA(lastQuestion) {
+    const html = `
+      <div>
+        目前找不到合適的答案。要不要改由<strong>人工客服</strong>協助？
+        <div class="mt-2" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>
+          <button class="cb-inline-btn" data-action="ask-again" type="button">我再問一次</button>
+        </div>
+      </div>`;
+    const div = addBubble('bot', html, true);
+    messagesDiv.addEventListener('click', (e) => {
+      if (e.target && e.target.matches('[data-action="ask-again"]')) {
+        input.focus();
+      }
+    }, { once: true });
+    return div;
+  }
+
+  // ✅ 送出人工客服請求（建立/沿用工單，並保存 ticketId）
   const submitHandoff = async () => {
     const name = (window.prompt('請輸入稱呼（可留空）：', '') || '匿名').trim() || '匿名';
     const contact = (window.prompt('請留下聯絡方式（Email/手機/LINE ID，可留空）：', '') || '').trim();
 
-    const headers = { "Content-Type": "application/json" };
-    const csrftoken = getCSRFToken();
-    if (csrftoken) headers["X-CSRFToken"] = csrftoken;
-
     try {
-      const res = await fetch(HANDOFF_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          name,
-          contact,
-          last_question: lastUserText || '',
-          channel: 'web'
-        }),
-        credentials: 'same-origin'
+      const data = await apiPost(HANDOFF_URL, {
+        name, contact,
+        last_question: lastUserText || '',
+        channel: 'web'
       });
-      const data = await res.json();
-      if (res.ok && data?.ok) {
-        addBubble('bot', '✅ 已提交人工客服請求，我們將盡快聯絡你。');
-      } else {
-        addBubble('bot', '（一般建議）提交失敗，請稍後再試或改用其他聯絡方式。');
-      }
+      ticketId  = data.ticket_id;
+      lastMsgId = 0;
+      inHandoff = true;
+      addBubble('bot', `✅ 已建立人工客服工單（#${ticketId}）。此後可直接在這裡與座席互動。`);
+      startPolling();
     } catch (e) {
-      addBubble('bot', '（一般建議）目前無法提交人工客服，請稍後再試。');
+      showSubmitError(e.status, e.message);
     }
   };
+
+  // === 轉人工後把訊息送到座席（一定要帶 ticket_id） ===
+  const sendToAgent = async (text) => {
+    if (!ticketId) {
+      showHandoffCTA(lastUserText);
+      return;
+    }
+    try {
+      await apiPost(MESSAGE_URL, { ticket_id: ticketId, message: text });
+      addBubble('user', text); // 即時顯示；座席回覆靠輪詢
+    } catch (e) {
+      showSubmitError(e.status, e.message);
+    }
+  };
+
+  // === 轉人工後輪詢座席/系統訊息（一定要帶 ticket_id） ===
+  const pollOnce = async () => {
+    if (!inHandoff || !ticketId) return;
+    try {
+      const r = await fetch(`${POLL_URL}?ticket_id=${ticketId}&since=${lastMsgId || 0}`, {
+        cache: 'no-store',
+        credentials: 'same-origin'
+      });
+      if (r.status === 401 || r.status === 403) {
+        showSubmitError(r.status);
+        stopPolling();
+        inHandoff = false;
+        return;
+      }
+      if (!r.ok) return;
+      const data = await r.json().catch(() => ({}));
+      if (Array.isArray(data?.messages)) {
+        for (const m of data.messages) {
+          lastMsgId = Math.max(lastMsgId, m.id || 0);
+          addBubble('bot', `[${m.sender}] ${m.text}`);
+          if (/工單已結案/.test(m.text)) {
+            inHandoff = false;
+            stopPolling();
+          }
+        }
+      } else if (typeof data?.last_id === 'number') {
+        lastMsgId = data.last_id;
+      }
+    } catch (_) {}
+  };
+  const startPolling = () => { stopPolling(); pollOnce(); pollTimer = setInterval(pollOnce, 2000); };
+  const stopPolling  = () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } };
 
   // ---- 串流呼叫：逐行解析 NDJSON（meta / delta / done / error）----
   async function askRAGStream(message, historyArr) {
@@ -255,6 +350,13 @@ setupChatbot: function() {
   const sendMessageStream = async () => {
     const text = input.value.trim();
     if (!text || busy) return;
+
+    // 若已轉人工：改為送給座席
+    if (inHandoff){
+      input.value = '';
+      return sendToAgent(text);
+    }
+
     busy = true;
     input.value = '';
     sendBtn.setAttribute('disabled', 'disabled');
@@ -285,11 +387,18 @@ setupChatbot: function() {
           }
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
         } else if (evt.type === "error") {
-          botDiv.textContent = evt.message || "（一般建議）發生錯誤";
+          botDiv.textContent = evt.message || "發生錯誤";
         } else if (evt.type === "done") {
-          // 串流結束：附上來源，並在最後檢查是否要插入「轉人工客服」按鈕
           if (sourcesHTML) botDiv.innerHTML += sourcesHTML;
-          injectHandoffButton(botDiv);
+
+          // 若模型回覆語句顯示「找不到」或「沒有找到」，改為給 CTA
+          const contentText = botDiv.textContent || botDiv.innerText || "";
+          if (/目前知識庫沒有找到相關資訊|找不到合適的答案|無法找到|沒有找到/.test(contentText)) {
+            showHandoffCTA(lastUserText);
+          } else {
+            // 仍保留你原本的「把文字轉成可點擊的 轉人工客服 按鈕」
+            injectHandoffButton(botDiv);
+          }
         }
       }
 
@@ -299,7 +408,7 @@ setupChatbot: function() {
         { role: 'assistant', content: (botDiv.textContent || botDiv.innerText || '') }
       );
     } catch (err) {
-      botDiv.textContent = '（一般建議）連線失敗，請確認 /api/chat/stream 是否可用，以及本機 Ollama 是否啟動';
+      botDiv.textContent = '連線失敗，請確認 /api/chat/stream 是否可用，以及本機 Ollama 是否啟動';
       (window.PD?.debug?.error || console.error)(err);
     } finally {
       busy = false;
@@ -315,15 +424,18 @@ setupChatbot: function() {
   closeBtn.addEventListener("click", closeBox);
   sendBtn.addEventListener("click", sendMessageStream);
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessageStream();
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessageStream(); } // Enter 送出
     if (e.key === "Escape") closeBox();
   });
 
-  // ✅ 在訊息區委派事件 → 點擊「轉人工客服」按鈕時觸發 submitHandoff
+  // ✅ 在訊息區委派事件 → 點擊「轉人工客服」或「我再問一次」
   messagesDiv.addEventListener('click', (e) => {
     const t = e.target;
     if (t && t.matches('[data-action="handoff"]')) {
       submitHandoff();
+    }
+    if (t && t.matches('[data-action="ask-again"]')) {
+      input.focus();
     }
   });
 
@@ -334,161 +446,6 @@ setupChatbot: function() {
     }
   });
 },
-
-
-  /**
-   * 設定新聞滾動功能
-   */
-  setupNewsScroll: function() {
-    const newsContainer = document.querySelector('.news-scroll-container .d-flex');
-    if (!newsContainer) return;
-
-    PD.debug.log('📰 設定新聞滾動功能');
-
-    // 新聞卡片點擊效果
-    const newsCards = document.querySelectorAll('.news-card:not(.more)');
-    newsCards.forEach((card, index) => {
-      // 滑鼠事件
-      card.addEventListener('mouseenter', () => this.animateNewsCard(card, 'enter'));
-      card.addEventListener('mouseleave', () => this.animateNewsCard(card, 'leave'));
-      
-      // 點擊事件
-      card.addEventListener('click', (e) => {
-        this.handleNewsCardClick(e, card, index);
-      });
-    });
-
-    // "更多消息" 卡片
-    const moreCard = document.querySelector('.news-card.more');
-    if (moreCard) {
-      moreCard.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.showMoreNews();
-      });
-    }
-
-    // 滾動控制按鈕（如果需要）
-    this.createScrollButtons(newsContainer);
-    
-    // 自動滾動（可選）
-    this.setupAutoScroll(newsContainer);
-  },
-
-  /**
-   * 新聞卡片動畫
-   */
-  animateNewsCard: function(card, action) {
-    if (action === 'enter') {
-      card.style.transform = 'translateY(-8px) scale(1.02)';
-      card.style.zIndex = '10';
-      
-      // 添加光澤效果
-      const gloss = card.querySelector('::before');
-      if (gloss) {
-        gloss.style.transform = 'translateX(100%)';
-      }
-    } else {
-      card.style.transform = 'translateY(-5px) scale(1)';
-      card.style.zIndex = '1';
-    }
-  },
-
-  /**
-   * 處理新聞卡片點擊
-   */
-  handleNewsCardClick: function(event, card, index) {
-    // 添加點擊動畫
-    card.style.transform = 'scale(0.95)';
-    
-    setTimeout(() => {
-      card.style.transform = 'translateY(-8px) scale(1.02)';
-    }, 150);
-
-    // 記錄點擊事件（如果需要分析）
-    PD.debug.log(`新聞卡片點擊: ${index}`);
-    
-    // 可以在這裡添加GA追蹤
-    if (window.gtag) {
-      gtag('event', 'news_card_click', {
-        'news_index': index,
-        'news_url': card.href
-      });
-    }
-  },
-
-  /**
-   * 顯示更多新聞
-   */
-  showMoreNews: function() {
-    // 這裡可以實作載入更多新聞的邏輯
-    PD.message.show('更多新聞功能開發中...', 'info');
-    
-    // 模擬載入效果
-    const moreCard = document.querySelector('.news-card.more');
-    if (moreCard) {
-      moreCard.innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
-      
-      setTimeout(() => {
-        moreCard.innerHTML = '<span><i class="bi bi-arrow-right-circle me-2"></i>更多消息</span>';
-      }, 2000);
-    }
-  },
-
-  /**
-   * 創建滾動控制按鈕
-   */
-  createScrollButtons: function(container) {
-    const scrollContainer = container.parentElement;
-    if (!scrollContainer) return;
-
-    // 左滾動按鈕
-    const leftBtn = document.createElement('button');
-    leftBtn.className = 'btn btn-outline-secondary news-scroll-btn news-scroll-left';
-    leftBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
-    leftBtn.setAttribute('aria-label', '向左滾動新聞');
-    
-    // 右滾動按鈕
-    const rightBtn = document.createElement('button');
-    rightBtn.className = 'btn btn-outline-secondary news-scroll-btn news-scroll-right';
-    rightBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
-    rightBtn.setAttribute('aria-label', '向右滾動新聞');
-
-    // 按鈕樣式
-    const btnStyle = `
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border-light);
-      transition: all var(--transition-normal) ease;
-    `;
-    
-    leftBtn.style.cssText = btnStyle + 'left: 10px;';
-    rightBtn.style.cssText = btnStyle + 'right: 10px;';
-
-    // 事件監聽
-    leftBtn.addEventListener('click', () => this.scrollNews(container, 'left'));
-    rightBtn.addEventListener('click', () => this.scrollNews(container, 'right'));
-
-    // 添加到DOM
-    scrollContainer.style.position = 'relative';
-    scrollContainer.appendChild(leftBtn);
-    scrollContainer.appendChild(rightBtn);
-
-    // 根據滾動位置顯示/隱藏按鈕
-    this.updateScrollButtons(container, leftBtn, rightBtn);
-    container.addEventListener('scroll', () => {
-      this.updateScrollButtons(container, leftBtn, rightBtn);
-    });
-  },
 
   /**
    * 滾動新聞

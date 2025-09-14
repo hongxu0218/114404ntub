@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Handoff Console | 毛日好{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { font-family: system-ui,-apple-system,"Noto Sans TC","Segoe UI",Roboto; }
+  .handoff-wrap { display: flex; gap: 20px; }
+  .tickets { width: 320px; border-right: 1px solid #ddd; padding-right: 20px; }
+  .ticket { padding: 10px; border: 1px solid #ddd; margin-bottom: 8px; border-radius: 8px; background: #fff; }
+  .ticket a { text-decoration: none; color: #111; display: inline-block; margin-bottom: 4px; }
+  .ticket.open { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,.08) inset; }
+  .chat { flex: 1; display: flex; flex-direction: column; min-height: 60vh; }
+  .msg { margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: #f8fafc; }
+  .msg .who { font-weight: 700; margin-right: 8px; }
+  .chat-top { display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; }
+  .foot { display: flex; gap: 8px; margin-top: auto; }
+  #reply { width: 100%; height: 96px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center mb-3">
+    <i class="bi bi-headset me-2" aria-hidden="true"></i>
+    <h3 class="mb-0">人工客服工單台（Handoff Console）</h3>
+  </div>
+
+  <div class="handoff-wrap">
+    <div class="tickets">
+      <h5 class="mb-3">工單</h5>
+      {% for t in tickets %}
+        <div class="ticket {% if t.is_open %}open{% endif %}">
+          <a href="{% url 'handoff_console_ticket' t.id %}">
+            #{{ t.id }} {{ t.session_key }} {% if t.is_open %}（開啟）{% else %}（結案）{% endif %}
+          </a><br>
+          <small class="text-muted">{{ t.created_at }}</small>
+        </div>
+      {% empty %}
+        <p class="text-muted">尚無工單</p>
+      {% endfor %}
+    </div>
+
+    <div class="chat">
+      {% if current %}
+        <div class="chat-top">
+          <h5 class="mb-0">Ticket #{{ current.id }} {% if current.is_open %}（開啟）{% else %}（結案）{% endif %}</h5>
+        </div>
+
+        <div id="chatlog" class="mb-3">
+          {% for m in current.messages.all %}
+            <div class="msg">
+              <span class="who">[{{ m.sender }}]</span>{{ m.text }}
+              <div class="small text-muted mt-1">{{ m.created_at }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if current.is_open %}
+        <div class="foot">
+          <textarea id="reply" class="form-control" placeholder="輸入回覆內容..."></textarea>
+          <div class="d-flex flex-column gap-2">
+            <button id="send" class="btn btn-success">送出</button>
+            <form method="post" action="{% url 'handoff_agent_close' current.id %}">
+              {% csrf_token %}
+              <button class="btn btn-outline-secondary">結案</button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="text-muted">尚未選擇工單</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if current %}
+<script>
+(function () {
+  const sendBtn  = document.getElementById('send');
+  const textarea = document.getElementById('reply');
+  if (!sendBtn || !textarea) return;
+
+  // 只有 current 存在時才生成 URL，避免 NoReverseMatch
+  const replyUrl = "{% url 'handoff_agent_reply' current.id %}";
+
+  // 你的登入頁（若不是 allauth，請把 account_login 換成 login）
+  const LOGIN_URL = "{% url 'account_login' %}?next={{ request.get_full_path|urlencode }}";
+
+  // 讀取 CSRF（Django 官方 cookie 取法）
+  function getCookie(name) {
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? decodeURIComponent(m.pop()) : null;
+  }
+  const CSRF_TOKEN = getCookie('csrftoken');
+
+  // 狀態碼對應的明確提示
+  const STATUS_HINT = {
+    400: "欄位有誤，請確認必填內容（例如：訊息不可為空）。",
+    401: "尚未登入，請先登入後再試。",
+    403: "沒有操作權限（僅限客服/管理員）。",
+    404: "找不到工單，可能已被刪除。",
+    409: "工單已結案，無法再回覆。",
+    413: "內容過大，請精簡後再送出。",
+    429: "操作過於頻繁，請稍後再試。",
+    500: "系統暫時異常，請稍後再試或改用其他聯絡方式。"
+  };
+
+  // 簡易提示（若你有 Bootstrap toast/snackbar，可換成自己的）
+  function showError(msg) { alert(msg); }
+  function showOK(msg)    { console.log(msg); } // 或換成你的成功提示
+
+  // 統一的 POST 包裝：含 CSRF、AJAX Header、偵測 302→登入頁
+  async function apiPost(url, payload) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": CSRF_TOKEN,
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    // 被 staff_member_required 重導去登入頁時，fetch 會拿到 200 + HTML
+    const ct = res.headers.get("content-type") || "";
+    if (res.redirected || (!ct.includes("application/json") && ct.includes("text/html"))) {
+      throw { loginRequired: true };
+    }
+
+    let data = null;
+    try { data = await res.json(); } catch (_) {}
+
+    if (!res.ok || (data && data.ok === false)) {
+      const status = res.status || 500;
+      const msg = (data && data.error) ? data.error : (STATUS_HINT[status] || STATUS_HINT[500]);
+      throw { status, message: msg };
+    }
+    return data;
+  }
+
+  async function handleSend() {
+    const text = (textarea.value || "").trim();
+    if (!text) { showError("請輸入回覆內容。"); return; }
+
+    sendBtn.disabled = true;
+    try {
+      await apiPost(replyUrl, { message: text });
+
+      // 成功後：即時加到畫面（避免整頁重載）
+      const log = document.getElementById('chatlog');
+      if (log) {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.innerHTML =
+          '<span class="who">[AGENT]</span>' +
+          text.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+          '<div class="small text-muted mt-1">剛剛</div>';
+        log.appendChild(div);
+      }
+      textarea.value = "";
+      showOK("已送出。");
+    } catch (e) {
+      if (e.loginRequired || e.status === 401) {
+        if (confirm("需要登入才能操作，現在前往登入？")) {
+          window.location.href = LOGIN_URL;
+        }
+        return;
+      }
+      showError(e.message || STATUS_HINT[500]);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.addEventListener('click', handleSend);
+  // Ctrl/⌘ + Enter 送出
+  textarea.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+      ev.preventDefault();
+      handleSend();
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

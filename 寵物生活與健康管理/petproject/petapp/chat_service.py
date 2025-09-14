@@ -1,4 +1,5 @@
 # petapp/chat_service.py
+# -*- coding: utf-8 -*-
 import os, re, json, requests, traceback, time
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -132,6 +133,23 @@ def _strip_source_section(text: str) -> str:
         new_lines.append(ln)
     t = "\n".join(new_lines).rstrip()
     return t
+
+# ====== 串流安全包裝：偵測用戶端中斷，安靜收尾 ======
+def _guard_stream(generator):
+    """
+    將任一字串產生器包起來；若用戶端關閉連線（BrokenPipe / Reset / GeneratorExit），
+    立即停止迴圈，避免 console 汙染與上游資源浪費。
+    """
+    try:
+        for chunk in generator:
+            yield chunk
+    except (BrokenPipeError, ConnectionResetError, GeneratorExit):
+        return
+    except Exception as e:
+        try:
+            yield json.dumps({"type":"error","message":f"（一般建議）串流發生錯誤：{e}"}) + "\n"
+        finally:
+            return
 
 # ====== 轉人工客服：連續失敗判斷 ======
 HANDOFF_THRESHOLD = int(os.getenv("HANDOFF_THRESHOLD", "3"))
@@ -459,7 +477,7 @@ def chat_with_ollama(messages):
         traceback.print_exc()
         return f"（一般建議）AI 回覆發生錯誤：{e}"
 
-# ====== 與 Ollama 串流對話（NDJSON） ======
+# ====== 與 Ollama 串流對話（NDJSON）—強化版 ======
 def chat_with_ollama_stream(messages):
     payload = {
         "model": OLLAMA_MODEL,
@@ -472,33 +490,48 @@ def chat_with_ollama_stream(messages):
             "keep_alive": "5m",
         }
     }
+    r = None
     try:
-        with requests.post(OLLAMA_CHAT_URL, json=payload, timeout=OLLAMA_TIMEOUT_SEC, stream=True) as r:
-            r.raise_for_status()
-            for line in r.iter_lines(decode_unicode=True):
-                if not line:
-                    continue
-                try:
-                    piece = json.loads(line)
-                except Exception:
-                    raw = normalize_zh_tw(line)
-                    yield json.dumps({"type": "delta", "text": raw}) + "\n"
-                    continue
-                delta = ""
-                if isinstance(piece.get("message"), dict):
-                    delta = piece["message"].get("content", "") or ""
-                if not delta and "response" in piece:
-                    delta = piece.get("response") or ""
-                if delta:
-                    delta = normalize_zh_tw(delta)
-                    yield json.dumps({"type": "delta", "text": delta}) + "\n"
+        r = requests.post(OLLAMA_CHAT_URL, json=payload, timeout=OLLAMA_TIMEOUT_SEC, stream=True)
+        r.raise_for_status()
+
+        # 逐行讀取 NDJSON；若下游（瀏覽器）已關閉，外層 _guard_stream 會終止並走到 finally 關 connection
+        for line in r.iter_lines(chunk_size=8192, decode_unicode=True):
+            if not line:
+                continue
+            try:
+                piece = json.loads(line)
+            except Exception:
+                raw = normalize_zh_tw(line)
+                yield json.dumps({"type": "delta", "text": raw}) + "\n"
+                continue
+
+            delta = ""
+            if isinstance(piece.get("message"), dict):
+                delta = piece["message"].get("content", "") or ""
+            if not delta and "response" in piece:
+                delta = piece.get("response") or ""
+
+            if delta:
+                delta = normalize_zh_tw(delta)
+                yield json.dumps({"type": "delta", "text": delta}) + "\n"
+
         yield json.dumps({"type": "done"}) + "\n"
+
     except requests.exceptions.ConnectionError:
         yield json.dumps({"type":"error","message":"（一般建議）本機模型尚未啟動，請先執行：ollama serve，並確認已 pull 模型。"}) + "\n"
         yield json.dumps({"type":"done"}) + "\n"
+    except (BrokenPipeError, ConnectionResetError, GeneratorExit):
+        return
     except Exception as e:
         yield json.dumps({"type":"error","message":f"（一般建議）AI 回覆發生錯誤：{e}"}) + "\n"
         yield json.dumps({"type":"done"}) + "\n"
+    finally:
+        try:
+            if r is not None:
+                r.close()
+        except Exception:
+            pass
 
 # ====== 非串流端點：/api/chat/ ======
 @csrf_exempt
@@ -591,8 +624,8 @@ def api_chat_stream(request):
         data = json.loads(request.body.decode("utf-8"))
     except Exception:
         return StreamingHttpResponse(
-            iter([json.dumps({"type":"error","message":"（一般建議）請以 JSON 傳送：{ message: '...'}"})+"\n",
-                  json.dumps({"type":"done"})+"\n"]),
+            _guard_stream(iter([json.dumps({"type":"error","message":"（一般建議）請以 JSON 傳送：{ message: '...'}"})+"\n",
+                                json.dumps({"type":"done"})+"\n"])),
             content_type="application/x-ndjson; charset=utf-8"
         )
 
@@ -600,8 +633,8 @@ def api_chat_stream(request):
     history  = (data.get("history") or [])
     if not user_msg:
         return StreamingHttpResponse(
-            iter([json.dumps({"type":"error","message":"（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})+"\n",
-                  json.dumps({"type":"done"})+"\n"]),
+            _guard_stream(iter([json.dumps({"type":"error","message":"（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})+"\n",
+                                json.dumps({"type":"done"})+"\n"])),
             content_type="application/x-ndjson; charset=utf-8"
         )
 
@@ -614,7 +647,10 @@ def api_chat_stream(request):
                 "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": True
             }}) + "\n"
             yield json.dumps({"type":"done"}) + "\n"
-        return StreamingHttpResponse(_bye_gen(), content_type="application/x-ndjson; charset=utf-8")
+        resp = StreamingHttpResponse(_guard_stream(_bye_gen()), content_type="application/x-ndjson; charset=utf-8")
+        resp["Cache-Control"] = "no-cache, no-transform"
+        resp["X-Accel-Buffering"] = "no"
+        return resp
 
     # 小聊
     if is_low_intent_smalltalk(user_msg):
@@ -624,7 +660,10 @@ def api_chat_stream(request):
             payload = {"count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False}
             yield json.dumps({"type":"handoff","payload": payload}) + "\n"
             yield json.dumps({"type":"done"}) + "\n"
-        return StreamingHttpResponse(_greet_gen(), content_type="application/x-ndjson; charset=utf-8")
+        resp = StreamingHttpResponse(_guard_stream(_greet_gen()), content_type="application/x-ndjson; charset=utf-8")
+        resp["Cache-Control"] = "no-cache, no-transform"
+        resp["X-Accel-Buffering"] = "no"
+        return resp
 
     # 意圖攔截
     intent = detect_intent(user_msg)
@@ -638,7 +677,10 @@ def api_chat_stream(request):
             payload = {"count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False}
             yield json.dumps({"type":"handoff","payload": payload}) + "\n"
             yield json.dumps({"type":"done"}) + "\n"
-        return StreamingHttpResponse(_plan_gen(), content_type="application/x-ndjson; charset=utf-8")
+        resp = StreamingHttpResponse(_guard_stream(_plan_gen()), content_type="application/x-ndjson; charset=utf-8")
+        resp["Cache-Control"] = "no-cache, no-transform"
+        resp["X-Accel-Buffering"] = "no"
+        return resp
 
     # RAG 檢索
     context, sources = safe_retrieve(user_msg)
@@ -650,7 +692,10 @@ def api_chat_stream(request):
             _, handoff_meta = _update_handoff_state(request, failed=True)
             yield json.dumps({"type":"handoff","payload": handoff_meta}) + "\n"
             yield json.dumps({"type":"done"}) + "\n"
-        return StreamingHttpResponse(_nohit_gen(), content_type="application/x-ndjson; charset=utf-8")
+        resp = StreamingHttpResponse(_guard_stream(_nohit_gen()), content_type="application/x-ndjson; charset=utf-8")
+        resp["Cache-Control"] = "no-cache, no-transform"
+        resp["X-Accel-Buffering"] = "no"
+        return resp
 
     opening = "根據提供的知識片段，"
     user_block = (
@@ -708,8 +753,14 @@ def api_chat_stream(request):
         yield json.dumps({"type":"handoff","payload": handoff_meta}) + "\n"
         yield json.dumps({"type":"done"}) + "\n"
 
-    resp = StreamingHttpResponse(_generator(), content_type="application/x-ndjson; charset=utf-8")
-    resp["Cache-Control"] = "no-cache"
+    resp = StreamingHttpResponse(
+        _guard_stream(_generator()),
+        content_type="application/x-ndjson; charset=utf-8"
+    )
+    # 代理/瀏覽器友善：盡可能避免緩衝與轉碼
+    resp["Cache-Control"] = "no-cache, no-transform"
+    resp["X-Accel-Buffering"] = "no"  # Nginx：關閉代理端緩衝，SSE/串流更穩
+    # ⚠️ 不要設定 Connection（WSGI 不允許 hop-by-hop header）
     return resp
 
 # ====== 建立人工客服請求端點：/api/handoff/request/ ======
