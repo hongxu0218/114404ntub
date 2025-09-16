@@ -69,8 +69,8 @@ const profilePosts = [
   /* 逗逗 */
   { id:'d1', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'1小時前', text:'今天跑跑！', type:'video', media:['https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'], likes:18, comments:[] },
   { id:'d2', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'昨天', text:'最愛的骨頭🦴', type:'single', media:['images/1080.webp'], likes:22, comments:[] },
-  { id:'d3', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'2天前', text:'散步遇到朋友', type:'carousel', media:['images/original.jpg','images/200427-23094-01-Cuuu5.jpg'], likes:9, comments:[] },
-  { id:'d4', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'4天前', text:'睡回籠覺', type:'single', media:['images/southeast.jpg'], likes:6, comments:[] },
+  { id:'d3', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'2天前', text:'散步遇到朋友', type:'carousel', media:['images/ChatGPT Image12_53_59.PNG','images/ChatGPT Image12_54_01.PNG'], likes:9, comments:[] },
+  { id:'d4', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'4天前', text:'睡回籠覺', type:'single', media:['images/ChatGPT Image12_01_08.PNG'], likes:6, comments:[] },
   { id:'d5', user:{name:'逗逗', avatar:'https://i.pravatar.cc/80?img=10'}, ts:'6天前', text:'握手新技能', type:'video', media:['https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'], likes:13, comments:[] },
 
   /* Butter */
@@ -82,14 +82,15 @@ const profilePosts = [
   /* Peanut */
   { id:'p1u', user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=5'}, ts:'3小時前', text:'今天洗香香🛁', type:'carousel', media:['images/ChatGPT Image06_13_13.PNG','images/ChatGPT Image 06_18_40.PNG'], likes:8, comments:[] },
   { id:'p2u', user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=5'}, ts:'昨天', text:'玩球時間', type:'video', media:['images/kling_20250829_Image_to_Video__4745_0.mp4'], likes:17, comments:[] },
-  { id:'p3u', user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=5'}, ts:'4天前', text:'午睡 zZz', type:'single', media:['images/southeast.jpg'], likes:3, comments:[] },
-  { id:'p4u', user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=5'}, ts:'6天前', text:'盯著零食罐…', type:'single', media:['images/original.jpg'], likes:6, comments:[] },
+  { id:'p3u', user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=5'}, ts:'4天前', text:'午睡 zZz', type:'single', media:['images/ChatGPT Image03_03_33.PNG'], likes:3, comments:[] },
+  { id:'p4u', user:{name:'Peanut', avatar:'https://i.pravatar.cc/80?img=5'}, ts:'6天前', text:'盯著零食罐…', type:'single', media:['images/ChatGPT Image 03_07_41.PNG'], likes:6, comments:[] },
 
   /* 小黑 */
-  { id:'x1u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'1小時前', text:'巡邏地盤', type:'single', media:['images/1080.webp'], likes:6, comments:[] },
-  { id:'x2u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'昨天', text:'接飛盤！', type:'video', media:['https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'], likes:20, comments:[] },
-  { id:'x3u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'3天前', text:'偷吃被抓包', type:'single', media:['images/original.jpg'], likes:4, comments:[] },
+  { id:'x1u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'1小時前', text:'巡邏地盤', type:'single', media:['images/ChatGPT Image03_33_46.PNG'], likes:6, comments:[] },
+  { id:'x2u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'昨天', text:'玩飛盤！', type:'video', media:['影片專案.MP4'], likes:20, comments:[] },
+  { id:'x3u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'5天前', text:'偷吃被抓包', type:'single', media:['images/ChatGPT Image 10_51_36.PNG'], likes:4, comments:[] },
   { id:'x4u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'6天前', text:'想出去玩～', type:'single', media:['images/southeast.jpg'], likes:2, comments:[] },
+  { id:'x5u', user:{name:'小黑', avatar:'https://i.pravatar.cc/80?img=8'}, ts:'3天前', text:'小黑今天去洗澡啦🛁', type:'carousel', media:['images/a5139e2a-54d9-427a-982a-a898c7d69034.png','images/6da1c8d2-5e89-4680-8e60-b1c8302ac816.png','images/d01badcf-644d-48de-837e-d6b9c7fe4ac8.png'], likes:5, comments:[] },
 ];
 
 /****************************************************
@@ -97,7 +98,7 @@ const profilePosts = [
  ****************************************************/
 const userProfiles = {
   "Butter": { handle:"@butter", bio:"喜歡散步與曬太陽的奶油寶。", banner:"images/original.jpg", followers:1203, following:88 },
-  "Peanut": { handle:"@peanut", bio:"花生先生的日常集錦。",     banner:"images/southeast.jpg", followers:842,  following:51 },
+  "Peanut": { handle:"@peanut", bio:"Peanut小姐的日常集錦。",     banner:"images/ChatGPT Image 06_18_40.PNG", followers:842,  following:51 },
   "小黑":   { handle:"@小黑",   bio:"洗澡最帥的小黑 🛁",         banner:"images/a5139e2a-54d9-427a-982a-a898c7d69034.png", followers:564, following:33 },
   "逗逗":   { handle:"@逗逗",   bio:"我是啃骨頭小天才 🐶",       banner:"images/1080.webp", followers:1932, following:102 },
 };
