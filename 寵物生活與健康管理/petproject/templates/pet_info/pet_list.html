@@ -4,9 +4,87 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pet_list.css' %}">
+<style>
+  .action-btn.btn-adoption {
+    background: linear-gradient(135deg, #f9d423 0%, #ffb800 100%);
+    color: white;
+    border: none;
+}
+  .btn-adoption:hover {
+    background: linear-gradient(135deg, #ffb800 0%, #d89b00 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 184, 0, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+/* 更改飼主按鈕 - 深灰藍灰色調 */
+.btn-changeowner {
+  background: linear-gradient(135deg, #5F8089 0%, #3E5E65 100%);
+  color: white;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-changeowner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(95, 128, 137, 0.35);
+  color: white;
+  text-decoration: none;
+  background: linear-gradient(135deg, #4B6A72 0%, #2F4B52 100%);
+}
+
+.btn-changeowner:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(95, 128, 137, 0.3);
+}
+  .btn-appointment:active {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+}
+  .transfer-alert {
+    background-color: #fff4cc;
+    border: 1px solid #ffcc80;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+.transfer-alert a {
+    margin-left: 10px;
+}
+
+  .pet-card {
+    max-width: 100%;
+  }
+.pet-details.show {
+  max-height: none;
+}
+
+
+</style>
 {% endblock %}
 
 {% block content %}
+
+{% if pending_transfers %}
+  <div class="transfer-alert">
+    您有 {{ pending_transfers|length }} 筆待確認的飼主轉讓請求：
+    <ul>
+      {% for transfer in pending_transfers %}
+        <li>
+          飼主：{{ transfer.from_owner.username  }} <br>
+          寵物：{{ transfer.pet.name }}
+          <a href="{% url 'transfer_confirm' transfer.id %}" class="btn btn-sm btn-primary">
+            查看
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
 <div class="pet-management-container">
   <div class="container">
     <!-- 頁面標題 -->
@@ -36,7 +114,8 @@
         <div class="pet-card-header" onclick="togglePetDetails({{ pet.id }})">
           <h3 class="pet-name">
             <span>
-              <i class="bi bi-heart me-2"></i>{{ pet.name }}
+              <i class="bi bi-heart me-2"></i>{{ pet.name }} {% if pet.is_adoption_only %}(待領養){% endif %}
+              {% if pet.is_adopted %}（已送養）{% endif %}
             </span>
             <i class="bi bi-chevron-down toggle-icon" id="toggle-{{ pet.id }}"></i>
           </h3>
@@ -46,11 +125,33 @@
         <div id="details-{{ pet.id }}" class="pet-details">
           <div class="pet-info-grid">
             <!-- 基本資訊 -->
+
+            <!-- 種類 -->
+            <div class="pet-info-section">
+              <div class="info-label">
+                <i class="bi bi-tag me-1"></i>種類
+              </div>
+              <p class="info-value">
+                {% if pet.species %}
+                  {{ pet.species }}
+              {% else %}
+                <span class="text-muted">尚無資料</span>
+              {% endif %}
+              </p>
+            </div>
+
+            <!-- 品種 -->
             <div class="pet-info-section">
               <div class="info-label">
                 <i class="bi bi-tag me-1"></i>品種
               </div>
-              <p class="info-value">{{ pet.breed }}</p>
+              <p class="info-value">
+                {% if pet.breed %}
+                  {{ pet.breed }}
+              {% else %}
+                <span class="text-muted">尚無資料</span>
+              {% endif %}
+              </p>
             </div>
 
             <div class="pet-info-section">
@@ -107,7 +208,7 @@
                 <i class="bi bi-star me-1"></i>特徵描述
               </div>
               <p class="info-value">
-                <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature }}</span>
+                <span id="feature-{{ pet.id }}" class="feature-text collapsed">{{ pet.feature|linebreaksbr  }}</span>
                 <button class="toggle-feature-btn" onclick="toggleFeature({{ pet.id }})">
                   <span id="toggle-text-{{ pet.id }}">展開</span>
                 </button>
@@ -175,14 +276,55 @@
               <i class="bi bi-pencil"></i>
               <span>修改資料</span>
             </a>
+            {% if pet.has_pending_transfer %}
+            <button class="action-btn">
+              <i class="bi bi-trash"></i>
+              <span>刪除寵物</span>
+            </button>
+            {% else %}
             <a href="{% url 'delete_pet' pet.id %}" class="action-btn btn-delete">
               <i class="bi bi-trash"></i>
               <span>刪除寵物</span>
             </a>
+            {% endif %}
+
+
+            {% if pet.is_adoption_only %}
+            <button class="action-btn">
+                <i class="bi bi-calendar-plus"></i>
+                <span>預約獸醫</span>
+              </button>
+            {% elif pet.is_adopted %}
+            <button class="action-btn">
+                <i class="bi bi-calendar-plus"></i>
+                <span>預約獸醫</span>
+              </button>
+            {% elif pet.has_pending_transfer %}
+            <button class="action-btn" disabled title="請先等待新飼主的確認才能進行此操作">
+                <i class="bi bi-calendar-plus"></i>
+                <span>預約獸醫</span>
+              </button>
+            {% else %}
             <a href="{% url 'create_appointment' %}?pet_id={{ pet.id }}" class="action-btn btn-appointment">
               <i class="bi bi-calendar-plus"></i>
               <span>預約獸醫</span>
             </a>
+            {% endif %}
+
+
+            {% if pet.future_appointments %}
+              <button class="action-btn" disabled title="請先取消所有預約才能進行此操作">
+                <i class="bi bi-arrow-repeat me-1"></i>更改飼主
+              </button>
+            {% elif not pet.has_pending_transfer %}
+              <a href="{% url 'change_owner' pet.id %}" class="action-btn btn-changeowner">
+                <i class="bi bi-arrow-repeat"></i>更改飼主</a>
+            {% else %}
+              <button class="action-btn" disabled>等待轉讓處理中</button>
+            {% endif %}
+
+
+
             <button class="action-btn btn-close" onclick="togglePetDetails({{ pet.id }})">
               <i class="bi bi-x-lg"></i>
               <span>關閉</span>
@@ -219,10 +361,31 @@
     </div>
   </div>
   {% endfor %}
+
+
 {% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
 {{ block.super }}
-<script src="{% static 'js/pet_list.js' %}"></script>
+<script src="{% static 'js/pet_list.js' %}">
+  function confirmCancelAdoption(petName) {
+    return confirm(`你確定不繼續把「${petName}」送養嗎？\n「${petName}」的資料將會從「我的送養記錄」中刪除，你要繼續嗎？`);
+  }
+  document.querySelectorAll('.change-owner-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const petId = button.dataset.petId;
+      const petName = button.dataset.petName;
+      document.getElementById('modalPetId').value = petId;
+      document.getElementById('changeOwnerMsg').textContent =
+        `你確定要更改「${petName}」的飼主嗎？此操作無法覆原`;
+      const modal = new bootstrap.Modal(document.getElementById('changeOwnerModal'));
+      modal.show();
+    });
+  });
+
+
+
+</script>
 {% endblock %}

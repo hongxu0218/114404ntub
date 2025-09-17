@@ -17,6 +17,13 @@
         margin: auto;
         box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+    .form-control {
+        margin-bottom: 5px;
+    }
+    .form-other-group{
+      display:none;
+      margin-bottom:0px;
+    }
     label {
         display: block;
         margin-top: 1em;
@@ -78,11 +85,21 @@
     .current-image + a {
         display: none;
     }
+    .auto-grow-textarea {
+      width: 100%;
+      min-height: 1.5em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      resize: vertical;
+      overflow-y: hidden; /* JS 控制 */
+      box-sizing: border-box;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <h2 style="text-align: center;">編輯寵物資料</h2>
+
 
 <form method="post" enctype="multipart/form-data" id="edit-form">
     {% csrf_token %}
@@ -94,14 +111,43 @@
             {% endfor %}
         </ul>
     {% endif %}
-
-    <label for="id_species">種類</label>
+    <!-- 種類 -->
+    <div class="form-group">
+      <label for="species_select"><strong>種類</strong></label>
+      <select id="species_select" class="form-control">
+        <option value="">請選擇</option>
+        <option value="狗">狗</option>
+        <option value="貓">貓</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div id="species_other_group" class="form-other-group">
+      {{ form.species_other }}
+        {% if form.species_other.errors %}
+        <div class="text-danger">{{ form.species_other.errors }}</div>
+        {% endif %}
+    </div>
     {{ form.species }}
+    {% if form.species.errors %}
+    <div class="text-danger">{{ form.species.errors }}</div>
+    {% endif %}
 
-    <label for="id_breed">品種</label>
+    <!-- 品種 -->
+    <div class="form-group">
+      <label for="breed_select"><strong>品種</strong></label>
+      <select id="breed_select" class="form-control">
+        <option value="">請選擇</option>
+      </select>
+    </div>
+    <div id="breed_other_group" class="form-other-group">
+      {{ form.breed_other }}
+        {% if form.breed_other.errors %}
+        <div class="text-danger">{{ form.breed_other.errors }}</div>
+        {% endif %}
+    </div>
     {{ form.breed }}
-    {% if form.breed.errors %}
-        <div class="text-danger">{% for error in form.breed.errors %}<p>{{ error }}</p>{% endfor %}</div>
+   {% if form.breed.errors %}
+    <div class="text-danger">{{ form.breed.errors }}</div>
     {% endif %}
 
     <label for="id_name">名字</label>
@@ -112,9 +158,15 @@
 
     <label for="id_sterilization_status">絕育狀態</label>
     {{ form.sterilization_status }}
+    {% if form.sterilization_status.errors %}
+    <div class="text-danger">{{ form.sterilization_status.errors }}</div>
+    {% endif %}
 
     <label for="id_chip">晶片號碼</label>
     {{ form.chip }}
+    {% if form.chip.errors %}
+    <div class="text-danger">{{ form.chip.errors }}</div>
+    {% endif %}
 
     <label for="id_birth_date">出生日期</label>
     {{ form.birth_date }}
@@ -124,6 +176,9 @@
 
     <label for="id_gender">性別</label>
     {{ form.gender }}
+    {% if form.gender.errors %}
+    <div class="text-danger">{{ form.gender.errors }}</div>
+    {% endif %}
 
     <label for="id_weight">體重（公斤）</label>
     {{ form.weight }}
@@ -131,8 +186,13 @@
         <div class="text-danger">{% for error in form.weight.errors %}<p>{{ error }}</p>{% endfor %}</div>
     {% endif %}
 
+
     <label for="id_feature">特徵</label>
-    {{ form.feature }}
+     <div class="form-group">   {{ form.feature }} </div>
+
+    {% if form.feature.errors %}
+    <div class="text-danger">{{ form.feature.errors }}</div>
+    {% endif %}
 
     <label for="id_picture">圖片</label>
 
@@ -163,6 +223,7 @@
 
 {% block extra_js %}
 <script>
+
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('id_picture');
     const preview = document.getElementById('current-preview');
@@ -180,6 +241,186 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+
+// 種類、品種 後端預填值
+    const speciesSelect = document.getElementById('species_select');
+    const speciesOtherGroup = document.getElementById('species_other_group');
+    const speciesOtherInput = document.getElementById('id_species_other');
+    const hiddenSpecies = document.getElementById('id_species');
+
+    const breedSelect = document.getElementById('breed_select');
+    const breedOtherGroup = document.getElementById('breed_other_group');
+    const breedOtherInput = document.getElementById('id_breed_other');
+    const hiddenBreed = document.getElementById('id_breed');
+
+    const dogBreeds = {{ dog_choices|safe }};
+    const catBreeds = {{ cat_choices|safe }};
+
+    // 後端傳進來的原始值
+    const initialSpecies = hiddenSpecies.value;
+    const initialBreed = hiddenBreed.value;
+
+    function updateSpecies(setInitial=false) {
+        const value = speciesSelect.value;
+        hiddenSpecies.value = value;
+
+        speciesOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+        if (value !== '其他' && !setInitial) speciesOtherInput.value = '';
+
+        let breeds = [['', '請選擇']];
+        if (value === '狗') breeds = breeds.concat(dogBreeds);
+        if (value === '貓') breeds = breeds.concat(catBreeds);
+        if (value === '其他') breeds.push(['其他', '其他']);
+
+        breedSelect.innerHTML = breeds.map(o =>
+            `<option value="${o[0]}">${o[1]}</option>`
+        ).join('');
+
+        if (setInitial && initialBreed) {
+            breedSelect.value = initialBreed;
+        }
+        updateBreed(setInitial);
+    }
+
+    function updateBreed(setInitial=false) {
+        const value = breedSelect.value;
+        hiddenBreed.value = value;
+
+        breedOtherGroup.style.display = value === '其他' ? 'block' : 'none';
+        if (value !== '其他' && !setInitial) breedOtherInput.value = '';
+    }
+
+    speciesSelect.addEventListener('change', () => updateSpecies(false));
+    breedSelect.addEventListener('change', () => updateBreed(false));
+
+// 初始化選項
+if (initialSpecies) {
+    if (initialSpecies === '狗' || initialSpecies === '貓' || initialSpecies === '其他') {
+        speciesSelect.value = initialSpecies;
+    } else {
+        // 如果是使用者自填的
+        speciesSelect.value = '其他';
+        hiddenSpecies.value = '其他';
+        speciesOtherInput.value = initialSpecies;  // 顯示到「其他種類」輸入框
+    }
+}
+updateSpecies(true);
+
+if (initialBreed) {
+    const dogBreeds = {{ dog_choices|safe }};
+    const catBreeds = {{ cat_choices|safe }};
+    const validBreeds = dogBreeds.concat(catBreeds).map(b => b[0]).concat(['其他']);
+
+    if (validBreeds.includes(initialBreed)) {
+        breedSelect.value = initialBreed;
+    } else {
+        breedSelect.value = '其他';
+        hiddenBreed.value = '其他';
+        breedOtherInput.value = initialBreed;  // 顯示到「其他品種」輸入框
+    }
+}
+updateBreed(true);
+
+
+
+// 表單送出檢查
+document.getElementById('edit-form').addEventListener('submit', function(e) {
+  const species = speciesSelect.value;
+  const speciesOther = document.getElementById('id_species_other')?.value.trim();
+  const breed = breedSelect.value;
+  const breedOther = document.getElementById('id_breed_other')?.value.trim();
+
+  if (!species) {
+    alert('請選擇寵物種類！');
+    e.preventDefault();
+    return;
+  }
+
+  if (species === '其他' && !speciesOther) {
+    alert('請填寫寵物的種類！');
+    e.preventDefault();
+    return;
+  }
+
+  if (!breed) {
+    alert('請選擇寵物品種！');
+    e.preventDefault();
+    return;
+  }
+
+  if (breed === '其他' && !breedOther) {
+    alert('請填寫寵物的品種！');
+    e.preventDefault();
+    return;
+  }
+});
+
+
+
+//////////////////////////
+//////Textarea 的 展開/收合
+////////////////////////
+    const textareas = document.querySelectorAll(".auto-grow-textarea");
+    const maxRows = 5;     // 最多顯示 5 行
+
+  // 取得實際 line-height（避免手動估錯）
+  function getLineHeightPx(el) {
+    const lh = parseFloat(getComputedStyle(el).lineHeight);
+    if (!isNaN(lh)) return lh + 2;
+    const fs = parseFloat(getComputedStyle(el).fontSize) || 16;
+    return 1.5 * fs + 2; // 後備：line-height: 1.5
+  }
+
+  // 移除每行末尾多餘空白 + 移除尾端空白行
+  function trimTrailingBlankLines(str) {
+    return str
+      .replace(/[ \t]+\n/g, "\n") // 行尾空白
+      .replace(/\n+$/g, "")       // 多餘結尾空行
+      .replace(/\s+$/g, "");      // 任何尾端空白
+  }
+
+  // 編輯中：無上限展開
+  function expandFully(el) {
+    el.style.height = "auto";
+    el.style.overflowY = "hidden";
+    el.style.height = el.scrollHeight + "px";
+  }
+
+  // 閒置（blur/初始）：刪尾端空行後，<=5行顯示全部，>5行限制5行
+  function clampWhenIdle(el) {
+    const lineHeight = getLineHeightPx(el);
+    const maxHeight = lineHeight * maxRows;
+
+    const trimmed = trimTrailingBlankLines(el.value);
+    if (trimmed !== el.value) el.value = trimmed;
+
+    el.style.height = "auto";
+    requestAnimationFrame(() => {
+      const h = Math.min(el.scrollHeight, maxHeight);
+      el.style.height = h + "px";
+    });
+  }
+
+  textareas.forEach((ta) => {
+    // 初始載入：先收斂
+    clampWhenIdle(ta);
+
+    // 點擊/聚焦：馬上完全展開
+    ta.addEventListener("focus", () => expandFully(ta));
+
+    // 輸入時：即時無上限展開
+    ta.addEventListener("input", () => expandFully(ta));
+
+    // 離開時：刪尾端空行並收斂
+    ta.addEventListener("blur", () => clampWhenIdle(ta));
+  });
+
+  // 可選：字體/版面晚載入時再校正一次
+  window.addEventListener("load", () => textareas.forEach(clampWhenIdle));
+
+
+
 });
 </script>
 {% endblock %}
