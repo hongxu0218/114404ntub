@@ -1,0 +1,583 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  .header {
+    background: #FFB84D;
+    color: white;
+    padding: 25px;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+  }
+
+  .adopt-card-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    background: #fff8f1;
+    border-radius: 14px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.08);
+    padding: 20px;
+  }
+  .pet-photo {
+      max-width: 100%;
+    }
+  .carousel {
+    position: relative;
+    height: 400px;      /* 固定高度 */
+    margin: 0 auto;
+    background-color: #fff8f1;
+    border-radius: 10px;
+    border: none;
+    text-align: center;
+    overflow: hidden;    /* 裁剪溢出 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .main-image {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 10px;
+  }
+
+  .thumbs {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 5px 0;
+    background-color: #fff8f1;
+    border-radius: 0 0 10px 10px;  /* 底部圓角 */
+  }
+
+  .thumbs img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: none;
+    box-shadow: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .thumbs img:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid #a47148;
+
+  }
+
+  .thumbs img.selected {
+    border-color: #a47148;
+  }
+
+  .nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0,0,0,0.4);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+  }
+  .nav-button:hover{background-color: rgba(0,0,0,0.8);}
+  .nav-button.left { left: 5px; }
+  .nav-button.right { right: 5px; }
+
+  .image-wrapper {
+      width: 100%;       /* 填滿carousel寬度 */
+      height: 100%;     /* 主圖高度，留空間給縮圖 */
+      background-color: #fff8f1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      border-radius: 10px 10px 0 0;  /* 頂部圓角 */
+      position: relative;
+      margin-bottom: 0;   /* 移除原本main-wrapper的margin */
+    }
+
+    .main-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;  /* 讓圖片不變形且置中 */
+    }
+
+    .thumb-wrapper {
+      width: 100%;
+      height: 100%;
+    }
+
+    .thumb-wrapper img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;  /* 保持完整不裁切，空白補背景色 */
+    }
+
+
+  .side-by-side {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .basic-info {
+    flex: 1 1 320px;
+  }
+
+  .section-title {
+    font-size: 26px;
+    color: #5a3928;
+    border-left: 6px solid #a47148;
+    padding-left: 12px;
+    margin-bottom: 16px;
+  }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .info-card {
+    background: linear-gradient(135deg, #f3e5d8, #e9d6c3);
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .info-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  }
+
+  .info-card::before {
+    content: "";
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    top: -20px;
+    right: -20px;
+  }
+
+  .info-title {
+    font-size: 14px;
+    color: #6d4c3d;
+    margin-bottom: 6px;
+  }
+
+  .info-value {
+    font-size: 18px;
+    color: #8b5e3c;
+    font-weight: bold;
+  }
+
+  .detail-cards {
+    display: grid;
+    align-items: start; /* 不會被其他卡片拉高 */
+    grid-auto-rows: min-content;
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .detail-card {
+    background: linear-gradient(135deg, #f5e7dc, #f2e1c9);
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    word-wrap: break-word;
+    white-space: pre-wrap; /* 保留換行與自動換行 */
+    line-height: 1.5;
+    white-space: normal;
+    box-sizing: border-box;
+  }
+
+  .detail-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+  }
+
+  .detail-card h2 {
+    margin-top: 0;
+    color: #7b4a2b;
+    border-left: 6px solid #a47148;
+    padding-left: 12px;
+    margin-bottom: 12px;
+    font-size: 22px;
+  }
+
+  .detail-card p {
+    color: #4a342e;
+    line-height: 1.5;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+  }
+  .detail-card.contact {
+    font-size: 15px;
+    line-height: 0.1;
+
+  }
+
+
+  .back-link {
+    display: inline-block;
+    margin: 20px auto;  /* 上下 20px，自動水平居中 */
+    padding: 10px 20px;
+    background-color: #d8c2ae;
+    color: #4a342e;
+    text-decoration: none;
+    border-radius: 6px;
+  }
+
+  .back-link:hover {
+    background-color: #cbb299;
+  }
+
+  @media (max-width: 768px) {
+  /* 手機或平板直式：寬度 <= 768px */
+    .side-by-side {
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .basic-info, .pet-photo {
+      max-width: 100%;
+      flex-basis: 100%;
+    }
+    .detail-cards {
+      grid-template-columns: 1fr;
+      width: 100%;
+      max-width: 100%;
+    }
+    .detail-card {
+      grid-template-columns: 1fr;
+      width: 600px;
+      max-width: 100%;
+    }
+    .back-link {
+      margin-left: 10px;  /* 大螢幕也可居中 */
+    }
+    .carousel {
+      position: relative;
+      width: 700px;
+      max-width: 100%;
+    }
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 強制兩欄 */
+    }
+  }
+  @media (min-width: 769px) {
+   /* 桌機：寬度 >= 769px */
+  .detail-cards {
+    grid-template-columns: repeat(auto-fit, minmax(1160px, 1fr));
+  }
+  .detail-card {
+      grid-template-columns: 1fr;
+      width: 100%;
+      max-width: 100%;
+    }
+  .carousel {
+    position: relative;
+    width: 500px;
+    max-width: 100%;
+    }
+    .back-link {
+      margin-left: 280px;  /* 大螢幕也可居中 */
+  }
+
+
+}
+
+
+.floating-buttons {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 999;
+}
+
+.contact-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: white;
+  color: white;
+  font-size: 24px;
+  text-align: center;
+  line-height: 52px;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.contact-btn:hover {
+  background-color: #ffa726;
+  transform: scale(1.1);
+}
+
+.contact-btn.line {
+  background-color: #00c300; /* LINE 綠色 */
+}
+
+.contact-btn.line:hover {
+  background-color: #00a000;
+}
+
+</style>
+
+<div class="header">
+   {{ adoption.name }} 的資料介紹   <i class="bi bi-card-text ms-2"></i>
+
+</div>
+<div class="adopt-card-container">
+  <div class="side-by-side">
+    <div class="pet-photo">
+      <div class="carousel">
+        <div class="image-wrapper ">
+          <button class="nav-button left" onclick="navigateSlide(-1)">&#8249;</button>
+          <img id="mainImage" class="main-image" src="" alt="主圖">
+          <button class="nav-button right" onclick="navigateSlide(1)">&#8250;</button>
+
+        </div>
+        <div class="thumbs">
+          {% for url in image_urls %}
+            <img src="{{ url }}" alt="縮圖{{ forloop.counter }}" onclick="setMainImage({{ forloop.counter0 }})">
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="basic-info">
+      <h2 class="section-title">基本資料</h2>
+      <div class="grid-cards">
+        <div class="info-card"><div class="info-title"><i class="bi bi-tags-fill me-1"></i>種類</div><div class="info-value">{{ adoption.species|default:"-" }}</div></div>
+        <div class="info-card"><div class="info-title"><i class="bi bi-tag me-1"></i>品種</div><div class="info-value">{{ adoption.breed |default:"-" }}</div></div>
+        <div class="info-card"><div class="info-title"><i class="bi bi-calendar-heart me-1"></i>生日</div><div class="info-value">{{ adoption.birth_date|date:"Y 年 m 月 d 日"|default:"未提供" }}<br>（{{ adoption.age }}）</div></div>
+
+        <div class="info-card"><div class="info-title"><i class="bi bi-card-text me-1"></i>名字</div><div class="info-value">{{ adoption.name|default:"-" }}</div></div>
+        <div class="info-card"><div class="info-title"><i class="bi bi-gender-ambiguous me-1"></i>性別</div><div class="info-value">{{ adoption.get_gender_display|default:"-" }}</div></div>
+        <div class="info-card"><div class="info-title"><i class="bi bi-speedometer2 me-1"></i>體重</div><div class="info-value">{{ adoption.weight|default:"-" }} kg</div></div>
+        <div class="info-card"><div class="info-title"><i class="bi bi-scissors me-1"></i>絕育狀況</div><div class="info-value">{{ adoption.get_sterilization_status_display }}</div></div>
+  <!-- 不顯示晶片號碼  <div class="info-card"><div class="info-title"><i class="bi bi-credit-card me-1"></i>晶片號碼</div><div class="info-value">{{ adoption.chip|default:"-" }}</div></div>-->
+        <div class="info-card"><div class="info-title">
+          <img src="{% static 'images/syringe.png' %}" alt="領養圖示" class="icon-adoption">
+            疫苗</div><div class="info-value">{{ adoption.vaccine|default:"-" }}</div></div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <div class="detail-cards">
+    <div class="detail-card"><h2><i class="bi bi-needle me-1"></i>個性特徵</h2>
+      <p>
+        {% if parsed_feature.feature_choice %}
+            {% if parsed_feature.feature_choice == "其他" %}
+              {{ parsed_feature.feature_other|linebreaksbr  }}
+            {% else %}
+              {{ parsed_feature.feature_choice }}
+            {% endif %}
+        {% else %}
+          <span class="text-muted">尚無資料</span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="detail-card"><h2><i class="bi bi-heart-pulse me-1"></i>健康狀況</h2>
+      <p>
+        {% if parsed_physical_condition.physical_condition_choice %}
+            {% if parsed_physical_condition.physical_condition_choice == "其他" %}
+              {{ parsed_physical_condition.physical_condition_other|linebreaksbr  }}
+            {% else %}
+              {{ parsed_physical_condition.physical_condition_choice }}
+            {% endif %}
+        {% else %}
+          <span class="text-muted">尚無資料</span>
+        {% endif %}
+      </p>
+      <br>
+      <p>
+        {% if adoption.health_certificate %}
+                  <p>健康證明：<a href="{{ adoption.health_certificate.url }}" target="_blank">
+                    {{ adoption.health_certificate.name|cut:"pet_certificate/health_certificates/" }}</a>
+                  </p>
+                {% else %}
+                  <p>健康證明：未提供</p>
+                {% endif %}
+
+                {% if adoption.vaccine_certificate %}
+                  <p>疫苗接種證明：<a href="{{ adoption.vaccine_certificate.url }}" target="_blank">
+                    {{ adoption.vaccine_certificate.name|cut:"pet_certificate/vaccine_certificates/" }}</a>
+                  </p>
+                {% else %}
+                  <p>疫苗接種證明：未提供</p>
+                {% endif %}
+      </p>
+    </div>
+
+    <div class="detail-card"><h2><i class="bi bi-list-check me-1"></i>領養條件</h2>
+      <p>
+          {% if parsed_adoption_condition.adoption_condition_choice %}
+              {% if parsed_adoption_condition.adoption_condition_choice == "其他" %}
+                {{ parsed_adoption_condition.adoption_condition_other|linebreaksbr  }}
+              {% else %}
+                {{ parsed_adoption_condition.adoption_condition_choice }}
+              {% endif %}
+          {% else %}
+            <span class="text-muted">尚無資料</span>
+          {% endif %}
+        </p></div>
+    <div class="detail-card"><h2><i class="bi bi-geo-alt me-1"></i>領養地點</h2><p>{{ adoption.get_adopt_place_display|default:"未填寫" }}</p></div>
+    <div class="detail-card contact"><h2><i class="bi bi-telephone me-1"></i>聯絡方式</h2>
+      {% if adoption.phone %}
+        <p>手機號碼📞： {{ adoption.phone }}</p>
+      {% endif %}
+      {% if adoption.line_id %}
+        <p>Line_id <i class="bi bi-line"></i>：{{ adoption.line_id }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mt-4">
+    {% if user.is_authenticated %}
+      {% if is_owner %}
+        <a href="{% url 'edit_adoption' adoption.pk %}" class="btn btn-warning me-2">編輯資料</a>
+
+        <form method="post" action="{% url 'delete_adoption' adoption.pk %}" style="display:inline;"
+              onsubmit="return confirm('你確定要刪除這筆資料嗎？');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">刪除資料</button>
+        </form>
+      {% else %}
+      {% endif %}
+    {% else %}
+      <p class="text-muted">請登入以查看完整領養資訊或進行申請。</p>
+      <a href="{% url 'account_login' %}" class="btn btn-outline-secondary">登入</a>
+    {% endif %}
+  </div>
+</div>
+<a href="{% url 'adoption' %}" class="back-link mt-4">← 返回</a>
+<!-- 固定右下角聯繫按鈕 -->
+<div class="floating-buttons">
+  {% if adoption.phone %}
+    <a href="tel:{{ adoption.phone }}" class="contact-btn phone" title="撥打電話">
+      📞
+    </a>
+  {% endif %}
+
+  {% if adoption.line_id %}
+    <a href="https://line.me/ti/p/{{ adoption.line_id }}" class="contact-btn line" title="聯絡 LINE">
+      <i class="bi bi-line"></i>
+    </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+
+<script>
+  const images = [
+    {% for url in image_urls %}"{{ url }}"{% if not forloop.last %},{% endif %}{% endfor %}
+  ];
+
+  let currentIndex = 0;
+  let slideInterval = null;
+  let pauseTimeout = null;
+  let countdownInterval = null; // 秒錶計時器
+  let countdownValue = 0; // 剩餘秒數
+  const mainImage = document.getElementById('mainImage');
+  const countdownEl = document.getElementById('countdown');
+
+  function updateCountdownDisplay() {
+    countdownEl.textContent = countdownValue;
+  }
+
+  function setCountdown(seconds) {
+    clearInterval(countdownInterval);
+    countdownValue = seconds;
+    updateCountdownDisplay();
+    countdownInterval = setInterval(() => {
+      if (countdownValue > 0) {
+        countdownValue--;
+        updateCountdownDisplay();
+      }
+    }, 1000);
+  }
+
+  function setMainImage(index) {
+    currentIndex = index;
+    mainImage.src = images[currentIndex];
+    document.querySelectorAll('.thumbs img').forEach((img, i) => {
+      img.classList.toggle('selected', i === index);
+    });
+    pauseAutoSlide(); // 每次手動切換都重新計算 10 秒
+  }
+
+  function navigateSlide(direction) {
+    currentIndex = (currentIndex + direction + images.length) % images.length;
+    setMainImage(currentIndex);
+  }
+
+  function startAutoSlide() {
+    slideInterval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % images.length;
+      mainImage.src = images[currentIndex];
+      document.querySelectorAll('.thumbs img').forEach((img, i) => {
+        img.classList.toggle('selected', i === currentIndex);
+      });
+      setCountdown(5); // 每次自動切換，倒數 5 秒
+    }, 5000);
+    setCountdown(5); // 初始化倒數 5 秒
+  }
+
+  function pauseAutoSlide() {
+    clearInterval(slideInterval);
+    clearTimeout(pauseTimeout);
+    // 暫停 10 秒後再啟動自動切換
+    pauseTimeout = setTimeout(() => {
+      startAutoSlide();
+    }, 10000);
+    setCountdown(10); // 暫停期間倒數 10 秒
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (images.length > 0) {
+      setMainImage(0);
+      startAutoSlide();
+    }
+  });
+</script>
+
+
+{% endblock %}
