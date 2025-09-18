@@ -289,17 +289,7 @@
             {% endif %}
 
 
-            {% if pet.is_adoption_only %}
-            <button class="action-btn">
-                <i class="bi bi-calendar-plus"></i>
-                <span>預約獸醫</span>
-              </button>
-            {% elif pet.is_adopted %}
-            <button class="action-btn">
-                <i class="bi bi-calendar-plus"></i>
-                <span>預約獸醫</span>
-              </button>
-            {% elif pet.has_pending_transfer %}
+            {% if pet.has_pending_transfer %}
             <button class="action-btn" disabled title="請先等待新飼主的確認才能進行此操作">
                 <i class="bi bi-calendar-plus"></i>
                 <span>預約獸醫</span>
