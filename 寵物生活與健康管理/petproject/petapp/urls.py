@@ -163,6 +163,11 @@ urlpatterns = [
         staff_member_required(views_handoff.handoff_agent_close, login_url="account_login"),
         name="handoff_agent_close",
     ),
+    path(
+        "staff/handoff/<int:ticket_id>/poll/",
+        staff_member_required(views_handoff.handoff_staff_poll, login_url="account_login"),
+        name="handoff_staff_poll",
+    ),
 
 ]
 

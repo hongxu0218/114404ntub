@@ -48,14 +48,15 @@
           <h5 class="mb-0">Ticket #{{ current.id }} {% if current.is_open %}（開啟）{% else %}（結案）{% endif %}</h5>
         </div>
 
-        <div id="chatlog" class="mb-3">
-          {% for m in current.messages.all %}
-            <div class="msg">
-              <span class="who">[{{ m.sender }}]</span>{{ m.text }}
-              <div class="small text-muted mt-1">{{ m.created_at }}</div>
-            </div>
-          {% endfor %}
+    <div id="chatlog" class="mb-3">
+      {% for m in current.messages.all %}
+        <div class="msg" data-id="{{ m.id }}" data-sender="{{ m.sender }}">
+          <span class="who">[{{ m.sender }}]</span>{{ m.text }}
+          <div class="small text-muted mt-1">{{ m.created_at }}</div>
         </div>
+      {% endfor %}
+    </div>
+
 
         {% if current.is_open %}
         <div class="foot">
@@ -80,6 +81,7 @@
 {% block extra_js %}
 {% if current %}
 <script>
+/* ====== A) 送出訊息（沿用你原本的邏輯） ====== */
 (function () {
   const sendBtn  = document.getElementById('send');
   const textarea = document.getElementById('reply');
@@ -110,9 +112,8 @@
     500: "系統暫時異常，請稍後再試或改用其他聯絡方式。"
   };
 
-  // 簡易提示（若你有 Bootstrap toast/snackbar，可換成自己的）
   function showError(msg) { alert(msg); }
-  function showOK(msg)    { console.log(msg); } // 或換成你的成功提示
+  function showOK(msg)    { console.log(msg); } // 可換成你的成功提示
 
   // 統一的 POST 包裝：含 CSRF、AJAX Header、偵測 302→登入頁
   async function apiPost(url, payload) {
@@ -156,11 +157,14 @@
       if (log) {
         const div = document.createElement('div');
         div.className = 'msg';
+        div.setAttribute('data-sender', 'agent');
         div.innerHTML =
           '<span class="who">[AGENT]</span>' +
           text.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
           '<div class="small text-muted mt-1">剛剛</div>';
         log.appendChild(div);
+        // 送出後，捲到底
+        log.scrollTop = log.scrollHeight;
       }
       textarea.value = "";
       showOK("已送出。");
@@ -185,6 +189,70 @@
       handleSend();
     }
   });
+})();
+</script>
+
+<script>
+/* ====== B) 右側訊息「即時更新」輪詢 ====== */
+(function () {
+  const log = document.getElementById('chatlog');
+  if (!log) return;
+
+  // 由現有 DOM 取得最後一則訊息 id（若沒有則 0）
+  let lastId = (function() {
+    const lastMsg = log.querySelector('.msg:last-of-type');
+    return lastMsg ? parseInt(lastMsg.getAttribute('data-id') || '0', 10) : 0;
+  })();
+
+  const POLL_MS = 3000; // 每 3 秒輪詢
+  const pollUrl = "{% url 'handoff_staff_poll' current.id %}";
+
+  function nearBottom() {
+    // 使用者靠近底部才自動捲到底，避免閱讀歷史訊息被打斷
+    return (log.scrollTop + log.clientHeight) >= (log.scrollHeight - 120);
+  }
+
+  function escapeHTML(str) {
+    return (str || "").replace(/[&<>\"']/g, s => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;"
+    }[s]));
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch(pollUrl + "?since=" + lastId, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      // 若被重導至登入頁，這裡可能會拿到 HTML；保守處理就直接返回
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) return;
+
+      const data = await res.json();
+      if (!data || !data.ok || !Array.isArray(data.messages)) return;
+
+      const stick = nearBottom();
+      for (const m of data.messages) {
+        const div = document.createElement('div');
+        div.className = 'msg';
+        div.setAttribute('data-id', m.id);
+        div.setAttribute('data-sender', m.sender);
+        div.innerHTML =
+          `<span class="who">[${(m.sender || '').toUpperCase()}]</span>` +
+          `${escapeHTML(m.text)}` +
+          `<div class="small text-muted mt-1">${new Date(m.ts).toLocaleString()}</div>`;
+        log.appendChild(div);
+        lastId = m.id;
+      }
+      if (data.messages.length && stick) {
+        log.scrollTop = log.scrollHeight;
+      }
+    } catch (e) {
+      console.warn("handoff poll failed:", e);
+    }
+  }
+
+  // 開始輪詢
+  setInterval(poll, POLL_MS);
 })();
 </script>
 {% endif %}

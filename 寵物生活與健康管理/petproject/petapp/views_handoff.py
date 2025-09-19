@@ -226,3 +226,17 @@ def api_handoff_poll(request: HttpRequest):
     msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
     last_id = msgs[-1]["id"] if msgs else since
     return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id})
+
+# 員工輪詢：取 ticket 的新訊息（since 之後）
+@staff_member_required(login_url="account_login")
+def handoff_staff_poll(request: HttpRequest, ticket_id: int):
+    try:
+        since = int(request.GET.get("since") or 0)
+    except (TypeError, ValueError):
+        since = 0
+
+    t = get_object_or_404(HandoffTicket, id=ticket_id)
+    qs = t.messages.filter(id__gt=since).order_by("id").only("id", "sender", "text", "created_at")
+    msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
+    last_id = msgs[-1]["id"] if msgs else since
+    return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id})

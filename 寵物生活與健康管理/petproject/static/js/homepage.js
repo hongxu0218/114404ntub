@@ -1,5 +1,20 @@
 /* static/js/homepage.js - 首頁專用功能 */
 
+// 安全保護：若 PD 未載入，提供最小的 debug 介面避免報錯
+(function ensurePD() {
+  if (!window.PD) {
+    window.PD = {
+      debug: {
+        log:   function(){},
+        warn:  function(){},
+        error: function(){}
+      }
+    };
+  } else if (!window.PD.debug) {
+    window.PD.debug = { log(){}, warn(){}, error(){} };
+  }
+})();
+
 /**
  * 首頁功能模組
  */
@@ -71,381 +86,450 @@ window.PawDayHomepage = {
     PD.debug.log('✅ 首頁功能初始化完成');
   },
 
-/**
- * 設定聊天機器人功能（覆蓋舊版：/api/chat 串流 + 轉人工 handoff）
- */
-setupChatbot: function() {
-  const $ = (id) => document.getElementById(id);
-  const btn   = $('chatbot-button');
-  const box   = $('chatbot-box');
-  let   closeBtn = $('chatbot-close');
-  let   sendBtn  = $('chatbot-send');
-  let   input    = $('chatbot-text');
-  let   messagesDiv = $('chatbot-messages');
+  /**
+   * 設定聊天機器人功能（覆蓋舊版：/api/chat 串流 + 轉人工 handoff）
+   */
+  setupChatbot: function() {
+    const $ = (id) => document.getElementById(id);
+    const btn   = $('chatbot-button');
+    const box   = $('chatbot-box');
+    let   closeBtn = $('chatbot-close');
+    let   sendBtn  = $('chatbot-send');
+    let   input    = $('chatbot-text');
+    let   messagesDiv = $('chatbot-messages');
 
-  if (!btn || !box || !closeBtn || !sendBtn || !input || !messagesDiv) {
-    (window.PD?.debug?.warn || console.warn)('🔎 找不到 AI 客服 DOM 節點，跳過初始化');
-    return;
-  }
-
-  // ---- 清理舊事件監聽：clone 節點再綁定，確保覆蓋舊功能 ----
-  function replaceNode(el){
-    if(!el) return el;
-    const clone = el.cloneNode(true);
-    if (el.parentNode) el.parentNode.replaceChild(clone, el);
-    return clone;
-  }
-  closeBtn    = replaceNode(closeBtn);
-  sendBtn     = replaceNode(sendBtn);
-  input       = replaceNode(input);
-  messagesDiv = replaceNode(messagesDiv);
-
-  // ---- UI 調整：避免與回到頂部重疊 ----
-  try {
-    if (!btn.style.bottom) btn.style.bottom = '88px';
-    if (!box.style.bottom) box.style.bottom = '160px';
-  } catch(_) {}
-
-  // ---- 常數與狀態 ----
-  const STREAM_URL   = '/api/chat/stream/';      // 串流端點（Django）
-  const HANDOFF_URL  = '/api/handoff/request/';  // 轉人工：建立/沿用工單
-  const MESSAGE_URL  = '/api/handoff/message/';  // 轉人工後，使用者發訊息給座席
-  const POLL_URL     = '/api/handoff/poll/';     // 輪詢座席/系統訊息
-
-  const history = []; // 只在前端保存，後端僅取最近 6 則
-  let busy = false;
-  let lastUserText = ''; // 記錄最後一次提問，提交轉人工用
-  let inHandoff = false; // 是否已轉人工
-  let lastMsgId = 0;     // 追蹤最後一則訊息 ID（避免重覆）
-  let pollTimer = null;
-  let ticketId = null;   // 保存工單 id
-
-  // ---- 泡泡小工具 ----
-  const addBubble = (sender, textOrHtml, asHTML = false) => {
-    const msgDiv = document.createElement("div");
-    msgDiv.className = 'cb-bubble ' + (sender === 'user' ? 'cb-user' : 'cb-bot');
-    if (asHTML) msgDiv.innerHTML = textOrHtml;
-    else msgDiv.textContent = textOrHtml;
-    messagesDiv.appendChild(msgDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    return msgDiv;
-  };
-
-  const getCSRFToken = () => {
-    const name = 'csrftoken';
-    const cookies = document.cookie ? document.cookie.split(';') : [];
-    for (let c of cookies){
-      c = c.trim();
-      if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length+1));
-    }
-    return null;
-  };
-
-  const openBox = () => {
-    box.style.display = 'flex';
-    box.style.flexDirection = 'column';
-    if (messagesDiv.childElementCount === 0) {
-      addBubble('bot', '哈囉～我是毛日好 AI 客服，要查詢預約、健康紀錄或常見問題嗎？🙂');
-    }
-    input.focus();
-  };
-  const closeBox = () => { box.style.display = 'none'; };
-
-  // ✅ 將回覆中的「【轉人工客服】/轉人工客服」替換成可點擊的內嵌按鈕（更寬鬆的比對）
-  function injectHandoffButton(botDiv){
-    if (!botDiv) return;
-    if (botDiv.querySelector('[data-action="handoff"]')) return; // 已替換過就不重複
-    const textNow = (botDiv.innerText || '').trim();
-    if (!textNow.includes('轉人工客服')) return;
-
-    let html = botDiv.innerHTML;
-    // 1) 【轉人工客服】 → button
-    html = html.replace(
-      /【\s*轉人工客服\s*】/g,
-      '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
-    );
-    // 2) 若沒有全形括號版本，退而求其次替換單獨文字（避免誤傷，僅替換第一個）
-    if (!/data-action="handoff"/.test(html)) {
-      html = html.replace(
-        /轉人工客服(?![^<]*>)/,
-        '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
-      );
-    }
-    botDiv.innerHTML = html;
-  }
-
-  // ---- 狀態碼對應的明確提示 ----
-  const STATUS_HINT = {
-    400: "欄位有誤，請確認必填內容（例如：訊息不可為空）。",
-    401: "需要登入才能提交，請先登入後再試。",
-    403: "沒有操作權限（僅限客服/管理員）。",
-    404: "找不到資源，服務暫時不可用。",
-    409: "目前無法建立新工單，請稍後再試。",
-    413: "內容過大，請精簡後再送出。",
-    429: "操作過於頻繁，請稍後再試。",
-    500: "系統暫時異常，請稍後再試或改用其他聯絡方式。"
-  };
-
-  // ---- 通用 JSON POST（含 CSRF、非 JSON/被轉導偵測）----
-  async function apiPost(endpoint, payload) {
-    const headers = { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" };
-    const csrftoken = getCSRFToken();
-    if (csrftoken) headers["X-CSRFToken"] = csrftoken;
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload || {}),
-      credentials: "same-origin"
-    });
-
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) {
-      // 可能是被權限轉導到登入頁或回傳了 HTML 錯誤頁
-      throw { status: res.status || 500, message: null };
-    }
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.ok === false) {
-      throw { status: res.status || 500, message: data.error || null };
-    }
-    return data; // 正常回傳 JSON
-  }
-
-  // ---- 統一顯示錯誤（取代「（一般建議）提交失敗…」）----
-  function showSubmitError(status, fallbackMsg) {
-    addBubble('bot', `❌ ${STATUS_HINT[status] || fallbackMsg || STATUS_HINT[500]}`);
-  }
-
-  // ---- 顯示「轉人工客服」CTA（按鈕直接沿用委派事件）----
-  function showHandoffCTA(lastQuestion) {
-    const html = `
-      <div>
-        目前找不到合適的答案。要不要改由<strong>人工客服</strong>協助？
-        <div class="mt-2" style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>
-          <button class="cb-inline-btn" data-action="ask-again" type="button">我再問一次</button>
-        </div>
-      </div>`;
-    const div = addBubble('bot', html, true);
-    messagesDiv.addEventListener('click', (e) => {
-      if (e.target && e.target.matches('[data-action="ask-again"]')) {
-        input.focus();
-      }
-    }, { once: true });
-    return div;
-  }
-
-  // ✅ 送出人工客服請求（建立/沿用工單，並保存 ticketId）
-  const submitHandoff = async () => {
-    const name = (window.prompt('請輸入稱呼（可留空）：', '') || '匿名').trim() || '匿名';
-    const contact = (window.prompt('請留下聯絡方式（Email/手機/LINE ID，可留空）：', '') || '').trim();
-
-    try {
-      const data = await apiPost(HANDOFF_URL, {
-        name, contact,
-        last_question: lastUserText || '',
-        channel: 'web'
-      });
-      ticketId  = data.ticket_id;
-      lastMsgId = 0;
-      inHandoff = true;
-      addBubble('bot', `✅ 已建立人工客服工單（#${ticketId}）。此後可直接在這裡與座席互動。`);
-      startPolling();
-    } catch (e) {
-      showSubmitError(e.status, e.message);
-    }
-  };
-
-  // === 轉人工後把訊息送到座席（一定要帶 ticket_id） ===
-  const sendToAgent = async (text) => {
-    if (!ticketId) {
-      showHandoffCTA(lastUserText);
+    if (!btn || !box || !closeBtn || !sendBtn || !input || !messagesDiv) {
+      (window.PD?.debug?.warn || console.warn)('🔎 找不到 AI 客服 DOM 節點，跳過初始化');
       return;
     }
-    try {
-      await apiPost(MESSAGE_URL, { ticket_id: ticketId, message: text });
-      addBubble('user', text); // 即時顯示；座席回覆靠輪詢
-    } catch (e) {
-      showSubmitError(e.status, e.message);
-    }
-  };
 
-  // === 轉人工後輪詢座席/系統訊息（一定要帶 ticket_id） ===
-  const pollOnce = async () => {
-    if (!inHandoff || !ticketId) return;
+    // ---- 清理舊事件監聽：clone 節點再綁定，確保覆蓋舊功能 ----
+    function replaceNode(el){
+      if(!el) return el;
+      const clone = el.cloneNode(true);
+      if (el.parentNode) el.parentNode.replaceChild(clone, el);
+      return clone;
+    }
+    closeBtn    = replaceNode(closeBtn);
+    sendBtn     = replaceNode(sendBtn);
+    input       = replaceNode(input);
+    messagesDiv = replaceNode(messagesDiv);
+
+    // ---- UI 調整：避免與回到頂部重疊 ----
     try {
-      const r = await fetch(`${POLL_URL}?ticket_id=${ticketId}&since=${lastMsgId || 0}`, {
-        cache: 'no-store',
-        credentials: 'same-origin'
+      if (!btn.style.bottom) btn.style.bottom = '88px';
+      if (!box.style.bottom) box.style.bottom = '160px';
+    } catch(_) {}
+
+    // ---- 常數與狀態 ----
+    const STREAM_URL   = '/api/chat/stream/';      // 串流端點（Django）
+    const HANDOFF_URL  = '/api/handoff/request/';  // 轉人工：建立/沿用工單
+    const MESSAGE_URL  = '/api/handoff/message/';  // 轉人工後，使用者發訊息給座席
+    const POLL_URL     = '/api/handoff/poll/';     // 輪詢座席/系統訊息
+
+    const history = []; // 只在前端保存，後端僅取最近 6 則
+    let busy = false;
+    let lastUserText = ''; // 記錄最後一次提問，提交轉人工用
+    let inHandoff = false; // 是否已轉人工
+    let lastMsgId = 0;     // 追蹤最後一則訊息 ID（避免重覆）
+    let pollTimer = null;
+    let ticketId = null;   // 保存工單 id
+
+    // ---- 泡泡小工具 ----
+    const addBubble = (sender, textOrHtml, asHTML = false) => {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = 'cb-bubble ' + (sender === 'user' ? 'cb-user' : 'cb-bot');
+      if (asHTML) msgDiv.innerHTML = textOrHtml;
+      else msgDiv.textContent = textOrHtml;
+      messagesDiv.appendChild(msgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      return msgDiv;
+    };
+
+    const getCSRFToken = () => {
+      const name = 'csrftoken';
+      const cookies = document.cookie ? document.cookie.split(';') : [];
+      for (let c of cookies){
+        c = c.trim();
+        if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length+1));
+      }
+      return null;
+    };
+
+    const openBox = () => {
+      box.style.display = 'flex';
+      box.style.flexDirection = 'column';
+      if (messagesDiv.childElementCount === 0) {
+        addBubble('bot', '哈囉～我是毛日好 AI 客服，要查詢預約、健康紀錄或常見問題嗎？🙂');
+      }
+      input.focus();
+    };
+    const closeBox = () => { box.style.display = 'none'; };
+
+    // ✅ 將回覆中的「【轉人工客服】/轉人工客服」替換成可點擊的內嵌按鈕（更寬鬆的比對）
+    function injectHandoffButton(botDiv){
+      if (!botDiv) return;
+      if (botDiv.querySelector('[data-action="handoff"]')) return; // 已替換過就不重複
+      const textNow = (botDiv.innerText || '').trim();
+      if (!textNow.includes('轉人工客服')) return;
+
+      let html = botDiv.innerHTML;
+      // 1) 【轉人工客服】 → button
+      html = html.replace(
+        /【\s*轉人工客服\s*】/g,
+        '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
+      );
+      // 2) 若沒有全形括號版本，退而求其次替換單獨文字（避免誤傷，僅替換第一個）
+      if (!/data-action="handoff"/.test(html)) {
+        html = html.replace(
+          /轉人工客服(?![^<]*>)/,
+          '<button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>'
+        );
+      }
+      botDiv.innerHTML = html;
+    }
+
+    // ---- 狀態碼對應的明確提示 ----
+    const STATUS_HINT = {
+      400: "欄位有誤，請確認必填內容（例如：訊息不可為空）。",
+      401: "需要登入才能提交，請先登入後再試。",
+      403: "沒有操作權限（僅限客服/管理員）。",
+      404: "找不到資源，服務暫時不可用。",
+      409: "目前無法建立新工單，請稍後再試。",
+      413: "內容過大，請精簡後再送出。",
+      429: "操作過於頻繁，請稍後再試。",
+      500: "系統暫時異常，請稍後再試或改用其他聯絡方式。"
+    };
+
+    // ---- 通用 JSON POST（含 CSRF、非 JSON/被轉導偵測）----
+    async function apiPost(endpoint, payload) {
+      const headers = { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" };
+      const csrftoken = getCSRFToken();
+      if (csrftoken) headers["X-CSRFToken"] = csrftoken;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload || {}),
+        credentials: "same-origin"
       });
-      if (r.status === 401 || r.status === 403) {
-        showSubmitError(r.status);
-        stopPolling();
-        inHandoff = false;
+
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        // 可能是被權限轉導到登入頁或回傳了 HTML 錯誤頁
+        throw { status: res.status || 500, message: null };
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) {
+        throw { status: res.status || 500, message: data.error || null };
+      }
+      return data; // 正常回傳 JSON
+    }
+
+    // ---- 統一顯示錯誤（取代「（一般建議）提交失敗…」）----
+    function showSubmitError(status, fallbackMsg) {
+      addBubble('bot', `❌ ${STATUS_HINT[status] || fallbackMsg || STATUS_HINT[500]}`);
+    }
+
+    // ---- 顯示「轉人工客服」CTA（按鈕直接沿用委派事件）----
+    function showHandoffCTA(lastQuestion) {
+      const html = `
+        <div>
+          目前找不到合適的答案。要不要改由<strong>人工客服</strong>協助？
+          <div class="mt-2" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="cb-inline-btn" data-action="handoff" type="button">轉人工客服</button>
+            <button class="cb-inline-btn" data-action="ask-again" type="button">我再問一次</button>
+          </div>
+        </div>`;
+      const div = addBubble('bot', html, true);
+      messagesDiv.addEventListener('click', (e) => {
+        if (e.target && e.target.matches('[data-action="ask-again"]')) {
+          input.focus();
+        }
+      }, { once: true });
+      return div;
+    }
+
+    // ✅ 送出人工客服請求（建立/沿用工單，並保存 ticketId）
+    const submitHandoff = async () => {
+      const name = (window.prompt('請輸入稱呼（可留空）：', '') || '匿名').trim() || '匿名';
+      const contact = (window.prompt('請留下聯絡方式（Email/手機/LINE ID，可留空）：', '') || '').trim();
+
+      try {
+        const data = await apiPost(HANDOFF_URL, {
+          name, contact,
+          last_question: lastUserText || '',
+          channel: 'web'
+        });
+        ticketId  = data.ticket_id;
+        lastMsgId = 0;
+        inHandoff = true;
+        addBubble('bot', `✅ 已建立人工客服工單（#${ticketId}）。此後可直接在這裡與座席互動。`);
+        startPolling();
+      } catch (e) {
+        showSubmitError(e.status, e.message);
+      }
+    };
+
+    // === 轉人工後把訊息送到座席（一定要帶 ticket_id） ===
+    const sendToAgent = async (text) => {
+      if (!ticketId) {
+        showHandoffCTA(lastUserText);
         return;
       }
-      if (!r.ok) return;
-      const data = await r.json().catch(() => ({}));
-      if (Array.isArray(data?.messages)) {
-        for (const m of data.messages) {
-          lastMsgId = Math.max(lastMsgId, m.id || 0);
-          addBubble('bot', `[${m.sender}] ${m.text}`);
-          if (/工單已結案/.test(m.text)) {
-            inHandoff = false;
-            stopPolling();
+      try {
+        await apiPost(MESSAGE_URL, { ticket_id: ticketId, message: text });
+        addBubble('user', text); // 即時顯示；座席回覆靠輪詢
+      } catch (e) {
+        showSubmitError(e.status, e.message);
+      }
+    };
+
+    // === 轉人工後輪詢座席/系統訊息（一定要帶 ticket_id） ===
+    const pollOnce = async () => {
+      if (!inHandoff || !ticketId) return;
+      try {
+        const r = await fetch(`${POLL_URL}?ticket_id=${ticketId}&since=${lastMsgId || 0}`, {
+          cache: 'no-store',
+          credentials: 'same-origin'
+        });
+        if (r.status === 401 || r.status === 403) {
+          showSubmitError(r.status);
+          stopPolling();
+          inHandoff = false;
+          return;
+        }
+        if (!r.ok) return;
+        const data = await r.json().catch(() => ({}));
+        if (Array.isArray(data?.messages)) {
+          for (const m of data.messages) {
+            lastMsgId = Math.max(lastMsgId, m.id || 0);
+            addBubble('bot', `[${m.sender}] ${m.text}`);
+            if (/工單已結案/.test(m.text)) {
+              inHandoff = false;
+              stopPolling();
+            }
+          }
+        } else if (typeof data?.last_id === 'number') {
+          lastMsgId = data.last_id;
+        }
+      } catch (_) {}
+    };
+    const startPolling = () => { stopPolling(); pollOnce(); pollTimer = setInterval(pollOnce, 2000); };
+    const stopPolling  = () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } };
+
+    // ---- 串流呼叫：逐行解析 NDJSON（meta / delta / done / error）----
+    async function askRAGStream(message, historyArr) {
+      const headers = { "Content-Type": "application/json" };
+      const csrftoken = getCSRFToken();
+      if (csrftoken) headers["X-CSRFToken"] = csrftoken;
+
+      const res = await fetch(STREAM_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ message, history: historyArr }),
+        credentials: 'same-origin'
+      });
+      if (!res.ok || !res.body) throw new Error("stream response error");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      // 回傳 async 迭代器
+      return {
+        async *[Symbol.asyncIterator]() {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                yield JSON.parse(line);
+              } catch {
+                yield { type: "delta", text: line };
+              }
+            }
+          }
+          if (buffer.trim()) {
+            try { yield JSON.parse(buffer); } catch { yield { type: "delta", text: buffer }; }
           }
         }
-      } else if (typeof data?.last_id === 'number') {
-        lastMsgId = data.last_id;
+      };
+    }
+
+    // ---- 送出訊息（串流版）----
+    const sendMessageStream = async () => {
+      const text = input.value.trim();
+      if (!text || busy) return;
+
+      // 若已轉人工：改為送給座席
+      if (inHandoff){
+        input.value = '';
+        return sendToAgent(text);
       }
-    } catch (_) {}
-  };
-  const startPolling = () => { stopPolling(); pollOnce(); pollTimer = setInterval(pollOnce, 2000); };
-  const stopPolling  = () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } };
 
-  // ---- 串流呼叫：逐行解析 NDJSON（meta / delta / done / error）----
-  async function askRAGStream(message, historyArr) {
-    const headers = { "Content-Type": "application/json" };
-    const csrftoken = getCSRFToken();
-    if (csrftoken) headers["X-CSRFToken"] = csrftoken;
+      busy = true;
+      input.value = '';
+      sendBtn.setAttribute('disabled', 'disabled');
 
-    const res = await fetch(STREAM_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ message, history: historyArr }),
-      credentials: 'same-origin'
-    });
-    if (!res.ok || !res.body) throw new Error("stream response error");
+      // 使用者泡泡
+      addBubble('user', text);
+      lastUserText = text;
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
+      // 機器人泡泡（會持續追加）
+      const botDiv = addBubble('bot', '<em>輸入中…</em>', true);
 
-    // 回傳 async 迭代器
-    return {
-      async *[Symbol.asyncIterator]() {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              yield JSON.parse(line);
-            } catch {
-              yield { type: "delta", text: line };
+      try {
+        const stream = await askRAGStream(text, history.slice(-6)); // 傳最近 6 則上下文
+        let started = false;
+        let sourcesHTML = "";
+
+        for await (const evt of stream) {
+          if (evt.type === "meta") {
+            const srcList = (evt.sources || []).map(s => `<li>${(s.source || '來源')}</li>`).join("");
+            if (srcList) sourcesHTML = `<details class="cb-sources"><summary>來源</summary><ul>${srcList}</ul></details>`;
+          } else if (evt.type === "delta") {
+            const piece = (evt.text || "").replace(/\n/g, "<br>");
+            if (!started) {
+              botDiv.innerHTML = piece;
+              started = true;
+            } else {
+              botDiv.innerHTML += piece;
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          } else if (evt.type === "error") {
+            botDiv.textContent = evt.message || "發生錯誤";
+          } else if (evt.type === "done") {
+            if (sourcesHTML) botDiv.innerHTML += sourcesHTML;
+
+            // 若模型回覆語句顯示「找不到」或「沒有找到」，改為給 CTA
+            const contentText = botDiv.textContent || botDiv.innerText || "";
+            if (/目前知識庫沒有找到相關資訊|找不到合適的答案|無法找到|沒有找到/.test(contentText)) {
+              showHandoffCTA(lastUserText);
+            } else {
+              // 仍保留你原本的「把文字轉成可點擊的 轉人工客服 按鈕」
+              injectHandoffButton(botDiv);
             }
           }
         }
-        if (buffer.trim()) {
-          try { yield JSON.parse(buffer); } catch { yield { type: "delta", text: buffer }; }
-        }
+
+        // 更新前端歷史（用於下次串流）
+        history.push(
+          { role: 'user', content: text },
+          { role: 'assistant', content: (botDiv.textContent || botDiv.innerText || '') }
+        );
+      } catch (err) {
+        botDiv.textContent = '連線失敗，請確認 /api/chat/stream 是否可用，以及本機 Ollama 是否啟動';
+        (window.PD?.debug?.error || console.error)(err);
+      } finally {
+        busy = false;
+        sendBtn.removeAttribute('disabled');
+        input.focus();
       }
     };
-  }
 
-  // ---- 送出訊息（串流版）----
-  const sendMessageStream = async () => {
-    const text = input.value.trim();
-    if (!text || busy) return;
-
-    // 若已轉人工：改為送給座席
-    if (inHandoff){
-      input.value = '';
-      return sendToAgent(text);
-    }
-
-    busy = true;
-    input.value = '';
-    sendBtn.setAttribute('disabled', 'disabled');
-
-    // 使用者泡泡
-    addBubble('user', text);
-    lastUserText = text;
-
-    // 機器人泡泡（會持續追加）
-    const botDiv = addBubble('bot', '<em>輸入中…</em>', true);
-
-    try {
-      const stream = await askRAGStream(text, history.slice(-6)); // 傳最近 6 則上下文
-      let started = false;
-      let sourcesHTML = "";
-
-      for await (const evt of stream) {
-        if (evt.type === "meta") {
-          const srcList = (evt.sources || []).map(s => `<li>${(s.source || '來源')}</li>`).join("");
-          if (srcList) sourcesHTML = `<details class="cb-sources"><summary>來源</summary><ul>${srcList}</ul></details>`;
-        } else if (evt.type === "delta") {
-          const piece = (evt.text || "").replace(/\n/g, "<br>");
-          if (!started) {
-            botDiv.innerHTML = piece;
-            started = true;
-          } else {
-            botDiv.innerHTML += piece;
-          }
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        } else if (evt.type === "error") {
-          botDiv.textContent = evt.message || "發生錯誤";
-        } else if (evt.type === "done") {
-          if (sourcesHTML) botDiv.innerHTML += sourcesHTML;
-
-          // 若模型回覆語句顯示「找不到」或「沒有找到」，改為給 CTA
-          const contentText = botDiv.textContent || botDiv.innerText || "";
-          if (/目前知識庫沒有找到相關資訊|找不到合適的答案|無法找到|沒有找到/.test(contentText)) {
-            showHandoffCTA(lastUserText);
-          } else {
-            // 仍保留你原本的「把文字轉成可點擊的 轉人工客服 按鈕」
-            injectHandoffButton(botDiv);
-          }
-        }
-      }
-
-      // 更新前端歷史（用於下次串流）
-      history.push(
-        { role: 'user', content: text },
-        { role: 'assistant', content: (botDiv.textContent || botDiv.innerText || '') }
-      );
-    } catch (err) {
-      botDiv.textContent = '連線失敗，請確認 /api/chat/stream 是否可用，以及本機 Ollama 是否啟動';
-      (window.PD?.debug?.error || console.error)(err);
-    } finally {
-      busy = false;
-      sendBtn.removeAttribute('disabled');
-      input.focus();
-    }
-  };
-
-  // ---- 事件 ----
-  btn.addEventListener("click", () => {
-    if (box.style.display === 'flex') closeBox(); else openBox();
-  });
-  closeBtn.addEventListener("click", closeBox);
-  sendBtn.addEventListener("click", sendMessageStream);
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessageStream(); } // Enter 送出
-    if (e.key === "Escape") closeBox();
-  });
-
-  // ✅ 在訊息區委派事件 → 點擊「轉人工客服」或「我再問一次」
-  messagesDiv.addEventListener('click', (e) => {
-    const t = e.target;
-    if (t && t.matches('[data-action="handoff"]')) {
-      submitHandoff();
-    }
-    if (t && t.matches('[data-action="ask-again"]')) {
-      input.focus();
-    }
-  });
-
-  // 鍵盤快速開啟：Alt + /
-  window.addEventListener('keydown', (e) => {
-    if (e.altKey && e.key === '/') {
+    // ---- 事件 ----
+    btn.addEventListener("click", () => {
       if (box.style.display === 'flex') closeBox(); else openBox();
+    });
+    closeBtn.addEventListener("click", closeBox);
+    sendBtn.addEventListener("click", sendMessageStream);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessageStream(); } // Enter 送出
+      if (e.key === "Escape") closeBox();
+    });
+
+    // ✅ 在訊息區委派事件 → 點擊「轉人工客服」或「我再問一次」
+    messagesDiv.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t && t.matches('[data-action="handoff"]')) {
+        submitHandoff();
+      }
+      if (t && t.matches('[data-action="ask-again"]')) {
+        input.focus();
+      }
+    });
+
+    // 鍵盤快速開啟：Alt + /
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === '/') {
+        if (box.style.display === 'flex') closeBox(); else openBox();
+      }
+    });
+  },
+
+  /**
+   * 設定首頁「新聞水平滾動」功能
+   * 需求的 DOM：
+   *  - 容器：.news-scroll-container .d-flex
+   *  - 左鍵：#news-left（可選）
+   *  - 右鍵：#news-right（可選）
+   */
+  setupNewsScroll: function () {
+    const container = document.querySelector('.news-scroll-container .d-flex');
+    if (!container) {
+      PD.debug.warn('找不到新聞容器 .news-scroll-container .d-flex，跳過 setupNewsScroll');
+      return;
     }
-  });
-},
+
+    const leftBtn  = document.getElementById('news-left');
+    const rightBtn = document.getElementById('news-right');
+
+    PD.debug.log('📰 設定新聞水平滾動');
+
+    if (leftBtn) {
+      leftBtn.addEventListener('click', () => {
+        this.scrollNews(container, 'left');
+        setTimeout(() => this.updateScrollButtons(container, leftBtn, rightBtn), 300);
+      });
+    }
+    if (rightBtn) {
+      rightBtn.addEventListener('click', () => {
+        this.scrollNews(container, 'right');
+        setTimeout(() => this.updateScrollButtons(container, leftBtn, rightBtn), 300);
+      });
+    }
+
+    // 初始化按鈕狀態
+    if (leftBtn || rightBtn) {
+      this.updateScrollButtons(container, leftBtn, rightBtn);
+    }
+
+    // 監聽捲動（節流更新）
+    let btnTimer = null;
+    container.addEventListener('scroll', () => {
+      if (!leftBtn && !rightBtn) return;
+      if (btnTimer) return;
+      btnTimer = setTimeout(() => {
+        this.updateScrollButtons(container, leftBtn, rightBtn);
+        btnTimer = null;
+      }, 100);
+    }, { passive: true });
+
+    // 視窗尺寸改變
+    window.addEventListener('resize', () => {
+      if (leftBtn || rightBtn) {
+        this.updateScrollButtons(container, leftBtn, rightBtn);
+      }
+    });
+
+    // 啟用自動滾動
+    this.setupAutoScroll(container);
+
+    // 鍵盤左右鍵支援（容器聚焦時）
+    if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '0');
+    container.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        this.scrollNews(container, 'left');
+      } else if (e.key === 'ArrowRight') {
+        this.scrollNews(container, 'right');
+      }
+    });
+  },
 
   /**
    * 滾動新聞
@@ -470,14 +554,18 @@ setupChatbot: function() {
    * 更新滾動按鈕狀態
    */
   updateScrollButtons: function(container, leftBtn, rightBtn) {
+    if (!container) return;
     const scrollLeft = container.scrollLeft;
     const maxScroll = container.scrollWidth - container.clientWidth;
 
-    leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.5';
-    leftBtn.disabled = scrollLeft <= 0;
-    
-    rightBtn.style.opacity = scrollLeft < maxScroll ? '1' : '0.5';
-    rightBtn.disabled = scrollLeft >= maxScroll;
+    if (leftBtn) {
+      leftBtn.style.opacity = scrollLeft > 0 ? '1' : '0.5';
+      leftBtn.disabled = scrollLeft <= 0;
+    }
+    if (rightBtn) {
+      rightBtn.style.opacity = scrollLeft < maxScroll ? '1' : '0.5';
+      rightBtn.disabled = scrollLeft >= maxScroll;
+    }
   },
 
   /**
