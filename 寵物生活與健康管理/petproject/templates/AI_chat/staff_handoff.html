@@ -81,177 +81,164 @@
 {% block extra_js %}
 {% if current %}
 <script>
-/* ====== A) 送出訊息（沿用你原本的邏輯） ====== */
 (function () {
+  const log      = document.getElementById('chatlog');
   const sendBtn  = document.getElementById('send');
   const textarea = document.getElementById('reply');
-  if (!sendBtn || !textarea) return;
+  if (!log || !sendBtn || !textarea) return;
 
-  // 只有 current 存在時才生成 URL，避免 NoReverseMatch
+  // === API Endpoints ===
   const replyUrl = "{% url 'handoff_agent_reply' current.id %}";
+  const pollUrl  = "{% url 'handoff_staff_poll' current.id %}";
+  const POLL_MS  = 3000;
 
-  // 你的登入頁（若不是 allauth，請把 account_login 換成 login）
-  const LOGIN_URL = "{% url 'account_login' %}?next={{ request.get_full_path|urlencode }}";
+  // === 初始狀態 ===
+  let lastId = (function(){
+    const last = log.querySelector('.msg:last-of-type');
+    return last ? parseInt(last.dataset.id || '0', 10) : 0;
+  })();
 
-  // 讀取 CSRF（Django 官方 cookie 取法）
-  function getCookie(name) {
-    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-    return m ? decodeURIComponent(m.pop()) : null;
-  }
-  const CSRF_TOKEN = getCookie('csrftoken');
+  // 已顯示過（帶正式 id）的訊息集合
+  const displayedIds = new Set(
+    Array.from(log.querySelectorAll('.msg[data-id]'))
+      .map(el => parseInt(el.dataset.id,10))
+      .filter(Boolean)
+  );
 
-  // 狀態碼對應的明確提示
-  const STATUS_HINT = {
-    400: "欄位有誤，請確認必填內容（例如：訊息不可為空）。",
-    401: "尚未登入，請先登入後再試。",
-    403: "沒有操作權限（僅限客服/管理員）。",
-    404: "找不到工單，可能已被刪除。",
-    409: "工單已結案，無法再回覆。",
-    413: "內容過大，請精簡後再送出。",
-    429: "操作過於頻繁，請稍後再試。",
-    500: "系統暫時異常，請稍後再試或改用其他聯絡方式。"
-  };
+  // 暫存中的本地座席訊息（等待輪詢回來的正式 id/ts 後「升級」）
+  const pendingAgentBySig = new Map(); // key = sender|text, val = DOM
 
-  function showError(msg) { alert(msg); }
-  function showOK(msg)    { console.log(msg); } // 可換成你的成功提示
+  // === 小工具 ===
+  function sig(sender, text){ return (sender||'') + '|' + (text||'').trim(); }
+  function escapeHTML(s){ return (s||'').replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function nearBottom(){ return (log.scrollTop + log.clientHeight) >= (log.scrollHeight - 120); }
+  function stickBottom(){ log.scrollTop = log.scrollHeight; }
+  function getCookie(name){ const m = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)'); return m ? decodeURIComponent(m.pop()) : null; }
 
-  // 統一的 POST 包裝：含 CSRF、AJAX Header、偵測 302→登入頁
-  async function apiPost(url, payload) {
+  // 統一 POST
+  async function apiPost(url, payload){
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": CSRF_TOKEN,
-        "X-Requested-With": "XMLHttpRequest"
+        "Content-Type":"application/json",
+        "X-Requested-With":"XMLHttpRequest",
+        "X-CSRFToken": getCookie('csrftoken') || ''
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload || {})
     });
-
-    // 被 staff_member_required 重導去登入頁時，fetch 會拿到 200 + HTML
-    const ct = res.headers.get("content-type") || "";
-    if (res.redirected || (!ct.includes("application/json") && ct.includes("text/html"))) {
-      throw { loginRequired: true };
-    }
-
-    let data = null;
-    try { data = await res.json(); } catch (_) {}
-
-    if (!res.ok || (data && data.ok === false)) {
-      const status = res.status || 500;
-      const msg = (data && data.error) ? data.error : (STATUS_HINT[status] || STATUS_HINT[500]);
-      throw { status, message: msg };
-    }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('not-json');
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok || data.ok === false) throw new Error(data.error || 'failed');
     return data;
   }
 
-  async function handleSend() {
-    const text = (textarea.value || "").trim();
-    if (!text) { showError("請輸入回覆內容。"); return; }
+  // 渲染訊息（支援暫存與升級）
+  function renderMsg({id=null, sender='', text='', ts=null, temp=false, upgradeTarget=null}){
+    // 升級暫存：補上 id/時間，不再新增第二顆
+    if (upgradeTarget){
+      upgradeTarget.removeAttribute('data-temp');
+      if (id != null){
+        upgradeTarget.dataset.id = String(id);
+        displayedIds.add(id);
+      }
+      if (ts){
+        const meta = upgradeTarget.querySelector('.msg-meta');
+        const t = new Date(ts).toLocaleString();
+        if (meta) meta.textContent = t;
+        else upgradeTarget.querySelector('.msg-bubble')
+             .insertAdjacentHTML('beforeend', `<div class="msg-meta">${t}</div>`);
+      }
+      return upgradeTarget;
+    }
 
-    sendBtn.disabled = true;
-    try {
+    // 正式 id 已渲染過 → 跳過
+    if (id != null && displayedIds.has(id)) return null;
+
+    const el = document.createElement('div');
+    el.className = 'msg';
+    el.dataset.sender = sender || '';
+    if (id != null){ el.dataset.id = String(id); displayedIds.add(id); }
+    if (temp) el.dataset.temp = '1';
+
+    el.innerHTML = `
+      <div class="msg-bubble">
+        <span class="who">[${(sender||'').toUpperCase()}]</span>${escapeHTML(text||'')}
+        ${ts ? `<div class="small text-muted mt-1 msg-meta">${new Date(ts).toLocaleString()}</div>` : ''}
+      </div>`;
+    log.appendChild(el);
+    return el;
+  }
+
+  // === 送出：插入「暫存泡泡」，等待輪詢升級 ===
+  async function handleSend(){
+    const text = (textarea.value || '').trim();
+    if (!text) return;
+
+    // 1) 先插入暫存（不帶時間、不帶 id）
+    const signature = sig('agent', text);
+    const tempNode = renderMsg({ sender:'agent', text, temp:true });
+    pendingAgentBySig.set(signature, tempNode);
+    textarea.value = '';
+
+    // 2) 發送到後端；成功/失敗都等輪詢處理（失敗則移除暫存並提示）
+    try{
       await apiPost(replyUrl, { message: text });
-
-      // 成功後：即時加到畫面（避免整頁重載）
-      const log = document.getElementById('chatlog');
-      if (log) {
-        const div = document.createElement('div');
-        div.className = 'msg';
-        div.setAttribute('data-sender', 'agent');
-        div.innerHTML =
-          '<span class="who">[AGENT]</span>' +
-          text.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
-          '<div class="small text-muted mt-1">剛剛</div>';
-        log.appendChild(div);
-        // 送出後，捲到底
-        log.scrollTop = log.scrollHeight;
-      }
-      textarea.value = "";
-      showOK("已送出。");
-    } catch (e) {
-      if (e.loginRequired || e.status === 401) {
-        if (confirm("需要登入才能操作，現在前往登入？")) {
-          window.location.href = LOGIN_URL;
-        }
-        return;
-      }
-      showError(e.message || STATUS_HINT[500]);
-    } finally {
-      sendBtn.disabled = false;
+    }catch(e){
+      if (tempNode && tempNode.parentNode) tempNode.parentNode.removeChild(tempNode);
+      pendingAgentBySig.delete(signature);
+      renderMsg({ sender:'system', text:'⚠️ 傳送失敗，請稍後再試。' });
     }
+    if (nearBottom()) stickBottom();
   }
 
-  sendBtn.addEventListener('click', handleSend);
-  // Ctrl/⌘ + Enter 送出
-  textarea.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
-      ev.preventDefault();
-      handleSend();
-    }
-  });
-})();
-</script>
-
-<script>
-/* ====== B) 右側訊息「即時更新」輪詢 ====== */
-(function () {
-  const log = document.getElementById('chatlog');
-  if (!log) return;
-
-  // 由現有 DOM 取得最後一則訊息 id（若沒有則 0）
-  let lastId = (function() {
-    const lastMsg = log.querySelector('.msg:last-of-type');
-    return lastMsg ? parseInt(lastMsg.getAttribute('data-id') || '0', 10) : 0;
-  })();
-
-  const POLL_MS = 3000; // 每 3 秒輪詢
-  const pollUrl = "{% url 'handoff_staff_poll' current.id %}";
-
-  function nearBottom() {
-    // 使用者靠近底部才自動捲到底，避免閱讀歷史訊息被打斷
-    return (log.scrollTop + log.clientHeight) >= (log.scrollHeight - 120);
-  }
-
-  function escapeHTML(str) {
-    return (str || "").replace(/[&<>\"']/g, s => ({
-      "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;"
-    }[s]));
-  }
-
-  async function poll() {
-    try {
-      const res = await fetch(pollUrl + "?since=" + lastId, {
-        headers: { "X-Requested-With": "XMLHttpRequest" }
+  // === 輪詢：若撞到暫存 → 升級；否則直接新增 ===
+  async function poll(){
+    try{
+      const res = await fetch(pollUrl + '?since=' + (lastId || 0), {
+        headers: { "X-Requested-With":"XMLHttpRequest" },
+        cache: 'no-store'
       });
-      // 若被重導至登入頁，這裡可能會拿到 HTML；保守處理就直接返回
-      const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json")) return;
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) return;
 
       const data = await res.json();
       if (!data || !data.ok || !Array.isArray(data.messages)) return;
 
       const stick = nearBottom();
-      for (const m of data.messages) {
-        const div = document.createElement('div');
-        div.className = 'msg';
-        div.setAttribute('data-id', m.id);
-        div.setAttribute('data-sender', m.sender);
-        div.innerHTML =
-          `<span class="who">[${(m.sender || '').toUpperCase()}]</span>` +
-          `${escapeHTML(m.text)}` +
-          `<div class="small text-muted mt-1">${new Date(m.ts).toLocaleString()}</div>`;
-        log.appendChild(div);
-        lastId = m.id;
+      for (const m of data.messages){
+        // 已顯示過的正式 id → 跳過
+        if (m.id != null && displayedIds.has(m.id)) { lastId = Math.max(lastId, m.id); continue; }
+
+        const signature = sig(m.sender, m.text);
+        const maybeTemp = pendingAgentBySig.get(signature);
+
+        if (m.sender === 'agent' && maybeTemp && maybeTemp.dataset.temp === '1'){
+          // 升級暫存（補 id/時間）
+          renderMsg({ sender:'agent', text:m.text, id:m.id, ts:m.ts, upgradeTarget: maybeTemp });
+          pendingAgentBySig.delete(signature);
+        } else {
+          // 直接新增
+          renderMsg({ sender:m.sender, text:m.text, id:m.id, ts:m.ts });
+        }
+        if (m.id != null) lastId = Math.max(lastId, m.id);
       }
-      if (data.messages.length && stick) {
-        log.scrollTop = log.scrollHeight;
-      }
-    } catch (e) {
-      console.warn("handoff poll failed:", e);
+      if (stick) stickBottom();
+    }catch(e){
+      console.warn('handoff poll failed:', e);
     }
   }
 
-  // 開始輪詢
+  // 綁定事件
+  sendBtn.addEventListener('click', handleSend);
+  textarea.addEventListener('keydown', (ev)=>{
+    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+      ev.preventDefault();
+      handleSend();
+    }
+  });
+
+  // 啟動輪詢
   setInterval(poll, POLL_MS);
 })();
 </script>

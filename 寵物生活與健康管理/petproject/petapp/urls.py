@@ -143,6 +143,7 @@ urlpatterns = [
     path("api/handoff/poll/",     views_handoff.api_handoff_poll,      name="handoff_poll"),
 
     # ===== Staff Console（職員端頁面 & 動作）— 雙重保護 =====
+    path("staff/handoff/<int:ticket_id>/accept/", views_handoff.handoff_agent_accept, name="handoff_agent_accept"),
     path(
         "staff/handoff/",
         staff_member_required(views_handoff.handoff_console, login_url="account_login"),

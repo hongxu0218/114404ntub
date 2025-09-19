@@ -38,9 +38,7 @@ def handoff_console(request: HttpRequest, ticket_id: Optional[int] = None):
 
     current = None
     if ticket_id:
-        current = (
-            HandoffTicket.objects.prefetch_related("messages").get(id=ticket_id)
-        )
+        current = HandoffTicket.objects.prefetch_related("messages").get(id=ticket_id)
 
     return render(
         request,
@@ -56,6 +54,7 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
     職員在控台回覆訊息。
     - 接受 JSON: {"message": "..."} 或 form POST: message=...
     - 回傳: {"ok": true}
+    - 第一次回覆前會自動新增一則 system 訊息通知「已接單」
     """
     t = get_object_or_404(HandoffTicket, id=ticket_id)
     if not t.is_open:
@@ -73,6 +72,36 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
 
     if not msg_text:
         return _json_error("message 欄位必填。", status=400)
+
+    # --- 新增：第一次回覆前，自動補「已接單」system 訊息（只發一次） ---
+    if not HandoffMessage.objects.filter(
+        ticket=t, sender="system", text__icontains="接手您的工單"
+    ).exists():
+        # 若 model 有 assigned_to / accepted_at 欄位則順手標記
+        changed = False
+        if hasattr(t, "assigned_to") and getattr(t, "assigned_to_id", None) != request.user.id:
+            t.assigned_to = request.user
+            changed = True
+        if hasattr(t, "accepted_at") and getattr(t, "accepted_at", None) is None:
+            t.accepted_at = timezone.now()
+            changed = True
+        if changed:
+            try:
+                t.save()
+            except Exception:
+                pass
+
+        agent_name = (
+            getattr(request.user, "get_full_name", lambda: "")()
+            or getattr(request.user, "username", None)
+            or "客服"
+        )
+        HandoffMessage.objects.create(
+            ticket=t,
+            sender="system",
+            text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
+        )
+    # --------------------------------------------------------------------
 
     HandoffMessage.objects.create(
         ticket=t,
@@ -101,6 +130,49 @@ def handoff_agent_close(request: HttpRequest, ticket_id: int):
         sender="system",
         text="工單已結案",
     )
+    return redirect("handoff_console_ticket", ticket_id=t.id)
+
+
+@staff_member_required(login_url="account_login")
+@require_POST
+def handoff_agent_accept(request: HttpRequest, ticket_id: int):
+    """
+    （可選）手動「接單」：座席點擊接單按鈕即發出 system 訊息告知使用者。
+    成功後導回該工單頁面。
+    """
+    t = get_object_or_404(HandoffTicket, id=ticket_id)
+    if not t.is_open:
+        return redirect("handoff_console_ticket", ticket_id=t.id)
+
+    # 若 model 有欄位就同步標記
+    changed = False
+    if hasattr(t, "assigned_to") and getattr(t, "assigned_to_id", None) != request.user.id:
+        t.assigned_to = request.user
+        changed = True
+    if hasattr(t, "accepted_at") and getattr(t, "accepted_at", None) is None:
+        t.accepted_at = timezone.now()
+        changed = True
+    if changed:
+        try:
+            t.save()
+        except Exception:
+            pass
+
+    # 避免重覆發同一則通知
+    if not HandoffMessage.objects.filter(
+        ticket=t, sender="system", text__icontains="接手您的工單"
+    ).exists():
+        agent_name = (
+            getattr(request.user, "get_full_name", lambda: "")()
+            or getattr(request.user, "username", None)
+            or "客服"
+        )
+        HandoffMessage.objects.create(
+            ticket=t,
+            sender="system",
+            text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
+        )
+
     return redirect("handoff_console_ticket", ticket_id=t.id)
 
 
@@ -226,6 +298,7 @@ def api_handoff_poll(request: HttpRequest):
     msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
     last_id = msgs[-1]["id"] if msgs else since
     return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id})
+
 
 # 員工輪詢：取 ticket 的新訊息（since 之後）
 @staff_member_required(login_url="account_login")
