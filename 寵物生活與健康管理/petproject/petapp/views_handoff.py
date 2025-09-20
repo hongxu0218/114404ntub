@@ -7,6 +7,7 @@ from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.db.models import Max
 
 from .models import HandoffTicket, HandoffMessage
 
@@ -73,7 +74,7 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
     if not msg_text:
         return _json_error("message 欄位必填。", status=400)
 
-    # --- 新增：第一次回覆前，自動補「已接單」system 訊息（只發一次） ---
+    # --- 第一次回覆前，自動補「已接單」system 訊息（只發一次） ---
     if not HandoffMessage.objects.filter(
         ticket=t, sender="system", text__icontains="接手您的工單"
     ).exists():
@@ -101,7 +102,7 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
             sender="system",
             text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
         )
-    # --------------------------------------------------------------------
+    # ------------------------------------------------------------
 
     HandoffMessage.objects.create(
         ticket=t,
@@ -174,6 +175,69 @@ def handoff_agent_accept(request: HttpRequest, ticket_id: int):
         )
 
     return redirect("handoff_console_ticket", ticket_id=t.id)
+
+
+# ----------------------------
+# Staff：工單清單輪詢（左側欄即時更新）
+# ----------------------------
+@staff_member_required(login_url="account_login")
+def handoff_staff_tickets_poll(request: HttpRequest):
+    """
+    供控台左側工單清單即時更新：
+    回傳三組分區：unclaimed / open / closed，各含精簡欄位。
+    未接手 = 未結案 且 尚無 agent 訊息（或未發出「接手您的工單」系統訊息，或沒有 assigned_to）
+    """
+    tickets = list(HandoffTicket.objects.all().only("id", "session_key", "is_open", "created_at"))
+
+    if not tickets:
+        return JsonResponse({"ok": True, "unclaimed": [], "open": [], "closed": []})
+
+    t_ids = [t.id for t in tickets]
+
+    # 有沒有座席回覆過
+    agent_tids = set(
+        HandoffMessage.objects.filter(ticket_id__in=t_ids, sender="agent")
+        .values_list("ticket_id", flat=True)
+        .distinct()
+    )
+    # 有沒有系統「已接手」通知
+    accept_tids = set(
+        HandoffMessage.objects.filter(ticket_id__in=t_ids, sender="system", text__icontains="接手您的工單")
+        .values_list("ticket_id", flat=True)
+        .distinct()
+    )
+    # 每個 ticket 最後訊息 id（給前端做變更偵測用）
+    last_ids = {
+        row["ticket_id"]: row["last_id"]
+        for row in HandoffMessage.objects.filter(ticket_id__in=t_ids)
+        .values("ticket_id")
+        .annotate(last_id=Max("id"))
+    }
+
+    # 分組
+    unclaimed, opened, closed = [], [], []
+    for t in sorted(tickets, key=lambda x: x.created_at, reverse=True):
+        # 若 model 有 assigned_to，可直接視為已接手
+        has_assigned_field = hasattr(t, "assigned_to_id")
+        assigned_flag = bool(getattr(t, "assigned_to_id", None)) if has_assigned_field else False
+
+        assigned = assigned_flag or (t.id in agent_tids) or (t.id in accept_tids)
+        item = {
+            "id": t.id,
+            "session_key": t.session_key,
+            "is_open": t.is_open,
+            "assigned": bool(assigned),
+            "created_at": t.created_at.isoformat(),
+            "last_msg_id": last_ids.get(t.id, 0),
+        }
+        if not t.is_open:
+            closed.append(item)
+        elif not assigned:
+            unclaimed.append(item)
+        else:
+            opened.append(item)
+
+    return JsonResponse({"ok": True, "unclaimed": unclaimed, "open": opened, "closed": closed})
 
 
 # ----------------------------

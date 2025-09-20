@@ -170,6 +170,13 @@ urlpatterns = [
         name="handoff_staff_poll",
     ),
 
+    # 新增這條（左側清單輪詢 API）
+    path(
+        "staff/handoff/tickets/poll/",
+        staff_member_required(views_handoff.handoff_staff_tickets_poll, login_url="account_login"),
+        name="handoff_staff_tickets_poll",
+    ),
+
 ]
 
 
