@@ -1,0 +1,194 @@
+{
+  "followData": [
+    {
+      "name": "Butter",
+      "avatar": "https://i.pravatar.cc/24?img=1"
+    },
+    {
+      "name": "Peanut",
+      "avatar": "https://i.pravatar.cc/24?img=5"
+    },
+    {
+      "name": "小黑",
+      "avatar": "https://i.pravatar.cc/24?img=8"
+    },
+    {
+      "name": "逗逗",
+      "avatar": "https://i.pravatar.cc/24?img=10"
+    }
+  ],
+  "postData": [
+    {
+      "id": "p1",
+      "user": {
+        "name": "逗逗",
+        "avatar": "https://i.pravatar.cc/80?img=10"
+      },
+      "ts": "2小時前",
+      "text": "噢噢，逗逗啃寵物骨頭的模樣好可愛 🐶",
+      "type": "single",
+      "media": [
+        "images/1080.webp"
+      ],
+      "likes": 20,
+      "comments": [
+        {
+          "id": "c1",
+          "user": {
+            "name": "Lydia",
+            "avatar": "https://i.pravatar.cc/40?img=12"
+          },
+          "text": "這張真的太可愛了😍",
+          "likes": 3,
+          "replies": [
+            {
+              "id": "c1r1",
+              "user": {
+                "name": "逗逗",
+                "avatar": "https://i.pravatar.cc/40?img=10"
+              },
+              "text": "謝謝妳～牠超會吃😂",
+              "likes": 1
+            }
+          ]
+        },
+        {
+          "id": "c2",
+          "user": {
+            "name": "Jay",
+            "avatar": "https://i.pravatar.cc/40?img=16"
+          },
+          "text": "也太療癒了吧~",
+          "likes": 1,
+          "replies": []
+        }
+      ],
+      "repostFrom": null
+    },
+    {
+      "id": "p2",
+      "user": {
+        "name": "Butter",
+        "avatar": "https://i.pravatar.cc/80?img=1"
+      },
+      "ts": "昨天",
+      "text": "戶外散步集錦，一次放上四張～",
+      "type": "carousel",
+      "media": [
+        "images/200427-23094-01-Cuuu5.jpg",
+        "images/original.jpg",
+        "images/1382490545-442951735.jpg",
+        "images/southeast.jpg"
+      ],
+      "likes": 12,
+      "comments": [
+        {
+          "id": "c3",
+          "user": {
+            "name": "MEI",
+            "avatar": "https://i.pravatar.cc/40?img=22"
+          },
+          "text": "路邊花也美！",
+          "likes": 0,
+          "replies": []
+        }
+      ],
+      "repostFrom": null
+    },
+    {
+      "id": "p3",
+      "user": {
+        "name": "小黑",
+        "avatar": "https://i.pravatar.cc/80?img=8"
+      },
+      "ts": "3天前",
+      "text": "小黑今天去洗澡啦🛁",
+      "type": "carousel",
+      "media": [
+        "images/a5139e2a-54d9-427a-982a-a898c7d69034.png",
+        "images/6da1c8d2-5e89-4680-8e60-b1c8302ac816.png",
+        "images/d01badcf-644d-48de-837e-d6b9c7fe4ac8.png"
+      ],
+      "likes": 5,
+      "comments": [],
+      "repostFrom": "p1"
+    }
+  ],
+  "profilePosts": [
+    {
+      "id": "d1",
+      "user": {
+        "name": "逗逗",
+        "avatar": "https://i.pravatar.cc/80?img=10"
+      },
+      "ts": "1小時前",
+      "text": "今天跑跑！",
+      "type": "video",
+      "media": [
+        "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+      ],
+      "likes": 18,
+      "comments": []
+    },
+    {
+      "id": "b3",
+      "user": {
+        "name": "Butter",
+        "avatar": "https://i.pravatar.cc/80?img=1"
+      },
+      "ts": "3天前",
+      "text": "衝刺！",
+      "type": "video",
+      "media": [
+        "images/kling_20250829_Image_to_Video__4516_0.mp4"
+      ],
+      "likes": 21,
+      "comments": []
+    },
+    {
+      "id": "p2u",
+      "user": {
+        "name": "Peanut",
+        "avatar": "https://i.pravatar.cc/80?img=5"
+      },
+      "ts": "昨天",
+      "text": "玩球時間",
+      "type": "video",
+      "media": [
+        "images/kling_20250829_Image_to_Video__4745_0.mp4"
+      ],
+      "likes": 17,
+      "comments": []
+    }
+  ],
+  "userProfiles": {
+    "Butter": {
+      "handle": "@butter",
+      "bio": "喜歡散步與曬太陽的奶油寶。",
+      "banner": "images/original.jpg",
+      "followers": 1203,
+      "following": 88
+    },
+    "Peanut": {
+      "handle": "@peanut",
+      "bio": "Peanut小姐的日常集錦。",
+      "banner": "images/ChatGPT Image 06_18_40.PNG",
+      "followers": 842,
+      "following": 51
+    },
+    "小黑": {
+      "handle": "@小黑",
+      "bio": "洗澡最帥的小黑 🛁",
+      "banner": "images/a5139e2a-54d9-427a-982a-a898c7d69034.png",
+      "followers": 564,
+      "following": 33
+    },
+    "逗逗": {
+      "handle": "@逗逗",
+      "bio": "我是啃骨頭小天才 🐶",
+      "banner": "images/1080.webp",
+      "followers": 1932,
+      "following": 102
+    }
+  }
+}
