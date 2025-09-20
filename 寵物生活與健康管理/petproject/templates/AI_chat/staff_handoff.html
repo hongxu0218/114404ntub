@@ -97,13 +97,13 @@
       <h5 class="mb-2">工單</h5>
 
       <div class="seg" role="tablist" aria-label="工單分類">
-        <button class="seg-btn active" data-filter="unclaimed" role="tab" aria-selected="true">
+        <button type="button" class="seg-btn active" data-filter="unclaimed" role="tab" aria-selected="true">
           尚未接手 <span id="count-unclaimed" class="badge bg-danger">0</span>
         </button>
-        <button class="seg-btn" data-filter="open" role="tab" aria-selected="false">
+        <button type="button" class="seg-btn" data-filter="open" role="tab" aria-selected="false">
           進行中 <span id="count-open" class="badge bg-success">0</span>
         </button>
-        <button class="seg-btn" data-filter="closed" role="tab" aria-selected="false">
+        <button type="button" class="seg-btn" data-filter="closed" role="tab" aria-selected="false">
           已結案 <span id="count-closed" class="badge bg-secondary">0</span>
         </button>
       </div>
@@ -166,7 +166,7 @@
 
 {% block extra_js %}
 <script>
-/* ====== 左側：分頁切換 + 輪詢 ====== */
+/* ====== 左側：分頁切換 + 輪詢（事件委派） ====== */
 (function(){
   const pane = document.getElementById('tickets-pane');
   if (!pane) return;
@@ -174,31 +174,25 @@
   const currentId = parseInt(pane.dataset.currentId || '0', 10);
   const url = "{% url 'handoff_staff_tickets_poll' %}";
 
-  const listEl      = document.getElementById('tickets-list');
-  const btns        = Array.from(document.querySelectorAll('.seg-btn'));
-  const cUnclaimed  = document.getElementById('count-unclaimed');
-  const cOpen       = document.getElementById('count-open');
-  const cClosed     = document.getElementById('count-closed');
+  const listEl     = document.getElementById('tickets-list');
+  const seg        = document.querySelector('.seg');        // 事件委派容器
+  const cUnclaimed = document.getElementById('count-unclaimed');
+  const cOpen      = document.getElementById('count-open');
+  const cClosed    = document.getElementById('count-closed');
 
-  // 儲存/讀取目前分頁（避免刷新後跑回預設）
   let currentFilter = localStorage.getItem('handoff_filter') || 'unclaimed';
+  let lastData = { unclaimed:[], open:[], closed:[] };
+  const digests = { unclaimed:'', open:'', closed:'' };
+
   function applyTabUI() {
-    btns.forEach(b => {
+    seg.querySelectorAll('.seg-btn').forEach(b=>{
       const active = b.dataset.filter === currentFilter;
       b.classList.toggle('active', active);
       b.setAttribute('aria-selected', active ? 'true' : 'false');
     });
   }
-  applyTabUI();
 
-  btns.forEach(b => {
-    b.addEventListener('click', () => {
-      currentFilter = b.dataset.filter;
-      localStorage.setItem('handoff_filter', currentFilter);
-      applyTabUI();
-      renderActiveList(lastData); // 立即依目前快照重繪
-    });
-  });
+  function digest(list){ return JSON.stringify((list||[]).map(x=>[x.id,x.last_msg_id])); }
 
   function itemHTML(t, status){
     const href = "{% url 'handoff_console_ticket' 0 %}".replace(/0\/$/, t.id + "/");
@@ -211,33 +205,32 @@
       </div>`;
   }
 
-  // 伺服器回來的最新資料快照
-  let lastData = { unclaimed:[], open:[], closed:[] };
-  // 各分頁的變化指紋，用來避免無謂重繪
-  const digests = { unclaimed:'', open:'', closed:'' };
-
-  function digest(list){
-    return JSON.stringify((list||[]).map(x=>[x.id, x.last_msg_id]));
-  }
-
-  function renderActiveList(data){
-    if (!listEl) return;
-
-    // 更新數量徽章
+  function renderActiveList(data, force=false){
+    // 更新徽章數
     cUnclaimed.textContent = (data.unclaimed||[]).length;
     cOpen.textContent      = (data.open||[]).length;
     cClosed.textContent    = (data.closed||[]).length;
 
     const group = data[currentFilter] || [];
     const snap  = digest(group);
-    if (snap === digests[currentFilter]) return; // 該分頁無變化
-
+    if (!force && snap === digests[currentFilter]) return; // 沒變就不重繪
     digests[currentFilter] = snap;
 
     listEl.innerHTML = group.length
       ? group.map(t => itemHTML(t, currentFilter)).join('')
       : `<div class="text-muted small py-2">此分類目前沒有工單</div>`;
   }
+
+  // 事件委派：點到任何 .seg-btn 都會切換
+  seg.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    e.preventDefault();                                    // 防止 submit
+    currentFilter = btn.dataset.filter;
+    localStorage.setItem('handoff_filter', currentFilter);
+    applyTabUI();
+    renderActiveList(lastData, true);                      // 立刻強制重繪
+  });
 
   async function poll(){
     try{
@@ -252,12 +245,13 @@
         open:      data.open      || [],
         closed:    data.closed    || []
       };
-      // 每次輪詢只重繪「當前分頁」
-      renderActiveList(lastData);
+      renderActiveList(lastData);                          // 只更新當前分頁
     }catch(e){ console.warn('tickets poll failed', e); }
   }
 
-  // 初始化：先拉一次資料，並套用當前分頁
+  // 初始化
+  applyTabUI();
+  renderActiveList(lastData, true);                        // 先畫空狀態
   poll();
   setInterval(poll, 3000);
 })();
