@@ -231,6 +231,7 @@
               <span>{{ doctor.user.profile.phone_number }}</span>
             </div>
             {% endif %}
+            
           </div>
         </div>
         
@@ -340,7 +341,7 @@
         </a>
         
         <a 
-          href="{% url 'manage_doctor_schedules' doctor.id %}" 
+          href="{% url 'schedule_list' %}?doctor_id={{ doctor.id }}" 
           class="action-btn btn-schedule"
           title="管理排班"
         >
@@ -497,6 +498,52 @@
   {% csrf_token %}
 </form>
 
+<!-- 確認操作Modal -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="w-100 text-center">
+          <div class="modal-icon mb-3">
+            <i class="bi bi-question-circle-fill text-warning" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="modal-title fw-bold" id="confirmActionModalLabel">確認操作</h5>
+        </div>
+      </div>
+      <div class="modal-body text-center pt-0">
+        <p class="modal-message text-muted mb-4">確定要執行此操作嗎？</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="confirmActionBtn">確認</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 結果提示Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="w-100 text-center">
+          <div class="result-icon mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body text-center pt-0">
+        <h6 class="fw-bold mb-2" id="resultModalTitle">操作成功</h6>
+        <p class="text-muted mb-0" id="resultModalMessage">操作已完成</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">確定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 {% endblock %}
 
 {% block extra_js %}
@@ -506,7 +553,12 @@
 // 頁面專用初始化
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🎯 醫師管理頁面載入完成');
-  
+
+
+  initializeDoctorManagement();
+  // 初始化Modal
+  initializeModals();
+
   // 傳遞 Django 數據到 JavaScript
   window.doctorPageData = {
     clinicId: {{ clinic.id }},
@@ -534,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
     urls: {
       toggleDoctor: '{% url "toggle_doctor_status" 0 %}'.replace('0', '{id}'),
       editDoctor: '{% url "edit_doctor" 0 %}'.replace('0', '{id}'),
-      manageSchedules: '{% url "manage_doctor_schedules" 0 %}'.replace('0', '{id}')
+      manageSchedules: '{% url "schedule_list" %}?doctor_id={id}'
     }
   };
   

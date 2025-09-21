@@ -12,17 +12,42 @@
   
   <!-- 現代化頁面標題 -->
   <div class="page-header-modern">
-    <div class="row align-items-center">
+    <div class="header-background-gradient"></div>
+    <div class="row align-items-center position-relative">
       <div class="col-lg-8">
+        <div class="breadcrumb-modern">
+          <a href="{% url 'clinic_dashboard' %}" class="breadcrumb-link">
+            <i class="bi bi-house"></i>
+            <span>診所管理</span>
+          </a>
+          <i class="bi bi-chevron-right"></i>
+          <a href="{% url 'manage_doctors' %}" class="breadcrumb-link">
+            <i class="bi bi-people"></i>
+            <span>醫師管理</span>
+          </a>
+          <i class="bi bi-chevron-right"></i>
+          <span class="breadcrumb-current">新增醫師</span>
+        </div>
+        
         <h1 class="page-title-modern">
-          <i class="bi bi-person-plus-fill me-3"></i>
-          新增醫師成員
+          <div class="title-icon-wrapper">
+            <i class="bi bi-person-plus-fill"></i>
+          </div>
+          <div class="title-text">
+            <span class="title-main">新增醫師成員</span>
+            <span class="title-sub">為您的醫療團隊加入新夥伴</span>
+          </div>
         </h1>
-        <div class="page-subtitle-modern">
-          <i class="bi bi-hospital me-2"></i>
-          <span>{{ clinic.clinic_name }}</span>
-          <span class="mx-2">•</span>
-          <span>擴充您的醫療團隊</span>
+        
+        <div class="page-stats">
+          <div class="stat-item">
+            <i class="bi bi-hospital"></i>
+            <span>{{ clinic.clinic_name }}</span>
+          </div>
+          <div class="stat-item">
+            <i class="bi bi-people"></i>
+            <span>當前團隊：{{ doctors_count|default:0 }} 位醫師</span>
+          </div>
         </div>
       </div>
       
@@ -32,6 +57,10 @@
             <i class="bi bi-arrow-left"></i>
             <span>返回列表</span>
           </a>
+          <button type="button" class="btn-modern btn-info-modern" id="helpButton">
+            <i class="bi bi-question-circle"></i>
+            <span>需要協助？</span>
+          </button>
         </div>
       </div>
     </div>
@@ -39,26 +68,88 @@
 
   <!-- 表單進度指示器 -->
   <div class="form-progress-modern">
-    <div class="progress-steps">
-      <div class="progress-step active" data-step="1">
-        <div class="step-circle">1</div>
-        <div class="step-label">基本資料</div>
-      </div>
-      <div class="progress-step" data-step="2">
-        <div class="step-circle">2</div>
-        <div class="step-label">專業資訊</div>
-      </div>
-      <div class="progress-step" data-step="3">
-        <div class="step-circle">3</div>
-        <div class="step-label">權限設定</div>
-      </div>
-      <div class="progress-step" data-step="4">
-        <div class="step-circle">4</div>
-        <div class="step-label">確認建立</div>
+    <div class="progress-header">
+      <h3 class="progress-title">
+        <i class="bi bi-list-check me-2"></i>
+        建立醫師流程
+      </h3>
+      <div class="progress-summary">
+        <span class="current-step">步驟 1</span>
+        <span class="total-steps">共 4 步驟</span>
       </div>
     </div>
-    <div class="progress-bar">
-      <div class="progress-fill" style="width: 25%;"></div>
+    
+    <div class="progress-steps">
+      <div class="progress-step active" data-step="1">
+        <div class="step-circle">
+          <i class="bi bi-person-badge"></i>
+          <span class="step-number">1</span>
+        </div>
+        <div class="step-info">
+          <div class="step-label">基本資料</div>
+          <div class="step-description">設定登入資訊</div>
+        </div>
+        <div class="step-status">
+          <i class="bi bi-check-circle step-check"></i>
+        </div>
+      </div>
+      
+      <div class="progress-connector"></div>
+      
+      <div class="progress-step" data-step="2">
+        <div class="step-circle">
+          <i class="bi bi-award"></i>
+          <span class="step-number">2</span>
+        </div>
+        <div class="step-info">
+          <div class="step-label">專業資訊</div>
+          <div class="step-description">執照與專長</div>
+        </div>
+        <div class="step-status">
+          <i class="bi bi-check-circle step-check"></i>
+        </div>
+      </div>
+      
+      <div class="progress-connector"></div>
+      
+      <div class="progress-step" data-step="3">
+        <div class="step-circle">
+          <i class="bi bi-shield-check"></i>
+          <span class="step-number">3</span>
+        </div>
+        <div class="step-info">
+          <div class="step-label">權限設定</div>
+          <div class="step-description">系統功能權限</div>
+        </div>
+        <div class="step-status">
+          <i class="bi bi-check-circle step-check"></i>
+        </div>
+      </div>
+      
+      <div class="progress-connector"></div>
+      
+      <div class="progress-step" data-step="4">
+        <div class="step-circle">
+          <i class="bi bi-check-circle"></i>
+          <span class="step-number">4</span>
+        </div>
+        <div class="step-info">
+          <div class="step-label">確認建立</div>
+          <div class="step-description">最終確認資訊</div>
+        </div>
+        <div class="step-status">
+          <i class="bi bi-check-circle step-check"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="progress-bar-container">
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 25%;">
+          <div class="progress-glow"></div>
+        </div>
+      </div>
+      <div class="progress-percentage">25%</div>
     </div>
   </div>
 
@@ -87,7 +178,8 @@
                 {{ form.first_name.label }}
                 <span class="required-mark">*</span>
               </label>
-              {{ form.first_name }}
+              <input type="text" name="first_name" class="form-control" required 
+                     placeholder="醫師的真實姓名，將顯示在預約系統中">
               <div class="form-help">醫師的真實姓名，將顯示在預約系統中</div>
               <div class="invalid-feedback"></div>
             </div>
@@ -100,7 +192,8 @@
                 {{ form.username.label }}
                 <span class="required-mark">*</span>
               </label>
-              {{ form.username }}
+              <input type="text" name="username" class="form-control" required 
+                     placeholder="用於登入的使用者名稱，建議使用英文">
               <div class="form-help">用於登入的使用者名稱，建議使用英文</div>
               <div class="invalid-feedback"></div>
             </div>
@@ -115,7 +208,8 @@
                 {{ form.email.label }}
                 <span class="required-mark">*</span>
               </label>
-              {{ form.email }}
+              <input type="email" name="email" class="form-control" required 
+                     placeholder="將用於接收系統通知和密碼重設">
               <div class="form-help">將用於接收系統通知和密碼重設</div>
               <div class="invalid-feedback"></div>
             </div>
@@ -127,7 +221,8 @@
                 <i class="bi bi-telephone me-1"></i>
                 {{ form.phone_number.label }}
               </label>
-              {{ form.phone_number }}
+              <input type="tel" name="phone_number" class="form-control" 
+                     placeholder="09xxxxxxxx" pattern="09[0-9]{8}">
               <div class="form-help">聯絡電話，格式：09xxxxxxxx</div>
               <div class="invalid-feedback"></div>
             </div>
@@ -143,7 +238,8 @@
                 <span class="required-mark">*</span>
               </label>
               <div class="password-input-wrapper">
-                {{ form.password }}
+                <input type="password" name="password" class="form-control" required 
+                       minlength="8" placeholder="至少8個字元">
                 <button type="button" class="password-toggle" id="togglePassword1">
                   <i class="bi bi-eye"></i>
                 </button>
@@ -169,7 +265,7 @@
             專業資訊設定
           </h3>
           <p class="section-description">
-            設定醫師的專業背景和執照資訊
+            設定醫師的專業背景和執照資訊（均為選填，建議填寫以提升檔案完整度）
           </p>
         </div>
         
@@ -179,10 +275,12 @@
               <label for="{{ form.vet_license_number.id_for_label }}" class="form-label-modern">
                 <i class="bi bi-card-text me-1"></i>
                 {{ form.vet_license_number.label }}
+                <span class="optional-mark">（選填）</span>
               </label>
-              {{ form.vet_license_number }}
+              <input type="text" name="vet_license_number" class="form-control" 
+                     placeholder="例如：**府農**字第****號">
               <div class="form-help">
-                農委會核發的獸醫師執照號碼
+                獸醫師執照號碼，可稍後補填
                 <button type="button" class="info-button" data-bs-toggle="tooltip" 
                         title="填寫後可透過農委會API自動驗證執照有效性">
                   <i class="bi bi-info-circle"></i>
@@ -198,7 +296,8 @@
                 <i class="bi bi-calendar-check me-1"></i>
                 {{ form.years_of_experience.label }}
               </label>
-              {{ form.years_of_experience }}
+              <input type="number" name="years_of_experience" class="form-control" 
+                     min="0" max="50" value="0" placeholder="0">
               <div class="form-help">從取得執照開始計算的年資</div>
               <div class="invalid-feedback"></div>
             </div>
@@ -208,12 +307,163 @@
         <div class="row">
           <div class="col-md-12">
             <div class="form-group-modern">
-              <label for="{{ form.specialization.id_for_label }}" class="form-label-modern">
+              <label for="specialization" class="form-label-modern">
                 <i class="bi bi-star me-1"></i>
-                {{ form.specialization.label }}
+                專科領域
+                <span class="suggested-mark">（建議，可複選）</span>
               </label>
-              {{ form.specialization }}
-              <div class="form-help">例如：小動物內科、外科、皮膚科等專業領域</div>
+              <div class="multi-select-wrapper">
+                <div class="multi-select-display" id="multi_select_display" onclick="toggleMultiSelectDropdown()">
+                  <span class="selected-text">請選擇專科領域</span>
+                  <i class="bi bi-chevron-down dropdown-icon"></i>
+                </div>
+                
+                <!-- 已選擇的專科標籤顯示區域 -->
+                <div class="selected-tags" id="selected_tags" style="display: none;">
+                  <!-- 標籤將由JavaScript動態生成 -->
+                </div>
+                
+                <div class="multi-select-dropdown" id="multi_select_dropdown">
+                  <div class="dropdown-search">
+                    <input type="text" id="spec_search" placeholder="搜尋專科領域..." 
+                           oninput="filterSpecializationOptions()" onclick="event.stopPropagation()">
+                    <i class="bi bi-search"></i>
+                  </div>
+                  
+                  <div class="dropdown-options" id="dropdown_options">
+                    <div class="option-item">
+                      <label for="spec_small_animal_internal">
+                        <input type="checkbox" id="spec_small_animal_internal" name="specializations[]" 
+                               value="小動物內科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>小動物內科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_small_animal_surgery">
+                        <input type="checkbox" id="spec_small_animal_surgery" name="specializations[]" 
+                               value="小動物外科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>小動物外科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_dermatology">
+                        <input type="checkbox" id="spec_dermatology" name="specializations[]" 
+                               value="獸醫皮膚科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫皮膚科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_cardiology">
+                        <input type="checkbox" id="spec_cardiology" name="specializations[]" 
+                               value="獸醫心臟科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫心臟科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_orthopedics">
+                        <input type="checkbox" id="spec_orthopedics" name="specializations[]" 
+                               value="獸醫骨科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫骨科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_oncology">
+                        <input type="checkbox" id="spec_oncology" name="specializations[]" 
+                               value="獸醫腫瘤科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫腫瘤科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_ophthalmology">
+                        <input type="checkbox" id="spec_ophthalmology" name="specializations[]" 
+                               value="獸醫眼科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫眼科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_dentistry">
+                        <input type="checkbox" id="spec_dentistry" name="specializations[]" 
+                               value="獸醫牙科" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫牙科</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_emergency">
+                        <input type="checkbox" id="spec_emergency" name="specializations[]" 
+                               value="急診重症醫學" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>急診重症醫學</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_anesthesia">
+                        <input type="checkbox" id="spec_anesthesia" name="specializations[]" 
+                               value="獸醫麻醉學" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫麻醉學</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_behavior">
+                        <input type="checkbox" id="spec_behavior" name="specializations[]" 
+                               value="動物行為學" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>動物行為學</span>
+                      </label>
+                    </div>
+                    
+                    <div class="option-item">
+                      <label for="spec_nutrition">
+                        <input type="checkbox" id="spec_nutrition" name="specializations[]" 
+                               value="獸醫營養學" onchange="updateSelectedSpecs()">
+                        <span class="checkmark"></span>
+                        <span>獸醫營養學</span>
+                      </label>
+                    </div>
+                    
+                    <!-- 其他專科選項 -->
+                    <div class="option-item">
+                      <label for="other_checkbox" onclick="toggleOtherInput()">
+                        <input type="checkbox" id="other_checkbox" onchange="updateSelectedSpecs()">
+                        <span class="checkmark other-checkmark"></span>
+                        <span>其他專科</span>
+                      </label>
+                    </div>
+                    <div class="other-input-section" id="other_input_section" style="display: none;">
+                      <input type="text" id="specialization_other" name="specialization_other" 
+                             class="form-control other-input" placeholder="請填寫其他專科領域" 
+                             oninput="updateSelectedSpecs()" 
+                             onclick="event.stopPropagation()">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 隱藏欄位儲存最終的專科領域值 -->
+              <input type="hidden" name="specialization" id="specialization" value="">
+              
+              <div class="form-help">
+                <i class="bi bi-stethoscope me-1"></i>
+                請選擇醫師的專科領域（可複選），也可填寫其他專科
+              </div>
               <div class="invalid-feedback"></div>
             </div>
           </div>
@@ -226,13 +476,52 @@
                 <i class="bi bi-file-text me-1"></i>
                 {{ form.bio.label }}
               </label>
-              {{ form.bio }}
-              <div class="form-help">簡短介紹醫師的專業背景和治療理念</div>
+              <textarea name="bio" class="form-control" rows="4" maxlength="500" 
+                        placeholder="簡短介紹醫師的專業背景和治療理念（選填）"></textarea>
+              <div class="form-help">詳細的個人簡介有助於建立飼主信任</div>
               <div class="character-counter">
                 <span class="current">0</span> / <span class="max">500</span>
               </div>
               <div class="invalid-feedback"></div>
             </div>
+          </div>
+        </div>
+        
+        <!-- 專業資訊完整度提示 -->
+        <div class="professional-info-status">
+          <div class="status-header">
+            <h6 class="status-title">
+              <i class="bi bi-clipboard-check me-2"></i>
+              專業資訊完整度
+            </h6>
+          </div>
+          <div class="status-items">
+            <div class="status-item" data-field="specialization">
+              <i class="bi bi-circle status-icon"></i>
+              <span class="status-text">專科領域</span>
+            </div>
+            <div class="status-item" data-field="bio">
+              <i class="bi bi-circle status-icon"></i>
+              <span class="status-text">個人簡介</span>
+            </div>
+            <div class="status-item" data-field="vet_license_number">
+              <i class="bi bi-circle status-icon"></i>
+              <span class="status-text">執照號碼</span>
+            </div>
+          </div>
+          <div class="status-summary">
+            <small class="text-muted">專業資訊完整度：0% (0/3)</small>
+          </div>
+        </div>
+        
+        <!-- 溫馨提示 -->
+        <div class="professional-tip">
+          <div class="tip-content">
+            <i class="bi bi-lightbulb text-info me-2"></i>
+            <span class="tip-text">
+              <strong>小提示：</strong>填寫完整的專業資訊有助於提升醫師檔案的專業度，
+              但這些都不是必填項目，您可以稍後再補充。
+            </span>
           </div>
         </div>
       </div>
@@ -253,17 +542,25 @@
           <div class="permission-card">
             <div class="permission-header">
               <h4 class="permission-title">
-                <i class="bi bi-calendar3 me-2"></i>
-                預約管理權限
+                <i class="bi bi-stethoscope me-2"></i>
+                獸醫師身份
               </h4>
             </div>
             <div class="permission-content">
-              <div class="form-check-modern">
-                {{ form.can_manage_appointments }}
-                <label for="{{ form.can_manage_appointments.id_for_label }}" class="form-check-label-modern">
-                  可管理預約
-                  <span class="permission-description">允許查看、確認、取消和修改預約</span>
+                <div class="form-check-modern">
+                <input type="checkbox" name="is_active_veterinarian" 
+                      class="form-check-input-modern" id="isVeterinarian" checked>
+                <label for="isVeterinarian" class="form-check-label-modern">
+                  啟用獸醫師身份
+                  <span class="permission-description">可進行診療、開立處方、填寫醫療記錄等專業功能</span>
                 </label>
+              </div>
+
+              
+              
+              <div class="permission-note">
+                <i class="bi bi-info-circle me-2"></i>
+                <small class="text-muted">獸醫師身份包含預約管理、病歷查看等基本功能</small>
               </div>
             </div>
           </div>
@@ -287,6 +584,38 @@
               <div class="admin-warning" id="adminWarning" style="display: none;">
                 <i class="bi bi-exclamation-triangle me-2"></i>
                 <strong>注意：</strong>管理員權限將允許此醫師管理診所的所有設定和其他醫師帳號
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 權限說明 -->
+        <div class="permission-explanation">
+          <h6 class="explanation-title">
+            <i class="bi bi-lightbulb me-2"></i>
+            權限說明
+          </h6>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="permission-info">
+                <h6>獸醫師身份包含：</h6>
+                <ul>
+                  <li>管理預約（查看、確認、修改）</li>
+                  <li>填寫和查看醫療記錄</li>
+                  <li>查看自己的排班</li>
+                  <li>查看病患資料</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="permission-info">
+                <h6>管理員額外權限：</h6>
+                <ul>
+                  <li>管理其他醫師帳號</li>
+                  <li>設定診所營業時間</li>
+                  <li>管理所有醫師排班</li>
+                  <li>查看診所統計數據</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -381,65 +710,149 @@
     </form>
   </div>
 
-  <!-- 幫助提示區域 -->
-  <div class="help-section-modern">
-    <h6 class="help-title">
-      <i class="bi bi-lightbulb"></i>
-      建立醫師注意事項
-    </h6>
-    
-    <div class="row">
-      <div class="col-md-6">
-        <ul class="help-list">
-          <li class="help-item">
-            <strong>基本資料：</strong>確保信箱地址正確，系統將發送登入資訊
-          </li>
-          <li class="help-item">
-            <strong>密碼設定：</strong>建議使用強密碼，醫師首次登入後可自行修改
-          </li>
-          <li class="help-item">
-            <strong>執照驗證：</strong>填寫執照號碼後可透過農委會API驗證
-          </li>
-        </ul>
+  <!-- 幫助面板 -->
+  <div class="help-panel" id="helpPanel" style="display: none;">
+    <div class="help-overlay"></div>
+    <div class="help-content">
+      <div class="help-header">
+        <h4 class="help-title">
+          <i class="bi bi-question-circle me-2"></i>
+          新增醫師幫助指南
+        </h4>
+        <button class="help-close" id="helpClose">
+          <i class="bi bi-x"></i>
+        </button>
       </div>
       
-      <div class="col-md-6">
-        <ul class="help-list">
-          <li class="help-item">
-            <strong>權限分配：</strong>建議依據醫師職責給予適當權限
-          </li>
-          <li class="help-item">
-            <strong>管理員權限：</strong>謹慎授予，管理員可管理其他醫師
-          </li>
-          <li class="help-item">
-            <strong>後續設定：</strong>建立後可在醫師列表中進一步設定排班
-          </li>
-        </ul>
+      <div class="help-body">
+        <div class="help-tabs">
+          <button class="help-tab active" data-tab="basic">基本資料</button>
+          <button class="help-tab" data-tab="professional">專業資訊</button>
+          <button class="help-tab" data-tab="permissions">權限設定</button>
+          <button class="help-tab" data-tab="tips">使用技巧</button>
+        </div>
+        
+        <div class="help-tab-content active" data-content="basic">
+          <h5>基本資料填寫指南</h5>
+          <div class="help-items">
+            <div class="help-item">
+              <div class="help-icon">
+                <i class="bi bi-person"></i>
+              </div>
+              <div class="help-text">
+                <strong>醫師姓名</strong>
+                <p>填寫醫師的真實姓名，將顯示在預約系統和醫療記錄中</p>
+              </div>
+            </div>
+            
+            <div class="help-item">
+              <div class="help-icon">
+                <i class="bi bi-envelope"></i>
+              </div>
+              <div class="help-text">
+                <strong>電子信箱</strong>
+                <p>確保信箱地址正確，系統將發送登入資訊和重要通知</p>
+              </div>
+            </div>
+            
+            <div class="help-item">
+              <div class="help-icon">
+                <i class="bi bi-lock"></i>
+              </div>
+              <div class="help-text">
+                <strong>初始密碼</strong>
+                <p>設定暫時密碼，醫師首次登入時會要求重新設定</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="help-tab-content" data-content="professional">
+          <h5>專業資訊說明</h5>
+          <div class="help-items">
+            <div class="help-item">
+              <div class="help-icon">
+                <i class="bi bi-card-text"></i>
+              </div>
+              <div class="help-text">
+                <strong>執照號碼</strong>
+                <p>填寫後可透過農委會API自動驗證，格式如：**府農**字第****號</p>
+              </div>
+            </div>
+            
+            <div class="help-item">
+              <div class="help-icon">
+                <i class="bi bi-star"></i>
+              </div>
+              <div class="help-text">
+                <strong>專科領域</strong>
+                <p>有助於飼主選擇合適的醫師，如：小動物內科、外科、皮膚科</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="help-tab-content" data-content="permissions">
+          <h5>權限設定指南</h5>
+          <div class="permission-comparison">
+            <div class="comparison-item">
+              <h6>獸醫師身份</h6>
+              <ul>
+                <li>管理預約（查看、確認、修改）</li>
+                <li>填寫和查看醫療記錄</li>
+                <li>查看自己的排班</li>
+                <li>查看病患資料</li>
+              </ul>
+            </div>
+            
+            <div class="comparison-item">
+              <h6>管理員權限 <span class="warning-badge">謹慎授予</span></h6>
+              <ul>
+                <li>管理其他醫師帳號</li>
+                <li>設定診所營業時間</li>
+                <li>管理所有醫師排班</li>
+                <li>查看診所統計數據</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="help-tab-content" data-content="tips">
+          <h5>使用技巧</h5>
+          <div class="tips-grid">
+            <div class="tip-card">
+              <i class="bi bi-lightbulb"></i>
+              <h6>快速建立</h6>
+              <p>只需填寫必填欄位即可快速建立，專業資訊可稍後補充</p>
+            </div>
+            
+            <div class="tip-card">
+              <i class="bi bi-shield-check"></i>
+              <h6>安全建議</h6>
+              <p>建議使用強密碼，並謹慎分配管理員權限</p>
+            </div>
+            
+            <div class="tip-card">
+              <i class="bi bi-calendar"></i>
+              <h6>後續設定</h6>
+              <p>建立完成後可在醫師列表中設定排班和其他詳細資訊</p>
+            </div>
+            
+            <div class="tip-card">
+              <i class="bi bi-envelope-check"></i>
+              <h6>通知設定</h6>
+              <p>系統會自動發送歡迎信件，包含登入指引</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+
 
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/clinic/add-doctor.js' %}"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('🎯 新增醫師頁面載入完成');
-  
-  // 顯示表單錯誤（如果有）
-  {% if form.errors %}
-    {% for field, errors in form.errors.items %}
-      {% for error in errors %}
-        showFieldError('{{ field }}', '{{ error|escapejs }}');
-      {% endfor %}
-    {% endfor %}
-  {% endif %}
-  
-  // 初始化表單驗證
-  initializeFormValidation();
-});
-</script>
 {% endblock %}

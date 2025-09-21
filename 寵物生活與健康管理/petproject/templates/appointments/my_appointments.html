@@ -1,139 +1,276 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}我的預約 - 毛日好 Paw&Day{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/appointments/appointments.css' %}?v=2.2">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-calendar-check text-primary"></i>
-                    我的預約
-                </h2>
-                <a href="{% url 'pet_list' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> 返回寵物列表
+<div class="appointments-wrapper">
+    <div class="container appointments-container">
+        
+        <!-- 美化的頁面標題 -->
+        <div class="page-header-appointments">
+            <div class="header-content">
+                <div class="header-title">
+                    <div class="title-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div>
+                        <h1>我和毛孩的預約</h1>
+                        <p class="header-subtitle">給心愛的毛孩最好的照護 💕</p>
+                    </div>
+                </div>
+                
+                <a href="{% url 'pet_list' %}" class="back-button">
+                    <i class="fas fa-paw"></i>
+                    <span>回到毛孩列表</span>
                 </a>
             </div>
+        </div>
 
-            <!-- 篩選選項 -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label for="statusFilter" class="form-label">篩選狀態：</label>
-                            <select class="form-select" id="statusFilter" onchange="filterAppointments()">
-                                <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>即將到來</option>
-                                <option value="past" {% if status_filter == 'past' %}selected{% endif %}>過去預約</option>
-                                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>全部預約</option>
-                            </select>
-                        </div>
-                    </div>
+        <!-- 篩選面板 -->
+        <div class="enhanced-filter-panel">
+            <!-- 篩選標籤 - 簡化為3個主要狀態 -->
+            <div class="filter-section">
+                <div class="filter-tabs">
+                    <button class="filter-tab {% if status_filter == 'active' %}active{% endif %}" 
+                            onclick="filterAppointments('active')">
+                        <i class="fas fa-clock"></i>
+                        <span>進行中</span>
+                    </button>
+                    <button class="filter-tab {% if status_filter == 'completed' %}active{% endif %}" 
+                            onclick="filterAppointments('completed')">
+                        <i class="fas fa-check-circle"></i>
+                        <span>已完成</span>
+                    </button>
+                    <button class="filter-tab {% if status_filter == 'cancelled' %}active{% endif %}" 
+                            onclick="filterAppointments('cancelled')">
+                        <i class="fas fa-times-circle"></i>
+                        <span>已取消</span>
+                    </button>
+                    <button class="filter-tab {% if status_filter == 'all' %}active{% endif %}" 
+                            onclick="filterAppointments('all')">
+                        <i class="fas fa-list"></i>
+                        <span>全部</span>
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- 預約列表 -->
+        <!-- 預約內容區域 -->
+        <div class="appointments-content" id="appointmentsContent">
+            <!-- 預約網格檢視 -->
             {% if appointments %}
-                <div class="row">
-                    {% for appointment in appointments %}
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-paw text-warning"></i>
-                                        {{ appointment.pet.name }}
-                                    </h5>
-                                    {% if appointment.status == 'confirmed' %}
-                                        <span class="badge bg-success">已確認</span>
-                                    {% elif appointment.status == 'pending' %}
-                                        <span class="badge bg-warning">待確認</span>
-                                    {% elif appointment.status == 'cancelled' %}
-                                        <span class="badge bg-danger">已取消</span>
-                                    {% elif appointment.status == 'completed' %}
-                                        <span class="badge bg-info">已完成</span>
-                                    {% endif %}
-                                </div>
-                                <div class="card-body">
-                                    <div class="appointment-info">
-                                        <p class="mb-2">
-                                            <i class="fas fa-calendar text-primary"></i>
-                                            <strong>日期：</strong>{{ appointment.slot.date|date:"Y年m月d日 (l)" }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <i class="fas fa-clock text-success"></i>
-                                            <strong>時間：</strong>{{ appointment.slot.start_time|time:"H:i" }} - {{ appointment.slot.end_time|time:"H:i" }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <i class="fas fa-hospital text-info"></i>
-                                            <strong>診所：</strong>{{ appointment.slot.clinic.clinic_name }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <i class="fas fa-user-md text-secondary"></i>
-                                            <strong>醫師：</strong>{{ appointment.slot.doctor.user.get_full_name|default:appointment.slot.doctor.user.username }}
-                                        </p>
-                                        {% if appointment.reason %}
-                                            <p class="mb-2">
-                                                <i class="fas fa-notes-medical text-warning"></i>
-                                                <strong>預約原因：</strong>{{ appointment.reason }}
-                                            </p>
-                                        {% endif %}
-                                        {% if appointment.contact_phone %}
-                                            <p class="mb-2">
-                                                <i class="fas fa-phone text-primary"></i>
-                                                <strong>聯絡電話：</strong>{{ appointment.contact_phone }}
-                                            </p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <div class="d-flex justify-content-between">
-                                        <small class="text-muted">
-                                            預約時間：{{ appointment.created_at|date:"m/d H:i" }}
-                                        </small>
-                                        {% if appointment.status in 'pending,confirmed' and appointment.slot.date >= today %}
-                                            <form method="post" action="{% url 'cancel_appointment' appointment.id %}" 
-                                                  onsubmit="return confirm('確定要取消這個預約嗎？');" style="display: inline;">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <i class="fas fa-times"></i> 取消預約
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+            <div class="appointments-grid view-grid active" id="gridView">
+            {% for appointment_data in appointments %}
+                {% with appointment=appointment_data.appointment medical_record=appointment_data.medical_record medical_details=appointment_data.medical_details %}
+            <div class="appointment-card" data-status="{{ appointment.status }}">
+                
+                <!-- 卡片頭部 - 簡化設計 -->
+                <div class="card-header">
+                    <div class="pet-info">
+                        <div class="pet-avatar">
+                            {% if appointment.pet.picture %}
+                                <img src="{{ appointment.pet.picture.url }}" alt="{{ appointment.pet.name }}">
+                            {% else %}
+                                <div class="pet-initial">{{ appointment.pet.name|first|upper }}</div>
+                            {% endif %}
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="card">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">暫無預約記錄</h4>
-                        {% if status_filter == 'upcoming' %}
-                            <p class="text-muted">您目前沒有即將到來的預約</p>
-                        {% elif status_filter == 'past' %}
-                            <p class="text-muted">您沒有過去的預約記錄</p>
-                        {% else %}
-                            <p class="text-muted">您還沒有任何預約記錄</p>
+                        <div class="pet-details">
+                            <h3 class="pet-name">{{ appointment.pet.name }}</h3>
+                            <div class="appointment-id">#{{ appointment.id }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-badge status-{{ appointment.status }}">
+                        {% if appointment.status == 'confirmed' %}
+                            <i class="fas fa-check-circle"></i>
+                            <span>已確認</span>
+                        {% elif appointment.status == 'pending' %}
+                            <i class="fas fa-clock"></i>
+                            <span>待確認</span>
+                        {% elif appointment.status == 'cancelled' %}
+                            <i class="fas fa-times-circle"></i>
+                            <span>已取消</span>
+                        {% elif appointment.status == 'completed' %}
+                            <i class="fas fa-check-double"></i>
+                            <span>已完成</span>
                         {% endif %}
-                        <a href="{% url 'pet_list' %}" class="btn btn-primary mt-3">
-                            <i class="fas fa-plus"></i> 立即預約
-                        </a>
                     </div>
                 </div>
-            {% endif %}
+                
+                <!-- 主要資訊 - 突出顯示 -->
+                <div class="card-body">
+                    <div class="primary-info">
+                        <div class="datetime-info">
+                            <div class="date">
+                                <i class="fas fa-calendar"></i>
+                                <span>{{ appointment.slot.date|date:"m月d日 (D)" }}</span>
+                            </div>
+                            <div class="time">
+                                <i class="fas fa-clock"></i>
+                                <span>預約時間 {{ appointment.slot.start_time|time:"H:i" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="clinic-info">
+                            <div class="clinic-name">
+                                <i class="fas fa-hospital"></i>
+                                <span>{{ appointment.slot.clinic.clinic_name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 醫療記錄摘要 -->
+                    {% if enhanced_view and medical_record %}
+                    <div class="medical-summary">
+                        <div class="summary-header">
+                            <i class="fas fa-stethoscope"></i>
+                            <span class="summary-title">診療記錄</span>
+                            <div class="record-badge">已看診</div>
+                        </div>
+                        <div class="summary-content">
+                            {% if medical_record.diagnosis %}
+                            <div class="medical-item">
+                                <span class="medical-label">診斷:</span>
+                                <span class="medical-value">{{ medical_record.diagnosis|truncatechars:50 }}</span>
+                            </div>
+                            {% endif %}
+                            {% if medical_record.treatment %}
+                            <div class="medical-item">
+                                <span class="medical-label">治療:</span>
+                                <span class="medical-value">{{ medical_record.treatment|truncatechars:50 }}</span>
+                            </div>
+                            {% endif %}
+                            {% if medical_record.attending_vet %}
+                            <div class="medical-item">
+                                <span class="medical-label">主治醫師:</span>
+                                <span class="medical-value">{{ medical_record.attending_vet.user.get_full_name }}</span>
+                            </div>
+                            {% endif %}
+                            <!-- 詳細醫療數據 -->
+                            {% if medical_details %}
+                                {% if medical_details.vital_signs %}
+                                <div class="vital-signs-summary">
+                                    {% if medical_details.vital_signs.weight %}
+                                        <span class="vital-item">體重: {{ medical_details.vital_signs.weight }}kg</span>
+                                    {% endif %}
+                                    {% if medical_details.vital_signs.temperature %}
+                                        <span class="vital-item">體溫: {{ medical_details.vital_signs.temperature }}°C</span>
+                                    {% endif %}
+                                    {% if medical_details.vital_signs.heart_rate %}
+                                        <span class="vital-item">心率: {{ medical_details.vital_signs.heart_rate }}bpm</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if medical_details.prescriptions %}
+                                <div class="prescription-summary">
+                                    <span class="prescription-label">處方藥物:</span>
+                                    {% for prescription in medical_details.prescriptions %}
+                                        <span class="prescription-item">{{ prescription.medication|default:"未指定藥物" }}</span>{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif enhanced_view and appointment.status == 'completed' %}
+                    <div class="medical-summary no-record">
+                        <div class="summary-header">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span class="summary-title">診療記錄</span>
+                            <div class="record-badge no-record">無記錄</div>
+                        </div>
+                        <div class="summary-content">
+                            <p class="no-record-text">此次看診尚未建立詳細醫療記錄</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 次要資訊 - 可展開 -->
+                    <div class="secondary-info" style="display: none;">
+                        <div class="info-item">
+                            <span class="label">醫師：</span>
+                            <span class="value">{{ appointment.slot.doctor.user.get_full_name|default:"任何醫師" }}</span>
+                        </div>
+                        {% if appointment.reason %}
+                        <div class="info-item">
+                            <span class="label">原因：</span>
+                            <span class="value">{{ appointment.reason }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="info-item">
+                            <span class="label">創建時間：</span>
+                            <span class="value">{{ appointment.created_at|date:"m/d H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按鈕 - 簡化 -->
+                <div class="card-actions">
+                    <button class="action-btn view-details">
+                        <i class="fas fa-info-circle"></i>
+                        <span>詳細資料</span>
+                    </button>
+                    {% if enhanced_view and medical_record %}
+                    <button class="action-btn view-medical-record" data-record-id="{{ medical_record.id }}">
+                        <i class="fas fa-file-medical"></i>
+                        <span>完整診療記錄</span>
+                    </button>
+                    {% endif %}
+                    
+                    <!-- Cancel button removed - cancellation should be in history records only -->
+                </div>
+                
+            </div>
+                {% endwith %}
+            {% endfor %}
+            </div>
         </div>
+        
+        {% else %}
+        
+        <!-- 空狀態 -->
+        <div class="appointments-grid">
+            <div class="empty-state-modern">
+                <div class="empty-icon-modern">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+                <h3 class="empty-title-modern">暫無預約記錄</h3>
+                <p class="empty-description-modern">
+                    {% if status_filter == 'active' %}
+                        您目前沒有進行中的預約<br>
+                        包含待確認和已確認的預約
+                    {% elif status_filter == 'completed' %}
+                        您沒有已完成的預約記錄<br>
+                        建議定期帶寵物進行健康檢查
+                    {% elif status_filter == 'cancelled' %}
+                        您沒有已取消的預約記錄<br>
+                        這是好事！表示您的預約都順利進行
+                    {% else %}
+                        您還沒有任何預約記錄<br>
+                        立即開始您的寵物健康管理之旅
+                    {% endif %}
+                </p>
+                <a href="{% url 'pet_list' %}" class="cta-button">
+                    <i class="fas fa-plus"></i>
+                    <span>立即預約</span>
+                </a>
+            </div>
+        </div>
+        
+        {% endif %}
     </div>
 </div>
 
-<script>
-function filterAppointments() {
-    const status = document.getElementById('statusFilter').value;
-    const currentUrl = new URL(window.location);
-    currentUrl.searchParams.set('status', status);
-    window.location.href = currentUrl.toString();
-}
-</script>
+<!-- CSRF Token -->
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/appointments/my_appointment.js' %}?v=2.1"></script>
 {% endblock %}

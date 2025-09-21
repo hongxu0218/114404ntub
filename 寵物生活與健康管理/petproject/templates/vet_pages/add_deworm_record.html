@@ -3,6 +3,8 @@
 
 {% block title %}新增驅蟲記錄 - {{ pet.name }}{% endblock %}
 
+{% block header %}{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
 <style>
@@ -20,7 +22,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 100%);
     min-height: 100vh;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -51,7 +53,7 @@ body {
     width: 60px;
     height: 60px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--warning-color), #fbbf24);
+    background: linear-gradient(135deg, #10b981, #34d399);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -119,9 +121,9 @@ body {
 .form-field input:focus,
 .form-field textarea:focus,
 .form-field select:focus {
-    border-color: var(--warning-color);
+    border-color: #10b981;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .form-grid {
@@ -152,12 +154,12 @@ body {
 }
 
 .btn-primary {
-    background: var(--warning-color);
+    background: #10b981;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #d97706;
+    background: #059669;
     transform: translateY(-1px);
 }
 
@@ -271,6 +273,31 @@ body {
                     <div class="form-field">
                         {{ form.location.label_tag }}
                         {{ form.location }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-calendar-check" style="color: var(--warning-color);"></i>
+                    保護效期與追蹤
+                </div>
+
+                <div class="info-box" style="background: #f0f9ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #1e40af; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>提示：</strong>輸入保護效期後，系統會自動計算下次施打日期。你也可以手動調整下次施打日期。
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        {{ form.protection_period_months.label_tag }}
+                        {{ form.protection_period_months }}
+                        <small style="color: var(--gray-600); font-size: 0.8rem;">常見：體內驅蟲 3個月，體外驅蟲 1個月</small>
+                    </div>
+                    <div class="form-field">
+                        {{ form.next_due_date.label_tag }}
+                        {{ form.next_due_date }}
+                        <small style="color: var(--gray-600); font-size: 0.8rem;">可手動調整，留空則自動計算</small>
                     </div>
                 </div>
             </div>

@@ -6,6 +6,141 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/clinic/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/clinic/business-hours.css' %}">
+<style>
+/* 營業時間設定樣式 - 完全複製個人排班管理 */
+.business-hours-form .hours-grid {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.hours-grid .grid-header {
+    display: grid;
+    grid-template-columns: 80px 120px 1fr 120px;
+    gap: 15px;
+    background: #f8f9fa;
+    padding: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
+}
+
+.hours-row {
+    display: grid;
+    grid-template-columns: 80px 120px 1fr 120px;
+    gap: 15px;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+}
+
+.hours-row:last-child {
+    border-bottom: none;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #2196F3;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.time-slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-slot input[type="time"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.time-slot span {
+    font-size: 14px;
+    color: #666;
+}
+
+.day-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.status-text {
+    font-size: 14px;
+    color: #666;
+    min-width: 40px;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+}
+
+/* 模板按鈕樣式 */
+.template-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.template-buttons .btn-modern {
+    flex: 1;
+    min-width: 180px;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -191,20 +326,20 @@
             <div class="col-md-6 mb-4">
               <div class="feature-card">
                 <div class="feature-icon schedule-icon">
-                  <i class="bi bi-calendar3"></i>
+                  <i class="bi bi-calendar-week"></i>
                 </div>
                 <div class="feature-content">
                   <h4 class="feature-title">排班管理</h4>
                   <p class="feature-description">設定醫師排班時間，管理看診時段</p>
                   <div class="feature-stats">
                     <span class="stat-item">
-                      <strong id="activeSchedulesCount">--</strong> 個排班
+                      <strong>完整排班系統</strong>
                     </span>
                   </div>
                 </div>
                 <div class="feature-actions">
-                  <a href="{% url 'manage_schedules' %}" class="btn-feature btn-success">
-                    <i class="bi bi-arrow-right"></i>
+                  <a href="{% url 'schedule_dashboard' %}" class="btn-feature btn-primary">
+                    <i class="bi bi-calendar-week"></i>
                     管理排班
                   </a>
                 </div>
@@ -364,8 +499,8 @@
                 <i class="bi bi-person-plus"></i>
               </div>
               <div class="action-content">
-                <div class="action-title">新增醫師</div>
-                <div class="action-desc">新增診所醫師成員</div>
+                <div class="action-title">新增成員</div>
+                <div class="action-desc">新增診所成員</div>
               </div>
             </button>
             
@@ -388,6 +523,16 @@
                 <div class="action-desc">查看今日所有預約</div>
               </div>
             </button>
+            
+            <a href="{% url 'create_walkin_appointment' %}" class="quick-action-btn" style="text-decoration: none; color: inherit;">
+              <div class="action-icon">
+                <i class="bi bi-calendar-plus"></i>
+              </div>
+              <div class="action-content">
+                <div class="action-title">現場預約</div>
+                <div class="action-desc">為現場客人創建預約</div>
+              </div>
+            </a>
             
             <button class="quick-action-btn" onclick="showNotifications()">
               <div class="action-icon">
@@ -465,6 +610,10 @@
                     <i class="bi bi-calendar-week me-2"></i>
                     營業時間
                 </button>
+                <button class="tab-btn" data-tab="mode">
+                    <i class="bi bi-toggles me-2"></i>
+                    診所模式
+                </button>
             </div>
         </div>
         
@@ -508,7 +657,7 @@
                 </form>
             </div>
             
-            <!-- 營業時間設定標籤內容 - 修正版 -->
+            <!-- 營業時間設定標籤內容 - 統一版 -->
             <div class="tab-content" id="businessTab">
               <div class="business-hours-container">
                   <div class="business-hours-header">
@@ -522,23 +671,136 @@
                       </p>
                   </div>
                   
-                  <div class="business-hours-editor">
-                      <div class="days-container" id="businessHoursDays">
-                          <!-- 天數卡片將由 JavaScript 動態生成 -->
+                  <!-- 營業時間設定表單 - 完全複製個人排班管理介面 -->
+                  <div class="business-hours-form">
+                      <div class="form-group">
+                          <label>快速設定模板</label>
+                          <div class="template-buttons" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                              <button type="button" class="btn-modern btn-outline-modern" onclick="applyBusinessTemplateSync('weekday_only')">
+                                  平日營業 (週一至週五)
+                              </button>
+                              <button type="button" class="btn-modern btn-outline-modern" onclick="applyBusinessTemplateSync('weekend_half')">
+                                  週末半天 (週六上午)
+                              </button>
+                              <button type="button" class="btn-modern btn-outline-modern" onclick="applyBusinessTemplateSync('full_week')">
+                                  全週營業
+                              </button>
+                          </div>
+                      </div>
+                      
+                      <div class="hours-grid">
+                          <div class="grid-header">
+                              <div>星期</div>
+                              <div>營業狀態</div>
+                              <div>營業時間</div>
+                              <div>操作</div>
+                          </div>
+                          
+                          <div id="businessHoursRows">
+                              <!-- 營業時間行將由 JavaScript 動態生成 -->
+                          </div>
                       </div>
                   </div>
 
-                  <!-- 營業時間預覽 -->
-                  <div class="business-hours-preview">
-                      <h6 class="preview-title">
-                          <i class="bi bi-eye me-2"></i>
-                          營業時間總覽
-                      </h6>
-                      <div class="preview-content" id="businessHoursPreview">
-                          <!-- 預覽內容將由 JavaScript 生成 -->
-                      </div>
+                  <!-- 儲存按鈕 -->
+                  <div class="d-flex justify-content-end mt-3">
+                      <button class="btn-modern btn-primary-modern" onclick="saveBusinessHours()">
+                          儲存營業時間
+                      </button>
                   </div>
               </div>
+            </div>
+            
+            <!-- 診所模式標籤 -->
+            <div class="tab-content" id="modeTab">
+                <div class="clinic-mode-container">
+                    <div class="mode-header">
+                        <h5 class="section-title">
+                            <i class="bi bi-toggles me-2"></i>
+                            診所營運模式設定
+                        </h5>
+                        <p class="section-description">
+                            選擇適合您診所的營運模式。切換模式會影響排班管理和預約系統的顯示方式。
+                        </p>
+                    </div>
+                    
+                    <div class="current-mode-display">
+                        <div class="mode-info-card">
+                            <div class="mode-badge-large">
+                                <span class="mode-indicator {{ clinic.clinic_mode }}"></span>
+                                <div class="mode-text">
+                                    <h6>目前模式</h6>
+                                    <p>{% if clinic.clinic_mode == 'single' %}單人獸醫模式{% else %}團隊獸醫模式{% endif %}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mode-options">
+                        <div class="mode-option-card" data-mode="single">
+                            <div class="mode-option-icon">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="mode-option-content">
+                                <h6>單人獸醫模式</h6>
+                                <p>適合小型診所，由單一獸醫師提供服務</p>
+                                <ul class="mode-features">
+                                    <li>簡化的排班管理</li>
+                                    <li>預約直接指向主獸醫師</li>
+                                    <li>快速設定與管理</li>
+                                </ul>
+                            </div>
+                            <div class="mode-option-action">
+                                {% if clinic.clinic_mode != 'single' %}
+                                <button class="btn-switch-mode" onclick="confirmModeSwitch('single')">
+                                    <i class="bi bi-arrow-right"></i>
+                                    切換至此模式
+                                </button>
+                                {% else %}
+                                <span class="current-mode-badge">
+                                    <i class="bi bi-check-circle"></i>
+                                    目前模式
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mode-option-card" data-mode="multi">
+                            <div class="mode-option-icon">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="mode-option-content">
+                                <h6>團隊獸醫模式</h6>
+                                <p>適合中大型診所，支援多位獸醫師協作</p>
+                                <ul class="mode-features">
+                                    <li>多獸醫師排班管理</li>
+                                    <li>專科分工預約系統</li>
+                                    <li>團隊協作功能</li>
+                                </ul>
+                            </div>
+                            <div class="mode-option-action">
+                                {% if clinic.clinic_mode != 'multi' %}
+                                <button class="btn-switch-mode" onclick="confirmModeSwitch('multi')">
+                                    <i class="bi bi-arrow-right"></i>
+                                    切換至此模式
+                                </button>
+                                {% else %}
+                                <span class="current-mode-badge">
+                                    <i class="bi bi-check-circle"></i>
+                                    目前模式
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mode-warning">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>注意：</strong>切換模式前請確保沒有未完成的預約。切換模式會重新整理排班系統的顯示方式。
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -564,31 +826,30 @@
 
 {% block extra_js %}
 <script src="{% static 'js/clinic/dashboard.js' %}"></script>
-<script src="{% static 'js/clinic/business-hours.js' %}"></script>
 <script>
 // 傳遞 Django 數據到 JavaScript
 window.dashboardData = {
   clinic: {
     id: {{ clinic.id }},
-    name: '{{ clinic.clinic_name|escapejs }}',
-    phone: '{{ clinic.clinic_phone|escapejs }}',
-    email: '{{ clinic.clinic_email|escapejs }}',
-    address: '{{ clinic.clinic_address|escapejs }}',
+    name: "{{ clinic.clinic_name|escapejs }}",
+    phone: "{{ clinic.clinic_phone|escapejs }}",
+    email: "{{ clinic.clinic_email|escapejs }}",
+    address: "{{ clinic.clinic_address|escapejs }}",
     isVerified: {{ clinic.is_verified|yesno:"true,false" }}
   },
   stats: {
-    todayAppointments: {{ today_appointments }},
-    pendingAppointments: {{ pending_appointments }},
-    doctorsCount: {{ doctors_count }},
-    totalAppointmentsThisMonth: {{ total_appointments_this_month }}
+    todayAppointments: {{ today_appointments|default:0 }},
+    pendingAppointments: {{ pending_appointments|default:0 }},
+    doctorsCount: {{ doctors_count|default:0 }},
+    totalAppointmentsThisMonth: {{ total_appointments_this_month|default:0 }}
   },
   urls: {
-    appointments: '{% url "clinic_appointments" %}',
-    doctors: '{% url "manage_doctors" %}',
-    schedules: '{% url "manage_schedules"%}', 
-    addDoctor: '{% url "add_doctor" %}'
+    appointments: "{% url 'clinic_appointments' %}",
+    doctors: "{% url 'manage_doctors' %}",
+    schedules: "{% url 'schedule_dashboard' %}",
+    addDoctor: "{% url 'add_doctor' %}"
   },
-  csrfToken: '{{ csrf_token }}'
+  csrfToken: "{{ csrf_token }}"
 };
 
 // 顯示訊息
@@ -746,12 +1007,10 @@ function initializeSettingsTabs() {
                 if (targetTab === 'business') {
                     console.log('🕘 切換到營業時間標籤，開始初始化...');
                     setTimeout(() => {
-                        if (typeof businessHours !== 'undefined') {
-                            businessHours.initialize();
-                        } else if (typeof initializeBusinessHours === 'function') {
-                            initializeBusinessHours();
+                        if (typeof loadBusinessHoursForm === 'function') {
+                            loadBusinessHoursForm();
                         } else {
-                            console.error('❌ businessHours 物件未找到');
+                            console.error('❌ loadBusinessHoursForm 函數未找到');
                         }
                     }, 150); // 減少延遲時間
                 }
@@ -760,126 +1019,353 @@ function initializeSettingsTabs() {
     });
 }
 
-// 儲存診所設定函數
-function saveClinicSettings() {
-    console.log('💾 儲存診所設定...');
-    
-    const activeTab = document.querySelector('.tab-btn.active');
-    if (!activeTab) {
-        showErrorMessage('請選擇要儲存的設定分類');
+console.log('✅ 診所管理頁面載入完成，使用 dashboard.js 中的函數');
+
+// ============ 診所模式切換功能 ============
+
+function confirmModeSwitch(newMode) {
+    const currentMode = '{{ clinic.clinic_mode }}';
+    if (newMode === currentMode) {
+        showWarningMessage('已經是當前模式');
         return;
     }
     
-    const tabType = activeTab.dataset.tab;
+    const newModeName = newMode === 'single' ? '單人獸醫模式' : '團隊獸醫模式';
     
-    switch(tabType) {
-        case 'basic':
-            saveBasicSettings();
-            break;
-        case 'business':
-            if (typeof businessHours !== 'undefined') {
-                const result = businessHours.save();
-                if (result) {
-                    // 設定儲存成功後關閉 Modal
-                    setTimeout(() => {
-                        closeSettingsModal();
-                    }, 1500);
-                }
+    // 檢查是否可以切換模式
+    fetch('{% url "api_can_switch_mode" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.can_switch) {
+                showModeSwitchConfirmation(newMode, newModeName);
             } else {
-                showErrorMessage('營業時間系統尚未載入');
+                showModeSwitchBlocked(data.reason);
             }
-            break;
-        default:
-            showErrorMessage('未知的設定類型');
+        })
+        .catch(error => {
+            console.error('檢查切換權限失敗:', error);
+            showErrorMessage('檢查切換權限時發生錯誤，請稍後再試');
+        });
+}
+
+function showModeSwitchConfirmation(newMode, newModeName) {
+    const currentModeName = '{{ clinic.clinic_mode }}' === 'single' ? '單人獸醫模式' : '團隊獸醫模式';
+    
+    const confirmed = confirm(`確認要從「${currentModeName}」切換到「${newModeName}」嗎？\n\n切換模式會影響排班管理方式，請確保沒有進行中的預約。`);
+    
+    if (confirmed) {
+        // 發送模式切換請求
+        fetch(`{% url 'switch_clinic_mode' clinic.id %}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                'mode': newMode
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessMessage(`已成功切換到${newModeName}`);
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showErrorMessage(data.error || '模式切換失敗，請稍後再試');
+            }
+        })
+        .catch(error => {
+            console.error('模式切換失敗:', error);
+            showErrorMessage('模式切換時發生錯誤，請稍後再試');
+        });
     }
 }
 
-function saveBasicSettings() {
-    console.log('💾 儲存基本設定...');
-    
-    const form = document.getElementById('clinicSettingsForm');
-    if (!form) {
-        showErrorMessage('找不到設定表單');
-        return;
-    }
-    
-    const formData = new FormData(form);
-    const data = {
-        clinic_phone: formData.get('clinic_phone'),
-        clinic_email: formData.get('clinic_email'),
-        clinic_address: formData.get('clinic_address')
-    };
-    
-    // 簡單驗證
-    if (!data.clinic_phone || !data.clinic_email) {
-        showErrorMessage('請填寫所有必填欄位');
-        return;
-    }
-    
-    // 顯示載入狀態
-    showSaveLoading(true);
-    
-    // 暫時模擬成功
-    setTimeout(() => {
-        showSaveLoading(false);
-        showSuccessMessage('基本設定已更新');
-        updateClinicInfo(data);
-        setTimeout(() => {
-            closeSettingsModal();
-        }, 1000);
-    }, 1500);
+function showModeSwitchBlocked(reason) {
+    alert(`無法切換模式：\n${reason || '目前有未完成的預約，無法切換模式'}\n\n請處理完所有未完成的預約後再嘗試切換模式。`);
 }
 
-function updateClinicInfo(data) {
-    try {
-        // 更新電話顯示
-        const phoneElement = document.querySelector('[data-clinic-phone]');
-        if (phoneElement) {
-            phoneElement.textContent = data.clinic_phone;
-        }
-        
-        // 更新信箱顯示
-        const emailElement = document.querySelector('[data-clinic-email]');
-        if (emailElement) {
-            emailElement.textContent = data.clinic_email;
-        }
-        
-        // 更新地址顯示
-        const addressElement = document.querySelector('[data-clinic-address]');
-        if (addressElement) {
-            addressElement.textContent = data.clinic_address;
-        }
-        
-        console.log('✅ 診所資訊顯示已更新');
-    } catch (error) {
-        console.error('❌ 更新診所資訊顯示失敗:', error);
-    }
-}
+// 排班模式切換功能已恢復
 
-// 顯示儲存載入狀態
-function showSaveLoading(show) {
-    const saveButton = document.querySelector('.modal-footer .btn-primary-modern');
-    if (!saveButton) return;
-    
-    if (show) {
-        saveButton.disabled = true;
-        saveButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i> 儲存中...';
-        saveButton.style.pointerEvents = 'none';
-    } else {
-        saveButton.disabled = false;
-        saveButton.innerHTML = '<i class="bi bi-check me-2"></i> 儲存設定';
-        saveButton.style.pointerEvents = 'auto';
-    }
-}
+// 導出函數到全域
+window.confirmModeSwitch = confirmModeSwitch;
 
-// 導出必要的全域函數
-window.saveClinicSettings = saveClinicSettings;
-window.initializeSettingsTabs = initializeSettingsTabs;
-window.applyQuickSettings = applyQuickSettings;
-window.clearAllSchedules = clearAllSchedules;
-window.setMorningAfternoonSchedule = setMorningAfternoonSchedule;
-window.setCommonClinicHours = setCommonClinicHours;
 
-console.log('✅ 修正版診所管理頁面載入完成（支援營業時間儲存和狀態同步）');
 </script>
+
+<!-- 診所模式設定樣式 -->
+<style>
+/* 診所模式容器 */
+.clinic-mode-container {
+    max-width: 800px;
+}
+
+.mode-header {
+    margin-bottom: 2rem;
+}
+
+.mode-header .section-title {
+    color: #1f2937;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.mode-header .section-description {
+    color: #6b7280;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* 當前模式顯示 */
+.current-mode-display {
+    margin-bottom: 2rem;
+}
+
+.mode-info-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.mode-badge-large {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mode-badge-large .mode-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mode-indicator.single {
+    background: #3b82f6;
+}
+
+.mode-indicator.multi {
+    background: #10b981;
+}
+
+.mode-text h6 {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.mode-text p {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* 模式選項 */
+.mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.mode-option-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.mode-option-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mode-option-card[data-mode="single"] {
+    border-color: #bfdbfe;
+}
+
+.mode-option-card[data-mode="multi"] {
+    border-color: #bbf7d0;
+}
+
+.mode-option-icon {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.mode-option-card[data-mode="single"] .mode-option-icon {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.mode-option-card[data-mode="multi"] .mode-option-icon {
+    background: #dcfce7;
+    color: #059669;
+}
+
+.mode-option-content {
+    flex: 1;
+}
+
+.mode-option-content h6 {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.mode-option-content p {
+    margin: 0 0 0.75rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.mode-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mode-features li {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.mode-option-action {
+    flex-shrink: 0;
+}
+
+.btn-switch-mode {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-switch-mode:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-switch-mode:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.current-mode-badge {
+    background: #dcfce7;
+    color: #166534;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+/* 警告區域 */
+.mode-warning .alert {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1e40af;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.mode-warning .alert i {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .mode-option-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .mode-option-content {
+        order: 2;
+    }
+    
+    .mode-option-action {
+        order: 3;
+        width: 100%;
+    }
+    
+    .btn-switch-mode,
+    .current-mode-badge {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .mode-features {
+        justify-content: center;
+    }
+    
+    .mode-badge-large {
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .clinic-mode-container {
+        padding: 0 0.5rem;
+    }
+    
+    .mode-option-card {
+        padding: 1rem;
+    }
+    
+    .mode-option-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+}
+</style>
+
 {% endblock %}

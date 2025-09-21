@@ -1,13 +1,16 @@
 {% extends 'vet_pages/base.html' %}
 {% load static %}
 
-{% block title %}新增驅蟲記錄 - {{ pet.name }}{% endblock %}
+{% block title %}新增疫苗記錄 - {{ pet.name }}{% endblock %}
+
+{% block header %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
 <style>
 :root {
     --primary-color: #2563eb;
+    --success-color: #10b981;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --gray-50: #f9fafb;
@@ -20,12 +23,12 @@
 }
 
 body {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 100%);
     min-height: 100vh;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.deworm-form-container {
+.vaccine-form-container {
     max-width: 800px;
     margin: 0 auto;
     padding: 24px;
@@ -51,7 +54,7 @@ body {
     width: 60px;
     height: 60px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--warning-color), #fbbf24);
+    background: linear-gradient(135deg, var(--success-color), #34d399);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -119,9 +122,9 @@ body {
 .form-field input:focus,
 .form-field textarea:focus,
 .form-field select:focus {
-    border-color: var(--warning-color);
+    border-color: var(--success-color);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .form-grid {
@@ -152,12 +155,12 @@ body {
 }
 
 .btn-primary {
-    background: var(--warning-color);
+    background: var(--success-color);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #d97706;
+    background: #059669;
     transform: translateY(-1px);
 }
 
@@ -190,22 +193,12 @@ body {
     border-color: #fecaca;
 }
 
-.info-box {
-    background: #fffbeb;
-    border: 1px solid #fed7aa;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 16px;
-    color: #92400e;
-    font-size: 0.9rem;
-}
-
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
     }
 
-    .deworm-form-container {
+    .vaccine-form-container {
         padding: 16px;
     }
 
@@ -217,17 +210,17 @@ body {
 {% endblock %}
 
 {% block content %}
-<div class="deworm-form-container">
+<div class="vaccine-form-container">
     <!-- 表單標題 -->
     <div class="form-header">
         <div class="pet-info">
             <div class="pet-avatar">
-                🪲
+                💉
             </div>
             <div>
-                <h1 style="margin: 0; font-size: 1.8rem; color: var(--gray-900);">新增驅蟲記錄</h1>
+                <h1 style="margin: 0; font-size: 1.8rem; color: var(--gray-900);">新增疫苗記錄</h1>
                 <p style="margin: 4px 0 0 0; color: var(--gray-600);">
-                    為 <strong>{{ pet.name }}</strong> 建立驅蟲治療記錄
+                    為 <strong>{{ pet.name }}</strong> 建立疫苗接種記錄
                 </p>
             </div>
         </div>
@@ -237,16 +230,11 @@ body {
         </div>
     </div>
 
-    <!-- 驅蟲記錄表單 -->
+    <!-- 疫苗記錄表單 -->
     <div class="form-card">
         <div class="form-title">
-            <i class="fas fa-bug" style="color: var(--warning-color);"></i>
-            專業驅蟲記錄
-        </div>
-
-        <div class="info-box">
-            <i class="fas fa-info-circle"></i>
-            <strong>提醒：</strong>請確實記錄驅蟲資訊，以建立完整的預防醫學檔案，有助於後續的健康管理。
+            <i class="fas fa-syringe" style="color: var(--success-color);"></i>
+            專業疫苗記錄
         </div>
 
         <form method="post">
@@ -254,8 +242,8 @@ body {
 
             <div class="form-section">
                 <div class="section-title">
-                    <i class="fas fa-pills" style="color: var(--primary-color);"></i>
-                    驅蟲資訊
+                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                    基本資訊
                 </div>
 
                 <div class="form-field">
@@ -275,6 +263,31 @@ body {
                 </div>
             </div>
 
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-calendar-check" style="color: var(--warning-color);"></i>
+                    保護效期與追蹤
+                </div>
+
+                <div class="info-box" style="background: #f0f9ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #1e40af; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>提示：</strong>輸入保護效期後，系統會自動計算下次接種日期。你也可以手動調整下次接種日期。
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        {{ form.protection_period_months.label_tag }}
+                        {{ form.protection_period_months }}
+                        <small style="color: var(--gray-600); font-size: 0.8rem;">常見：狂犬病疫苗 12個月，八合一疫苗 12個月</small>
+                    </div>
+                    <div class="form-field">
+                        {{ form.next_due_date.label_tag }}
+                        {{ form.next_due_date }}
+                        <small style="color: var(--gray-600); font-size: 0.8rem;">可手動調整，留空則自動計算</small>
+                    </div>
+                </div>
+            </div>
+
             <div class="action-buttons">
                 <a href="{% url 'pet_detail' pet.id %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i>
@@ -282,7 +295,7 @@ body {
                 </a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i>
-                    儲存驅蟲記錄
+                    儲存疫苗記錄
                 </button>
             </div>
         </form>

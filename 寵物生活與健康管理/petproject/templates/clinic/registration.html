@@ -82,6 +82,8 @@
                       <i class="bi bi-shop me-1"></i>
                       診所名稱
                     </label>
+
+              
                     <div class="input-group">
                       <span class="input-group-text">
                         <i class="bi bi-hospital"></i>
@@ -196,6 +198,40 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- 診所類型 -->
+              <div class="mb-3">
+                <label class="form-label required">
+                  <i class="bi bi-people-fill me-1"></i>
+                  診所類型
+                </label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="clinic_mode" value="single" id="modeSingle" required>
+                  <label class="form-check-label" for="modeSingle">
+                    單一醫師診所
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="clinic_mode" value="multi" id="modeMulti" required>
+                  <label class="form-check-label" for="modeMulti">
+                    團隊診所
+                  </label>
+                </div>
+
+                {% if form.clinic_mode.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.clinic_mode.errors %}
+                      <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                <div class="form-text">
+                  <i class="bi bi-lightbulb me-1"></i>
+                  請選擇診所為單一醫師診所或團隊診所
+                </div>
+              </div>
+
 
               <!-- 管理員帳號資訊 -->
               <div class="form-section">

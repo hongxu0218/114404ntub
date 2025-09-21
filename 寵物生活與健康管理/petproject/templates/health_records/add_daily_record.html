@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}新增生活記錄 - 毛日好 Paw&Day{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/health/health_records.css' %}">
+<style>
+.add-daily-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #fafafa 0%, #e8f5e8 100%);
+    padding: 2rem 0;
+}
+
+.add-daily-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.add-daily-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+}
+
+.add-daily-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.add-daily-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4caf50, #81c784);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+}
+
+.add-daily-title h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #212121;
+    margin: 0;
+}
+
+.add-daily-subtitle {
+    color: #757575;
+    margin: 0.5rem 0 0 0;
+    font-size: 1rem;
+}
+
+.add-daily-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #212121;
+    font-size: 1rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4caf50;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.form-textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: #4caf50;
+    color: white;
+    border: 2px solid #4caf50;
+    flex: 1;
+}
+
+.btn-primary:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+}
+
+.btn-secondary {
+    background: white;
+    color: #757575;
+    border: 2px solid #e0e0e0;
+}
+
+.btn-secondary:hover {
+    background: #f5f5f5;
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.pet-info {
+    background: linear-gradient(135deg, #4caf50, #81c784);
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pet-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.pet-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.pet-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.pet-details p {
+    margin: 0.25rem 0 0 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .add-daily-container {
+        padding: 0 0.5rem;
+    }
+    
+    .add-daily-card {
+        padding: 1.5rem;
+    }
+    
+    .add-daily-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="add-daily-wrapper">
+    <div class="add-daily-container">
+        <div class="add-daily-card">
+            <div class="add-daily-header">
+                <div class="add-daily-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="add-daily-title">
+                    <h1>新增生活記錄</h1>
+                    <p class="add-daily-subtitle">記錄 {{ pet.name }} 的日常生活點滴</p>
+                </div>
+            </div>
+
+            <div class="pet-info">
+                <div class="pet-avatar">
+                    {% if pet.picture %}
+                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
+                    {% else %}
+                        <i class="fas fa-paw"></i>
+                    {% endif %}
+                </div>
+                <div class="pet-details">
+                    <h3>{{ pet.name }}</h3>
+                    <p>{{ pet.species }} • {{ pet.breed }}</p>
+                </div>
+            </div>
+
+            <form method="post" class="add-daily-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="id_date" class="form-label">
+                        <i class="fas fa-calendar-alt"></i> 日期
+                    </label>
+                    {{ form.date }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_category" class="form-label">
+                        <i class="fas fa-tags"></i> 分類
+                    </label>
+                    {{ form.category }}
+                </div>
+
+                <div class="form-group" id="content-group">
+                    <label for="id_content" class="form-label">
+                        <i class="fas fa-edit"></i> 記錄內容
+                    </label>
+                    {{ form.content }}
+                </div>
+
+                <div class="form-group" id="temperature-group" style="display: none;">
+                    <label for="id_temperature" class="form-label">
+                        <i class="fas fa-thermometer-half"></i> 體溫 (°C)
+                    </label>
+                    {{ form.temperature }}
+                    <small class="form-text text-muted">正常體溫範圍：狗 37.5-39.2°C，貓 38.1-39.2°C</small>
+                </div>
+
+                <div class="form-group" id="weight-group" style="display: none;">
+                    <label for="id_weight" class="form-label">
+                        <i class="fas fa-weight"></i> 體重 (kg)
+                    </label>
+                    {{ form.weight }}
+                </div>
+
+                <div class="form-group" id="medication-group" style="display: none;">
+                    <label for="id_medication_dosage" class="form-label">
+                        <i class="fas fa-pills"></i> 藥物劑量
+                    </label>
+                    {{ form.medication_dosage }}
+                </div>
+
+                <div class="form-group" id="exercise-group" style="display: none;">
+                    <label for="id_exercise_duration" class="form-label">
+                        <i class="fas fa-running"></i> 運動時長 (分鐘)
+                    </label>
+                    {{ form.exercise_duration }}
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        保存記錄
+                    </button>
+                    <a href="{% url 'health_rec' %}?tab=daily" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 動態顯示/隱藏字段的函數
+function toggleFields(category) {
+    // 隱藏所有特殊字段
+    const groups = ['content-group', 'temperature-group', 'weight-group', 'medication-group', 'exercise-group'];
+    groups.forEach(groupId => {
+        const group = document.getElementById(groupId);
+        if (group) {
+            group.style.display = 'none';
+        }
+    });
+    
+    const dateGroup = document.querySelector('.form-group:has(#id_date)') || 
+                      document.querySelector('[for="id_date"]')?.closest('.form-group');
+    
+    // 健康數據類：只需要數值和日期，用於趨勢分析
+    if (category === 'temperature') {
+        document.getElementById('temperature-group').style.display = 'flex';
+        if (dateGroup) dateGroup.style.display = 'flex';
+        setFormMode('data', '📊 體溫監測數據將用於健康趨勢分析');
+    } else if (category === 'weight') {
+        document.getElementById('weight-group').style.display = 'flex';
+        if (dateGroup) dateGroup.style.display = 'flex';
+        setFormMode('data', '📊 體重記錄數據將用於成長趨勢分析');
+    } else if (category === 'exercise') {
+        document.getElementById('exercise-group').style.display = 'flex';
+        if (dateGroup) dateGroup.style.display = 'flex';
+        setFormMode('data', '📊 運動數據將用於運動習慣分析');
+    } else if (category === 'medication') {
+        document.getElementById('medication-group').style.display = 'flex';
+        document.getElementById('content-group').style.display = 'flex';
+        if (dateGroup) dateGroup.style.display = 'none';
+        setFormMode('note', '💊 用藥記錄會自動使用今天日期，專注記錄藥物資訊');
+    } 
+    // 筆記類型記錄：自動設置今天日期，隱藏日期選擇
+    else if (['diet', 'allergen', 'mood', 'other'].includes(category)) {
+        document.getElementById('content-group').style.display = 'flex';
+        if (dateGroup) dateGroup.style.display = 'none';
+        setFormMode('note', '📝 生活筆記會自動使用今天日期，專注記錄內容觀察');
+    } else {
+        // 默認情況
+        document.getElementById('content-group').style.display = 'flex';
+        if (dateGroup) dateGroup.style.display = 'flex';
+    }
+}
+
+function setFormMode(mode, hint) {
+    // 為筆記類型自動設置今天日期
+    if (mode === 'note') {
+        const dateInput = document.getElementById('id_date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+    }
+    
+    // 顯示提示信息
+    showFormHint(hint);
+}
+
+function showFormHint(message) {
+    // 移除舊的提示
+    const oldHint = document.querySelector('.form-mode-hint');
+    if (oldHint) {
+        oldHint.remove();
+    }
+    
+    // 添加新提示
+    const categoryGroup = document.querySelector('.form-group:has(#id_category)');
+    if (categoryGroup) {
+        const hint = document.createElement('div');
+        hint.className = 'form-mode-hint';
+        hint.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+        categoryGroup.appendChild(hint);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 為表單控件添加樣式類
+    const formControls = document.querySelectorAll('input, select, textarea');
+    formControls.forEach(control => {
+        control.classList.add('form-control');
+        
+        if (control.tagName === 'SELECT') {
+            control.classList.add('form-select');
+        }
+        
+        if (control.tagName === 'TEXTAREA') {
+            control.classList.add('form-textarea');
+        }
+    });
+
+    // 設置默認日期為今天
+    const dateInput = document.getElementById('id_date');
+    if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+    
+    // 初始化字段顯示
+    const categorySelect = document.getElementById('id_category');
+    if (categorySelect) {
+        toggleFields(categorySelect.value);
+    }
+    
+    // 添加小提示樣式
+    const style = document.createElement('style');
+    style.textContent = `
+        .form-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        .text-muted {
+            color: #6c757d !important;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-mode-hint {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #1565c0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-mode-hint i {
+            color: #42a5f5;
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

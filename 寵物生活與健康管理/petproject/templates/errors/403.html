@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}權限不足 - 毛日好{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-lg-6 col-md-8 text-center">
+      <div class="error-card p-5">
+        <!-- 錯誤圖示 -->
+        <div class="error-icon mb-4">
+          <i class="bi bi-shield-exclamation" style="font-size: 5rem; color: var(--warning-color);"></i>
+        </div>
+        
+        <!-- 錯誤代碼 -->
+        <h1 class="error-code mb-3" style="font-size: 4rem; font-weight: 700; color: var(--primary-orange);">403</h1>
+        
+        <!-- 錯誤標題 -->
+        <h2 class="error-title mb-3" style="color: var(--text-dark);">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          權限不足
+        </h2>
+        
+        <!-- 錯誤描述 -->
+        <div class="error-description mb-4">
+          <p class="lead text-muted">抱歉，您沒有權限訪問此頁面 🐾</p>
+          <p class="text-muted">
+            這可能是因為：
+          </p>
+          <ul class="list-unstyled text-muted">
+            <li><i class="bi bi-dot text-warning"></i> 您的帳號權限不足</li>
+            <li><i class="bi bi-dot text-warning"></i> 需要特定的用戶身份</li>
+            <li><i class="bi bi-dot text-warning"></i> 此功能僅限管理員使用</li>
+          </ul>
+        </div>
+        
+        <!-- 操作按鈕 -->
+        <div class="error-actions">
+          <a href="{% url 'home' %}" class="btn btn-primary-custom btn-lg me-3">
+            <i class="bi bi-house-door me-2"></i>
+            回到首頁
+          </a>
+          
+          {% if user.is_authenticated %}
+            <a href="{% url 'account_logout' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-box-arrow-right me-2"></i>
+              切換帳號
+            </a>
+          {% else %}
+            <a href="{% url 'account_login' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              重新登入
+            </a>
+          {% endif %}
+        </div>
+        
+        <!-- 可愛的小貓插圖區域 -->
+        <div class="mt-5 text-muted">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">🐱😿</div>
+          <small>小貓咪也在守護這個頁面呢！</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.error-card {
+  background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px var(--shadow-light);
+  border: 1px solid var(--border-light);
+}
+
+.error-icon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.min-vh-100 {
+  min-height: calc(100vh - 200px);
+}
+</style>
+{% endblock %}

@@ -100,6 +100,17 @@ input, select, textarea {
             {% for error in form.breed.errors %}<p>{{ error }}</p>{% endfor %}
         </div>
     {% endif %}
+    
+    <!-- 當品種選擇"其他"時顯示的文字輸入框 -->
+    <div id="breed-other-field" style="display: none;">
+        <label for="id_breed_other">請輸入品種</label>
+        {{ form.breed_other }}
+        {% if form.breed_other.errors %}
+            <div class="text-danger">
+                {% for error in form.breed_other.errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+    </div>
 
     <label for="id_name">名字</label>
     {{ form.name }}
@@ -172,6 +183,7 @@ input, select, textarea {
 {% block extra_js %}
     {{ block.super }}
 <script>
+// 圖片預覽功能
 function previewImage(event) {
     const input = event.target;
     const preview = document.getElementById('image-preview');
@@ -183,6 +195,102 @@ function previewImage(event) {
             preview.style.display = 'block';
         }
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 動態品種選項功能
+document.addEventListener('DOMContentLoaded', function() {
+    const speciesSelect = document.getElementById('id_species');
+    const breedSelect = document.getElementById('id_breed');
+    const pictureInput = document.getElementById('id_picture');
+    
+    // 圖片預覽事件
+    if (pictureInput) {
+        pictureInput.addEventListener('change', previewImage);
+    }
+    
+    // 種類改變時更新品種選項
+    speciesSelect.addEventListener('change', function() {
+        const selectedSpecies = this.value;
+        updateBreedOptions(selectedSpecies);
+    });
+    
+    // 品種改變時檢查是否選擇"其他"
+    breedSelect.addEventListener('change', function() {
+        toggleBreedOtherField(this.value);
+    });
+    
+    // 頁面載入時初始化品種選項
+    updateBreedOptions(speciesSelect.value);
+});
+
+function updateBreedOptions(species) {
+    const breedSelect = document.getElementById('id_breed');
+    
+    // 顯示載入中
+    breedSelect.innerHTML = '<option value="">載入中...</option>';
+    breedSelect.disabled = true;
+    
+    // 發送AJAX請求獲取品種選項
+    fetch(`/api/breed-choices/?species=${species}`)
+        .then(response => response.json())
+        .then(data => {
+            // 清空選項
+            breedSelect.innerHTML = '';
+            
+            // 添加預設空選項
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '請選擇品種';
+            breedSelect.appendChild(defaultOption);
+            
+            // 添加品種選項
+            data.breeds.forEach(breed => {
+                const option = document.createElement('option');
+                option.value = breed.value;
+                option.textContent = breed.text;
+                breedSelect.appendChild(option);
+            });
+            
+            // 啟用選擇框
+            breedSelect.disabled = false;
+            
+            // 初始時隱藏品種其他字段，等用戶選擇時再顯示
+            toggleBreedOtherField('');
+        })
+        .catch(error => {
+            console.error('Error fetching breed options:', error);
+            breedSelect.innerHTML = '<option value="">載入失敗</option>';
+            breedSelect.disabled = false;
+        });
+}
+
+function toggleBreedOtherField(selectedBreed) {
+    const breedOtherField = document.getElementById('breed-other-field');
+    const breedOtherInput = document.getElementById('id_breed_other');
+    
+    console.log('toggleBreedOtherField called with:', selectedBreed);
+    console.log('breedOtherField found:', breedOtherField);
+    console.log('breedOtherInput found:', breedOtherInput);
+    
+    if (selectedBreed === '其他') {
+        console.log('Showing breed_other field');
+        if (breedOtherField) {
+            breedOtherField.style.display = 'block';
+        }
+        if (breedOtherInput) {
+            breedOtherInput.required = true;
+            breedOtherInput.focus(); // 自動聚焦到輸入框
+        }
+    } else {
+        console.log('Hiding breed_other field');
+        if (breedOtherField) {
+            breedOtherField.style.display = 'none';
+        }
+        if (breedOtherInput) {
+            breedOtherInput.required = false;
+            breedOtherInput.value = ''; // 清空輸入值
+        }
     }
 }
 </script>

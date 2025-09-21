@@ -40,7 +40,20 @@
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle"></i> 
                                 這將是您在毛日好的暱稱
+                                {% if suggested_username and suggested_username != form.username.value %}
+                                <br><span class="badge bg-light text-dark">
+                                    💡 建議：如果想使用 "{{ suggested_username }}"，可以嘗試修改
+                                </span>
+                                {% endif %}
                             </small>
+                            {% if suggested_username and suggested_username != form.username.value %}
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                        onclick="useOriginalName('{{ suggested_username }}')">
+                                    使用 "{{ suggested_username }}"
+                                </button>
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- 手機號碼 -->
@@ -111,4 +124,30 @@
     margin: 0;
 }
 </style>
+
+<script>
+function useOriginalName(username) {
+    document.getElementById('id_username').value = username;
+    // 隱藏建議按鈕
+    event.target.closest('.mt-2').style.display = 'none';
+}
+
+// 即時檢查用戶名可用性
+let usernameTimeout;
+document.getElementById('id_username').addEventListener('input', function() {
+    clearTimeout(usernameTimeout);
+    const username = this.value.trim();
+    
+    if (username.length >= 3) {
+        usernameTimeout = setTimeout(() => {
+            checkUsernameAvailability(username);
+        }, 500);
+    }
+});
+
+function checkUsernameAvailability(username) {
+    // 這裡可以加入AJAX檢查，現在先用簡單提示
+    console.log('檢查用戶名:', username);
+}
+</script>
 {% endblock %}
