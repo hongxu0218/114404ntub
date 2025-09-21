@@ -74,6 +74,9 @@ window.ClinicRegistration = {
       required: true,
       pattern: /^09[\s\-]?\d{2}[\s\-]?\d{3}[\s\-]?\d{3}$|^09\d{8}$/
       // 支援格式：0912-345-678, 0912 345 678, 0912345678 等
+    },
+    clinic_mode: {
+    required: true
     }
   },
 
@@ -81,7 +84,7 @@ window.ClinicRegistration = {
    * 初始化模組
    */
   init: function() {
-    console.log('🏥 診所註冊模組啟動');
+//     console.log('🏥 診所註冊模組啟動');
     
     if (!this.setupDOM()) {
       return;
@@ -93,7 +96,7 @@ window.ClinicRegistration = {
     this.setupModal();
     this.loadSavedProgress();
     
-    console.log('診所註冊模組初始化完成');
+//     console.log('診所註冊模組初始化完成');
   },
 
   /**
@@ -275,7 +278,7 @@ window.ClinicRegistration = {
       return;
     }
 
-    console.log('🚀 開始提交註冊表單');
+//     console.log('🚀 開始提交註冊表單');
     
     // 開始提交流程
     this.state.isSubmitting = true;
@@ -325,7 +328,7 @@ window.ClinicRegistration = {
       this.state.preventUnload = false;
       
       // 🔧 直接提交表單到後端
-      console.log('🏁 動畫完成，提交表單到後端');
+//       console.log('🏁 動畫完成，提交表單到後端');
       this.elements.form.submit();
       
     } catch (error) {
@@ -408,7 +411,7 @@ window.ClinicRegistration = {
       this.setFieldError(this.elements.confirmationCheck, '請確認同意接受農委會驗證');
     }
 
-    console.log('表單驗證結果', { isValid, errors });
+//     console.log('表單驗證結果', { isValid, errors });
     return isValid;
   },
 
@@ -781,7 +784,7 @@ window.ClinicRegistration = {
    * 取消驗證
    */
   cancelVerification: function() {
-    console.log('取消診所註冊驗證');
+//     console.log('取消診所註冊驗證');
     
     this.state.isSubmitting = false;
     this.state.preventUnload = false;  // 關閉頁面離開警告
@@ -873,7 +876,7 @@ window.ClinicRegistration = {
    */
   cleanup: function() {
     this.cancelVerification();
-    console.log('診所註冊模組資源已清理');
+//     console.log('診所註冊模組資源已清理');
   },
 
 

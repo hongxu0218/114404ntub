@@ -57,7 +57,7 @@ class PetMapApp {
      * 初始化應用程式
      */
     async init() {
-        console.log('🚀 初始化寵物地圖...');
+//         console.log('🚀 初始化寵物地圖...');
         
         try {
             this.showLoading(true);
@@ -65,7 +65,7 @@ class PetMapApp {
             this.setupEventListeners();
             await this.getUserLocation();
             await this.loadLocations();
-            console.log('✅ 地圖初始化完成');
+//             console.log('✅ 地圖初始化完成');
         } catch (error) {
             console.error('❌ 初始化失敗:', error);
             this.showError('地圖初始化失敗，請重新整理頁面');
@@ -230,7 +230,7 @@ class PetMapApp {
      * 載入地點資料
      */
     async loadLocations() {
-        console.log('📡 載入地點資料...');
+//         console.log('📡 載入地點資料...');
         
         try {
             this.showLoading(true);
@@ -311,14 +311,14 @@ class PetMapApp {
             return true;
         });
         
-        console.log(`🔍 篩選後顯示 ${this.filteredLocations.length} 個地點`);
+//         console.log(`🔍 篩選後顯示 ${this.filteredLocations.length} 個地點`);
     }
     
     /**
      * 顯示地圖標記
      */
     displayMarkers() {
-        console.log('📍 更新地圖標記...');
+//         console.log('📍 更新地圖標記...');
         
         this.markers.clearLayers();
         
@@ -716,11 +716,11 @@ class PetMapApp {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     };
-                    console.log('✅ 獲取用戶位置成功:', this.userLocation);
+//                     console.log('✅ 獲取用戶位置成功:', this.userLocation);
                     resolve(this.userLocation);
                 },
                 (error) => {
-                    console.log('無法獲取用戶位置:', error.message);
+//                     console.log('無法獲取用戶位置:', error.message);
                     resolve(null);
                 },
                 {
@@ -1181,7 +1181,7 @@ let petMapApp;
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 地圖頁面初始化...');
+//     console.log('📱 地圖頁面初始化...');
     
     try {
         petMapApp = new PetMapApp();

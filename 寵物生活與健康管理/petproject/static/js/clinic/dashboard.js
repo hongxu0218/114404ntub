@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ========== 主要初始化函數 ==========
 function initializeDashboard() {
-    console.log('🚀 初始化診所管理中心...');
+//     console.log('🚀 初始化診所管理中心...');
     
     try {
         loadDashboardData();
@@ -34,7 +34,7 @@ function initializeDashboard() {
         loadInitialDataSafe();
         setupBusinessHoursListener(); // 新增：設置營業時間更新監聽器
         
-        console.log('✅ 診所管理中心初始化完成');
+//         console.log('✅ 診所管理中心初始化完成');
     } catch (error) {
         console.error('❌ 初始化失敗:', error);
         showErrorMessage('系統初始化失敗，請重新整理頁面');
@@ -45,13 +45,13 @@ function initializeDashboard() {
 function loadDashboardData() {
     if (window.dashboardData) {
         dashboardData = window.dashboardData;
-        console.log('📊 載入Dashboard數據:', dashboardData);
+//         console.log('📊 載入Dashboard數據:', dashboardData);
     }
 }
 
 // ========== 營業狀態檢查（提前定義） - 修正版 ==========
 function initializeBusinessStatus() {
-    console.log('🏥 初始化營業狀態檢查...');
+//     console.log('🏥 初始化營業狀態檢查...');
     
     try {
         // 先載入儲存的營業時間設定
@@ -64,7 +64,7 @@ function initializeBusinessStatus() {
             }
             businessStatusInterval = setInterval(updateBusinessStatusLocal, 60000);
             
-            console.log('🏥 營業狀態檢查初始化完成');
+//             console.log('🏥 營業狀態檢查初始化完成');
         });
         
     } catch (error) {
@@ -97,7 +97,7 @@ async function loadBusinessHoursSettings() {
             const data = await response.json();
             if (data.success) {
                 currentBusinessHours = data.business_hours;
-                console.log('✅ 營業時間設定載入成功:', currentBusinessHours);
+//                 console.log('✅ 營業時間設定載入成功:', currentBusinessHours);
             } else {
                 currentBusinessHours = getDefaultBusinessHours();
             }
@@ -157,7 +157,7 @@ function updateBusinessStatusLocal() {
         // 獲取今天的營業時間
         const todayHours = currentBusinessHours ? (currentBusinessHours[systemWeekday.toString()] || []) : [];
         
-        console.log(`📅 今天是系統編號 ${systemWeekday}，營業時間:`, todayHours);
+//         console.log(`📅 今天是系統編號 ${systemWeekday}，營業時間:`, todayHours);
         
         // 檢查當前是否在營業時間內
         if (Array.isArray(todayHours)) {
@@ -254,7 +254,7 @@ function updateBusinessStatusLocal() {
             text.textContent = statusText;
         }
         
-        console.log(`🏥 營業狀態更新: ${isOpen ? '營業中' : '休診中'} - ${statusText}`);
+//         console.log(`🏥 營業狀態更新: ${isOpen ? '營業中' : '休診中'} - ${statusText}`);
         
     } catch (error) {
         console.error('❌ 更新營業狀態失敗:', error);
@@ -267,7 +267,7 @@ function updateBusinessStatusLocal() {
  */
 function setupBusinessHoursListener() {
     window.addEventListener('businessHoursUpdated', function(event) {
-        console.log('📡 收到營業時間更新事件，刷新營業狀態');
+//         console.log('📡 收到營業時間更新事件，刷新營業狀態');
         
         // 更新儲存的營業時間
         if (event.detail && event.detail.businessHours) {
@@ -285,7 +285,7 @@ function setupBusinessHoursListener() {
  * 全域更新營業狀態函數（供外部調用）- 新增
  */
 window.updateBusinessStatus = function() {
-    console.log('🔄 外部調用更新營業狀態');
+//     console.log('🔄 外部調用更新營業狀態');
     loadBusinessHoursSettings().then(() => {
         updateBusinessStatusLocal();
     });
@@ -351,7 +351,7 @@ function initializeStatCards() {
     try {
         addStatCardClickHandlers();
         animateStatCards();
-        console.log('📈 統計卡片初始化完成');
+//         console.log('📈 統計卡片初始化完成');
     } catch (error) {
         console.error('❌ 統計卡片初始化失敗:', error);
     }
@@ -413,49 +413,61 @@ function initializeAppointmentsList() {
         
         // 初始載入
         loadAppointments('today');
-        console.log('📋 預約列表初始化完成');
+//         console.log('📋 預約列表初始化完成');
     } catch (error) {
         console.error('❌ 預約列表初始化失敗:', error);
     }
 }
 
 function loadAppointments(dateFilter) {
-    console.log(`📋 載入預約 (${dateFilter})`);
+//     console.log(`📋 載入預約 (${dateFilter})`);
     
     try {
         // 顯示載入狀態
         showAppointmentsLoading();
         
-        // 模擬 API 調用
-        if (dashboardData.urls && dashboardData.urls.appointments) {
-            // 實際項目中這裡應該調用 API
-            /*
-            fetch(`/api/appointments/list/?date=${dateFilter}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': dashboardData.csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    displayAppointments(data.appointments);
-                } else {
-                    showAppointmentsError(data.message || '載入預約失敗');
-                }
-            })
-            .catch(error => {
-                console.error('載入預約錯誤:', error);
-                showAppointmentsError('載入預約失敗，請稍後重試');
-            });
-            */
+        // API 調用
+        let url = '/api/appointments/list/';
+        const params = new URLSearchParams();
+        
+        // 根據日期篩選設定參數
+        const today = new Date();
+        if (dateFilter === 'today') {
+            params.append('date_from', today.toISOString().split('T')[0]);
+            params.append('date_to', today.toISOString().split('T')[0]);
+        } else if (dateFilter === 'tomorrow') {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            params.append('date_from', tomorrow.toISOString().split('T')[0]);
+            params.append('date_to', tomorrow.toISOString().split('T')[0]);
+        } else if (dateFilter === 'week') {
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            params.append('date_from', today.toISOString().split('T')[0]);
+            params.append('date_to', nextWeek.toISOString().split('T')[0]);
         }
         
-        // 暫時顯示空狀態
-        setTimeout(() => {
-            showEmptyAppointments(dateFilter);
-        }, 800);
+        url += '?' + params.toString();
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                displayAppointments(data.data, dateFilter);
+            } else {
+                showAppointmentsError(data.message || '載入預約失敗');
+            }
+        })
+        .catch(error => {
+            console.error('載入預約錯誤:', error);
+            showAppointmentsError('載入預約失敗，請稍後重試');
+        });
         
     } catch (error) {
         console.error('❌ 載入預約失敗:', error);
@@ -524,29 +536,35 @@ function displayAppointments(appointments) {
             <div class="appointment-header">
                 <div class="appointment-time">
                     <i class="bi bi-clock"></i>
-                    ${appointment.startTime}
+                    ${appointment.start_time} - ${appointment.end_time}
                 </div>
                 <span class="appointment-status ${appointment.status}">
-                    ${getStatusText(appointment.status)}
+                    ${appointment.status_display}
                 </span>
             </div>
             <div class="appointment-info">
                 <div class="appointment-row">
                     <i class="bi bi-person"></i>
                     <div class="owner-pet-info">
-                        <span class="owner-name">${appointment.ownerName}</span>
+                        <span class="owner-name">${appointment.owner_name}</span>
                         <span class="info-separator">・</span>
-                        <span class="pet-name">${appointment.petName}</span>
+                        <span class="pet-name">${appointment.pet_name} (${appointment.pet_species})</span>
                     </div>
                 </div>
                 <div class="appointment-row">
                     <i class="bi bi-person-badge"></i>
-                    <span class="doctor-info">Dr. ${appointment.doctorName}</span>
+                    <span class="doctor-info">Dr. ${appointment.doctor_name}</span>
                 </div>
-                ${appointment.reason ? `
+                ${appointment.notes ? `
                 <div class="appointment-row">
                     <i class="bi bi-chat-text"></i>
-                    <span class="reason-info">${appointment.reason}</span>
+                    <span class="reason-info">${appointment.notes}</span>
+                </div>
+                ` : ''}
+                ${appointment.owner_phone ? `
+                <div class="appointment-row">
+                    <i class="bi bi-telephone"></i>
+                    <span class="phone-info">${appointment.owner_phone}</span>
                 </div>
                 ` : ''}
             </div>
@@ -578,7 +596,7 @@ function initializeQuickActions() {
         initializeFeatureCards();
         initializeQuickActionButtons();
         initializeSettingsButton();
-        console.log('⚡ 快速操作初始化完成');
+//         console.log('⚡ 快速操作初始化完成');
     } catch (error) {
         console.error('❌ 快速操作初始化失敗:', error);
     }
@@ -649,7 +667,7 @@ function initializeSettingsButton() {
             
             // 添加新的事件監聽器
             settingsButton.addEventListener('click', handleSettingsClick);
-            console.log('✅ 診所設定按鈕事件綁定完成');
+//             console.log('✅ 診所設定按鈕事件綁定完成');
         } else {
             console.warn('⚠️ 找不到診所設定按鈕');
         }
@@ -662,7 +680,7 @@ function initializeSettingsButton() {
 function handleSettingsClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🔧 點擊診所設定按鈕');
+//     console.log('🔧 點擊診所設定按鈕');
     showSettingsModal();
 }
 
@@ -728,7 +746,7 @@ function initializeModals() {
         
         // 初始化標籤頁
         initializeSettingsTabs();
-        console.log('🗂️ Modal 管理初始化完成');
+//         console.log('🗂️ Modal 管理初始化完成');
     } catch (error) {
         console.error('❌ Modal 初始化失敗:', error);
     }
@@ -753,18 +771,15 @@ function initializeSettingsTabs() {
             if (targetContent) {
                 targetContent.classList.add('active');
                 
-                // 如果是營業時間標籤，立即初始化
+                // 如果是營業時間標籤，載入營業時間表單
                 if (targetTab === 'business') {
-                    console.log('🕘 切換到營業時間標籤，開始初始化...');
-                    setTimeout(() => {
-                        if (typeof businessHours !== 'undefined') {
-                            businessHours.initialize();
-                        } else if (typeof initializeBusinessHours === 'function') {
-                            initializeBusinessHours();
-                        } else {
-                            console.error('❌ initializeBusinessHours 函數未找到');
-                            // 手動載入 business-hours.js
-                            loadBusinessHoursScript();
+//                     console.log('🕘 切換到營業時間標籤，載入表單...');
+                    setTimeout(async () => {
+                        try {
+                            await loadBusinessHoursForm();
+//                             console.log('✅ 營業時間表單載入成功');
+                        } catch (error) {
+                            console.error('❌ 營業時間表單載入失敗:', error);
                         }
                     }, 100);
                 }
@@ -774,7 +789,7 @@ function initializeSettingsTabs() {
 }
 
 function showSettingsModal() {
-    console.log('🔧 顯示診所設定 Modal');
+//     console.log('🔧 顯示診所設定 Modal');
     
     try {
         const modal = document.getElementById('settingsModal');
@@ -800,43 +815,18 @@ function showSettingsModal() {
 
 // ========== 營業時間系統初始化 ==========
 function initializeBusinessHoursSystem() {
-    console.log('🕘 初始化營業時間系統...');
+//     console.log('🕘 初始化營業時間系統...');
     
     try {
-        const container = document.getElementById('businessHoursDays');
+        const container = document.getElementById('businessHoursRows');
         if (!container) {
-            console.error('❌ 找不到 businessHoursDays 容器');
+            console.error('❌ 找不到 businessHoursRows 容器');
             showBusinessHoursError();
             return;
         }
         
-        // 檢查 business-hours.js 是否載入
-        if (typeof initializeBusinessHours === 'function') {
-            try {
-                // 延遲初始化，確保modal完全顯示
-                setTimeout(() => {
-                    initializeBusinessHours();
-                    console.log('✅ 營業時間系統初始化成功');
-                }, 300);
-            } catch (error) {
-                console.error('❌ 營業時間系統初始化失敗:', error);
-                showBusinessHoursError();
-            }
-        } else if (typeof businessHours !== 'undefined') {
-            // 直接使用 businessHours 實例
-            try {
-                setTimeout(() => {
-                    businessHours.initialize();
-                    console.log('✅ 營業時間系統實例初始化成功');
-                }, 300);
-            } catch (error) {
-                console.error('❌ 營業時間系統實例初始化失敗:', error);
-                showBusinessHoursError();
-            }
-        } else {
-            console.warn('⚠️ initializeBusinessHours 函數未載入');
-            loadBusinessHoursScript();
-        }
+        // 使用我們新的營業時間管理系統
+//         console.log('✅ 使用新的營業時間管理系統');
         
     } catch (error) {
         console.error('❌ 營業時間系統初始化過程發生錯誤:', error);
@@ -846,11 +836,11 @@ function initializeBusinessHoursSystem() {
 
 // ========== 動態載入 business-hours.js ==========
 function loadBusinessHoursScript() {
-    console.log('📦 動態載入 business-hours.js...');
+//     console.log('📦 動態載入 business-hours.js...');
     
     // 檢查腳本是否已經載入
     if (document.querySelector('script[src*="business-hours"]')) {
-        console.log('📦 business-hours.js 已載入，直接初始化');
+//         console.log('📦 business-hours.js 已載入，直接初始化');
         setTimeout(() => {
             if (typeof initializeBusinessHours === 'function') {
                 initializeBusinessHours();
@@ -865,7 +855,7 @@ function loadBusinessHoursScript() {
     const script = document.createElement('script');
     script.src = '/static/js/clinic/business-hours.js';
     script.onload = function() {
-        console.log('✅ business-hours.js 載入成功');
+//         console.log('✅ business-hours.js 載入成功');
         setTimeout(() => {
             if (typeof initializeBusinessHours === 'function') {
                 initializeBusinessHours();
@@ -885,7 +875,7 @@ function loadBusinessHoursScript() {
 
 // ========== 營業時間錯誤處理 ==========
 function showBusinessHoursError() {
-    const container = document.getElementById('businessHoursDays');
+    const container = document.getElementById('businessHoursRows');
     if (container) {
         container.innerHTML = `
             <div class="alert alert-warning">
@@ -913,7 +903,7 @@ function showBusinessHoursError() {
 
 // 重試營業時間載入
 function retryBusinessHours() {
-    console.log('🔄 重試載入營業時間...');
+//     console.log('🔄 重試載入營業時間...');
     
     if (typeof forceRenderBusinessHours === 'function') {
         forceRenderBusinessHours();
@@ -927,45 +917,80 @@ function retryBusinessHours() {
     }
 }
 
-function saveClinicSettings() {
-    console.log('💾 儲存診所設定...');
+async function saveClinicSettings() {
+//     console.log('💾 儲存診所設定...');
+    
+    // 調試：檢查所有 tab 按鈕
+    const allTabs = document.querySelectorAll('.tab-btn');
+//     console.log('🔍 找到的所有 tab 按鈕:', allTabs.length);
+    allTabs.forEach((tab, index) => {
+//         console.log(`Tab ${index}: ${tab.dataset.tab}, active: ${tab.classList.contains('active')}`);
+    });
     
     const activeTab = document.querySelector('.tab-btn.active');
     if (!activeTab) {
-        showErrorMessage('請選擇要儲存的設定分類');
+//         console.log('⚠️ 沒有找到激活的 tab，嘗試使用第一個可見的內容區域');
+        
+        // 嘗試根據可見的內容區域判斷當前 tab
+        const visibleContent = document.querySelector('.tab-content.active, .tab-content[style*="display: block"]');
+        if (visibleContent) {
+            const contentId = visibleContent.id;
+//             console.log('📋 根據可見內容推斷的分類:', contentId);
+            
+            if (contentId === 'businessTab') {
+                await saveBusinessHours();
+                showInfoMessage('診所營業時間設定已更新');
+                return;
+            } else if (contentId === 'basicTab') {
+                await saveBasicSettings();
+                return;
+            }
+        }
+        
+        // 如果還是找不到，默認嘗試保存基本設定
+//         console.log('⚠️ 無法確定當前 tab，嘗試保存基本設定...');
+        await saveBasicSettings();
         return;
     }
     
     const tabType = activeTab.dataset.tab;
+//     console.log('📋 當前選擇的設定分類:', tabType);
     
-    switch(tabType) {
-        case 'basic':
-            saveBasicSettings();
-            break;
-        case 'business':
-            if (typeof saveBusinessHours === 'function') {
-                const result = saveBusinessHours();
-                if (result) {
-                    // 設定儲存成功後關閉 Modal
-                    setTimeout(() => {
-                        closeSettingsModal();
-                    }, 1500);
+    try {
+        switch(tabType) {
+            case 'basic':
+                await saveBasicSettings();
+                break;
+            case 'business':
+                if (typeof saveBusinessHours === 'function') {
+                    await saveBusinessHours();
+                    // 設定儲存成功後顯示額外訊息
+                    showInfoMessage('診所營業時間設定已更新');
+                } else {
+                    showErrorMessage('營業時間系統尚未載入');
                 }
-            } else {
-                showErrorMessage('營業時間系統尚未載入');
-            }
-            break;
-        case 'notification':
-            saveNotificationSettings();
-            break;
-        default:
-            showErrorMessage('未知的設定類型');
+                break;
+            case 'mode':
+                // 診所模式切換通常是即時的，不需要額外儲存
+                showInfoMessage('診所模式設定已確認');
+                break;
+            default:
+                showErrorMessage(`未知的設定類型: ${tabType}`);
+                return;
+        }
+        
+        // 所有設定儲存成功
+//         console.log('✅ 診所設定儲存完成');
+        
+    } catch (error) {
+        console.error('❌ 儲存診所設定時發生錯誤:', error);
+        showErrorMessage('儲存設定時發生錯誤');
     }
 }
 
 // 儲存基本設定
-function saveBasicSettings() {
-    console.log('💾 儲存基本設定...');
+async function saveBasicSettings() {
+//     console.log('💾 儲存基本設定...');
     
     const form = document.getElementById('clinicSettingsForm');
     if (!form) {
@@ -986,22 +1011,46 @@ function saveBasicSettings() {
         return;
     }
     
-    // 顯示載入狀態
-    showSaveLoading(true);
-    
-    // 暫時模擬成功
-    setTimeout(() => {
+    try {
+        // 顯示載入狀態
+        showSaveLoading(true);
+        showInfoMessage('正在儲存基本設定...');
+        
+        // 調用實際的 API 來儲存基本設定
+        const response = await fetch('/api/clinic/settings/', {
+            method: 'POST', 
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+//         console.log('📥 基本設定 API 響應:', result);
+        
+        if (!response.ok || result.status !== 'success') {
+            throw new Error(result.message || '保存基本設定失敗');
+        }
+        
         showSaveLoading(false);
         showSuccessMessage('基本設定已更新');
         updateClinicInfo(data);
+        
+        // 延遲關閉設定頁面
         setTimeout(() => {
             closeSettingsModal();
-        }, 1000);
-    }, 1500);
+        }, 1500);
+        
+    } catch (error) {
+        showSaveLoading(false);
+        console.error('❌ 儲存基本設定錯誤:', error);
+        showErrorMessage('儲存基本設定時發生錯誤');
+    }
 }
 
 function saveNotificationSettings() {
-    console.log('💾 儲存通知設定...');
+//     console.log('💾 儲存通知設定...');
     
     showSaveLoading(true);
     
@@ -1041,7 +1090,7 @@ function updateClinicInfo(data) {
             addressElement.textContent = data.clinic_address;
         }
         
-        console.log('✅ 診所資訊顯示已更新');
+//         console.log('✅ 診所資訊顯示已更新');
     } catch (error) {
         console.error('❌ 更新診所資訊顯示失敗:', error);
     }
@@ -1118,7 +1167,7 @@ function initializeRefreshTimer() {
         loadAppointments(currentDateFilter);
     }, 300000); // 5 分鐘
     
-    console.log('🔄 自動刷新功能初始化完成');
+//     console.log('🔄 自動刷新功能初始化完成');
 }
 
 function initializeKeyboardShortcuts() {
@@ -1143,14 +1192,14 @@ function initializeKeyboardShortcuts() {
             }
         });
         
-        console.log('⌨️ 鍵盤快捷鍵初始化完成');
+//         console.log('⌨️ 鍵盤快捷鍵初始化完成');
     } catch (error) {
         console.error('❌ 鍵盤快捷鍵初始化失敗:', error);
     }
 }
 
 function loadInitialDataSafe() {
-    console.log('📊 安全初始資料載入');
+//     console.log('📊 安全初始資料載入');
     
     try {
         updateScheduleStats({ 
@@ -1158,7 +1207,7 @@ function loadInitialDataSafe() {
             totalSchedules: '--' 
         });
         
-        console.log('📊 安全初始資料載入完成');
+//         console.log('📊 安全初始資料載入完成');
     } catch (error) {
         console.error('❌ 初始資料載入失敗:', error);
     }
@@ -1285,21 +1334,21 @@ function cleanup() {
 
 // ========== 調試函數 ==========
 function debugSettingsButton() {
-    console.log('🔍 調試診所設定按鈕...');
+//     console.log('🔍 調試診所設定按鈕...');
     
     const button = document.getElementById('settingsButton');
     const modal = document.getElementById('settingsModal');
-    const container = document.getElementById('businessHoursDays');
+    const container = document.getElementById('businessHoursRows');
     
-    console.log('按鈕元素:', button);
-    console.log('Modal元素:', modal);
-    console.log('營業時間容器:', container);
-    console.log('initializeBusinessHours函數:', typeof initializeBusinessHours);
-    console.log('當前營業時間:', currentBusinessHours);
+//     console.log('按鈕元素:', button);
+//     console.log('Modal元素:', modal);
+//     console.log('營業時間容器:', container);
+//     console.log('initializeBusinessHours函數:', typeof initializeBusinessHours);
+//     console.log('當前營業時間:', currentBusinessHours);
     
     if (button) {
-        console.log('按鈕樣式:', window.getComputedStyle(button).display);
-        console.log('按鈕事件:', getEventListeners ? getEventListeners(button) : '無法檢查事件');
+//         console.log('按鈕樣式:', window.getComputedStyle(button).display);
+//         console.log('按鈕事件:', getEventListeners ? getEventListeners(button) : '無法檢查事件');
     }
 }
 
@@ -1307,7 +1356,7 @@ function debugSettingsButton() {
  * 刷新dashboard統計數據 - 新增
  */
 window.refreshDashboardStats = function() {
-    console.log('📊 刷新dashboard統計數據');
+//     console.log('📊 刷新dashboard統計數據');
     // 這裡可以添加刷新統計數據的邏輯
     // 例如重新載入今日預約數、待確認預約數等
 };
@@ -1332,4 +1381,452 @@ window.clearAllSchedules = clearAllSchedules;
 window.updateBusinessStatusLocal = updateBusinessStatusLocal; // 新增
 window.retryBusinessHours = retryBusinessHours; // 新增重試函數
 
-console.log('✅ 修正版診所管理中心 JavaScript 載入完成（支援營業狀態同步）');
+// ========== 營業時間設定函數 ==========
+let businessHours = null;
+let timeSlots = [];
+
+/**
+ * 載入營業時間數據
+ */
+async function loadBusinessHoursData() {
+    try {
+        const response = await fetch('/api/business-hours/get/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+//             console.log('📥 API 載入響應:', result);
+            if (result.success && result.business_hours) {
+                businessHours = result.business_hours;
+//                 console.log('✅ 營業時間數據載入成功:', businessHours);
+//                 console.log('📊 載入數據結構檢查:');
+                Object.keys(businessHours).forEach(day => {
+//                     console.log(`  Day ${day}: ${businessHours[day].length} 個時間段`);
+                    businessHours[day].forEach((slot, index) => {
+//                         console.log(`    ${index}: ${slot.startTime} - ${slot.endTime}`);
+                    });
+                });
+            } else {
+                businessHours = null;
+//                 console.log('ℹ️ 沒有找到營業時間數據，使用空白設定');
+//                 console.log('📥 完整響應內容:', result);
+            }
+        } else {
+            businessHours = null;
+            console.warn('⚠️ 載入營業時間失敗，HTTP狀態:', response.status);
+            console.warn('⚠️ 響應內容:', await response.text());
+        }
+    } catch (error) {
+        console.error('❌ 載入營業時間數據錯誤:', error);
+        businessHours = null;
+    }
+}
+
+/**
+ * 初始化營業時間表單
+ */
+async function loadBusinessHoursForm(skipApiLoad = false) {
+    const container = document.getElementById('businessHoursRows');
+    if (!container) return;
+
+    // 只有在不跳過 API 載入時才載入數據
+    if (!skipApiLoad) {
+        await loadBusinessHoursData();
+    }
+
+    const weekdays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+    
+    container.innerHTML = '';
+
+    for (let day = 0; day < 7; day++) {
+        const dayHours = businessHours ? businessHours[day] : [];
+        const hasHours = dayHours && dayHours.length > 0;
+        
+        const row = document.createElement('div');
+        row.className = 'hours-row';
+        row.innerHTML = `
+            <div class="day-name">${weekdays[day]}</div>
+            <div class="status-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" ${hasHours ? 'checked' : ''} 
+                           onchange="toggleDayStatus(${day})" id="day-${day}-status">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="status-text">${hasHours ? '營業' : '休息'}</span>
+            </div>
+            <div class="time-inputs" id="day-${day}-times">
+                ${createTimeInputs(day, dayHours)}
+            </div>
+            <div class="actions">
+                <button type="button" class="btn-modern btn-sm btn-success-modern" 
+                        onclick="addTimeSlot(${day})" ${!hasHours ? 'disabled style="display: none;"' : ''}>
+                    <i class="fas fa-plus"></i> 新增時段
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+}
+
+/**
+ * 創建時間輸入欄位
+ */
+function createTimeInputs(day, dayHours) {
+    if (!dayHours || dayHours.length === 0) {
+        return `
+            <div class="time-slot" style="display: none;">
+                <input type="time" class="form-control" value="09:00" name="start-${day}-0">
+                <span>至</span>
+                <input type="time" class="form-control" value="17:00" name="end-${day}-0">
+                <button type="button" class="btn-modern btn-sm btn-danger-modern" 
+                        onclick="removeTimeSlot(this)" disabled>
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    return dayHours.map((hour, index) => `
+        <div class="time-slot">
+            <input type="time" class="form-control" value="${hour.startTime}" name="start-${day}-${index}">
+            <span>至</span>
+            <input type="time" class="form-control" value="${hour.endTime}" name="end-${day}-${index}">
+            <button type="button" class="btn-modern btn-sm btn-danger-modern" 
+                    onclick="removeTimeSlot(this)" ${dayHours.length <= 1 ? 'disabled' : ''}>
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+/**
+ * 切換日期狀態
+ */
+function toggleDayStatus(day) {
+//     console.log('toggleDayStatus called for day:', day);
+    
+    const checkbox = document.getElementById(`day-${day}-status`);
+    const timesContainer = document.getElementById(`day-${day}-times`);
+    const statusText = checkbox?.closest('.status-toggle')?.querySelector('.status-text');
+    const addButton = checkbox?.closest('.hours-row')?.querySelector('button');
+    
+    if (!checkbox || !timesContainer) {
+        console.error('Required elements not found for day:', day);
+        return;
+    }
+    
+    if (checkbox.checked) {
+        if (statusText) statusText.textContent = '營業';
+        timesContainer.style.display = 'block';
+        timesContainer.querySelectorAll('.time-slot').forEach(slot => {
+            slot.style.display = 'flex';
+        });
+        if (addButton) {
+            addButton.disabled = false;
+            addButton.style.display = 'block';
+        }
+    } else {
+        if (statusText) statusText.textContent = '休息';
+        timesContainer.style.display = 'none';
+        if (addButton) {
+            addButton.disabled = true;
+            addButton.style.display = 'none'; // 休息時隱藏新增按鈕
+        }
+    }
+}
+
+/**
+ * 新增時間段
+ */
+function addTimeSlot(day) {
+    const container = document.getElementById(`day-${day}-times`);
+    const existingSlots = container.querySelectorAll('.time-slot');
+    const index = existingSlots.length;
+    
+    const newSlot = document.createElement('div');
+    newSlot.className = 'time-slot';
+    newSlot.innerHTML = `
+        <input type="time" class="form-control" value="13:00" name="start-${day}-${index}">
+        <span>至</span>
+        <input type="time" class="form-control" value="17:00" name="end-${day}-${index}">
+        <button type="button" class="btn-modern btn-sm btn-danger-modern" onclick="removeTimeSlot(this)">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    container.appendChild(newSlot);
+    
+    // 啟用所有刪除按鈕
+    container.querySelectorAll('.btn-danger-modern').forEach(btn => btn.disabled = false);
+}
+
+/**
+ * 移除時間段
+ */
+function removeTimeSlot(button) {
+    const slot = button.closest('.time-slot');
+    const container = slot.parentElement;
+    slot.remove();
+    
+    // 如果只剩一個時間段，禁用刪除按鈕
+    const remainingSlots = container.querySelectorAll('.time-slot');
+    if (remainingSlots.length <= 1) {
+        remainingSlots.forEach(slot => {
+            slot.querySelector('.btn-danger-modern').disabled = true;
+        });
+    }
+}
+
+/**
+ * 套用營業時間模板
+ */
+async function applyBusinessTemplate(templateType) {
+//     console.log('🎯 套用營業時間模板:', templateType);
+    
+    const templates = {
+        'weekday_only': {
+            0: [{ startTime: '09:00', endTime: '18:00' }], // 週一
+            1: [{ startTime: '09:00', endTime: '18:00' }], // 週二
+            2: [{ startTime: '09:00', endTime: '18:00' }], // 週三
+            3: [{ startTime: '09:00', endTime: '18:00' }], // 週四
+            4: [{ startTime: '09:00', endTime: '18:00' }], // 週五
+            5: [], // 週六
+            6: []  // 週日
+        },
+        'weekend_half': {
+            0: [{ startTime: '09:00', endTime: '18:00' }],
+            1: [{ startTime: '09:00', endTime: '18:00' }],
+            2: [{ startTime: '09:00', endTime: '18:00' }],
+            3: [{ startTime: '09:00', endTime: '18:00' }],
+            4: [{ startTime: '09:00', endTime: '18:00' }],
+            5: [{ startTime: '09:00', endTime: '12:00' }], // 週六上午
+            6: []
+        },
+        'full_week': {
+            0: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }],
+            1: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }],
+            2: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }],
+            3: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }],
+            4: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }],
+            5: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }],
+            6: [{ startTime: '09:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }]
+        }
+    };
+    
+    const template = templates[templateType];
+    if (template) {
+        businessHours = template;
+        
+        // 重新載入表單以顯示模板數據（跳過 API 載入）
+        await loadBusinessHoursForm(true);
+        
+        const templateNames = {
+            'weekday_only': '平日營業 (週一至週五)',
+            'weekend_half': '週末半天 (週六上午)',
+            'full_week': '全週營業'
+        };
+        
+        showSuccessMessage(`已套用「${templateNames[templateType]}」模板`);
+//         console.log('✅ 模板套用成功:', template);
+    } else {
+        console.error('❌ 找不到模板:', templateType);
+        showErrorMessage('模板套用失敗');
+    }
+}
+
+/**
+ * 同步包裝函數以支持 onclick 調用
+ */
+function applyBusinessTemplateSync(templateType) {
+    applyBusinessTemplate(templateType).catch(error => {
+        console.error('❌ 套用模板錯誤:', error);
+        showErrorMessage('套用模板時發生錯誤');
+    });
+}
+
+/**
+ * 收集營業時間數據
+ */
+function collectBusinessHoursData() {
+//     console.log('📊 開始收集營業時間數據...');
+    const hoursData = {};
+    
+    for (let day = 0; day < 7; day++) {
+        const checkbox = document.getElementById(`day-${day}-status`);
+        const timesContainer = document.getElementById(`day-${day}-times`);
+        
+//         console.log(`Day ${day}: checkbox=${!!checkbox}, checked=${checkbox?.checked}, container=${!!timesContainer}`);
+        
+        if (checkbox && checkbox.checked && timesContainer) {
+            const timeSlots = timesContainer.querySelectorAll('.time-slot');
+            hoursData[day] = [];
+            
+//             console.log(`Day ${day}: 找到 ${timeSlots.length} 個時間段`);
+            
+            timeSlots.forEach((slot, index) => {
+                const startInput = slot.querySelector(`[name="start-${day}-${index}"]`);
+                const endInput = slot.querySelector(`[name="end-${day}-${index}"]`);
+                
+                if (startInput && endInput && startInput.value && endInput.value) {
+                    hoursData[day].push({
+                        startTime: startInput.value,
+                        endTime: endInput.value
+                    });
+//                     console.log(`  時間段 ${index}: ${startInput.value} - ${endInput.value}`);
+                }
+            });
+        } else {
+//             console.log(`Day ${day}: 休息日或未勾選`);
+        }
+    }
+    
+//     console.log('📊 收集到的營業時間數據:', hoursData);
+    return hoursData;
+}
+
+/**
+ * 儲存營業時間
+ */
+async function saveBusinessHours() {
+    const hoursData = collectBusinessHoursData();
+    
+//     console.log('🔄 準備儲存營業時間數據:', hoursData);
+//     console.log('📊 數據結構檢查:');
+    Object.keys(hoursData).forEach(day => {
+//         console.log(`  Day ${day}: ${hoursData[day].length} 個時間段`);
+        hoursData[day].forEach((slot, index) => {
+//             console.log(`    ${index}: ${slot.startTime} - ${slot.endTime}`);
+        });
+    });
+    
+    try {
+        showInfoMessage('保存營業時間中...');
+        
+        const requestData = { business_hours: hoursData };
+//         console.log('📤 發送請求數據:', requestData);
+        
+        const response = await fetch('/api/business-hours/save/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+//         console.log('📥 API 響應狀態:', response.status);
+        
+        const result = await response.json();
+//         console.log('📥 API 響應數據:', result);
+        
+        if (response.ok && result.success) {
+            showSuccessMessage('營業時間保存成功！');
+            businessHours = hoursData;
+            // 不要重新載入表單，避免覆蓋當前設定，直接使用已更新的 businessHours
+//             console.log('✅ 營業時間已更新到內存中，無需重新載入表單');
+            // 延遲關閉設定頁面
+            setTimeout(() => {
+                closeSettingsModal();
+            }, 1500);
+        } else {
+            showErrorMessage(result.message || '保存失敗');
+        }
+    } catch (error) {
+        console.error('保存營業時間錯誤:', error);
+        showErrorMessage('保存時發生錯誤');
+    }
+}
+
+/**
+ * 獲取 CSRF Token
+ */
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+           document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+           getCookie('csrftoken');
+}
+
+/**
+ * 獲取 Cookie 值
+ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 初始化診所設定tabs和營業時間編輯器
+document.addEventListener('DOMContentLoaded', function() {
+//     console.log('🔄 初始化診所設定系統...');
+    
+    // 添加 tab 切換邏輯
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+//     console.log(`找到 ${tabButtons.length} 個 tab 按鈕, ${tabContents.length} 個內容區域`);
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.dataset.tab;
+//             console.log('🔄 切換到 tab:', targetTab);
+            
+            // 移除所有 active 狀態
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // 添加當前 active 狀態
+            this.classList.add('active');
+            const targetContent = document.getElementById(targetTab + 'Tab');
+            if (targetContent) {
+                targetContent.classList.add('active');
+                
+                // 如果切換到營業時間 tab，載入表單
+                if (targetTab === 'business') {
+                    setTimeout(async () => {
+                        await loadBusinessHoursForm();
+                    }, 100);
+                }
+            }
+        });
+    });
+    
+    // 頁面載入時預先載入營業時間數據
+//     console.log('🔄 頁面載入時初始化營業時間數據...');
+    loadBusinessHoursData().then(() => {
+//         console.log('✅ 頁面載入時營業時間數據初始化完成');
+    }).catch(error => {
+        console.error('❌ 頁面載入時營業時間數據初始化失敗:', error);
+    });
+    
+    // 如果默認顯示營業時間 tab，也要載入表單
+    const businessContent = document.getElementById('businessTab');
+    if (businessContent && businessContent.classList.contains('active')) {
+        setTimeout(async () => {
+            await loadBusinessHoursForm();
+        }, 100);
+    }
+});
+
+// 導出營業時間相關函數
+window.loadBusinessHoursForm = loadBusinessHoursForm;
+window.toggleDayStatus = toggleDayStatus;
+window.addTimeSlot = addTimeSlot;
+window.removeTimeSlot = removeTimeSlot;
+window.applyBusinessTemplate = applyBusinessTemplate;
+window.applyBusinessTemplateSync = applyBusinessTemplateSync;
+window.saveBusinessHours = saveBusinessHours;
+
+// console.log('✅ 修正版診所管理中心 JavaScript 載入完成（支援營業狀態同步）');

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ========== 主要初始化函數 ==========
 function initializeVetAppointments() {
-    console.log('初始化獸醫師預約管理系統...');
+    // console.log('初始化獸醫師預約管理系統...');
     
     try {
         loadAppointmentsData();
@@ -29,7 +29,7 @@ function initializeVetAppointments() {
         initializeKeyboardShortcuts();
         updateAppointmentCounts();
         
-        console.log('獸醫師預約管理系統初始化完成');
+        // console.log('獸醫師預約管理系統初始化完成');
     } catch (error) {
         console.error('初始化失敗:', error);
         showErrorMessage('系統初始化失敗，請重新整理頁面');
@@ -40,7 +40,7 @@ function initializeVetAppointments() {
 function loadAppointmentsData() {
     if (window.vetAppointmentsData) {
         appointmentsData = window.vetAppointmentsData;
-        console.log('載入預約數據:', appointmentsData);
+        // console.log('載入預約數據:', appointmentsData);
     }
 }
 
@@ -65,7 +65,7 @@ function initializeSearchFunctionality() {
             });
         }
         
-        console.log('搜尋功能初始化完成');
+//         console.log('搜尋功能初始化完成');
     } catch (error) {
         console.error('搜尋功能初始化失敗:', error);
     }
@@ -109,7 +109,7 @@ function performSearch() {
         showNoResultsMessage();
     }
     
-    console.log(`搜尋 "${searchQuery}" 找到 ${visibleCount} 筆結果`);
+//     console.log(`搜尋 "${searchQuery}" 找到 ${visibleCount} 筆結果`);
 }
 
 function updateDateGroupVisibility() {
@@ -188,7 +188,7 @@ function initializeFilterFunctionality() {
             });
         });
         
-        console.log('篩選功能初始化完成');
+//         console.log('篩選功能初始化完成');
     } catch (error) {
         console.error('篩選功能初始化失敗:', error);
     }
@@ -248,7 +248,7 @@ function applyFilter(filter) {
         performSearch();
     }
     
-    console.log(`篩選 "${filter}" 顯示 ${visibleCount} 筆預約`);
+//     console.log(`篩選 "${filter}" 顯示 ${visibleCount} 筆預約`);
 }
 
 // ========== 表格互動功能 ==========
@@ -267,7 +267,7 @@ function initializeTableInteractions() {
             });
         });
         
-        console.log('表格互動功能初始化完成');
+//         console.log('表格互動功能初始化完成');
     } catch (error) {
         console.error('表格互動功能初始化失敗:', error);
     }
@@ -285,7 +285,7 @@ function initializeFormHandling() {
             });
         });
         
-        console.log('表單處理初始化完成');
+//         console.log('表單處理初始化完成');
     } catch (error) {
         console.error('表單處理初始化失敗:', error);
     }
@@ -354,7 +354,7 @@ function handleCancelAppointment(form) {
 
 // ========== 其他功能函數 ==========
 function refreshAppointments() {
-    console.log('重新整理預約資料...');
+//     console.log('重新整理預約資料...');
     showLoadingModal();
     
     // 重新載入頁面
@@ -364,7 +364,7 @@ function refreshAppointments() {
 }
 
 function exportAppointments() {
-    console.log('匯出預約資料...');
+//     console.log('匯出預約資料...');
     
     if (appointmentsData.urls && appointmentsData.urls.export) {
         // 建立匯出參數
@@ -448,7 +448,7 @@ function initializeKeyboardShortcuts() {
             }
         });
         
-        console.log('鍵盤快捷鍵初始化完成');
+//         console.log('鍵盤快捷鍵初始化完成');
     } catch (error) {
         console.error('鍵盤快捷鍵初始化失敗:', error);
     }
@@ -627,11 +627,11 @@ function formatTime(time) {
 
 // ========== 調試函數 ==========
 function debugAppointments() {
-    console.log('調試獸醫師預約管理...');
+//     console.log('調試獸醫師預約管理...');
     
-    console.log('預約數據:', appointmentsData);
-    console.log('當前篩選:', currentFilter);
-    console.log('搜尋查詢:', searchQuery);
+//     console.log('預約數據:', appointmentsData);
+//     console.log('當前篩選:', currentFilter);
+//     console.log('搜尋查詢:', searchQuery);
     
     const keyElements = {
         appointmentsTable: document.getElementById('appointmentsTable'),
@@ -640,10 +640,10 @@ function debugAppointments() {
         appointmentRows: document.querySelectorAll('.appointment-row')
     };
     
-    console.log('關鍵元素:', keyElements);
+//     console.log('關鍵元素:', keyElements);
     
     const visibleRows = document.querySelectorAll('.appointment-row:not([style*="display: none"])');
-    console.log('可見行數:', visibleRows.length);
+//     console.log('可見行數:', visibleRows.length);
 }
 
 // ========== 全域函數導出 ==========
@@ -660,7 +660,7 @@ window.debugAppointments = debugAppointments;
 // 頁面卸載時清理
 window.addEventListener('beforeunload', function() {
     // 清理事件監聽器等
-    console.log('清理預約管理頁面資源');
+//     console.log('清理預約管理頁面資源');
 });
 
-console.log('獸醫師預約管理 JavaScript 載入完成');
+// console.log('獸醫師預約管理 JavaScript 載入完成');

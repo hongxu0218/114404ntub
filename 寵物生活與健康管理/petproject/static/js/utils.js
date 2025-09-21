@@ -399,7 +399,7 @@ window.PawDayUtils = {
      */
     log: function(...args) {
       if (window.DEBUG || localStorage.getItem('pawday_debug')) {
-        console.log('[PawDay Debug]', ...args);
+//         console.log('[PawDay Debug]', ...args);
       }
     },
 

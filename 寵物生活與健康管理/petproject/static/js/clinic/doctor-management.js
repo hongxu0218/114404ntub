@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ========== 主要初始化函數 ==========
 function initializeDoctorManagement() {
-    console.log('🚀 初始化醫師管理系統...');
+//     console.log('🚀 初始化醫師管理系統...');
     
     // 載入頁面數據
     loadPageData();
@@ -31,7 +31,7 @@ function initializeDoctorManagement() {
     // 初始化計數統計
     updateStatistics();
     
-    console.log('✅ 醫師管理系統初始化完成');
+//     console.log('✅ 醫師管理系統初始化完成');
 }
 
 // ========== 載入頁面數據 ==========
@@ -40,7 +40,7 @@ function loadPageData() {
         pageData = window.doctorPageData;
         doctorsData = pageData.doctors || [];
         filteredDoctors = [...doctorsData];
-        console.log('📊 載入醫師數據:', doctorsData);
+//         console.log('📊 載入醫師數據:', doctorsData);
     }
 }
 
@@ -114,7 +114,7 @@ function performSearch(query) {
     
     // 搜尋分析（用於改善搜尋體驗）
     if (searchTerm) {
-        console.log(`🔍 搜尋: "${query}" → ${filteredDoctors.length} 個結果`);
+//         console.log(`🔍 搜尋: "${query}" → ${filteredDoctors.length} 個結果`);
         
         // 如果搜尋結果為空，顯示建議
         if (filteredDoctors.length === 0) {
@@ -301,7 +301,7 @@ function renderDoctors() {
     
     updateResultsCount(visibleCount);
     
-    console.log(`🎨 渲染 ${visibleCount} 張醫師卡片`);
+//     console.log(`🎨 渲染 ${visibleCount} 張醫師卡片`);
 }
 
 function updateResultsCount(count) {
@@ -335,12 +335,13 @@ function handleToggleDoctorStatus(button) {
     const doctor = doctorsData.find(d => d.id === parseInt(doctorId));
     if (!doctor) return;
     
-    // 顯示確認對話框
-    showConfirmDialog({
+    // 使用Modal顯示確認對話框
+    showConfirmModal({
         title: isDeactivating ? '停用醫師' : '啟用醫師',
         message: `確定要${isDeactivating ? '停用' : '啟用'}醫師「${doctor.name}」嗎？`,
         confirmText: isDeactivating ? '停用' : '啟用',
         confirmClass: isDeactivating ? 'btn-warning' : 'btn-success',
+        icon: isDeactivating ? 'bi-pause-circle-fill text-warning' : 'bi-play-circle-fill text-success',
         onConfirm: () => {
             executeToggleDoctorStatus(button, doctor);
         }
@@ -365,14 +366,20 @@ function executeToggleDoctorStatus(button, doctor) {
         headers: {
             'X-CSRFToken': pageData.csrfToken,
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'  // 重要：標識為AJAX請求
         },
         body: JSON.stringify({})
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // 更新本地資料
-            doctor.isActive = !doctor.isActive;
+            doctor.isActive = data.doctor.is_active;
             
             // 更新 UI
             updateDoctorCardStatus(card, doctor);
@@ -380,8 +387,12 @@ function executeToggleDoctorStatus(button, doctor) {
             // 更新統計
             updateStatistics();
             
-            // 顯示成功訊息
-            showSuccessMessage(`醫師「${doctor.name}」已${doctor.isActive ? '啟用' : '停用'}`);
+            // 顯示成功Modal
+            showResultModal({
+                type: 'success',
+                title: '操作成功',
+                message: data.message
+            });
             
             // 如果當前篩選會隱藏這個醫師，則重新渲染
             setTimeout(() => {
@@ -389,12 +400,19 @@ function executeToggleDoctorStatus(button, doctor) {
             }, 1000);
             
         } else {
-            showErrorMessage(data.message || '操作失敗，請稍後再試');
+            throw new Error(data.message || '操作失敗');
         }
     })
     .catch(error => {
         console.error('切換醫師狀態錯誤:', error);
-        showErrorMessage('網路錯誤，請檢查連線後再試');
+        
+        // 顯示錯誤Modal
+        showResultModal({
+            type: 'error',
+            title: '操作失敗',
+            message: error.message || '網路錯誤，請檢查連線後再試',
+            autoClose: false
+        });
     })
     .finally(() => {
         // 恢復按鈕狀態
@@ -468,7 +486,7 @@ function viewDoctorDetails(doctorId) {
     // 顯示 modal
     showModal(modal);
     
-    console.log('👁️ 查看醫師詳細資料:', doctor.name);
+//     console.log('👁️ 查看醫師詳細資料:', doctor.name);
 }
 
 function generateDoctorDetailsHTML(doctor) {
@@ -703,7 +721,7 @@ function updateStatistics() {
 
 function updateFilteredStatistics() {
     // 如果需要顯示篩選後的統計資料
-    console.log(`📊 篩選後統計: ${filteredDoctors.length}/${doctorsData.length}`);
+//     console.log(`📊 篩選後統計: ${filteredDoctors.length}/${doctorsData.length}`);
 }
 
 function calculateStatistics() {
@@ -737,7 +755,14 @@ function animateNumber(element, newValue) {
 }
 
 // ========== Modal 管理 ==========
+let confirmModal;
+let resultModal;
+
 function initializeModals() {
+
+    confirmModal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+    resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+
     // Modal 外部點擊關閉
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         modal.addEventListener('click', function(e) {
@@ -753,6 +778,74 @@ function initializeModals() {
             closeAllModals();
         }
     });
+}
+
+// 顯示確認Modal
+function showConfirmModal(options) {
+    const modal = document.getElementById('confirmActionModal');
+    const title = modal.querySelector('.modal-title');
+    const message = modal.querySelector('.modal-message');
+    const confirmBtn = modal.querySelector('#confirmActionBtn');
+    const icon = modal.querySelector('.modal-icon i');
+    
+    // 設置內容
+    title.textContent = options.title || '確認操作';
+    message.textContent = options.message || '確定要執行此操作嗎？';
+    confirmBtn.textContent = options.confirmText || '確認';
+    
+    // 設置按鈕樣式
+    confirmBtn.className = `btn ${options.confirmClass || 'btn-primary'}`;
+    
+    // 設置圖標
+    if (options.icon) {
+        icon.className = `bi ${options.icon}`;
+    }
+    
+    // 移除舊的事件監聽器
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    // 添加新的確認事件
+    newConfirmBtn.addEventListener('click', () => {
+        confirmModal.hide();
+        if (options.onConfirm) {
+            options.onConfirm();
+        }
+    });
+    
+    // 顯示Modal
+    confirmModal.show();
+}
+
+// 顯示結果Modal
+function showResultModal(options) {
+    const modal = document.getElementById('resultModal');
+    const title = modal.querySelector('#resultModalTitle');
+    const message = modal.querySelector('#resultModalMessage');
+    const icon = modal.querySelector('.result-icon i');
+    
+    // 設置內容
+    title.textContent = options.title || '操作完成';
+    message.textContent = options.message || '';
+    
+    // 設置圖標和顏色
+    if (options.type === 'success') {
+        icon.className = 'bi bi-check-circle-fill text-success';
+    } else if (options.type === 'error') {
+        icon.className = 'bi bi-x-circle-fill text-danger';
+    } else if (options.type === 'warning') {
+        icon.className = 'bi bi-exclamation-triangle-fill text-warning';
+    }
+    
+    // 顯示Modal
+    resultModal.show();
+    
+    // 自動關閉（可選）
+    if (options.autoClose !== false) {
+        setTimeout(() => {
+            resultModal.hide();
+        }, 2000);
+    }
 }
 
 function showModal(modal) {
@@ -894,17 +987,29 @@ function showConfirmDialog(options) {
         closeConfirmDialog(dialog);
     });
     
+    // 點擊外部關閉
     dialog.addEventListener('click', (e) => {
         if (e.target === dialog) {
             closeConfirmDialog(dialog);
         }
     });
+    
+    // ESC 鍵關閉
+    const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+            closeConfirmDialog(dialog);
+            document.removeEventListener('keydown', handleEsc);
+        }
+    };
+    document.addEventListener('keydown', handleEsc);
 }
 
 function closeConfirmDialog(dialog) {
     dialog.classList.remove('show');
     setTimeout(() => {
-        document.body.removeChild(dialog);
+        if (document.body.contains(dialog)) {
+            document.body.removeChild(dialog);
+        }
     }, 250);
 }
 
@@ -971,4 +1076,4 @@ function hideMessage(messageEl) {
     }, 300);
 }
 
-console.log('✅ 醫師管理 JavaScript 載入完成');
+// console.log('✅ 醫師管理 JavaScript 載入完成');

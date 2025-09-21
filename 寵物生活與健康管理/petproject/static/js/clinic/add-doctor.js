@@ -1,4 +1,4 @@
-// static/js/clinic/add-doctor.js
+// static/js/clinic/add-doctor.js - 完整版本
 
 // ========== 全域變數 ==========
 let currentStep = 1;
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ========== 主要初始化函數 ==========
 function initializeAddDoctorForm() {
-    console.log('🚀 初始化新增醫師表單...');
+//     console.log('🚀 初始化新增醫師表單...');
     
     // 初始化各種功能
     initializeStepNavigation();
@@ -23,12 +23,18 @@ function initializeAddDoctorForm() {
     initializePermissionHandlers();
     initializePreviewUpdates();
     initializeFormSubmission();
+    initializeProfessionalInfoStatus();
+    initializeHelpSystem();
+    initializeEnhancedProgress();
+    initializeSpecializationMultiSelect();
     
     // 設定初始狀態
     updateStepDisplay();
     updateProgressBar();
+    updateNavigationButtons();
+    updatePreviewData();
     
-    console.log('✅ 新增醫師表單初始化完成');
+//     console.log('✅ 新增醫師表單初始化完成');
 }
 
 // ========== 步驟導航功能 ==========
@@ -46,20 +52,25 @@ function initializeStepNavigation() {
 }
 
 function handleNextStep() {
-    if (validateCurrentStep()) {
-        if (currentStep < totalSteps) {
-            currentStep++;
-            updateStepDisplay();
-            updateProgressBar();
-            updateNavigationButtons();
-            updatePreviewData();
-            
-            // 添加步驟完成動畫
-            animateStepTransition();
-        }
-    } else {
-        // 顯示驗證錯誤
+//     console.log(`🔄 嘗試從步驟 ${currentStep} 前進到下一步`);
+    
+    if (!validateCurrentStep()) {
+//         console.log(`❌ 步驟 ${currentStep} 驗證失敗`);
         showStepValidationErrors();
+        return;
+    }
+    
+    if (currentStep < totalSteps) {
+//         console.log(`✅ 步驟 ${currentStep} 驗證通過，前進到步驟 ${currentStep + 1}`);
+        currentStep++;
+        updateStepDisplay();
+        updateProgressBar();
+        updateNavigationButtons();
+        updatePreviewData();
+        animateStepTransition();
+        
+        // 滾動到頂部
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
@@ -69,8 +80,10 @@ function handlePrevStep() {
         updateStepDisplay();
         updateProgressBar();
         updateNavigationButtons();
-        
         animateStepTransition();
+        
+        // 滾動到頂部
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
@@ -88,6 +101,12 @@ function updateStepDisplay() {
             step.classList.add('completed');
         }
     });
+    
+    // 更新進度摘要
+    const currentStepText = document.querySelector('.current-step');
+    if (currentStepText) {
+        currentStepText.textContent = `步驟 ${currentStep}`;
+    }
     
     // 更新表單區域顯示
     const formSections = document.querySelectorAll('.form-section');
@@ -138,7 +157,7 @@ function animateStepTransition() {
     }
 }
 
-// ========== 表單驗證功能 ==========
+// ========== 改善的表單驗證功能 ==========
 function initializeFormValidation() {
     const form = document.getElementById('addDoctorForm');
     if (!form) return;
@@ -146,77 +165,180 @@ function initializeFormValidation() {
     // 即時驗證
     const inputs = form.querySelectorAll('input, textarea, select');
     inputs.forEach(input => {
-        input.addEventListener('blur', () => validateField(input));
-        input.addEventListener('input', () => clearFieldError(input));
+        input.addEventListener('blur', () => {
+            validateField(input);
+            updateProfessionalInfoStatus();
+        });
+        input.addEventListener('input', () => {
+            clearFieldError(input);
+            updateProfessionalInfoStatus();
+        });
     });
 }
 
 function validateCurrentStep() {
+//     console.log(`🔍 驗證步驟 ${currentStep}`);
+    
     const currentSection = document.querySelector(`[data-section="${currentStep}"]`);
     if (!currentSection) return true;
     
-    const inputs = currentSection.querySelectorAll('input[required], textarea[required], select[required]');
     let isValid = true;
     
-    inputs.forEach(input => {
-        if (!validateField(input)) {
+    // 清除之前的錯誤狀態
+    clearSectionErrors(currentSection);
+    
+    // 根據步驟進行專門驗證
+    switch (currentStep) {
+        case 1:
+            isValid = validateStep1();
+            break;
+        case 2:
+            isValid = validateStep2();
+            break;
+        case 3:
+            isValid = validateStep3();
+            break;
+        case 4:
+            isValid = validateStep4();
+            break;
+    }
+    
+//     console.log(`${isValid ? '✅' : '❌'} 步驟 ${currentStep} 驗證結果: ${isValid}`);
+    return isValid;
+}
+
+function validateStep1() {
+//     console.log('🔍 驗證步驟 1: 基本資料');
+    let isValid = true;
+    
+    // 驗證必填欄位
+    const requiredFields = [
+        { name: 'first_name', label: '姓名' },
+        { name: 'username', label: '使用者名稱' },
+        { name: 'email', label: '電子信箱' },
+        { name: 'password', label: '密碼' }
+    ];
+    
+    requiredFields.forEach(field => {
+        const input = document.querySelector(`[name="${field.name}"]`);
+        if (!input || !input.value.trim()) {
+            showFieldError(input, `${field.label}為必填欄位`);
             isValid = false;
         }
     });
     
-    // 特殊驗證規則
-    if (currentStep === 1) {
-        isValid = validateStep1() && isValid;
-    } else if (currentStep === 4) {
-        isValid = validateStep4() && isValid;
+    // 驗證密碼強度
+    const password = document.querySelector('[name="password"]');
+    if (password && password.value) {
+        if (password.value.length < 8) {
+            showFieldError(password, '密碼長度至少需要8個字元');
+            isValid = false;
+        }
+    }
+    
+    // 驗證信箱格式
+    const email = document.querySelector('[name="email"]');
+    if (email && email.value && !isValidEmail(email.value)) {
+        showFieldError(email, '請輸入有效的電子郵件地址');
+        isValid = false;
+    }
+    
+    // 驗證電話格式（非必填）
+    const phone = document.querySelector('[name="phone_number"]');
+    if (phone && phone.value && !isValidPhone(phone.value)) {
+        showFieldError(phone, '請輸入有效的台灣手機號碼（09xxxxxxxx）');
+        isValid = false;
+    }
+    
+    // 驗證使用者名稱格式
+    const username = document.querySelector('[name="username"]');
+    if (username && username.value && !isValidUsername(username.value)) {
+        showFieldError(username, '使用者名稱只能包含英文、數字和底線，長度3-30字元');
+        isValid = false;
     }
     
     return isValid;
 }
 
-function validateStep1() {
-    // 驗證密碼
-    const password = document.querySelector('[name="password"]');
-    const confirmPassword = document.querySelector('[name="password_confirm"]');
+function validateStep2() {
+//     console.log('🔍 驗證步驟 2: 專業資訊');
+    let isValid = true;
     
-    if (password && password.value.length < 8) {
-        showFieldError(password, '密碼長度至少需要8個字元');
-        return false;
+    // 執業年資驗證
+    const experience = document.querySelector('[name="years_of_experience"]');
+    if (experience && experience.value) {
+        const years = parseInt(experience.value);
+        if (isNaN(years) || years < 0 || years > 50) {
+            showFieldError(experience, '執業年資應在0-50年之間');
+            isValid = false;
+        }
     }
     
-    // 驗證信箱格式
-    const email = document.querySelector('[name="email"]');
-    if (email && !isValidEmail(email.value)) {
-        showFieldError(email, '請輸入有效的電子郵件地址');
-        return false;
+    // 執照號碼格式驗證（如果有填寫）
+    const license = document.querySelector('[name="vet_license_number"]');
+    if (license && license.value.trim()) {
+        if (!isValidLicenseNumber(license.value)) {
+            showFieldError(license, '請輸入有效的獸醫師執照號碼格式');
+            isValid = false;
+        }
     }
     
-    // 驗證電話格式
-    const phone = document.querySelector('[name="phone_number"]');
-    if (phone && phone.value && !isValidPhone(phone.value)) {
-        showFieldError(phone, '請輸入有效的台灣手機號碼');
-        return false;
+    // 個人簡介長度驗證
+    const bio = document.querySelector('[name="bio"]');
+    if (bio && bio.value.length > 500) {
+        showFieldError(bio, '個人簡介不能超過500字元');
+        isValid = false;
+    }
+    
+    // 如果沒有填寫任何專業資訊，顯示提示但不阻止進行
+    const specialization = document.querySelector('[name="specialization"]');
+    const hasAnyProfessionalInfo = 
+        (specialization && specialization.value.trim()) ||
+        (license && license.value.trim()) ||
+        (bio && bio.value.trim()) ||
+        (experience && experience.value && parseInt(experience.value) > 0);
+    
+    if (!hasAnyProfessionalInfo) {
+        showMessage('建議填寫專業資訊以提升醫師檔案完整度', 'info');
+    }
+    
+    return isValid;
+}
+
+function validateStep3() {
+//     console.log('🔍 驗證步驟 3: 權限設定');
+    
+    // 權限設定都是可選的，但建議至少有一個身份
+    const vetCheckbox = document.querySelector('[name="is_active_veterinarian"]');
+    const adminCheckbox = document.querySelector('[name="is_clinic_admin"]');
+    
+    if ((!vetCheckbox || !vetCheckbox.checked) && (!adminCheckbox || !adminCheckbox.checked)) {
+        showMessage('建議至少選擇一種身份（獸醫師或管理員）', 'info');
+        // 這裡不返回 false，只是提醒
     }
     
     return true;
 }
 
 function validateStep4() {
+//     console.log('🔍 驗證步驟 4: 確認建立');
+    let isValid = true;
+    
     // 驗證確認勾選
     const confirmInfo = document.getElementById('confirmInfo');
     const confirmEmail = document.getElementById('confirmEmail');
     
     if (!confirmInfo || !confirmInfo.checked) {
         showMessage('請確認醫師資訊正確無誤', 'error');
-        return false;
+        isValid = false;
     }
     
     if (!confirmEmail || !confirmEmail.checked) {
         showMessage('請確認將發送歡迎信件', 'error');
-        return false;
+        isValid = false;
     }
     
-    return true;
+    return isValid;
 }
 
 function validateField(field) {
@@ -249,22 +371,54 @@ function validateField(field) {
     return true;
 }
 
+function clearSectionErrors(section) {
+    const errorFields = section.querySelectorAll('.is-invalid');
+    errorFields.forEach(field => {
+        clearFieldError(field);
+    });
+}
+
 function showFieldError(field, message) {
+    if (!field) return;
+    
     field.classList.add('is-invalid');
     field.classList.remove('is-valid');
     
-    const feedback = field.nextElementSibling;
+    let feedback = field.nextElementSibling;
+    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+        feedback = field.parentElement.querySelector('.invalid-feedback');
+    }
+    
     if (feedback && feedback.classList.contains('invalid-feedback')) {
         feedback.textContent = message;
         feedback.style.display = 'block';
+    } else {
+        // 如果找不到 invalid-feedback，動態創建一個
+        const newFeedback = document.createElement('div');
+        newFeedback.className = 'invalid-feedback';
+        newFeedback.textContent = message;
+        newFeedback.style.display = 'block';
+        field.parentElement.appendChild(newFeedback);
     }
 }
 
 function clearFieldError(field) {
-    field.classList.remove('is-invalid');
-    field.classList.add('is-valid');
+    if (!field) return;
     
-    const feedback = field.nextElementSibling;
+    field.classList.remove('is-invalid');
+    
+    // 如果有值且通過基本驗證，標記為有效
+    if (field.value.trim()) {
+        field.classList.add('is-valid');
+    } else {
+        field.classList.remove('is-valid');
+    }
+    
+    let feedback = field.nextElementSibling;
+    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+        feedback = field.parentElement.querySelector('.invalid-feedback');
+    }
+    
     if (feedback && feedback.classList.contains('invalid-feedback')) {
         feedback.style.display = 'none';
     }
@@ -279,6 +433,29 @@ function showStepValidationErrors() {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         firstError.focus();
     }
+}
+
+// ========== 驗證所有步驟 ==========
+function validateAllSteps() {
+//     console.log('🔍 執行最終驗證...');
+    
+    for (let step = 1; step <= 4; step++) {
+        const originalStep = currentStep;
+        currentStep = step;
+        
+        if (!validateCurrentStep()) {
+//             console.log(`❌ 步驟 ${step} 驗證失敗`);
+            updateStepDisplay();
+            updateProgressBar();
+            updateNavigationButtons();
+            return false;
+        }
+        
+        currentStep = originalStep;
+    }
+    
+//     console.log('✅ 所有步驟驗證通過');
+    return true;
 }
 
 // ========== 密碼強度檢測 ==========
@@ -353,6 +530,8 @@ function initializeCharacterCounter() {
     
     if (bioTextarea) {
         bioTextarea.addEventListener('input', updateCharacterCounter);
+        // 初始更新
+        updateCharacterCounter();
     }
 }
 
@@ -378,9 +557,52 @@ function updateCharacterCounter() {
     }
 }
 
+// ========== 專業資訊完整度狀態 ==========
+function initializeProfessionalInfoStatus() {
+    const professionalFields = ['specialization', 'bio', 'vet_license_number'];
+    
+    professionalFields.forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            field.addEventListener('input', updateProfessionalInfoStatus);
+            field.addEventListener('blur', updateProfessionalInfoStatus);
+        }
+    });
+    
+    // 初始更新
+    updateProfessionalInfoStatus();
+}
+
+function updateProfessionalInfoStatus() {
+    const statusItems = document.querySelectorAll('.status-item');
+    
+    statusItems.forEach(item => {
+        const fieldName = item.dataset.field;
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        
+        if (field && field.value.trim()) {
+            item.classList.add('filled');
+        } else {
+            item.classList.remove('filled');
+        }
+    });
+    
+    // 計算完整度百分比
+    const totalItems = statusItems.length;
+    const filledItems = document.querySelectorAll('.status-item.filled').length;
+    const completeness = Math.round((filledItems / totalItems) * 100);
+    
+    // 更新完整度顯示
+    const summary = document.querySelector('.status-summary small');
+    if (summary) {
+        summary.textContent = `專業資訊完整度：${completeness}% (${filledItems}/${totalItems})`;
+    }
+}
+
 // ========== 權限處理 ==========
 function initializePermissionHandlers() {
     const adminCheckbox = document.getElementById('isClinicAdmin');
+    const vetCheckbox = document.getElementById('isVeterinarian');
     const adminWarning = document.getElementById('adminWarning');
     
     if (adminCheckbox && adminWarning) {
@@ -390,6 +612,16 @@ function initializePermissionHandlers() {
             if (this.checked) {
                 showMessage('注意：管理員權限將允許此醫師管理診所設定', 'warning');
             }
+            
+            // 更新預覽
+            updatePermissionsPreview();
+        });
+    }
+    
+    if (vetCheckbox) {
+        vetCheckbox.addEventListener('change', function() {
+            // 更新預覽
+            updatePermissionsPreview();
         });
     }
 }
@@ -400,10 +632,13 @@ function initializePreviewUpdates() {
     inputs.forEach(input => {
         input.addEventListener('input', updatePreviewData);
     });
+    
+    // 初始更新
+    updatePreviewData();
 }
 
 function updatePreviewData() {
-    // 更新預覽名稱
+    // 更新預覽姓名
     const nameInput = document.querySelector('[name="first_name"]');
     const previewName = document.getElementById('previewName');
     if (nameInput && previewName) {
@@ -418,11 +653,7 @@ function updatePreviewData() {
     }
     
     // 更新預覽專科
-    const specializationInput = document.querySelector('[name="specialization"]');
-    const previewSpecialization = document.getElementById('previewSpecialization');
-    if (specializationInput && previewSpecialization) {
-        previewSpecialization.textContent = specializationInput.value || '--';
-    }
+    updatePreviewSpecialization();
     
     // 更新其他預覽欄位
     updateDetailPreview('username', 'previewUsername');
@@ -449,17 +680,24 @@ function updatePermissionsPreview() {
     
     const permissions = [];
     
-    const appointmentPerm = document.querySelector('[name="can_manage_appointments"]');
-    if (appointmentPerm && appointmentPerm.checked) {
-        permissions.push('預約管理');
+    // 檢查獸醫師身份
+    const vetCheckbox = document.querySelector('[name="is_active_veterinarian"]');
+    if (vetCheckbox && vetCheckbox.checked) {
+        permissions.push('獸醫師');
     }
     
-    const adminPerm = document.getElementById('isClinicAdmin');
-    if (adminPerm && adminPerm.checked) {
+    // 檢查管理員權限
+    const adminCheckbox = document.getElementById('isClinicAdmin');
+    if (adminCheckbox && adminCheckbox.checked) {
         permissions.push('診所管理員');
     }
     
-    preview.textContent = permissions.length > 0 ? permissions.join('、') : '一般醫師';
+    // 顯示結果
+    if (permissions.length > 0) {
+        preview.textContent = permissions.join('、');
+    } else {
+        preview.textContent = '無特殊權限';
+    }
 }
 
 // ========== 表單提交 ==========
@@ -475,10 +713,14 @@ function initializeFormSubmission() {
 function handleFormSubmission(e) {
     e.preventDefault();
     
-    if (isSubmitting) return;
+    if (isSubmitting) {
+//         console.log('⏳ 表單正在提交中，忽略重複提交');
+        return;
+    }
     
-    if (!validateCurrentStep()) {
-        showStepValidationErrors();
+    // 最終驗證所有步驟
+    if (!validateAllSteps()) {
+//         console.log('❌ 表單驗證失敗');
         return;
     }
     
@@ -486,17 +728,36 @@ function handleFormSubmission(e) {
     
     // 顯示載入狀態
     const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+        <i class="bi bi-hourglass-split"></i>
+        <span>建立中...</span>
+        <div class="loading-spinner-modern"></div>
+    `;
     
     // 收集表單資料
     const formData = new FormData(document.getElementById('addDoctorForm'));
     
-    // 添加管理員權限到表單資料
-    const adminCheckbox = document.getElementById('isClinicAdmin');
-    if (adminCheckbox && adminCheckbox.checked) {
-        formData.append('is_clinic_admin', 'on');
+    // 確保正確的欄位名稱被包含
+    const vetCheckbox = document.querySelector('[name="is_active_veterinarian"]');
+    const adminCheckbox = document.querySelector('[name="is_clinic_admin"]');
+    
+    // 確保勾選框狀態正確傳送
+    if (vetCheckbox && vetCheckbox.checked) {
+        if (!formData.has('is_veterinarian')) {
+            formData.append('is_veterinarian', 'on');
+        }
     }
+    
+    if (adminCheckbox && adminCheckbox.checked) {
+        if (!formData.has('is_clinic_admin')) {
+            formData.append('is_clinic_admin', 'on');
+        }
+    }
+    
+//     console.log('📤 提交表單資料...');
     
     // 發送 AJAX 請求
     fetch(window.location.href, {
@@ -504,66 +765,144 @@ function handleFormSubmission(e) {
         body: formData,
         headers: {
             'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
         }
     })
-    .then(response => response.json())
+    .then(response => {
+//         console.log('📥 收到伺服器回應:', response.status);
+        
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // HTML 回應處理
+            return response.text().then(htmlText => {
+                if (response.ok) {
+                    return {
+                        success: true,
+                        message: '醫師建立成功！正在跳轉...',
+                        redirect: response.url || '/clinic/doctors/'
+                    };
+                } else {
+                    throw new Error(`伺服器回應錯誤 ${response.status}: ${response.statusText}`);
+                }
+            });
+        }
+    })
     .then(data => {
+//         console.log('✅ 處理回應資料:', data);
+        
         if (data.success) {
-            showSuccessMessage('醫師建立成功！正在跳轉...');
+            showSuccessMessage(data.message || '醫師建立成功！');
             
-            // 延遲跳轉以顯示成功訊息
+            // 成功動畫效果
+            submitBtn.innerHTML = `
+                <i class="bi bi-check-circle-fill"></i>
+                <span>建立成功</span>
+            `;
+            
+            // 延遲跳轉
             setTimeout(() => {
                 window.location.href = data.redirect || '/clinic/doctors/';
-            }, 1500);
+            }, 2000);
         } else {
+//             console.log('❌ 表單驗證失敗:', data.errors);
             handleFormErrors(data.errors);
             showErrorMessage(data.message || '建立失敗，請檢查輸入資料');
         }
     })
     .catch(error => {
-        console.error('提交錯誤:', error);
-        showErrorMessage('網路錯誤，請稍後再試');
+        console.error('💥 提交錯誤:', error);
+        
+        // 更詳細的錯誤處理
+        let errorMessage = '系統錯誤，請稍後再試';
+        
+        if (error.message.includes('property') && error.message.includes('no setter')) {
+            errorMessage = '表單欄位設定錯誤，請聯繫系統管理員';
+        } else if (error.name === 'SyntaxError' && error.message.includes('JSON')) {
+            errorMessage = '伺服器回應格式錯誤，請聯繫管理員';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = '網路連接失敗，請檢查網路連接';
+        } else if (error.message.includes('timeout')) {
+            errorMessage = '請求超時，請重試';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showErrorMessage(errorMessage);
     })
     .finally(() => {
-        isSubmitting = false;
-        submitBtn.classList.remove('loading');
-        submitBtn.disabled = false;
+        // 恢復按鈕狀態
+        setTimeout(() => {
+            isSubmitting = false;
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }, 1000);
     });
 }
 
 function handleFormErrors(errors) {
     if (!errors) return;
     
-    // 回到有錯誤的步驟
-    let errorStep = 1;
+//     console.log('🚨 處理表單錯誤:', errors);
     
+    // 找到有錯誤的最早步驟
+    let errorStep = currentStep;
+    const stepFieldMapping = {
+        1: ['first_name', 'username', 'email', 'password', 'phone_number'],
+        2: ['vet_license_number', 'specialization', 'years_of_experience', 'bio'],
+        3: ['is_active_veterinarian', 'is_clinic_admin'], // 修正後的欄位名稱
+        4: []
+    };
+    
+    // 檢查每個步驟是否有錯誤
+    for (let step = 1; step <= 4; step++) {
+        const stepFields = stepFieldMapping[step];
+        const hasErrorInStep = stepFields.some(fieldName => 
+            errors.hasOwnProperty(fieldName)
+        );
+        
+        if (hasErrorInStep) {
+            errorStep = step;
+            break;
+        }
+    }
+    
+    // 顯示所有欄位錯誤
     for (const [fieldName, fieldErrors] of Object.entries(errors)) {
         const field = document.querySelector(`[name="${fieldName}"]`);
         if (field) {
-            showFieldError(field, fieldErrors[0]);
-            
-            // 判斷錯誤所在步驟
-            const section = field.closest('.form-section');
-            if (section) {
-                const sectionNumber = parseInt(section.dataset.section);
-                if (sectionNumber < errorStep || errorStep === 1) {
-                    errorStep = sectionNumber;
-                }
-            }
+            const errorMessage = Array.isArray(fieldErrors) ? fieldErrors[0] : fieldErrors;
+            showFieldError(field, errorMessage);
+        } else {
+            console.warn('找不到欄位:', fieldName);
         }
     }
     
     // 跳轉到錯誤步驟
     if (errorStep !== currentStep) {
+//         console.log(`🔄 跳轉到步驟 ${errorStep} 處理錯誤`);
         currentStep = errorStep;
         updateStepDisplay();
         updateProgressBar();
         updateNavigationButtons();
+        
+        showMessage(`步驟 ${errorStep} 中有需要修正的欄位`, 'error');
     }
+    
+    // 滾動到第一個錯誤欄位
+    setTimeout(() => {
+        const firstError = document.querySelector('.is-invalid');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstError.focus();
+        }
+    }, 300);
 }
 
 // ========== 工具函數 ==========
-
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -575,8 +914,13 @@ function isValidPhone(phone) {
 }
 
 function isValidUsername(username) {
-    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
     return usernameRegex.test(username);
+}
+
+function isValidLicenseNumber(license) {
+    // 基本的獸醫師執照號碼格式驗證
+    return license.length >= 8 && /[\u4e00-\u9fff]/.test(license);
 }
 
 function getCsrfToken() {
@@ -584,13 +928,17 @@ function getCsrfToken() {
 }
 
 function showMessage(message, type) {
-    // 重用之前的訊息顯示函數
+    // 移除現有的訊息
+    const existingMessages = document.querySelectorAll('.message-toast');
+    existingMessages.forEach(msg => msg.remove());
+    
     const messageEl = document.createElement('div');
     messageEl.className = `message-toast message-${type}`;
     messageEl.innerHTML = `
         <div class="message-content">
             <i class="bi bi-${type === 'success' ? 'check-circle' : 
                               type === 'warning' ? 'exclamation-triangle' : 
+                              type === 'info' ? 'info-circle' :
                               'x-circle'}"></i>
             <span>${message}</span>
         </div>
@@ -600,7 +948,7 @@ function showMessage(message, type) {
     document.body.appendChild(messageEl);
     
     // 自動移除
-    setTimeout(() => {
+    const autoRemoveTimeout = setTimeout(() => {
         if (messageEl.parentNode) {
             messageEl.classList.add('fade-out');
             setTimeout(() => {
@@ -613,6 +961,7 @@ function showMessage(message, type) {
     
     // 手動關閉
     messageEl.querySelector('.message-close').addEventListener('click', () => {
+        clearTimeout(autoRemoveTimeout);
         messageEl.classList.add('fade-out');
         setTimeout(() => {
             if (messageEl.parentNode) {
@@ -628,13 +977,6 @@ function showSuccessMessage(message) {
 
 function showErrorMessage(message) {
     showMessage(message, 'error');
-}
-
-function showFieldError(fieldName, message) {
-    const field = document.querySelector(`[name="${fieldName}"]`);
-    if (field) {
-        showFieldError(field, message);
-    }
 }
 
 // ========== 鍵盤快捷鍵 ==========
@@ -664,4 +1006,437 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-console.log('✅ 新增醫師 JavaScript 載入完成');
+// ========== 幫助系統 ==========
+function initializeHelpSystem() {
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const helpClose = document.getElementById('helpClose');
+    const helpOverlay = document.querySelector('.help-overlay');
+    const helpTabs = document.querySelectorAll('.help-tab');
+    const helpTabContents = document.querySelectorAll('.help-tab-content');
+    
+    if (!helpButton || !helpPanel) return;
+    
+    // 開啟幫助面板
+    helpButton.addEventListener('click', () => {
+        helpPanel.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // 動畫效果
+        setTimeout(() => {
+            helpPanel.classList.add('active');
+        }, 10);
+    });
+    
+    // 關閉幫助面板
+    function closeHelpPanel() {
+        helpPanel.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        setTimeout(() => {
+            helpPanel.style.display = 'none';
+        }, 300);
+    }
+    
+    if (helpClose) {
+        helpClose.addEventListener('click', closeHelpPanel);
+    }
+    
+    if (helpOverlay) {
+        helpOverlay.addEventListener('click', closeHelpPanel);
+    }
+    
+    // ESC鍵關閉
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && helpPanel.style.display === 'block') {
+            closeHelpPanel();
+        }
+    });
+    
+    // 標籤頁切換
+    helpTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            
+            // 更新標籤狀態
+            helpTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // 更新內容顯示
+            helpTabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.dataset.content === targetTab) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+    
+//     console.log('🔧 幫助系統初始化完成');
+}
+
+// ========== 增強進度指示器 ==========
+function initializeEnhancedProgress() {
+    // 為進度條添加動態效果
+    updateProgressBar();
+    
+    // 添加步驟點擊跳轉功能（僅限已完成的步驟）
+    const progressSteps = document.querySelectorAll('.progress-step');
+    progressSteps.forEach((step, index) => {
+        const stepNumber = index + 1;
+        
+        step.addEventListener('click', () => {
+            if (stepNumber < currentStep) {
+                // 允許返回已完成的步驟
+                currentStep = stepNumber;
+                updateStepDisplay();
+                updateProgressBar();
+                updateNavigationButtons();
+                animateStepTransition();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+        
+        // 添加hover效果
+        step.addEventListener('mouseenter', () => {
+            if (stepNumber < currentStep) {
+                step.style.cursor = 'pointer';
+                step.style.opacity = '0.8';
+            }
+        });
+        
+        step.addEventListener('mouseleave', () => {
+            step.style.cursor = 'default';
+            step.style.opacity = '1';
+        });
+    });
+    
+//     console.log('🔧 增強進度指示器初始化完成');
+}
+
+// ========== 步驟轉換動畫 ==========
+function animateStepTransition() {
+    const currentSection = document.querySelector('.form-section.active');
+    
+    if (currentSection) {
+        // 淡出效果
+        currentSection.style.opacity = '0';
+        currentSection.style.transform = 'translateX(-20px)';
+        
+        setTimeout(() => {
+            // 顯示目標步驟
+            const formSections = document.querySelectorAll('.form-section');
+            formSections.forEach((section, index) => {
+                section.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    section.classList.add('active');
+                    
+                    // 淡入效果
+                    section.style.opacity = '0';
+                    section.style.transform = 'translateX(20px)';
+                    
+                    setTimeout(() => {
+                        section.style.opacity = '1';
+                        section.style.transform = 'translateX(0)';
+                    }, 50);
+                }
+            });
+        }, 150);
+    }
+}
+
+// ========== 進度條更新增強 ==========
+function updateProgressBar() {
+    const progressFill = document.querySelector('.progress-fill');
+    const progressPercentage = document.querySelector('.progress-percentage');
+    
+    if (progressFill && progressPercentage) {
+        const percentage = Math.round((currentStep / totalSteps) * 100);
+        
+        // 動畫更新進度條
+        progressFill.style.width = `${percentage}%`;
+        progressPercentage.textContent = `${percentage}%`;
+        
+        // 添加顏色變化
+        if (percentage === 100) {
+            progressFill.style.background = 'linear-gradient(90deg, var(--success-color), var(--success-light))';
+        } else {
+            progressFill.style.background = 'linear-gradient(90deg, var(--primary-color), var(--primary-light))';
+        }
+    }
+}
+
+// ========== 多選專科領域功能 ==========
+function initializeSpecializationMultiSelect() {
+    const dropdown = document.getElementById('multi_select_dropdown');
+    const display = document.getElementById('multi_select_display');
+    
+    if (!dropdown || !display) return;
+    
+    // 點擊外部關閉下拉選單
+    document.addEventListener('click', function(e) {
+        if (!display.contains(e.target) && !dropdown.contains(e.target)) {
+            closeMultiSelectDropdown();
+        }
+    });
+    
+    // 初始化搜索功能
+    const searchInput = document.getElementById('spec_search');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterSpecializationOptions);
+    }
+    
+    // 初始化其他專科輸入框
+    const otherCheckbox = document.getElementById('other_checkbox');
+    const otherInput = document.getElementById('specialization_other');
+    
+    if (otherCheckbox) {
+        otherCheckbox.addEventListener('change', toggleOtherInput);
+    }
+    
+    if (otherInput) {
+        otherInput.addEventListener('input', updateSelectedSpecs);
+        otherInput.addEventListener('click', (e) => e.stopPropagation());
+    }
+    
+    // 初始化所有複選框
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedSpecs);
+    });
+    
+//     console.log('🔧 多選專科領域初始化完成');
+}
+
+function toggleMultiSelectDropdown() {
+    const dropdown = document.getElementById('multi_select_dropdown');
+    const display = document.getElementById('multi_select_display');
+    
+    if (!dropdown || !display) return;
+    
+    const isOpen = dropdown.classList.contains('show');
+    
+    if (isOpen) {
+        closeMultiSelectDropdown();
+    } else {
+        openMultiSelectDropdown();
+    }
+}
+
+function openMultiSelectDropdown() {
+    const dropdown = document.getElementById('multi_select_dropdown');
+    const display = document.getElementById('multi_select_display');
+    const searchInput = document.getElementById('spec_search');
+    
+    if (!dropdown || !display) return;
+    
+    dropdown.classList.add('show');
+    display.classList.add('active');
+    
+    // 清空搜索並focus
+    if (searchInput) {
+        searchInput.value = '';
+        setTimeout(() => searchInput.focus(), 100);
+    }
+    
+    // 顯示所有選項
+    filterSpecializationOptions();
+}
+
+function closeMultiSelectDropdown() {
+    const dropdown = document.getElementById('multi_select_dropdown');
+    const display = document.getElementById('multi_select_display');
+    
+    if (!dropdown || !display) return;
+    
+    dropdown.classList.remove('show');
+    display.classList.remove('active');
+}
+
+function filterSpecializationOptions() {
+    const searchInput = document.getElementById('spec_search');
+    const options = document.querySelectorAll('#dropdown_options .option-item');
+    
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    options.forEach(option => {
+        const label = option.querySelector('span:last-child');
+        const text = label ? label.textContent.toLowerCase() : '';
+        
+        if (text.includes(searchTerm) || searchTerm === '') {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+function updateSelectedSpecs() {
+    const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]:checked');
+    const otherInput = document.getElementById('specialization_other');
+    const selectedText = document.querySelector('.selected-text');
+    const selectedTags = document.getElementById('selected_tags');
+    const hiddenField = document.getElementById('specialization');
+    
+    if (!selectedText || !hiddenField) return;
+    
+    // 收集選中的專科
+    const selectedSpecs = Array.from(checkboxes)
+        .filter(cb => cb.id !== 'other_checkbox')
+        .map(cb => cb.value);
+    
+    // 加入其他專科（如果有填寫）
+    const otherSpec = otherInput ? otherInput.value.trim() : '';
+    if (otherSpec) {
+        selectedSpecs.push(otherSpec);
+    }
+    
+    // 更新顯示文字
+    if (selectedSpecs.length === 0) {
+        selectedText.textContent = '請選擇專科領域';
+        selectedText.classList.remove('has-selection');
+        if (selectedTags) {
+            selectedTags.style.display = 'none';
+        }
+    } else {
+        const displayText = selectedSpecs.length === 1 
+            ? selectedSpecs[0]
+            : `已選擇 ${selectedSpecs.length} 個專科`;
+        selectedText.textContent = displayText;
+        selectedText.classList.add('has-selection');
+        
+        // 顯示標籤
+        displaySelectedTags(selectedSpecs);
+    }
+    
+    // 更新隱藏欄位
+    hiddenField.value = selectedSpecs.join('、');
+    
+    // 更新專業資訊完整度
+    updateProfessionalInfoStatus();
+    
+    // 更新預覽數據
+    updatePreviewData();
+}
+
+function displaySelectedTags(selectedSpecs) {
+    const selectedTags = document.getElementById('selected_tags');
+    if (!selectedTags) return;
+    
+    if (selectedSpecs.length === 0) {
+        selectedTags.style.display = 'none';
+        return;
+    }
+    
+    selectedTags.style.display = 'block';
+    selectedTags.innerHTML = '';
+    
+    selectedSpecs.forEach((spec, index) => {
+        const tag = document.createElement('div');
+        tag.className = 'tag-item';
+        tag.innerHTML = `
+            <span>${spec}</span>
+            <button type="button" class="tag-remove" onclick="removeSpecTag('${spec}', ${index >= selectedSpecs.length - 1 && document.getElementById('specialization_other')?.value.trim() === spec})">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+        selectedTags.appendChild(tag);
+    });
+}
+
+function removeSpecTag(specName, isOther = false) {
+    if (isOther) {
+        // 清空其他專科輸入框並取消勾選其他checkbox
+        const otherInput = document.getElementById('specialization_other');
+        const otherInputSection = document.getElementById('other_input_section');
+        const otherCheckbox = document.getElementById('other_checkbox');
+        
+        if (otherInput) otherInput.value = '';
+        if (otherInputSection) otherInputSection.style.display = 'none';
+        if (otherCheckbox) otherCheckbox.checked = false;
+    } else {
+        // 取消勾選對應的checkbox
+        const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value === specName && checkbox.id !== 'other_checkbox') {
+                checkbox.checked = false;
+            }
+        });
+    }
+    
+    // 更新顯示
+    updateSelectedSpecs();
+}
+
+function toggleOtherInput() {
+    const otherCheckbox = document.getElementById('other_checkbox');
+    const otherInputSection = document.getElementById('other_input_section');
+    const otherInput = document.getElementById('specialization_other');
+    
+    if (!otherCheckbox || !otherInputSection || !otherInput) return;
+    
+    if (otherCheckbox.checked) {
+        // 顯示輸入區域
+        otherInputSection.style.display = 'block';
+        setTimeout(() => otherInput.focus(), 100);
+    } else {
+        // 隱藏輸入區域並清空內容
+        otherInputSection.style.display = 'none';
+        otherInput.value = '';
+    }
+    
+    // 更新選擇狀態
+    updateSelectedSpecs();
+}
+
+// 更新專業資訊完整度狀態
+function updateProfessionalInfoStatus() {
+    const specializationField = document.getElementById('specialization');
+    const statusItem = document.querySelector('.professional-info-status .status-item[data-field="specialization"]');
+    const statusSummary = document.querySelector('.professional-info-status .status-summary');
+    
+    if (!specializationField || !statusItem) return;
+    
+    const hasSpecialization = specializationField.value.trim() !== '';
+    
+    if (hasSpecialization) {
+        statusItem.classList.add('filled');
+        statusItem.querySelector('.status-icon').classList.remove('bi-circle');
+        statusItem.querySelector('.status-icon').classList.add('bi-check-circle-fill');
+    } else {
+        statusItem.classList.remove('filled');
+        statusItem.querySelector('.status-icon').classList.remove('bi-check-circle-fill');
+        statusItem.querySelector('.status-icon').classList.add('bi-circle');
+    }
+    
+    // 更新完整度摘要
+    if (statusSummary) {
+        const filledItems = document.querySelectorAll('.professional-info-status .status-item.filled');
+        const totalItems = document.querySelectorAll('.professional-info-status .status-item');
+        const percentage = Math.round((filledItems.length / totalItems.length) * 100);
+        
+        statusSummary.innerHTML = `<small class="text-muted">專業資訊完整度：${percentage}% (${filledItems.length}/${totalItems.length})</small>`;
+    }
+}
+
+// 在預覽數據更新函數中添加專科領域
+function updatePreviewSpecialization() {
+    const specializationField = document.getElementById('specialization');
+    const previewSpecialization = document.getElementById('previewSpecialization');
+    
+    if (specializationField && previewSpecialization) {
+        const value = specializationField.value.trim();
+        previewSpecialization.textContent = value || '未填寫';
+    }
+}
+
+// 全域函數導出
+window.toggleMultiSelectDropdown = toggleMultiSelectDropdown;
+window.filterSpecializationOptions = filterSpecializationOptions;
+window.updateSelectedSpecs = updateSelectedSpecs;
+window.removeSpecTag = removeSpecTag;
+window.toggleOtherInput = toggleOtherInput;
+
+// console.log('✅ 新增醫師 JavaScript 載入完成（包含多選專科領域）');

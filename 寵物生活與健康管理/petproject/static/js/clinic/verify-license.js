@@ -34,7 +34,7 @@ window.VetLicenseVerification = {
    * 初始化模組
    */
   init: function() {
-    console.log('🏥 獸醫師執照驗證模組啟動');
+//     console.log('🏥 獸醫師執照驗證模組啟動');
     
     this.setupDOM();
     this.setupEventListeners();
