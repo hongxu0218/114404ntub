@@ -1,0 +1,1245 @@
+/* 排班管理系統 - 專業醫療介面設計 */
+
+/* 基礎變數定義 */
+:root {
+    /* 醫療專業配色 */
+    --medical-primary: #2563eb;          /* 專業藍 */
+    --medical-success: #059669;          /* 醫療綠 */
+    --medical-warning: #d97706;          /* 警示橘 */
+    --medical-danger: #dc2626;           /* 急診紅 */
+    --medical-info: #0891b2;             /* 資訊青 */
+    
+    /* 背景色系 */
+    --bg-primary: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f5f9;
+    --bg-section: #f9fafb;
+    
+    /* 文字色系 */
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    
+    /* 邊框與陰影 */
+    --border-light: #e2e8f0;
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+    
+    /* 圓角 */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    
+    /* 間距 */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+}
+
+/* 整體佈局 */
+.schedule-dashboard {
+    background: var(--bg-primary);
+    min-height: calc(100vh - 80px);
+    padding: var(--spacing-lg);
+}
+
+/* 頁面標題區域 */
+.dashboard-header {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-lg);
+}
+
+.title-section h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.title-section h1 i {
+    color: var(--medical-primary);
+}
+
+.mode-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    margin-left: var(--spacing-sm);
+}
+
+.mode-badge.single {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: var(--medical-primary);
+    border: 1px solid #93c5fd;
+}
+
+.mode-badge.team {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: var(--medical-success);
+    border: 1px solid #86efac;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* 操作按鈕組 */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    position: relative;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--medical-primary), #1d4ed8);
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: white;
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btn-outline:hover {
+    background: var(--bg-hover);
+    border-color: var(--medical-primary);
+    color: var(--medical-primary);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.badge-notification {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--medical-danger);
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 統計卡片網格 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-card.personal .stat-icon {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: var(--medical-primary);
+}
+
+.stat-card.team .stat-icon {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: var(--medical-success);
+}
+
+.stat-card.requests .stat-icon {
+    background: linear-gradient(135deg, #fed7aa, #fdba74);
+    color: var(--medical-warning);
+}
+
+.stat-card.coverage .stat-icon {
+    background: linear-gradient(135deg, #cffafe, #a7f3d0);
+    color: var(--medical-info);
+}
+
+.stat-info h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.stat-info p {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: var(--spacing-xs) 0 0 0;
+}
+
+.stat-info small {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* 主要內容區域 */
+.dashboard-content {
+    display: grid;
+    gap: var(--spacing-xl);
+}
+
+.content-section {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-section);
+}
+
+.section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.section-header h2 i {
+    color: var(--medical-primary);
+}
+
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    background: var(--medical-primary);
+    color: white;
+    border-color: var(--medical-primary);
+}
+
+/* 排班時間軸 */
+.schedule-timeline {
+    padding: var(--spacing-lg);
+}
+
+.timeline-item {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    position: relative;
+}
+
+.timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 70px;
+    bottom: -24px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--border-light), transparent);
+}
+
+.timeline-item.conflict::after {
+    background: linear-gradient(to bottom, var(--medical-danger), transparent);
+}
+
+.timeline-date {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--medical-primary), #1d4ed8);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    box-shadow: var(--shadow-md);
+}
+
+.timeline-date .day {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.timeline-date .month {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.timeline-content {
+    flex: 1;
+}
+
+.schedule-card {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.schedule-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--medical-primary);
+}
+
+.timeline-item.conflict .schedule-card {
+    border-color: var(--medical-danger);
+    background: linear-gradient(135deg, #fef2f2, white);
+}
+
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+}
+
+.schedule-header h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.schedule-badges {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-draft { background: #f1f5f9; color: #475569; }
+.badge-suspended { background: #fed7aa; color: #c2410c; }
+.badge-warning { background: #fef3c7; color: #d97706; }
+
+.schedule-details {
+    margin-bottom: var(--spacing-md);
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.detail-item i {
+    width: 16px;
+    color: var(--medical-primary);
+}
+
+.schedule-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-light);
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--medical-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: color 0.2s ease;
+}
+
+.btn-text:hover {
+    color: #1d4ed8;
+}
+
+.btn-text.text-danger {
+    color: var(--medical-danger);
+}
+
+.btn-text.text-danger:hover {
+    color: #b91c1c;
+}
+
+/* 空狀態 */
+.empty-state {
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-lg);
+    font-size: 2rem;
+    color: var(--text-muted);
+}
+
+.empty-state h3 {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* 診所排班網格 */
+.clinic-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+}
+
+.doctor-card {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.doctor-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--medical-primary);
+}
+
+.doctor-header {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--bg-section);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.doctor-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--medical-primary), #1d4ed8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--spacing-sm);
+}
+
+.doctor-info {
+    flex: 1;
+}
+
+.doctor-info h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.doctor-info .role {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-indicator.active {
+    background: var(--medical-success);
+    box-shadow: 0 0 0 2px #dcfce7;
+}
+
+.status-indicator.inactive {
+    background: var(--text-muted);
+    box-shadow: 0 0 0 2px var(--bg-hover);
+}
+
+.doctor-schedule-preview {
+    padding: var(--spacing-md);
+}
+
+.schedule-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.schedule-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.schedule-preview-item .time {
+    color: var(--medical-primary);
+    font-weight: 600;
+}
+
+.schedule-preview-item .title {
+    color: var(--text-secondary);
+    flex: 1;
+    margin-left: var(--spacing-sm);
+    text-align: left;
+}
+
+.more-items {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: var(--spacing-xs);
+    padding-top: var(--spacing-xs);
+    border-top: 1px solid var(--border-light);
+}
+
+.no-schedule {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.no-schedule i {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+/* 申請列表 */
+.request-list {
+    padding: var(--spacing-lg);
+}
+
+.request-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.request-item:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--medical-primary);
+}
+
+.request-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex: 1;
+}
+
+.requester {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.request-type .badge {
+    font-size: 0.75rem;
+}
+
+.request-date {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.request-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+}
+
+.btn-success {
+    background: var(--medical-success);
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #047857;
+}
+
+.btn-danger {
+    background: var(--medical-danger);
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+/* 浮動操作按鈕 (行動裝置) */
+.floating-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--medical-primary), #1d4ed8);
+    color: white;
+    border: none;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 30px -5px rgb(0 0 0 / 0.3);
+}
+
+.fab-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+}
+
+.fab-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+.fab-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: white;
+    color: var(--text-primary);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    box-shadow: var(--shadow-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.fab-item:hover {
+    background: var(--medical-primary);
+    color: white;
+    transform: translateX(-4px);
+}
+
+/* 週檢視專用樣式 - 原版表格式佈局 */
+.weekly-calendar {
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.week-days-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--bg-section);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.week-day-header {
+    padding: var(--spacing-md);
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-right: 1px solid var(--border-light);
+}
+
+.week-day-header:last-child {
+    border-right: none;
+}
+
+.week-day-header.today {
+    background: linear-gradient(135deg, var(--medical-primary), #1d4ed8);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.weekday-name {
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.day-date {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.day-date.today {
+    color: white;
+}
+
+.week-days-content {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    min-height: 400px;
+}
+
+.week-day-cell {
+    border-right: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    padding: var(--spacing-sm);
+    background: white;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.week-day-cell:last-child {
+    border-right: none;
+}
+
+.week-day-cell.today {
+    background: linear-gradient(135deg, #eff6ff, #f8fafc);
+}
+
+.schedule-item {
+    background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs);
+    color: var(--medical-info);
+    font-size: 0.8rem;
+    border-left: 3px solid var(--medical-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.schedule-item.approved {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: var(--medical-success);
+    border-left-color: var(--medical-success);
+}
+
+.schedule-item:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-sm);
+}
+
+.schedule-time {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.schedule-type {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.schedule-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-muted);
+    opacity: 0.6;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    border: 2px dashed transparent;
+    transition: all 0.2s ease;
+    padding: var(--spacing-sm);
+}
+
+.schedule-placeholder:hover {
+    opacity: 1;
+    border-color: var(--medical-primary);
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.schedule-placeholder i {
+    font-size: 1.2rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.schedule-placeholder div {
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+}
+
+/* 月檢視專用樣式 */
+.monthly-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    padding: 0;
+}
+
+.month-header-row {
+    display: contents;
+}
+
+.month-day-header {
+    background: var(--bg-section);
+    padding: var(--spacing-md);
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.month-day-header.weekend {
+    background: var(--bg-section);
+    color: var(--text-primary);
+}
+
+.month-day-header i {
+    margin-right: var(--spacing-xs);
+    color: var(--medical-primary);
+}
+
+.month-day-cell {
+    background: white;
+    min-height: 120px;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.month-day-cell.active {
+    position: relative;
+}
+
+.month-day-cell.active:hover {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    transform: scale(1.02);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.month-day-cell.today {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+}
+
+.day-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-sm);
+}
+
+.day-number {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+    text-align: center;
+}
+
+.day-number.today {
+    background: linear-gradient(135deg, var(--medical-primary), #1d4ed8);
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    animation: pulse 2s infinite;
+}
+
+.day-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.mini-schedule-card {
+    background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--medical-info);
+    border-left: 3px solid var(--medical-primary);
+}
+
+.mini-schedule-card:hover {
+    background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+    transform: scale(1.05);
+}
+
+.schedule-badge {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.schedule-badge i {
+    font-size: 0.7rem;
+}
+
+.schedule-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.empty-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: var(--spacing-xs);
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.month-day-cell:hover .empty-day {
+    opacity: 1;
+}
+
+.empty-day i {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+
+.empty-day small {
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+/* 排班列表專用樣式 */
+.schedule-list-grid {
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.weekday-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+    color: var(--medical-info);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: var(--spacing-xs);
+}
+
+.schedule-list-grid .timeline-item {
+    margin-bottom: 0;
+}
+
+.schedule-list-grid .timeline-item:not(:last-child)::after {
+    display: none;
+}
+
+/* 空狀態樣式 */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    color: var(--text-muted);
+}
+
+.empty-state .empty-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-lg);
+}
+
+.empty-state .empty-icon i {
+    font-size: 2.5rem;
+    color: var(--text-muted);
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .dashboard-header .header-content {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .action-buttons {
+        justify-content: flex-start;
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline-item {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .timeline-item::after {
+        display: none;
+    }
+    
+    .timeline-date {
+        width: 50px;
+        height: 50px;
+        align-self: flex-start;
+    }
+    
+    .week-days-header,
+    .week-days-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .week-day-header {
+        border-bottom: 1px solid var(--border-light);
+        border-right: none;
+    }
+    
+    .week-day-cell {
+        border-right: none;
+        min-height: 100px;
+    }
+    
+    .monthly-schedule-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+    }
+    
+    .month-day-cell {
+        min-height: 80px;
+    }
+    
+    .day-card {
+        padding: var(--spacing-xs);
+    }
+    
+    .day-number {
+        font-size: 0.9rem;
+    }
+    
+    .mini-schedule-card {
+        font-size: 0.65rem;
+        padding: 2px;
+    }
+    
+    .month-day-header {
+        padding: var(--spacing-sm);
+        font-size: 0.8rem;
+    }
+    
+    .clinic-schedule-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .request-item {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
+    }
+    
+    .request-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .request-actions {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .schedule-dashboard {
+        padding: var(--spacing-md);
+    }
+    
+    .dashboard-header {
+        padding: var(--spacing-lg);
+    }
+    
+    .title-section h1 {
+        font-size: 1.5rem;
+    }
+    
+    .mode-badge {
+        display: block;
+        margin-left: 0;
+        margin-top: var(--spacing-xs);
+    }
+}
+
+/* 列印樣式 */
+@media print {
+    .dashboard-header .action-buttons,
+    .floating-actions,
+    .schedule-actions,
+    .request-actions {
+        display: none !important;
+    }
+    
+    .schedule-dashboard {
+        background: white;
+        padding: 0;
+    }
+    
+    .content-section {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+        margin-bottom: 20px;
+    }
+}

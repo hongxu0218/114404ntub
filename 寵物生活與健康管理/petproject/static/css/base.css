@@ -118,6 +118,11 @@ main {
   text-decoration: none;
   white-space: nowrap;
   position: relative;
+  background-color: #ffffff !important;
+  min-width: 100px !important;
+  max-width: 150px !important;
+  width: auto !important;
+  text-align: center !important;
 }
 
 .nav-link:hover {
@@ -129,6 +134,107 @@ main {
 .nav-link:focus {
   outline: 2px solid var(--primary-orange);
   outline-offset: 2px;
+}
+
+/* 下拉選單樣式統一 */
+.dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: var(--border-radius-lg) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 8px !important;
+  margin-top: 8px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  width: 180px !important;
+}
+
+
+.dropdown-item {
+  color: var(--text-dark) !important;
+  font-weight: 500 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--border-radius-md) !important;
+  padding: 10px 16px !important;
+  margin: 2px 0 !important;
+  transition: all var(--transition-normal) ease !important;
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--primary-orange-light) !important;
+  color: var(--text-dark) !important;
+  border-color: #ccc !important;
+  transform: translateX(4px) !important;
+}
+
+.dropdown-item:active {
+  background-color: var(--primary-orange) !important;
+  color: white !important;
+}
+
+.dropdown-item i {
+  width: 18px !important;
+  height: 18px !important;
+  margin-right: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: inherit !important;
+}
+
+/* 分隔線樣式 */
+.dropdown-divider {
+  margin: 6px 0 !important;
+  border-top: 1px solid #e9ecef !important;
+}
+.nav-link.dropdown-toggle {
+  color: var(--text-dark) !important;
+  font-weight: 500 !important;
+  border: 1px solid #ccc !important;
+  border-radius: var(--border-radius-lg) !important;
+  padding: 8px 16px !important;
+  margin: 0 4px !important;
+  transition: all var(--transition-normal) ease !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  background-color: #ffffff !important;
+  min-width: 100px !important;
+  max-width: 150px !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+.nav-link.dropdown-toggle:hover,
+.nav-link.dropdown-toggle:focus,
+.nav-link.dropdown-toggle[aria-expanded="true"] {
+  background-color: var(--primary-orange-light) !important;
+  color: var(--text-dark) !important;
+  transform: translateY(-2px) !important;
+  border-color: var(--primary-orange) !important;
+}
+
+.dropdown-toggle::after {
+  border-top: 0.4em solid !important;
+  border-right: 0.3em solid transparent !important;
+  border-bottom: 0 !important;
+  border-left: 0.3em solid transparent !important;
+  margin-left: 0.5em !important;
+  vertical-align: middle !important;
+}
+
+.navbar-nav .dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
+  width: 180px !important;
 }
 
 /* 通知徽章 */
@@ -402,6 +508,27 @@ main {
 
 /* ===== 響應式設計 ===== */
 @media (max-width: 768px) {
+
+  .dropdown-menu {
+    min-width: 180px !important;
+    max-width: 180px !important;
+    width: 180px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .dropdown-item {
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+  }
+  
+  .nav-link.dropdown-toggle {
+    margin: 2px 0 !important;
+    text-align: center !important;
+    min-width: 120px !important;
+    max-width: 180px !important;
+    width: auto !important;
+  }
+
   .hero-text h1 {
     font-size: var(--font-size-3xl);
   }
@@ -433,6 +560,9 @@ main {
   .nav-link {
     margin: 2px 0;
     text-align: center;
+    min-width: 120px !important;
+    max-width: 180px !important;
+    width: auto !important;
   }
 
   .logo img {

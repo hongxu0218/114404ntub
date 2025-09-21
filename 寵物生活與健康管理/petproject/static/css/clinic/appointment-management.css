@@ -327,6 +327,7 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   max-height: 300px;
+  min-width: 180px !important;
   overflow-y: auto;
 }
 
@@ -894,12 +895,13 @@
   background: white;
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xl);
-  max-width: 600px;
+  max-width: min(600px, 90vw);
   width: 90%;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
   transform: scale(0.9);
   transition: transform var(--transition-normal);
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
 }
 
 .modal-overlay.show .modal-container {
@@ -911,7 +913,7 @@
 }
 
 .modal-header {
-  padding: var(--spacing-xl);
+  padding: clamp(var(--spacing-md), 3vw, var(--spacing-lg));
   border-bottom: 1px solid var(--gray-200);
   display: flex;
   align-items: center;
@@ -920,7 +922,7 @@
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.125rem, 2.5vw, 1.25rem);
   font-weight: 700;
   color: var(--gray-800);
 }
@@ -946,11 +948,11 @@
 }
 
 .modal-body {
-  padding: var(--spacing-xl);
+  padding: clamp(var(--spacing-md), 3vw, var(--spacing-lg));
 }
 
 .modal-footer {
-  padding: var(--spacing-xl);
+  padding: clamp(var(--spacing-md), 3vw, var(--spacing-xl));
   border-top: 1px solid var(--gray-200);
   display: flex;
   gap: var(--spacing-md);
@@ -991,17 +993,129 @@
 }
 
 /* ========== 預約摘要 ========== */
+/* ========== 取消預約摘要區域（緊湊版）========== */
 .appointment-summary {
-  background: var(--gray-50);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  margin: var(--spacing-lg) 0;
+  background: linear-gradient(135deg, var(--gray-50) 0%, #fafbfc 100%);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
   border: 1px solid var(--gray-200);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.pet-info-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.pet-info-summary i {
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.pet-name-summary {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.appointment-id-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.detail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  color: var(--gray-600);
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.detail-label {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  color: var(--gray-800);
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .cancel-appointment-info p {
   color: var(--gray-700);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .appointment-summary {
+    padding: var(--spacing-lg);
+  }
+  
+  .summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .detail-row {
+    gap: var(--spacing-sm);
+  }
+  
+  .detail-icon {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 /* ========== 空狀態 ========== */
@@ -1141,6 +1255,25 @@
   }
 }
 
+/* 中型螢幕響應式調整 */
+@media (max-width: 768px) and (min-width: 481px) {
+  .modal-container {
+    width: 90%;
+    max-height: 90vh;
+    font-size: 0.9rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.15rem;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: var(--spacing-md);
+  }
+}
+
 @media (max-width: 480px) {
   .page-title-modern {
     font-size: 1.75rem;
@@ -1154,13 +1287,15 @@
   
   .modal-container {
     width: 95%;
-    margin: var(--spacing-md);
+    margin: var(--spacing-sm);
+    max-height: 95vh;
+    font-size: 0.875rem;
   }
   
   .modal-header,
   .modal-body,
   .modal-footer {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-sm);
   }
   
   .time-block {

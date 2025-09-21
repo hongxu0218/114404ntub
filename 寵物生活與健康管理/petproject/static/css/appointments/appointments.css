@@ -1,0 +1,929 @@
+/* 預約管理 - 精簡統一版本 */
+
+:root {
+    /* 更淡的溫暖色系 */
+    --pet-primary: #ffc266;        /* 更淡的橘色 */
+    --pet-primary-hover: #ffb84d;  /* 輕微深一點的橘色 */
+    --pet-secondary: #ffe6cc;      /* 很淡的橘色 */
+    --pet-accent: #90c695;         /* 更淡的綠色 */
+    --pet-warm: #ffedcc;          /* 非常淡的米橘色 */
+    --pet-cool: #87ceeb;          /* 更淡的藍色 */
+    
+    /* 更淡的狀態顏色 */
+    --status-pending: #fff3b3;     /* 很淡的黃 */
+    --status-confirmed: #c8e6c9;   /* 很淡的綠 */
+    --status-completed: #b3e5fc;   /* 很淡的藍 */
+    --status-cancelled: #ffcdd2;   /* 很淡的紅 */
+    
+    /* 基礎顏色 - 更淡 */
+    --surface: #ffffff;
+    --background: #fffcf7;         /* 更淡的溫暖背景 */
+    --border: #f5f5f5;             /* 很淡的邊框 */
+    --text-primary: #555;          /* 更淡的文字色 */
+    --text-secondary: #888;        /* 更淡的次要文字 */
+    
+    /* 陰影與圓角 */
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+    --radius: 12px;
+    --radius-lg: 16px;
+
+    /* 醫療記錄相關顏色 */
+    --medical-bg: #f0f9ff;
+    --medical-border: #0ea5e9;
+    --medical-text: #0369a1;
+    --vital-bg: #ecfdf5;
+    --vital-border: #10b981;
+    --prescription-bg: #fdf4ff;
+    --prescription-border: #8b5cf6;
+}
+
+/* ===== 主容器 ===== */
+.appointments-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--background) 0%, var(--pet-warm) 50%, var(--pet-secondary) 100%);
+    padding: 2rem 0;
+}
+
+.appointments-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* ===== 頁面標題 ===== */
+.page-header-appointments {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--pet-primary), var(--pet-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.header-title h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.header-subtitle {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+    font-size: 1rem;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--pet-accent);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background: var(--pet-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== 篩選面板 ===== */
+.enhanced-filter-panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.filter-tab:hover {
+    border-color: var(--pet-primary);
+    color: var(--pet-primary);
+    transform: translateY(-1px);
+}
+
+.filter-tab.active {
+    background: var(--pet-primary);
+    border-color: var(--pet-primary);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== 預約卡片 ===== */
+.appointments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.appointment-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.appointment-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* ===== 卡片頭部 ===== */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.pet-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pet-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pet-primary);
+    color: white;
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.pet-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pet-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.appointment-id {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* ===== 狀態徽章 ===== */
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.status-pending { background: #fffef7; color: #cc9900; border-left: 2px solid var(--status-pending); }
+.status-confirmed { background: #f8fff8; color: #4caf50; border-left: 2px solid var(--status-confirmed); }
+.status-completed { background: #f7fdff; color: #2196f3; border-left: 2px solid var(--status-completed); }
+.status-cancelled { background: #fff7f7; color: #f44336; border-left: 2px solid var(--status-cancelled); }
+
+/* ===== 卡片內容 ===== */
+.card-body {
+    margin-bottom: 1rem;
+}
+
+.primary-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.datetime-info, .clinic-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.date, .time, .clinic-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.date i, .time i, .clinic-name i {
+    color: var(--pet-primary);
+    width: 16px;
+}
+
+/* ===== 次要資訊 ===== */
+.secondary-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--background);
+    border-radius: var(--radius);
+    border-left: 4px solid var(--pet-primary);
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 80px;
+}
+
+.info-item .value {
+    color: var(--text-primary);
+}
+
+/* ===== 操作按鈕 ===== */
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.action-btn:hover {
+    border-color: var(--pet-primary);
+    color: var(--pet-primary);
+    background: rgba(255, 194, 102, 0.08);
+}
+
+/* ===== 空狀態 ===== */
+.empty-state-modern {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.empty-icon-modern {
+    font-size: 3rem;
+    color: var(--pet-primary);
+    margin-bottom: 1rem;
+}
+
+.empty-title-modern {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.empty-description-modern {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 2rem;
+    background: var(--pet-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+    background: var(--pet-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 768px) {
+    .appointments-container {
+        padding: 0 0.5rem;
+    }
+    
+    .appointments-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .filter-tabs {
+        justify-content: center;
+    }
+    
+    .filter-tab {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/* ===== 醫療記錄摘要樣式 ===== */
+.medical-summary {
+    background: var(--medical-bg);
+    border: 1px solid var(--medical-border);
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.medical-summary:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.medical-summary.no-record {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(14, 165, 233, 0.1);
+    border-bottom: 1px solid var(--medical-border);
+}
+
+.medical-summary.no-record .summary-header {
+    background: rgba(239, 68, 68, 0.1);
+    border-bottom-color: #fecaca;
+}
+
+.summary-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--medical-text);
+    font-size: 0.875rem;
+}
+
+.record-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--medical-border);
+    color: white;
+}
+
+.record-badge.no-record {
+    background: #ef4444;
+}
+
+.summary-content {
+    padding: 1rem;
+}
+
+.medical-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.medical-item:last-child {
+    margin-bottom: 0;
+}
+
+.medical-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.medical-value {
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.vital-signs-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--vital-bg);
+    border: 1px solid var(--vital-border);
+    border-radius: var(--radius);
+}
+
+.vital-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #065f46;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border-radius: 6px;
+}
+
+.prescription-summary {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--prescription-bg);
+    border: 1px solid var(--prescription-border);
+    border-radius: var(--radius);
+}
+
+.prescription-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.prescription-item {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: #7c2d12;
+    background: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    margin: 0.125rem;
+}
+
+.no-record-text {
+    color: #dc2626;
+    font-style: italic;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* 完整醫療記錄按鈕 */
+.action-btn.view-medical-record {
+    background: var(--medical-border);
+    color: white;
+}
+
+.action-btn.view-medical-record:hover {
+    background: var(--medical-text);
+}
+
+/* 響應式設計增強 */
+@media (max-width: 768px) {
+    .medical-item {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .medical-label {
+        min-width: auto;
+    }
+
+    .vital-signs-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .vital-item {
+        justify-content: center;
+    }
+}
+
+/* ===== 醫療記錄模態框樣式 ===== */
+.medical-record-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--medical-bg);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--medical-text);
+    font-size: 1.25rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    max-height: calc(90vh - 100px);
+    overflow-y: auto;
+}
+
+.detail-section {
+    margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--medical-border);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--background);
+    border-radius: var(--radius);
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: var(--text-secondary);
+}
+
+.diagnosis-content, .treatment-content {
+    padding: 1rem;
+    background: var(--background);
+    border-radius: var(--radius);
+    border-left: 4px solid var(--medical-border);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.vital-signs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.vital-signs-grid .vital-item {
+    background: var(--vital-bg);
+    border: 1px solid var(--vital-border);
+    padding: 1rem;
+    border-radius: var(--radius);
+    text-align: center;
+    font-weight: 600;
+    color: #065f46;
+}
+
+.symptoms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.symptom-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: var(--radius);
+}
+
+.symptom-name {
+    font-weight: 600;
+    color: #92400e;
+}
+
+.symptom-severity {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f59e0b;
+    color: white;
+}
+
+.prescriptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.prescription-item {
+    padding: 1rem;
+    background: var(--prescription-bg);
+    border: 1px solid var(--prescription-border);
+    border-radius: var(--radius);
+}
+
+.prescription-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.prescription-header strong {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.prescription-dosage {
+    padding: 0.25rem 0.75rem;
+    background: var(--prescription-border);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.prescription-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.prescription-instructions {
+    padding: 0.75rem;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-left: 3px solid var(--prescription-border);
+}
+
+/* 響應式模態框 */
+@media (max-width: 768px) {
+    .medical-record-modal {
+        padding: 0.5rem;
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-header, .modal-body {
+        padding: 1rem;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .vital-signs-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .prescription-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .prescription-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ===== 重新設計的診斷內容和治療計畫樣式 ===== */
+.diagnosis-section, .treatment-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--medical-border);
+}
+
+.section-header i {
+    color: var(--medical-primary);
+    font-size: 1.2rem;
+}
+
+.section-header h4 {
+    margin: 0;
+    color: var(--medical-text);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.diagnosis-content-card, .treatment-content-card {
+    background: #f8fafe;
+    border: 1px solid #e3f2fd;
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.content-text {
+    line-height: 1.6;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+/* 治療計畫特殊格式 */
+.treatment-step {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #e8f5e8;
+    border-left: 4px solid #4caf50;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.treatment-item {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.treatment-item::before {
+    content: '●';
+    position: absolute;
+    left: 0;
+    color: var(--medical-primary);
+    font-size: 0.8rem;
+}
+
+.treatment-paragraph {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+    line-height: 1.7;
+}
+
+/* 診斷內容特殊樣式 */
+.diagnosis-content-card .content-text {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #1a365d;
+}
+
+/* 響應式 */
+@media (max-width: 768px) {
+    .section-header {
+        gap: 0.5rem;
+    }
+
+    .diagnosis-content-card, .treatment-content-card {
+        padding: 1rem;
+    }
+
+    .treatment-step {
+        margin-bottom: 0.5rem;
+        padding: 0.4rem 0.6rem;
+    }
+}
