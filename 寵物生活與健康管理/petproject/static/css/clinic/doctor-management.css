@@ -1180,4 +1180,188 @@
   .empty-title {
     font-size: 1.25rem;
   }
+
+  /* ========== 彈跳確認對話框樣式 ========== */
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; /* 確保在最上層 */
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.confirm-dialog-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  transform: scale(0.9) translateY(-20px);
+  transition: all 0.3s ease;
+  border: 1px solid var(--gray-200);
+}
+
+.confirm-dialog-overlay.show .confirm-dialog {
+  transform: scale(1) translateY(0);
+}
+
+.confirm-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--spacing-lg);
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--warning-color);
+}
+
+.confirm-dialog h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--spacing-md);
+}
+
+.confirm-dialog p {
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xl);
+  white-space: pre-line; /* 支援換行 */
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.btn-cancel,
+.btn-confirm {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid;
+  min-width: 80px;
+}
+
+.btn-cancel {
+  background: white;
+  color: var(--gray-600);
+  border-color: var(--gray-300);
+}
+
+.btn-cancel:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+}
+
+.btn-confirm {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.btn-confirm:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.btn-confirm.btn-warning {
+  background: var(--warning-color);
+  border-color: var(--warning-color);
+}
+
+.btn-confirm.btn-warning:hover {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+.btn-confirm.btn-success {
+  background: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.btn-confirm.btn-success:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+/* 響應式設計 */
+@media (max-width: 480px) {
+  .confirm-dialog {
+    margin: var(--spacing-lg);
+    width: calc(100% - 2rem);
+    padding: var(--spacing-lg);
+  }
+  
+  .confirm-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .dialog-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-cancel,
+  .btn-confirm {
+    width: 100%;
+  }
+}
+
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.modal-icon {
+    margin-bottom: 1rem;
+}
+
+.result-icon {
+    margin-bottom: 1rem;
+}
+
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 按鈕樣式優化 */
+.modal-footer .btn {
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    min-width: 80px;
+}
+
+.modal-footer .btn:not(:last-child) {
+    margin-right: 0.5rem;
+}
+
 }

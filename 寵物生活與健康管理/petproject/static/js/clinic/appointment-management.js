@@ -5,7 +5,7 @@ let appointmentsData = [];
 let filteredAppointments = [];
 let currentView = 'cards';
 let currentFilters = {
-  date: 'today',
+  date: 'all',
   status: 'all',
   doctor: 'all'
 };
@@ -13,16 +13,17 @@ let searchQuery = '';
 let pageData = {};
 
 // ========== DOM 載入完成後初始化 ==========
-document.addEventListener('DOMContentLoaded', function() {
-  initializeAppointmentManagement();
-});
+// 註：初始化將由模板中的內嵌 script 調用，不需要額外的 DOMContentLoaded 監聽器
 
 // ========== 主要初始化函數 ==========
 function initializeAppointmentManagement() {
-  console.log('🚀 初始化預約管理系統...');
+  // console.log('🚀 初始化預約管理系統...');
   
   // 載入頁面數據
   loadPageData();
+  
+  // 載入並渲染預約資料
+  loadAppointmentsData();
   
   // 初始化各種功能
   initializeFilters();
@@ -32,12 +33,10 @@ function initializeAppointmentManagement() {
   initializeKeyboardShortcuts();
   initializeAutoRefresh();
   
-  // 載入並渲染預約資料
-  loadAppointmentsData();
-  renderAppointments();
-  updateStatistics();
+  // 應用初始篩選並渲染
+  applyFilters();
   
-  console.log('✅ 預約管理系統初始化完成');
+  // console.log('✅ 預約管理系統初始化完成');
 }
 
 // ========== 載入頁面數據 ==========
@@ -47,7 +46,7 @@ function loadPageData() {
     appointmentsData = pageData.appointments || [];
     currentFilters = pageData.currentFilters || currentFilters;
     filteredAppointments = [...appointmentsData];
-    console.log('📊 載入頁面數據:', pageData);
+    // console.log('📊 載入頁面數據:', pageData);
   }
 }
 
@@ -76,7 +75,7 @@ function initializeFilters() {
       // 視覺回饋
       animateFilterChange(this);
       
-      console.log(`🔍 篩選更新: ${filterType} = ${filterValue}`);
+//       console.log(`🔍 篩選更新: ${filterType} = ${filterValue}`);
     });
   });
   
@@ -108,7 +107,7 @@ function initializeDoctorFilter() {
       // 應用篩選
       applyFilters();
       
-      console.log(`👨‍⚕️ 醫師篩選: ${doctorName} (${doctorId})`);
+//       console.log(`👨‍⚕️ 醫師篩選: ${doctorName} (${doctorId})`);
     });
   });
 }
@@ -134,7 +133,7 @@ function applyFilters() {
   updateStatistics();
   updateFilterCounts();
   
-  console.log(`📊 篩選結果: ${filteredAppointments.length}/${appointmentsData.length}`);
+  // console.log(`📊 篩選結果: ${filteredAppointments.length}/${appointmentsData.length}`);
 }
 
 function passesDateFilter(appointment) {
@@ -245,7 +244,7 @@ function switchView(view) {
     targetView.classList.add('active');
   }
   
-  console.log(`🔄 切換到 ${view} 檢視`);
+//   console.log(`🔄 切換到 ${view} 檢視`);
 }
 
 // ========== 渲染預約列表 ==========
@@ -275,7 +274,7 @@ function renderCardsView() {
     }
   });
   
-  console.log('🎨 渲染卡片檢視完成');
+//   console.log('🎨 渲染卡片檢視完成');
 }
 
 function renderListView() {
@@ -296,7 +295,7 @@ function renderListView() {
     }
   });
   
-  console.log('📋 渲染列表檢視完成');
+//   console.log('📋 渲染列表檢視完成');
 }
 
 function showAppointmentCard(card) {
@@ -329,7 +328,7 @@ function updateStatistics() {
   updateStatElement('pendingCount', stats.pending);
   updateStatElement('todayCount', stats.today);
   
-  console.log('📊 統計資料已更新:', stats);
+  // console.log('📊 統計資料已更新:', stats);
 }
 
 function updateStatElement(elementId, value) {
@@ -347,16 +346,11 @@ function updateStatElement(elementId, value) {
 
 function updateFilterCounts() {
   // 可以在這裡更新篩選器旁邊顯示的數量
-  console.log(`📈 當前顯示: ${filteredAppointments.length} 個預約`);
+//   console.log(`📈 當前顯示: ${filteredAppointments.length} 個預約`);
 }
 
 // ========== 預約操作功能 ==========
-function viewAppointmentDetail(appointmentId) {
-  console.log(`👁️ 查看預約詳情: ${appointmentId}`);
-  
-  // 從後端載入詳細資料
-  loadAppointmentDetail(appointmentId);
-}
+// 查看詳情功能已移除，因為所有重要信息已在主頁面顯示
 
 function loadAppointmentDetail(appointmentId) {
   const url = pageData.urls.appointmentDetail.replace('{id}', appointmentId);
@@ -378,7 +372,7 @@ function loadAppointmentDetail(appointmentId) {
 }
 
 function confirmAppointment(appointmentId) {
-  console.log(`✅ 確認預約: ${appointmentId}`);
+  // console.log(`✅ 確認預約: ${appointmentId}`);
   
   showConfirmDialog({
     title: '確認預約',
@@ -431,10 +425,45 @@ function showCancelModal(appointmentId) {
   // 生成預約摘要
   const summary = `
     <div class="appointment-summary">
-      <h6>${appointment.petName}</h6>
-      <p>飼主：${appointment.ownerName}</p>
-      <p>時間：${appointment.date} ${appointment.startTime}-${appointment.endTime}</p>
-      <p>醫師：${appointment.doctorName}</p>
+      <div class="summary-header">
+        <div class="pet-info-summary">
+          <i class="bi bi-heart-fill me-2"></i>
+          <h6 class="pet-name-summary">${appointment.petName}</h6>
+        </div>
+        <span class="appointment-id-badge">#${appointment.id}</span>
+      </div>
+      
+      <div class="summary-details">
+        <div class="detail-row">
+          <div class="detail-icon">
+            <i class="bi bi-person"></i>
+          </div>
+          <div class="detail-content">
+            <span class="detail-label">飼主</span>
+            <span class="detail-value">${appointment.ownerName}</span>
+          </div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-icon">
+            <i class="bi bi-calendar3"></i>
+          </div>
+          <div class="detail-content">
+            <span class="detail-label">預約時間</span>
+            <span class="detail-value">${appointment.date} ${appointment.startTime}-${appointment.endTime}</span>
+          </div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-icon">
+            <i class="bi bi-person-badge"></i>
+          </div>
+          <div class="detail-content">
+            <span class="detail-label">主治醫師</span>
+            <span class="detail-value">Dr. ${appointment.doctorName}</span>
+          </div>
+        </div>
+      </div>
     </div>
   `;
   
@@ -446,11 +475,11 @@ function showCancelModal(appointmentId) {
   // 顯示 Modal
   showModal(document.getElementById('cancelAppointmentModal'));
   
-  console.log(`❌ 開啟取消預約 Modal: ${appointmentId}`);
+//   console.log(`❌ 開啟取消預約 Modal: ${appointmentId}`);
 }
 
 function markCompleted(appointmentId) {
-  console.log(`✔️ 標記完成: ${appointmentId}`);
+//   console.log(`✔️ 標記完成: ${appointmentId}`);
   
   showConfirmDialog({
     title: '標記完成',
@@ -541,12 +570,7 @@ function updateCardActions(card, status) {
   if (!actionsContainer) return;
   
   // 重新生成操作按鈕
-  let buttonsHTML = `
-    <button class="action-btn btn-info" onclick="viewAppointmentDetail(${card.dataset.appointmentId})">
-      <i class="bi bi-eye"></i>
-      <span>查看詳情</span>
-    </button>
-  `;
+  let buttonsHTML = ``;
   
   if (status === 'pending') {
     buttonsHTML += `
@@ -686,7 +710,7 @@ function removeAppointmentFromDisplay(appointmentId) {
 
 // ========== 重新整理功能 ==========
 function refreshAppointments() {
-  console.log('🔄 重新整理預約列表...');
+//   console.log('🔄 重新整理預約列表...');
   
   showSuccessMessage('正在重新整理...');
   
@@ -708,7 +732,7 @@ function initializeAutoRefresh() {
 
 function checkForUpdates() {
   // 這裡可以實作檢查是否有新預約的邏輯
-  console.log('🔍 檢查更新...');
+//   console.log('🔍 檢查更新...');
 }
 
 // ========== 鍵盤快捷鍵 ==========
@@ -758,7 +782,7 @@ function closeAllModals() {
 function loadAppointmentsData() {
   // 資料已在頁面載入時注入，這裡處理資料初始化
   filteredAppointments = [...appointmentsData];
-  console.log('📊 載入預約資料:', appointmentsData);
+  // console.log('📊 載入預約資料:', appointmentsData);
 }
 
 function animateFilterChange(chip) {
@@ -914,4 +938,4 @@ if (!document.getElementById('appointment-animations')) {
   document.head.appendChild(style);
 }
 
-console.log('✅ 預約管理 JavaScript 載入完成');
+// console.log('✅ 預約管理 JavaScript 載入完成');

@@ -1,121 +1,1757 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
 
-{% extends "vet_pages/base.html" %}
-
-{% block title %}{{ pet.name }} 的醫療紀錄{% endblock %}
-
-{% block back_button %}
-  <a href="{% url 'my_patients' %}" class="back-home">← 返回我的看診寵物</a>
-{% endblock %}
-
-{% block header %}
-  <h1 class="section-title">🐾 {{ pet.name }} 的醫療紀錄</h1>
-{% endblock %}
+{% block title %}{{ pet.name }} - 病歷記錄{% endblock %}
 
 {% block extra_css %}
-<style>
-  .record-card {
-    background-color: #f9f9f9;
-    border: 2px solid #cce5ff;
-    padding: 16px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-    transition: all 0.3s ease-in-out;
-  }
-  .record-card:hover {
-    background-color: #e9f7ff;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 🏥 專業獸醫師風格設計系統 */
+        :root {
+            /* 專業醫療色彩系統 */
+            --medical-primary: #1e3a8a;        /* 深海軍藍 - 權威專業 */
+            --medical-primary-light: #3b82f6;   /* 亮藍 - 互動狀態 */
+            --medical-secondary: #64748b;       /* 中性灰 - 輔助資訊 */
+            --medical-white: #ffffff;           /* 醫療白 - 純淨專業 */
+            
+            /* 功能色彩 - 溫和專業配色 */
+            --status-success: #16a34a;          /* 溫和綠 - 疫苗健康 */
+            --status-warning: #ea580c;          /* 溫和橙 - 驅蟲治療 */
+            --status-danger: #0369a1;           /* 專業藍 - 病歷診療 */
+            --status-info: #7c3aed;             /* 優雅紫 - 檢驗報告 */
+            
+            /* 背景色調 - 溫和護眼配色 */
+            --bg-primary: #fafbfc;              /* 主背景 - 更柔和護眼 */
+            --bg-card: #ffffff;                 /* 卡片背景 - 純淨白色 */
+            --bg-section: #f3f4f6;              /* 區塊背景 - 輕微灰調 */
+            --bg-hover: #f9fafb;                /* hover背景 - 微妙變化 */
+            
+            /* 邊框和分隔 - 柔和邊框 */
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+            --border-dark: #9ca3af;
+            
+            /* 陰影系統 */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            /* 間距系統 */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 12px;
+            --space-lg: 16px;
+            --space-xl: 24px;
+            --space-2xl: 32px;
+            --space-3xl: 48px;
+            
+            /* 圓角系統 */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            
+            /* 過渡效果 */
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.2s ease;
+            --transition-slow: 0.3s ease;
+        }
+
+        /* 基礎重置和字體 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--medical-primary);
+            line-height: 1.5;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 🏥 專業醫療容器 */
+        .veterinary-dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-xl);
+            background: var(--bg-primary);
+        }
+
+        /* 🎯 專業頁面標題 */
+        .page-header {
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            border-left: 4px solid var(--medical-primary);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .page-subtitle {
+            font-size: 0.875rem;
+            color: var(--medical-secondary);
+            font-weight: 500;
+        }
+
+        /* 🏥 寵物資訊專業卡片 */
+        .patient-info-card {
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-2xl);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            position: relative;
+        }
+
+        .patient-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--medical-primary) 0%, var(--medical-primary-light) 100%);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .patient-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: var(--space-xl);
+            align-items: center;
+            margin-bottom: var(--space-xl);
+        }
+
+        .patient-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: var(--radius-lg);
+            background: var(--bg-section);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border-light);
+            overflow: hidden;
+        }
+
+        .patient-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .patient-details h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .patient-meta {
+            display: flex;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            padding: var(--space-sm) var(--space-lg);
+            background: var(--bg-section);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--medical-secondary);
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        /* 🎯 專業統計指標 */
+        .clinical-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-md);
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .clinical-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--space-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .clinical-stats {
+                grid-template-columns: 1fr;
+                gap: var(--space-sm);
+            }
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: var(--space-lg) var(--space-md);
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--medical-primary);
+            transform: scaleX(0);
+            transition: transform var(--transition-normal);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: var(--space-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--medical-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* 🎯 專業操作按鈕區 */
+        .clinical-actions {
+            margin-top: var(--space-xl);
+            padding-top: var(--space-xl);
+            border-top: 1px solid var(--border-light);
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .clinical-btn {
+            padding: var(--space-md) var(--space-xl);
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clinical-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .clinical-btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--medical-primary);
+            color: var(--medical-white);
+        }
+
+        .btn-success {
+            background: var(--status-success);
+            color: var(--medical-white);
+        }
+
+        .btn-warning {
+            background: var(--status-warning);
+            color: var(--medical-white);
+        }
+
+        .btn-info {
+            background: var(--status-info);
+            color: var(--medical-white);
+        }
+
+        .clinical-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* 🔍 專業搜索和篩選 */
+        .clinical-search-bar {
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: var(--space-lg);
+            align-items: center;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--space-md) var(--space-lg) var(--space-md) 40px;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all var(--transition-normal);
+            background: var(--medical-white);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: var(--space-md);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medical-secondary);
+            pointer-events: none;
+        }
+
+        .filter-select {
+            padding: var(--space-md) var(--space-lg);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: var(--medical-white);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            min-width: 160px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        /* 🎯 專業標籤導航 */
+        .clinical-tabs {
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            padding: var(--space-sm);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            gap: var(--space-xs);
+            overflow-x: auto;
+            border: 1px solid var(--border-light);
+        }
+
+        .clinical-tab {
+            flex: 1;
+            min-width: 140px;
+            padding: var(--space-lg) var(--space-xl);
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--medical-secondary);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            white-space: nowrap;
+        }
+
+        .clinical-tab.active {
+            background: var(--medical-primary);
+            color: var(--medical-white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .clinical-tab:hover:not(.active) {
+            background: var(--bg-hover);
+            color: var(--medical-primary);
+        }
+
+        .tab-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px var(--space-sm);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .clinical-tab:not(.active) .tab-badge {
+            background: var(--bg-section);
+            color: var(--medical-secondary);
+        }
+
+        /* 🎯 專業記錄內容區 */
+        .clinical-records {
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+
+        .tab-content {
+            display: none;
+            padding: var(--space-2xl);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: var(--space-xl);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding-bottom: var(--space-lg);
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        /* 🎯 專業記錄卡片 */
+        .record-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xl);
+        }
+
+        .clinical-record {
+            background: var(--medical-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            transition: all var(--transition-normal);
+            position: relative;
+        }
+
+        .clinical-record::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--medical-primary);
+            transition: width var(--transition-normal);
+        }
+
+        .clinical-record.medical::before { background: var(--status-danger); }
+        .clinical-record.vaccine::before { background: var(--status-success); }
+        .clinical-record.deworm::before { background: var(--status-warning); }
+        .clinical-record.report::before { background: var(--status-info); }
+
+        .clinical-record:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .clinical-record:hover::before {
+            width: 6px;
+        }
+
+        .record-header {
+            padding: var(--space-xl);
+            background: var(--bg-section);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .record-type {
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--medical-primary);
+        }
+
+        .record-date {
+            font-size: 0.875rem;
+            color: var(--medical-secondary);
+            font-weight: 600;
+            padding: var(--space-xs) var(--space-md);
+            background: var(--medical-white);
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+        }
+
+        .record-content {
+            padding: var(--space-xl);
+        }
+
+        /* 🎯 專業醫療區塊 */
+        .medical-section {
+            margin-bottom: var(--space-xl);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+
+        .section-header {
+            padding: var(--space-lg) var(--space-xl);
+            background: var(--bg-section);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .section-icon {
+            font-size: 1.1rem;
+            color: var(--medical-primary);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--medical-primary);
+            margin: 0;
+        }
+
+        .section-content {
+            padding: var(--space-xl);
+            background: var(--medical-white);
+        }
+
+        /* 🎯 專業資訊列表 */
+        .clinical-info-list {
+            list-style: none;
+            display: grid;
+            gap: var(--space-lg);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-md);
+            padding: var(--space-lg);
+            background: var(--bg-section);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--medical-primary);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--medical-secondary);
+            min-width: 120px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            color: var(--medical-primary);
+            font-weight: 600;
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .info-value.highlight {
+            color: var(--status-success);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .info-value.diagnosis {
+            color: var(--medical-primary);
+            font-weight: 700;
+        }
+
+        /* 🎯 專業資訊網格 */
+        .clinical-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        .info-card {
+            background: var(--bg-section);
+            padding: var(--space-xl);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .info-card .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--medical-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .info-card .value {
+            font-weight: 600;
+            color: var(--medical-primary);
+            font-size: 0.875rem;
+        }
+
+        /* 🎯 處方藥品專業顯示 */
+        .prescription-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .prescription-card {
+            padding: var(--space-xl);
+            background: var(--bg-section);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .drug-header {
+            margin-bottom: var(--space-lg);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .drug-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--medical-primary);
+        }
+
+        .drug-details {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .drug-detail {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--medical-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--medical-primary);
+            font-size: 0.875rem;
+        }
+
+        /* 🎯 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-3xl) var(--space-xl);
+            color: var(--medical-secondary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-lg);
+            opacity: 0.3;
+        }
+
+        .empty-message {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* 🎯 下載連結 */
+        .download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-lg);
+            background: var(--status-info);
+            color: var(--medical-white);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .download-link:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            background: var(--medical-primary);
+        }
+
+        /* 🎯 SVG 圖標樣式 */
+        .icon {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            vertical-align: middle;
+            stroke-width: 2;
+        }
+
+        .icon-lg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .icon-xl {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* 🎯 響應式設計 */
+        @media (max-width: 768px) {
+            .veterinary-dashboard {
+                padding: var(--space-lg);
+            }
+
+            .patient-header {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: var(--space-lg);
+            }
+
+            .clinical-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-md);
+            }
+
+            .clinical-tabs {
+                overflow-x: auto;
+            }
+
+            .clinical-tab {
+                min-width: 120px;
+            }
+
+            .clinical-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 🎯 動畫效果 */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .clinical-record {
+            animation: slideInUp 0.4s ease forwards;
+        }
+
+        .clinical-record:nth-child(2) { animation-delay: 0.1s; }
+        .clinical-record:nth-child(3) { animation-delay: 0.2s; }
+        .clinical-record:nth-child(4) { animation-delay: 0.3s; }
+        .clinical-record:nth-child(5) { animation-delay: 0.4s; }
+
+        /* 🎯 專業狀態指示器 */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-xs) var(--space-md);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-normal {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--status-success);
+        }
+
+        .status-warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--status-warning);
+        }
+
+        .status-critical {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--status-danger);
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="pet-card">
+    <div class="veterinary-dashboard">
+        <!-- 🏥 專業頁面標題 -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>
+                </svg>
+                寵物病歷記錄系統
+            </h1>
+            <p class="page-subtitle">專業獸醫師診療記錄管理平台</p>
+        </div>
 
-  <h3>飼主：{{ pet.owner.last_name }}{{ pet.owner.first_name|default:pet.owner.username }}</h3>
+        <!-- 🏥 專業寵物資訊卡片 -->
+        <div class="patient-info-card">
+            <div class="patient-header">
+                <div class="patient-avatar">
+                    {% if pet.picture %}
+                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
+                    {% else %}
+                        <svg class="icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>
+                        </svg>
+                    {% endif %}
+                </div>
 
-  <!-- 病歷紀錄 -->
-  <h4>病歷紀錄</h4>
-  {% if medical_records %}
-    {% for record in medical_records %}
-      <div class="record-card medical-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
-        <p><strong>🗕️ 看診日期：</strong>{{ record.visit_date }}</p>
-        <p><strong>🏥 看診地點：</strong>{{ record.clinic_location }}</p>
-        <p><strong>🦠 診斷結果：</strong>{{ record.diagnosis|default:"未填寫" }}</p>
-        <p><strong>💊 治療內容：</strong>{{ record.treatment|default:"未填寫" }}</p>
-        <p><strong>👨‍⚕️ 看診獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
-      </div>
-    {% endfor %}
-    {% if medical_records|length > 1 %}
-      <button onclick="toggleRecords('medical-record', this)" class="btn btn-secondary">顯示更多病歷紀錄</button>
-    {% endif %}
-  {% else %}
-    <p>無病例紀錄</p>
-  {% endif %}
+                <div class="patient-details">
+                    <h2>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        {{ pet.name }} ({{ pet.gender|default:"未記錄" }})
+                    </h2>
+                    <div class="patient-meta">
+                        <span class="meta-badge">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            飼主：{{ pet.owner.get_full_name|default:pet.owner.username }}
+                        </span>
+                        <span class="meta-badge">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            品種：{{ pet.breed|default:"未記錄" }}
+                        </span>
+                        <span class="meta-badge">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12,6 12,12 16,14"/>
+                            </svg>
+                            年齡：{{ pet.detailed_age }}
+                        </span>
+                    </div>
+                </div>
 
-  <!-- 疫苗紀錄 -->
-  <h4>疫苗紀錄</h4>
-  {% if vaccine_records %}
-    {% for record in vaccine_records %}
-      <div class="record-card vaccine-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
-        <p><strong>💉 疫苗品牌：</strong>{{ record.name }}</p>
-        <p><strong>📅 施打日期：</strong>{{ record.date }}</p>
-        <p><strong>📍 施打地點：</strong>{{ record.location }}</p>
-        <p><strong>👨‍⚕️ 施打獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
-      </div>
-    {% endfor %}
-    {% if vaccine_records|length > 1 %}
-      <button onclick="toggleRecords('vaccine-record', this)" class="btn btn-secondary">顯示更多疫苗紀錄</button>
-    {% endif %}
-  {% else %}
-    <p>無疫苗紀錄</p>
-  {% endif %}
+                <!-- 專業統計指標 -->
+                <div class="clinical-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                            {{ medical_records|length }}
+                        </div>
+                        <div class="stat-label">病歷記錄</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            {{ vaccine_records|length }}
+                        </div>
+                        <div class="stat-label">疫苗記錄</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                            </svg>
+                            {{ deworm_records|length }}
+                        </div>
+                        <div class="stat-label">驅蟲記錄</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                            </svg>
+                            {{ reports|length }}
+                        </div>
+                        <div class="stat-label">檢驗報告</div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- 驅蟲紀錄 -->
-  <h4>驅蟲紀錄</h4>
-  {% if deworm_records %}
-    {% for record in deworm_records %}
-      <div class="record-card deworm-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
-        <p><strong>🪲 驅蟲品牌：</strong>{{ record.name }}</p>
-        <p><strong>📅 施打日期：</strong>{{ record.date }}</p>
-        <p><strong>📍 施打地點：</strong>{{ record.location }}</p>
-        <p><strong>👨‍⚕️ 施打獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}</p>
-      </div>
-    {% endfor %}
-    {% if deworm_records|length > 1 %}
-      <button onclick="toggleRecords('deworm-record', this)" class="btn btn-secondary">顯示更多驅蟲紀錄</button>
-    {% endif %}
-  {% else %}
-    <p>無驅蟲紀錄</p>
-  {% endif %}
+            <!-- 🎯 專業操作按鈕 -->
+            <div class="clinical-actions">
+                <div class="action-grid">
+                    <a href="{% url 'create_medical_record_for_pet' pet.id %}" class="clinical-btn btn-primary">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="12" y1="18" x2="12" y2="12"/>
+                            <line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                        新增病歷記錄
+                    </a>
+                    <a href="{% url 'vet_add_vaccine' pet.id %}" class="clinical-btn btn-success">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        疫苗接種記錄
+                    </a>
+                    <a href="{% url 'vet_add_deworm' pet.id %}" class="clinical-btn btn-warning">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                        </svg>
+                        驅蟲治療記錄
+                    </a>
+                    <button type="button" class="clinical-btn btn-info" onclick="showUploadModal()">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        上傳檢驗報告
+                    </button>
+                </div>
+            </div>
+        </div>
 
-  <!-- 報告 -->
-  <h4>報告</h4>
-  {% if reports %}
-    {% for report in reports %}
-      <div class="record-card report-record" {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
-        <p><strong>📄 標題：</strong>{{ report.title }}</p>
-        <p><strong>📎 檔案：</strong><a href="{{ report.pdf.url }}" target="_blank">{{ report.pdf.name|default:"查看檔案" }}</a></p>
-      </div>
-    {% endfor %}
-    {% if reports|length > 1 %}
-      <button onclick="toggleRecords('report-record', this)" class="btn btn-secondary">顯示更多報告</button>
-    {% endif %}
-  {% else %}
-    <p>無報告</p>
-  {% endif %}
+        <!-- 🔍 專業搜索和篩選 -->
+        <div class="clinical-search-bar">
+            <div class="search-grid">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="搜索病歷內容、診斷結果、治療方案..." id="searchInput">
+                </div>
+                <select class="filter-select" id="dateFilter">
+                    <option value="">時間範圍</option>
+                    <option value="week">最近一週</option>
+                    <option value="month">最近一個月</option>
+                    <option value="quarter">最近三個月</option>
+                    <option value="year">最近一年</option>
+                </select>
+                <select class="filter-select" id="typeFilter">
+                    <option value="">記錄類型</option>
+                    <option value="medical">病歷記錄</option>
+                    <option value="vaccine">疫苗記錄</option>
+                    <option value="deworm">驅蟲記錄</option>
+                    <option value="report">檢驗報告</option>
+                </select>
+            </div>
+        </div>
 
-</div>
+        <!-- 🎯 專業標籤導航 -->
+        <div class="clinical-tabs">
+            <button class="clinical-tab active" data-tab="all">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                </svg>
+                全部記錄
+            </button>
+            <button class="clinical-tab" data-tab="medical">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                病歷記錄
+                <span class="tab-badge">{{ medical_records|length }}</span>
+            </button>
+            <button class="clinical-tab" data-tab="vaccine">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                疫苗記錄
+                <span class="tab-badge">{{ vaccine_records|length }}</span>
+            </button>
+            <button class="clinical-tab" data-tab="deworm">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                </svg>
+                驅蟲記錄
+                <span class="tab-badge">{{ deworm_records|length }}</span>
+            </button>
+            <button class="clinical-tab" data-tab="report">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                </svg>
+                檢驗報告
+                <span class="tab-badge">{{ reports|length }}</span>
+            </button>
+        </div>
 
-<!-- 通用展開/收合 JS -->
-<script>
-  function toggleRecords(className, button) {
-    const elements = document.querySelectorAll(`.${className}`);
-    const isHidden = elements[1].style.display === 'none';
-    elements.forEach((el, index) => {
-      if (index > 0) el.style.display = isHidden ? 'block' : 'none';
-    });
-    button.textContent = isHidden ? '隱藏' + button.textContent.replace('顯示更多', '') : '顯示更多' + button.textContent.replace('隱藏', '');
-  }
-</script>
+        <!-- 🎯 專業記錄內容區 -->
+        <div class="clinical-records">
+            <!-- 全部記錄 -->
+            <div class="tab-content active" id="content-all">
+                <h3 class="content-title">
+                    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                    </svg>
+                    全部診療記錄
+                </h3>
+                <div class="record-timeline">
+                    <!-- 病歷記錄 -->
+                    {% for record in medical_records %}
+                    <div class="clinical-record medical">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                </svg>
+                                病歷記錄
+                            </span>
+                            <span class="record-date">{{ record.visit_date }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">診斷結果</span>
+                                    <span class="value">{{ record.diagnosis|default:"未填寫" }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">主治獸醫</span>
+                                    <span class="value">{% if record.attending_vet and record.attending_vet.user %}{{ record.attending_vet.user.get_full_name|default:record.attending_vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                {% if record.total_cost %}
+                                <div class="info-card">
+                                    <span class="label">診療費用</span>
+                                    <span class="value highlight">NT$ {{ record.total_cost }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 疫苗記錄 -->
+                    {% for record in vaccine_records %}
+                    <div class="clinical-record vaccine">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                                疫苗接種記錄
+                            </span>
+                            <span class="record-date">{{ record.date }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">疫苗名稱</span>
+                                    <span class="value">{{ record.name|default:"未填寫" }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">接種獸醫</span>
+                                    <span class="value">{% if record.vet and record.vet.user %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                {% if record.next_due_date %}
+                                <div class="info-card">
+                                    <span class="label">下次接種</span>
+                                    <span class="value">{{ record.next_due_date|date:"Y年m月d日" }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 驅蟲記錄 -->
+                    {% for record in deworm_records %}
+                    <div class="clinical-record deworm">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                                </svg>
+                                驅蟲治療記錄
+                            </span>
+                            <span class="record-date">{{ record.date }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">驅蟲藥物</span>
+                                    <span class="value">{{ record.medicine_name }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">施藥獸醫</span>
+                                    <span class="value">{% if record.vet and record.vet.user %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                {% if record.next_due_date %}
+                                <div class="info-card">
+                                    <span class="label">下次施藥</span>
+                                    <span class="value">{{ record.next_due_date|date:"Y年m月d日" }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 報告記錄 -->
+                    {% for report in reports %}
+                    <div class="clinical-record report">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14,2 14,8 20,8"/>
+                                </svg>
+                                檢驗報告
+                            </span>
+                            <span class="record-date">{{ report.date_uploaded|date:"Y-m-d" }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">報告標題</span>
+                                    <span class="value">{{ report.title }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">上傳獸醫</span>
+                                    <span class="value">{% if report.vet and report.vet.user %}{{ report.vet.user.get_full_name|default:report.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">檢驗地點</span>
+                                    <span class="value">{% if report.clinic %}{{ report.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">上傳日期</span>
+                                    <span class="value">{{ report.date_uploaded|date:"Y年m月d日" }}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <a href="{{ report.pdf.url }}" download="{{ report.title }}.pdf" class="download-link">📥 下載報告</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 病歷記錄 -->
+            <div class="tab-content" id="content-medical">
+                <h3 class="content-title">
+                    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    病歷診療記錄
+                </h3>
+                <div class="record-timeline">
+                    {% for record in medical_records %}
+                    <div class="clinical-record medical">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                </svg>
+                                🏥病歷記錄
+                            </span>
+                            <span class="record-date">{{ record.visit_date }}</span>
+                        </div>
+                        <div class="record-content">
+                            <!-- 基本資訊 -->
+                            <div class="medical-section">
+                                <div class="section-header">
+                                    <h4 class="section-title">🏥基本資訊</h4>
+                                </div>
+                                <div class="section-content">
+                                    <div class="clinical-info-grid">
+                                        <div class="info-card">
+                                            <span class="label">🩺看診獸醫</span>
+                                            <span class="value">{% if record.attending_vet and record.attending_vet.user %}{{ record.attending_vet.user.get_full_name|default:record.attending_vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                        </div>
+                                        <div class="info-card">
+                                            <span class="label">看診地點</span>
+                                            <span class="value">{% if record.attending_vet and record.attending_vet.clinic %}{{ record.attending_vet.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                        </div>
+                                        <div class="info-card">
+                                            <span class="label">看診日期</span>
+                                            <span class="value">{{ record.visit_date|date:"Y年m月d日" }} {{ record.created_at|date:"H:i" }}</span>
+                                        </div>
+                                        {% if record.total_cost %}
+                                        <div class="info-card">
+                                            <span class="label">診療費用</span>
+                                            <span class="value highlight">NT$ {{ record.total_cost }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 診斷資訊 -->
+                            <div class="medical-section">
+                                <div class="section-header">
+                                    <h4 class="section-title">🔬診斷資訊</h4>
+                                </div>
+                                <div class="section-content">
+                                    <div class="clinical-info-grid">
+                                        <div class="info-card">
+                                            <span class="label">飼主主訴</span>
+                                            <span class="value">{{ record.chief_complaint|default:"未填寫" }}</span>
+                                        </div>
+                                        {% if record.medical_details.symptoms %}
+                                        <div class="info-card">
+                                            <span class="label">症狀</span>
+                                            <span class="value">
+                                                {% for symptom in record.medical_details.symptoms %}
+                                                    {{ symptom.name }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        <div class="info-card">
+                                            <span class="label">理學檢查</span>
+                                            <span class="value">{{ record.physical_examination|default:"未填寫" }}</span>
+                                        </div>
+                                        <div class="info-card">
+                                            <span class="label">診斷結果</span>
+                                            <span class="value">{{ record.diagnosis|default:"未填寫" }}</span>
+                                        </div>
+                                        <div class="info-card">
+                                            <span class="label">治療計畫</span>
+                                            <span class="value">{{ record.treatment_plan|default:"未填寫" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 處方藥品 -->
+                            {% if record.medical_details.prescriptions %}
+                            <div class="medical-section">
+                                <div class="section-header">
+                                    <h4 class="section-title">💊處方藥品</h4>
+                                </div>
+                                <div class="section-content">
+                                    <div class="prescription-list">
+                                        {% for prescription in record.medical_details.prescriptions %}
+                                        <div class="prescription-card">
+                                            <div class="drug-header">
+                                                <strong class="drug-name">{{ prescription.medication }}</strong>
+                                            </div>
+                                            <ul class="drug-details">
+                                                <li class="drug-detail">
+                                                    <strong class="detail-label">劑量</strong>
+                                                    <span class="detail-value">{{ prescription.dosage|default:"未填寫" }}</span>
+                                                </li>
+                                                <li class="drug-detail">
+                                                    <strong class="detail-label">給藥頻率</strong>
+                                                    <span class="detail-value">{{ prescription.frequency|translate_frequency|default:"未填寫" }}</span>
+                                                </li>
+                                                <li class="drug-detail">
+                                                    <strong class="detail-label">給藥途徑</strong>
+                                                    <span class="detail-value">{{ prescription.route|translate_route|default:"未填寫" }}</span>
+                                                </li>
+                                                <li class="drug-detail">
+                                                    <strong class="detail-label">用藥說明</strong>
+                                                    <span class="detail-value">{{ prescription.instructions|default:"未填寫" }}</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p class="text-muted">目前沒有病歷記錄</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 疫苗記錄 -->
+            <div class="tab-content" id="content-vaccine">
+                <h3 class="content-title">
+                    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    疫苗接種記錄
+                </h3>
+                <div class="record-timeline">
+                    {% for record in vaccine_records %}
+                    <div class="clinical-record vaccine">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                </svg>
+                                💉疫苗記錄
+                            </span>
+                            <span class="record-date">{{ record.date }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">疫苗名稱</span>
+                                    <span class="value">{{ record.name|default:"未填寫" }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">🩺施打獸醫</span>
+                                    <span class="value">{% if record.vet and record.vet.user %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">施打地點</span>
+                                    <span class="value">{{ record.location|default:"未記錄" }}</span>
+                                </div>
+                                {% if record.next_due_date %}
+                                <div class="info-card">
+                                    <span class="label">下次接種</span>
+                                    <span class="value">{{ record.next_due_date|date:"Y年m月d日" }}</span>
+                                </div>
+                                {% endif %}
+                                {% if record.protection_period_months %}
+                                <div class="info-card">
+                                    <span class="label">保護效期</span>
+                                    <span class="value">{{ record.protection_period_months }}個月</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p class="text-muted">目前沒有疫苗記錄</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 驅蟲記錄 -->
+            <div class="tab-content" id="content-deworm">
+                <h3 class="content-title">
+                    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                    </svg>
+                    驅蟲治療記錄
+                </h3>
+                <div class="record-timeline">
+                    {% for record in deworm_records %}
+                    <div class="clinical-record deworm">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                                </svg>
+                                🐛驅蟲記錄
+                            </span>
+                            <span class="record-date">{{ record.date }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">驅蟲藥物</span>
+                                    <span class="value">{{ record.drug_name|default:"未填寫" }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">🩺施藥獸醫</span>
+                                    <span class="value">{% if record.vet and record.vet.user %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">施藥地點</span>
+                                    <span class="value">{{ record.location|default:"未記錄" }}</span>
+                                </div>
+                                {% if record.next_due_date %}
+                                <div class="info-card">
+                                    <span class="label">下次施藥</span>
+                                    <span class="value">{{ record.next_due_date|date:"Y年m月d日" }}</span>
+                                </div>
+                                {% endif %}
+                                {% if record.protection_period_months %}
+                                <div class="info-card">
+                                    <span class="label">保護效期</span>
+                                    <span class="value">{{ record.protection_period_months }}個月</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p class="text-muted">目前沒有驅蟲記錄</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 檢驗報告 -->
+            <div class="tab-content" id="content-report">
+                <h3 class="content-title">
+                    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                    </svg>
+                    檢驗報告記錄
+                </h3>
+                <div class="record-timeline">
+                    {% for report in reports %}
+                    <div class="clinical-record report">
+                        <div class="record-header">
+                            <span class="record-type">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14,2 14,8 20,8"/>
+                                </svg>
+                                📋檢驗報告
+                            </span>
+                            <span class="record-date">{{ report.date_uploaded|date:"Y-m-d" }}</span>
+                        </div>
+                        <div class="record-content">
+                            <div class="clinical-info-grid">
+                                <div class="info-card">
+                                    <span class="label">報告標題</span>
+                                    <span class="value">{{ report.title }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">🩺檢驗獸醫</span>
+                                    <span class="value">{% if report.vet and report.vet.user %}{{ report.vet.user.get_full_name|default:report.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">上傳日期</span>
+                                    <span class="value">{{ report.date_uploaded|date:"Y年m月d日" }}</span>
+                                </div>
+                                <div class="info-card">
+                                    <span class="label">檢驗地點</span>
+                                    <span class="value">{% if report.clinic %}{{ report.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px;">
+                                <a href="{{ report.pdf.url }}" download="{{ report.title }}.pdf" class="download-link">📥 下載報告</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p class="text-muted">目前沒有報告記錄</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🎯 專業標籤頁切換功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const clinicalTabs = document.querySelectorAll('.clinical-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            clinicalTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+
+                    // 移除所有活動狀態
+                    clinicalTabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+
+                    // 添加活動狀態
+                    this.classList.add('active');
+                    document.getElementById(`content-${targetTab}`).classList.add('active');
+                });
+            });
+
+            // 🔍 專業搜索功能
+            const searchInput = document.getElementById('searchInput');
+            const dateFilter = document.getElementById('dateFilter');
+            const typeFilter = document.getElementById('typeFilter');
+
+            function filterRecords() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const dateValue = dateFilter.value;
+                const typeValue = typeFilter.value;
+
+                const recordCards = document.querySelectorAll('.clinical-record');
+
+                recordCards.forEach(card => {
+                    let showCard = true;
+
+                    // 搜索過濾
+                    if (searchTerm) {
+                        const cardText = card.textContent.toLowerCase();
+                        if (!cardText.includes(searchTerm)) {
+                            showCard = false;
+                        }
+                    }
+
+                    // 類型過濾
+                    if (typeValue) {
+                        if (!card.classList.contains(typeValue)) {
+                            showCard = false;
+                        }
+                    }
+
+                    // 顯示或隱藏卡片
+                    card.style.display = showCard ? 'block' : 'none';
+                });
+            }
+
+            searchInput.addEventListener('input', filterRecords);
+            dateFilter.addEventListener('change', filterRecords);
+            typeFilter.addEventListener('change', filterRecords);
+
+            // 🎯 專業按鈕互動效果
+            const clinicalBtns = document.querySelectorAll('.clinical-btn');
+            clinicalBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 添加點擊效果
+                    this.style.transform = 'translateY(-1px) scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        });
+
+        // 上傳報告模態框功能
+        function showUploadModal() {
+            document.getElementById('uploadReportModal').style.display = 'flex';
+        }
+
+        function hideUploadModal() {
+            document.getElementById('uploadReportModal').style.display = 'none';
+            // 重置表單
+            document.getElementById('uploadReportForm').reset();
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // 處理上傳報告表單提交
+        function submitUploadForm(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('uploadReportForm');
+            const formData = new FormData(form);
+            const errorDiv = document.getElementById('errorMessage');
+            const submitBtn = document.getElementById('uploadSubmitBtn');
+
+            // 禁用提交按鈕
+            submitBtn.disabled = true;
+            submitBtn.textContent = '上傳中...';
+            errorDiv.style.display = 'none';
+
+            fetch('{% url "upload_report" pet.id %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideUploadModal();
+                    // 顯示成功訊息
+                    showMessage('報告上傳成功！', 'success');
+                    // 重新加載頁面以顯示新報告
+                    location.reload();
+                } else {
+                    errorDiv.textContent = data.error || '上傳失敗，請稍後再試';
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                errorDiv.textContent = '網路錯誤，請稍後再試';
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                // 重新啟用提交按鈕
+                submitBtn.disabled = false;
+                submitBtn.textContent = '上傳報告';
+            });
+        }
+
+        // 顯示訊息的函數
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `alert alert-${type}`;
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10001;
+                animation: slideIn 0.3s ease-out;
+            `;
+
+            if (type === 'success') {
+                messageDiv.style.backgroundColor = '#28a745';
+            } else {
+                messageDiv.style.backgroundColor = '#dc3545';
+            }
+
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+    </script>
+
+    <!-- 上傳報告模態框 -->
+    <div id="uploadReportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--medical-primary); font-weight: 700;">上傳檢驗報告</h3>
+                <button type="button" onclick="hideUploadModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+            </div>
+
+            <form id="uploadReportForm" onsubmit="submitUploadForm(event)" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="margin-bottom: 20px;">
+                    <label for="reportTitle" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--medical-primary);">報告標題</label>
+                    <input type="text"
+                           id="reportTitle"
+                           name="title"
+                           required
+                           placeholder="請輸入報告標題"
+                           style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label for="reportFile" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--medical-primary);">選擇PDF檔案</label>
+                    <input type="file"
+                           id="reportFile"
+                           name="pdf"
+                           required
+                           accept=".pdf"
+                           style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+                </div>
+
+                <div id="errorMessage" style="display: none; padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 6px; color: #c33; margin-bottom: 15px;"></div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button"
+                            onclick="hideUploadModal()"
+                            style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        取消
+                    </button>
+                    <button type="submit"
+                            id="uploadSubmitBtn"
+                            style="padding: 12px 24px; background: var(--status-info); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        上傳報告
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
 {% endblock %}
+

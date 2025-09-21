@@ -1,726 +1,463 @@
 /**
- * 我的預約管理 JavaScript 控制器
- * 提供流暢的用戶體驗和動畫效果
+ * 我的預約管理 - 精簡版本
+ * 專注於核心功能，最佳性能
  */
 
-class MyAppointmentsController {
+class MyAppointments {
     constructor() {
-        this.currentFilter = 'upcoming';
-        this.appointments = [];
-        this.isLoading = false;
-        
+        this.currentFilter = 'all';
         this.init();
     }
 
-    // ===== 初始化 =====
     init() {
-        console.log('🚀 預約管理系統初始化...');
-        
-        this.setupEventListeners();
-        this.setupAnimations();
-        this.loadAppointments();
-        this.initializeTooltips();
-        
-        console.log('✅ 預約管理系統初始化完成');
+        this.setupFilters();
+        this.setupDetails();
     }
 
-    // ===== 事件監聽器 =====
-    setupEventListeners() {
-        // 取消預約表單提交
-        document.querySelectorAll('.cancel-form').forEach(form => {
-            form.addEventListener('submit', (e) => this.handleCancelSubmit(e));
-        });
-
-        // 確認對話框
-        document.querySelectorAll('.cancel-button').forEach(button => {
-            button.addEventListener('click', (e) => this.handleCancelClick(e));
-        });
-
-        // 卡片懸停效果
-        document.querySelectorAll('.appointment-card-modern').forEach(card => {
-            this.setupCardHoverEffects(card);
-        });
-
-        // 鍵盤快捷鍵
-        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
-
-        // 滾動動畫
-        this.setupScrollAnimations();
-    }
-
-    setupCardHoverEffects(card) {
-        card.addEventListener('mouseenter', () => {
-            this.animateCardEntry(card);
-        });
-
-        card.addEventListener('mouseleave', () => {
-            this.animateCardExit(card);
-        });
-    }
-
-    // ===== 篩選功能 =====
-    filterAppointments(status) {
-        if (this.isLoading) return;
-        
-        console.log(`🔍 篩選預約: ${status}`);
-        
-        // 更新活動標籤
-        this.updateActiveTab(status);
-        
-        // 顯示載入狀態
-        this.showLoadingState();
-        
-        // 執行篩選
-        setTimeout(() => {
-            this.executeFilter(status);
-        }, 300);
-    }
-
-    updateActiveTab(status) {
+    // 設置篩選功能
+    setupFilters() {
+        // 移除所有篩選按鈕的onclick屬性，改用事件委託
         document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        const activeTab = document.querySelector(`[onclick="filterAppointments('${status}')"]`);
-        if (activeTab) {
-            activeTab.classList.add('active');
-            this.animateTabSwitch(activeTab);
-        }
-    }
-
-    executeFilter(status) {
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('status', status);
-        
-        // 使用 AJAX 或頁面重載
-        if (this.supportsHistory()) {
-            this.loadAppointmentsAjax(status);
-        } else {
-            window.location.href = currentUrl.toString();
-        }
-    }
-
-    async loadAppointmentsAjax(status) {
-        try {
-            const response = await fetch(`${window.location.pathname}?status=${status}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+            const onclick = tab.getAttribute('onclick');
+            if (onclick) {
+                const match = onclick.match(/filterAppointments\('([^']+)'\)/);
+                if (match) {
+                    tab.dataset.filter = match[1];
+                    tab.removeAttribute('onclick');
                 }
-            });
-            
-            if (response.ok) {
-                const html = await response.text();
-                this.updateAppointmentsGrid(html);
-            }
-        } catch (error) {
-            console.error('載入預約失敗:', error);
-            // 降級到頁面重載
-            this.executeFilter(status);
-        } finally {
-            this.hideLoadingState();
-        }
-    }
-
-    // ===== 取消預約處理 =====
-    handleCancelClick(event) {
-        event.preventDefault();
-        
-        const button = event.currentTarget;
-        const appointmentId = this.extractAppointmentId(button);
-        const petName = this.extractPetName(button);
-        
-        this.showCancelConfirmation(appointmentId, petName, button);
-    }
-
-    showCancelConfirmation(appointmentId, petName, button) {
-        const modal = this.createCancelModal(appointmentId, petName);
-        document.body.appendChild(modal);
-        
-        // 顯示動畫
-        setTimeout(() => {
-            modal.classList.add('show');
-        }, 10);
-        
-        // 設置事件監聽器
-        this.setupModalEvents(modal, appointmentId, button);
-    }
-
-    createCancelModal(appointmentId, petName) {
-        const modal = document.createElement('div');
-        modal.className = 'cancel-modal-overlay';
-        modal.innerHTML = `
-            <div class="cancel-modal">
-                <div class="modal-header">
-                    <h3>確認取消預約</h3>
-                    <button class="modal-close" type="button">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="warning-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <p>確定要取消 <strong>${petName}</strong> 的預約嗎？</p>
-                    <p class="text-muted">此操作無法復原，建議您提前通知診所。</p>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary modal-cancel" type="button">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>返回</span>
-                    </button>
-                    <button class="btn-danger modal-confirm" type="button">
-                        <i class="fas fa-times-circle"></i>
-                        <span>確認取消</span>
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // 添加樣式
-        this.injectModalStyles();
-        
-        return modal;
-    }
-
-    setupModalEvents(modal, appointmentId, originalButton) {
-        const closeBtn = modal.querySelector('.modal-close');
-        const cancelBtn = modal.querySelector('.modal-cancel');
-        const confirmBtn = modal.querySelector('.modal-confirm');
-        
-        // 關閉事件
-        [closeBtn, cancelBtn].forEach(btn => {
-            btn.addEventListener('click', () => this.closeModal(modal));
-        });
-        
-        // 點擊背景關閉
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                this.closeModal(modal);
             }
         });
-        
-        // 確認取消
-        confirmBtn.addEventListener('click', () => {
-            this.executeCancelAppointment(appointmentId, modal, originalButton);
-        });
-        
-        // ESC 鍵關閉
-        const escHandler = (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal(modal);
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
-    }
 
-    async executeCancelAppointment(appointmentId, modal, originalButton) {
-        const confirmBtn = modal.querySelector('.modal-confirm');
-        
-        try {
-            // 顯示載入狀態
-            this.setButtonLoading(confirmBtn, true);
-            
-            // 執行取消請求
-            const success = await this.cancelAppointmentRequest(appointmentId);
-            
-            if (success) {
-                this.showSuccessNotification('預約已成功取消');
-                this.removeAppointmentCard(originalButton);
-                this.closeModal(modal);
-            } else {
-                throw new Error('取消失敗');
-            }
-            
-        } catch (error) {
-            console.error('取消預約錯誤:', error);
-            this.showErrorNotification('取消失敗，請稍後重試');
-        } finally {
-            this.setButtonLoading(confirmBtn, false);
-        }
-    }
-
-    async cancelAppointmentRequest(appointmentId) {
-        try {
-            const csrfToken = this.getCSRFToken();
-            const response = await fetch(`/appointments/${appointmentId}/cancel/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
+        // 使用事件委託處理篩選
+        document.addEventListener('click', (e) => {
+            const filterTab = e.target.closest('.filter-tab');
+            if (filterTab) {
+                const filter = filterTab.dataset.filter;
+                if (filter) {
+                    this.filterAppointments(filter);
+                    return; // 防止事件冒泡
                 }
-            });
-            
-            return response.ok;
-        } catch (error) {
-            console.error('網路錯誤:', error);
-            return false;
-        }
-    }
+            }
 
-    // ===== 動畫效果 =====
-    setupAnimations() {
-        // 入場動畫
-        this.animateCardsEntry();
-        
-        // 滾動觸發動畫
-        this.setupScrollAnimations();
-        
-        // 過濾器動畫
-        this.setupFilterAnimations();
-    }
+            // 處理詳細資料切換
+            const detailBtn = e.target.closest('.view-details');
+            if (detailBtn) {
+                // console.log('詳細資料按鈕被點擊:', detailBtn);
+                this.toggleDetails(detailBtn);
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
 
-    animateCardsEntry() {
-        const cards = document.querySelectorAll('.appointment-card-modern');
-        cards.forEach((card, index) => {
-            card.style.animationDelay = `${index * 0.1}s`;
-            card.classList.add('animate-entry');
+            // 處理完整醫療記錄按鈕
+            const medicalBtn = e.target.closest('.view-medical-record');
+            if (medicalBtn) {
+                const recordId = medicalBtn.dataset.recordId;
+                if (recordId) {
+                    this.viewMedicalRecord(recordId);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
         });
     }
 
-    animateCardEntry(card) {
-        card.style.transform = 'translateY(-8px) scale(1.02)';
-        card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    // 設置詳細資料切換
+    setupDetails() {
+        // 使用事件委託，無需單獨綁定
     }
 
-    animateCardExit(card) {
-        card.style.transform = 'translateY(0) scale(1)';
-    }
-
-    animateTabSwitch(tab) {
-        tab.style.transform = 'scale(1.05)';
-        setTimeout(() => {
-            tab.style.transform = 'scale(1)';
-        }, 150);
-    }
-
-    removeAppointmentCard(button) {
-        const card = button.closest('.appointment-card-modern');
-        if (card) {
-            card.style.animation = 'slideOutUp 0.4s ease forwards';
-            setTimeout(() => {
-                card.remove();
-                this.checkEmptyState();
-            }, 400);
-        }
-    }
-
-    // ===== 工具函數 =====
-    extractAppointmentId(button) {
-        const form = button.closest('form');
-        return form ? form.action.split('/').slice(-2, -1)[0] : null;
-    }
-
-    extractPetName(button) {
-        const card = button.closest('.appointment-card-modern');
-        const nameElement = card?.querySelector('.pet-name');
-        return nameElement?.textContent.trim() || '寵物';
-    }
-
-    getCSRFToken() {
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        if (meta) return meta.getAttribute('content');
+    // 篩選預約
+    filterAppointments(status) {
+        this.currentFilter = status;
         
-        const cookie = document.cookie.split(';')
-            .find(c => c.trim().startsWith('csrftoken='));
-        return cookie ? cookie.split('=')[1] : '';
+        // 更新按鈕狀態
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.filter === status);
+        });
+
+        // 篩選卡片
+        const cards = document.querySelectorAll('.appointment-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const shouldShow = this.shouldShowCard(card, status);
+            card.style.display = shouldShow ? 'block' : 'none';
+            if (shouldShow) visibleCount++;
+        });
+
+        // 更新空狀態
+        this.updateEmptyState(visibleCount === 0, status);
     }
 
-    closeModal(modal) {
-        modal.classList.remove('show');
-        setTimeout(() => {
-            if (modal.parentElement) {
-                document.body.removeChild(modal);
-            }
-        }, 300);
+    // 判斷卡片是否應該顯示
+    shouldShowCard(card, status) {
+        if (status === 'all') return true;
+
+        const cardStatus = card.dataset.status;
+        
+        // 狀態分組
+        const statusGroups = {
+            'active': ['pending', 'confirmed'],
+            'completed': ['completed'],
+            'cancelled': ['cancelled']
+        };
+
+        const group = statusGroups[status];
+        return group ? group.includes(cardStatus) : cardStatus === status;
     }
 
-    setButtonLoading(button, loading) {
-        if (loading) {
-            button.disabled = true;
-            button.innerHTML = `
-                <div class="loading-spinner"></div>
-                <span>處理中...</span>
-            `;
+    // 切換詳細資料
+    toggleDetails(button) {
+        // console.log('toggleDetails 被調用', button);
+        
+        const card = button.closest('.appointment-card');
+        const secondaryInfo = card ? card.querySelector('.secondary-info') : null;
+        const icon = button.querySelector('i');
+        const span = button.querySelector('span');
+
+        // console.log('找到的元素:', { card, secondaryInfo, icon, span });
+
+        if (!card || !secondaryInfo) {
+            console.error('找不到必要的 DOM 元素');
+            return;
+        }
+
+        if (secondaryInfo.style.display === 'none' || !secondaryInfo.style.display) {
+            secondaryInfo.style.display = 'block';
+            icon.className = 'fas fa-chevron-up';
+            span.textContent = '收起';
+            // console.log('展開詳細資料');
         } else {
-            button.disabled = false;
-            button.innerHTML = `
-                <i class="fas fa-times-circle"></i>
-                <span>確認取消</span>
-            `;
+            secondaryInfo.style.display = 'none';
+            icon.className = 'fas fa-info-circle';
+            span.textContent = '詳細資料';
+            // console.log('收起詳細資料');
         }
     }
 
-    // ===== 通知系統 =====
-    showSuccessNotification(message) {
-        this.showNotification(message, 'success');
+    // 查看完整醫療記錄
+    viewMedicalRecord(recordId) {
+        // 創建模態框顯示完整醫療記錄
+        this.createMedicalRecordModal(recordId);
     }
 
-    showErrorNotification(message) {
-        this.showNotification(message, 'error');
-    }
+    // 創建醫療記錄模態框
+    async createMedicalRecordModal(recordId) {
+        try {
+            // 獲取醫療記錄詳情 - 需要實作API端點
+            const response = await fetch(`/api/medical-records/${recordId}/`);
+            const data = await response.json();
 
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
-                <span>${message}</span>
-            </div>
-            <button class="notification-close">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-
-        // 添加到頁面
-        document.body.appendChild(notification);
-
-        // 設置樣式
-        this.styleNotification(notification, type);
-
-        // 自動關閉
-        setTimeout(() => {
-            this.removeNotification(notification);
-        }, 5000);
-
-        // 手動關閉
-        notification.querySelector('.notification-close').addEventListener('click', () => {
-            this.removeNotification(notification);
-        });
-    }
-
-    getNotificationIcon(type) {
-        const icons = {
-            success: 'check-circle',
-            error: 'exclamation-triangle',
-            info: 'info-circle',
-            warning: 'exclamation-circle'
-        };
-        return icons[type] || 'info-circle';
-    }
-
-    styleNotification(notification, type) {
-        const colors = {
-            success: { bg: '#dcfce7', border: '#bbf7d0', text: '#166534' },
-            error: { bg: '#fee2e2', border: '#fecaca', text: '#991b1b' },
-            info: { bg: '#dbeafe', border: '#bfdbfe', text: '#1e40af' },
-            warning: { bg: '#fef3c7', border: '#fde68a', text: '#92400e' }
-        };
-
-        const color = colors[type] || colors.info;
-        
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            background: color.bg,
-            border: `1px solid ${color.border}`,
-            color: color.text,
-            padding: '16px',
-            borderRadius: '12px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-            zIndex: '9999',
-            maxWidth: '400px',
-            animation: 'slideInRight 0.3s ease'
-        });
-    }
-
-    removeNotification(notification) {
-        notification.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => {
-            if (notification.parentElement) {
-                document.body.removeChild(notification);
+            if (!data.success) {
+                throw new Error(data.message || '獲取醫療記錄失敗');
             }
-        }, 300);
-    }
 
-    // ===== 狀態管理 =====
-    showLoadingState() {
-        this.isLoading = true;
-        const grid = document.querySelector('.appointments-grid');
-        if (grid) {
-            grid.style.opacity = '0.6';
-            grid.style.pointerEvents = 'none';
-        }
-    }
+            const record = data.record;
 
-    hideLoadingState() {
-        this.isLoading = false;
-        const grid = document.querySelector('.appointments-grid');
-        if (grid) {
-            grid.style.opacity = '1';
-            grid.style.pointerEvents = 'auto';
-        }
-    }
-
-    checkEmptyState() {
-        const cards = document.querySelectorAll('.appointment-card-modern');
-        const emptyState = document.querySelector('.empty-state-modern');
-        
-        if (cards.length === 0 && !emptyState) {
-            this.showEmptyState();
-        }
-    }
-
-    showEmptyState() {
-        const grid = document.querySelector('.appointments-grid');
-        if (grid) {
-            grid.innerHTML = `
-                <div class="empty-state-modern">
-                    <div class="empty-icon-modern">
-                        <i class="fas fa-calendar-times"></i>
+            // 創建模態框
+            const modal = document.createElement('div');
+            modal.className = 'medical-record-modal';
+            modal.innerHTML = `
+                <div class="modal-overlay" onclick="window.myAppointments.closeMedicalModal(this.closest('.medical-record-modal'))"></div>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>完整診療記錄</h3>
+                        <button class="modal-close" onclick="window.myAppointments.closeMedicalModal(this.closest('.medical-record-modal'))">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <h3 class="empty-title-modern">暫無預約記錄</h3>
-                    <p class="empty-description-modern">
-                        您目前沒有任何預約記錄<br>
-                        立即為您的寵物預約健康檢查吧！
-                    </p>
-                    <a href="/pets/" class="cta-button">
-                        <i class="fas fa-plus"></i>
-                        <span>立即預約</span>
-                    </a>
+                    <div class="modal-body">
+                        <div class="record-details">
+                            <div class="detail-section">
+                                <h4>基本資訊</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">寵物姓名:</span>
+                                        <span class="detail-value">${record.pet_name}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">看診日期:</span>
+                                        <span class="detail-value">${record.visit_date}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">主治醫師:</span>
+                                        <span class="detail-value">${record.attending_vet || '未指定'}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">診所位置:</span>
+                                        <span class="detail-value">${record.clinic_location}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section diagnosis-section">
+                                <div class="section-header">
+                                    <i class="fas fa-stethoscope"></i>
+                                    <h4>診斷內容</h4>
+                                </div>
+                                <div class="diagnosis-content-card">
+                                    <div class="content-text">
+                                        ${this.cleanText(record.diagnosis) || '無診斷資訊'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section treatment-section">
+                                <div class="section-header">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    <h4>治療計畫</h4>
+                                </div>
+                                <div class="treatment-content-card">
+                                    <div class="content-text">
+                                        ${this.formatTreatmentPlan(this.cleanText(record.treatment)) || '無治療資訊'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${record.medical_details ? this.renderMedicalDetails(record.medical_details) : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            document.body.style.overflow = 'hidden';
+
+            // 添加 ESC 鍵關閉功能
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    this.closeMedicalModal(modal);
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+
+        } catch (error) {
+            console.error('獲取醫療記錄失敗:', error);
+            alert('無法獲取醫療記錄詳情，請稍後再試');
+        }
+    }
+
+    // 渲染醫療詳細資訊
+    renderMedicalDetails(details) {
+        let html = '';
+
+        // 生命徵象
+        if (details.weight || details.temperature || details.heart_rate || details.respiratory_rate) {
+            html += `
+                <div class="detail-section">
+                    <h4>生命徵象</h4>
+                    <div class="vital-signs-grid">
+                        ${details.weight ? `<div class="vital-item">體重: ${details.weight}kg</div>` : ''}
+                        ${details.temperature ? `<div class="vital-item">體溫: ${details.temperature}°C</div>` : ''}
+                        ${details.heart_rate ? `<div class="vital-item">心率: ${details.heart_rate}bpm</div>` : ''}
+                        ${details.respiratory_rate ? `<div class="vital-item">呼吸: ${details.respiratory_rate}/min</div>` : ''}
+                    </div>
                 </div>
             `;
         }
+
+        // 症狀記錄
+        if (details.symptoms && details.symptoms.length > 0) {
+            html += `
+                <div class="detail-section">
+                    <h4>症狀記錄</h4>
+                    <div class="symptoms-list">
+                        ${details.symptoms.map(symptom => `
+                            <div class="symptom-item">
+                                <span class="symptom-name">${symptom.name}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 處方用藥
+        if (details.prescriptions && details.prescriptions.length > 0) {
+            html += `
+                <div class="detail-section">
+                    <h4>處方用藥</h4>
+                    <div class="prescriptions-list">
+                        ${details.prescriptions.map(prescription => `
+                            <div class="prescription-item">
+                                <div class="prescription-header">
+                                    <strong>${prescription.medication || '未指定藥物'}</strong>
+                                    <span class="prescription-dosage">${prescription.dosage || ''}</span>
+                                </div>
+                                <div class="prescription-details">
+                                    <span>給藥方式: ${this.translateRoute(prescription.route) || '口服'}</span>
+                                    <span>次數: ${this.translateFrequency(prescription.frequency) || '依醫師指示'}</span>
+                                </div>
+                                ${prescription.instructions ? `<div class="prescription-instructions">${prescription.instructions}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        return html;
     }
 
-    // ===== 工具方法 =====
-    supportsHistory() {
-        return !!(window.history && window.history.pushState);
-    }
-
-    setupScrollAnimations() {
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-visible');
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            document.querySelectorAll('.appointment-card-modern').forEach(card => {
-                observer.observe(card);
-            });
+    // 關閉醫療記錄模態框
+    closeMedicalModal(modal) {
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = '';
         }
     }
 
-    injectModalStyles() {
-        if (document.getElementById('cancel-modal-styles')) return;
-        
-        const styles = document.createElement('style');
-        styles.id = 'cancel-modal-styles';
-        styles.textContent = `
-            .cancel-modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(8px);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-            
-            .cancel-modal-overlay.show {
-                opacity: 1;
-            }
-            
-            .cancel-modal {
-                background: white;
-                border-radius: 1.5rem;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                max-width: 500px;
-                width: 90%;
-                transform: scale(0.95);
-                transition: transform 0.3s ease;
-            }
-            
-            .cancel-modal-overlay.show .cancel-modal {
-                transform: scale(1);
-            }
-            
-            .modal-header {
-                padding: 1.5rem 1.5rem 1rem;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            
-            .modal-header h3 {
-                margin: 0;
-                font-size: 1.25rem;
-                font-weight: 600;
-                color: #1f2937;
-            }
-            
-            .modal-close {
-                background: none;
-                border: none;
-                font-size: 1.25rem;
-                color: #6b7280;
-                cursor: pointer;
-                padding: 0.25rem;
-                border-radius: 0.375rem;
-                transition: all 0.2s ease;
-            }
-            
-            .modal-close:hover {
-                background: #f3f4f6;
-                color: #374151;
-            }
-            
-            .modal-body {
-                padding: 1.5rem;
-                text-align: center;
-            }
-            
-            .warning-icon {
-                width: 64px;
-                height: 64px;
-                margin: 0 auto 1rem;
-                background: #fef3c7;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #d97706;
-                font-size: 1.5rem;
-            }
-            
-            .modal-footer {
-                padding: 1rem 1.5rem 1.5rem;
-                display: flex;
-                gap: 0.75rem;
-                justify-content: flex-end;
-            }
-            
-            .btn-secondary, .btn-danger {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.75rem 1.5rem;
-                border: none;
-                border-radius: 0.75rem;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            
-            .btn-secondary {
-                background: #f3f4f6;
-                color: #374151;
-            }
-            
-            .btn-secondary:hover {
-                background: #e5e7eb;
-            }
-            
-            .btn-danger {
-                background: #ef4444;
-                color: white;
-            }
-            
-            .btn-danger:hover {
-                background: #dc2626;
-            }
-            
-            .loading-spinner {
-                width: 16px;
-                height: 16px;
-                border: 2px solid #ffffff;
-                border-top: 2px solid transparent;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }
-            
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            
-            @keyframes slideInRight {
-                0% { transform: translateX(100%); opacity: 0; }
-                100% { transform: translateX(0); opacity: 1; }
-            }
-            
-            @keyframes slideOutRight {
-                0% { transform: translateX(0); opacity: 1; }
-                100% { transform: translateX(100%); opacity: 0; }
-            }
-            
-            @keyframes slideOutUp {
-                0% { transform: translateY(0); opacity: 1; }
-                100% { transform: translateY(-20px); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(styles);
+    // 清理文字格式
+    cleanText(text) {
+        if (!text) return '';
+        return text.toString()
+            .trim()                           // 移除前後空格
+            .replace(/\s+/g, ' ')            // 將多個空格合併為單個空格
+            .replace(/[\u00A0\u2000-\u200B\u2028\u2029\u3000]/g, ' ') // 移除特殊空格字元
+            .trim();                         // 再次移除前後空格
     }
 
-    handleKeyboard(event) {
-        // 按 R 鍵重新載入
-        if (event.key === 'r' && !event.ctrlKey && !event.metaKey) {
-            const activeElement = document.activeElement;
-            if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
-                window.location.reload();
+    // 格式化治療計畫
+    formatTreatmentPlan(text) {
+        if (!text || text.trim() === '') return '';
+
+        // 清理文字並按行分割
+        const cleanedText = this.cleanText(text);
+        if (!cleanedText) return '';
+
+        // 將治療計畫按行分割並格式化
+        const formattedContent = cleanedText.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map((line, index) => {
+                // 如果行包含數字開頭（如 1. 2. 等），保持原樣
+                if (/^\d+\./.test(line)) {
+                    return `<div class="treatment-step">${line}</div>`;
+                }
+                // 如果行包含 "•" 或 "-" 開頭，轉換為列表項
+                else if (/^[•\-]/.test(line)) {
+                    return `<div class="treatment-item">${line}</div>`;
+                }
+                // 其他情況作為普通段落
+                else {
+                    return `<div class="treatment-paragraph">${line}</div>`;
+                }
+            })
+            .join('');
+
+        return formattedContent || '';
+    }
+
+    // 翻譯頻率
+    translateFrequency(value) {
+        if (!value) return '';
+        const frequencyMap = {
+            'bid': '一日兩次',
+            'tid': '一日三次',
+            'qd': '一日一次',
+            'qid': '一日四次',
+            'once': '單次使用',
+            'twice': '兩次',
+            'three_times': '三次',
+            'four_times': '四次',
+            'as_needed': '需要時使用',
+            'prn': '需要時使用',
+            'daily': '每日',
+            'weekly': '每週',
+            'monthly': '每月'
+        };
+        return frequencyMap[value.toLowerCase()] || value;
+    }
+
+    // 翻譯給藥方式
+    translateRoute(value) {
+        if (!value) return '';
+        const routeMap = {
+            'oral': '口服',
+            'topical': '外用',
+            'iv': '靜脈注射',
+            'im': '肌肉注射',
+            'sc': '皮下注射',
+            'subcutaneous': '皮下注射',
+            'injection': '注射',
+            'eye': '點眼',
+            'ear': '點耳',
+            'nasal': '鼻噴',
+            'rectal': '直腸給藥',
+            'inhalation': '吸入'
+        };
+        return routeMap[value.toLowerCase()] || value;
+    }
+
+    // 更新空狀態
+    updateEmptyState(isEmpty, status) {
+        const existingEmpty = document.querySelector('.empty-state-modern');
+        const grid = document.querySelector('.appointments-grid');
+
+        if (isEmpty && !existingEmpty && grid) {
+            let message = '暫無預約記錄';
+            
+            if (status === 'active') {
+                message = '您目前沒有進行中的預約';
+            } else if (status === 'completed') {
+                message = '您沒有已完成的預約記錄';
+            } else if (status === 'cancelled') {
+                message = '您沒有已取消的預約記錄';
             }
+
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-state-modern';
+            emptyState.innerHTML = `
+                <div class="empty-icon-modern">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+                <h3 class="empty-title-modern">${message}</h3>
+                <p class="empty-description-modern">
+                    立即開始您的寵物健康管理之旅
+                </p>
+                <a href="/pets/" class="cta-button">
+                    <i class="fas fa-plus"></i>
+                    <span>立即預約</span>
+                </a>
+            `;
+            grid.appendChild(emptyState);
+        } else if (!isEmpty && existingEmpty) {
+            existingEmpty.remove();
         }
     }
 }
 
-// ===== 全局函數 =====
+// 全域函數（向後相容）
 function filterAppointments(status) {
-    if (window.appointmentsController) {
-        window.appointmentsController.filterAppointments(status);
-    } else {
-        // 降級處理
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('status', status);
-        window.location.href = currentUrl.toString();
+    if (window.myAppointments) {
+        window.myAppointments.filterAppointments(status);
     }
 }
 
-// ===== 初始化 =====
-function initializeMyAppointments() {
-    // 檢查是否在正確的頁面
-    if (!document.querySelector('.appointments-wrapper')) {
-        return;
-    }
-
-    try {
-        // 創建控制器實例
-        window.appointmentsController = new MyAppointmentsController();
-        
-        console.log('✅ 我的預約管理系統已完全初始化');
-        
-    } catch (error) {
-        console.error('❌ 預約管理系統初始化失敗:', error);
-        
-        // 確保基本功能可用
-        window.filterAppointments = filterAppointments;
+function toggleDetails(button) {
+    if (window.myAppointments) {
+        window.myAppointments.toggleDetails(button);
     }
 }
 
-// ===== 多種初始化方式 =====
+// 初始化
+function initMyAppointments() {
+    if (document.querySelector('.appointments-wrapper')) {
+        window.myAppointments = new MyAppointments();
+        // console.log('✅ 預約管理系統已初始化');
+    }
+}
+
+// 多種初始化方式
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeMyAppointments);
+    document.addEventListener('DOMContentLoaded', initMyAppointments);
 } else {
-    initializeMyAppointments();
+    initMyAppointments();
 }
 
-// jQuery 支援
-if (typeof $ !== 'undefined') {
-    $(document).ready(() => {
-        console.log('jQuery 增強功能已啟用');
-    });
-}
-
-console.log('🎉 我的預約管理 JavaScript 模組已載入完成');
+// 確保全域函數可用
+window.filterAppointments = filterAppointments;
+window.toggleDetails = toggleDetails;

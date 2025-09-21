@@ -2,1218 +2,815 @@
 {% load static %}
 {% load custom_filters %}
 
-{% block title %}健康紀錄{% endblock %}
+{% block title %}健康紀錄 - 毛日好 Paw&Day{% endblock %}
 
 {% block extra_css %}
-<style>
-body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #fff8f0;
-        }
-
-        .navbar {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .nav-btn {
-            background-color: #ffffff;
-            border: 1px solid #6d9773;
-            color: #6d9773;
-            padding: 8px 16px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        .nav-btn:hover {
-            background-color: #6d9773;
-            color: white;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #333;
-        }
-
-        .tab-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .tab-btn {
-            padding: 15px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 140px;
-        }
-
-        .btn-vaccine { background-color: #f5b971; color: white; }
-        .btn-deworm { background-color: #d7b49e; color: white; }
-        .btn-report { background-color: #b3c99c; color: white; }
-        .btn-daily { background-color: #6d9773; color: white; }
-        .btn-reminder { background-color: #f9c784; color: black; }
-
-        .tab-content {
-            display: none;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .record-block {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15);
-            border-top: 1px solid rgba(0, 0, 0, 0.1);     /* 上邊線 */
-            border-left: 1px solid rgba(0, 0, 0, 0.1);
-            position: relative;
-        }
-
-        .add-record-btn {
-            display: block;
-            margin-top: 10px;
-            background-color: #f9c784;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .input-block {
-            margin-top: 10px;
-            display: none;
-        }
-
-        .input-block input, .input-block textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        .input-block {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .input-block .button-group {
-            display: flex;
-            gap: 8px;
-        }
-
-
-        /* 針對圖表調整 */
-        .chart-container {
-            background-color: #;        /* 淡藍背景，更明顯區隔 */
-            /*border: 1px solid ;         淺藍邊框 */
-            padding: 15px;                    /* 增加內距，讓內容不擠 */
-            margin-bottom: 30px;              /* 下方間距加大，分隔明顯 */
-            /*border-radius: 12px;               圓角更圓潤 */
-            /*box-shadow: 0 4px 8px rgba(33, 150, 243, 0.15);   輕柔陰影 */
-        }
-        /* 按鈕容器 */
-        .chart-container > div:last-child {
-            margin-top: 12px;
-            text-align: right;
-        }
-        /* 圖表本體 */
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .chart-label {
-            text-align: center;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .trend-chart {
-            width: 100% !important;
-            height: 200px !important;        /* 較高，方便看細節 */
-        }
-        .month-nav {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 12px;
-            gap: 10px;
-        }
-        .month-nav button {
-            background-color: #6d9773;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .month-nav button:hover {
-            background-color: #6d9773;
-        }
-
-
-        /* 修改按鈕樣式 */
-        .btn-info {
-            background-color: #6d9773;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-info:hover {
-            background-color: #5f8663;
-        }
-
-        /* 寵物名字按鈕樣式 */
-        .pet-name-btn {
-            margin-top: 10px;
-            display: inline-block;
-            background-color: #7a9e7e;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .record-details {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .record-details .left-col, .record-details .right-col {
-            width: 48%;  /* 左右兩側各佔 48% 寬度 */
-        }
-
-        .record-category {
-            margin-top: 20px;
-        }
-
-        .record-category h5 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-
-        .record-category ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-
-        .record-category ul li {
-            margin-bottom: 5px;
-            font-size: 16px;
-        }
-
-        /* 新增按鈕 */
-        .add-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #92bfa0;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        /* 體溫標題與新增按鈕 */
-        .record-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;              /* 增加標題與圖表間距 */
-        }
-
-        .record-header h5 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #6d9773;                  /* 深藍色，醒目 */
-        }
-
-        .add-btn {
-            background-color: #6d9773;
-            color: white;
-            padding: 8px 16px;
-            font-size: 14px;
-            border-radius: 6px;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-        .add-btn:hover {
-            background-color: #5f8663;
-        }
-        /* 編輯按鈕 */
-        .edit-btn {
-            background-color: #5aa469;
-            color: white;
-            padding: 6px 12px;
-            font-size: 13px;
-            border-radius: 6px;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-
-        .edit-btn:hover {
-            background-color: #4c8a5a;
-        }
-
-        /* 刪除按鈕 */
-        .delete-btn {
-            background-color: #c94c4c;
-            color: white;
-            padding: 6px 12px;
-            font-size: 13px;
-            border-radius: 6px;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-
-        .delete-btn:hover {
-            background-color: #a93c3c;
-        }
-
-        /* 儲存按鈕 */
-        .save-btn {
-            background-color: #507d63;
-            color: white;
-            padding: 6px 12px;
-            font-size: 13px;
-            border-radius: 6px;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-
-        .save-btn:hover {
-            background-color: #406b53;
-        }
-
-        /* 取消按鈕 */
-        .cancel-btn {
-            background-color: #999999;
-            color: white;
-            padding: 6px 12px;
-            font-size: 13px;
-            border-radius: 6px;
-            border: none;
-            transition: background-color 0.3s ease;
-        }
-        .cancel-btn:hover {
-            background-color: #7f7f7f;
-        }
-
-
-        .record-item {
-            cursor: pointer; /* 滑鼠變成手形（通常是三角形或箭頭） */
-          }
-        .record-item .delete-btn {
-          display: none;
-        }
-
-</style>
+<link rel="stylesheet" href="{% static 'css/health/health_records.css' %}">
 {% endblock %}
 
 {% block content %}
-<h2>健康記錄</h2>
+<div class="health-records-wrapper">
+    <div class="health-records-container">
+        
+        <!-- 頁面標題 -->
+        <div class="health-header">
+            <div class="health-header-content">
+                <div class="health-title">
+                    <div class="health-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div>
+                        <h1>健康管理中心</h1>
+                        <p class="health-subtitle">守護毛孩的每一個健康時刻 💚</p>
+                    </div>
+                </div>
+                
+                <div class="health-nav-buttons">
+                    <a href="{% url 'pet_list' %}" class="health-nav-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>回到毛孩列表</span>
+                    </a>
+                </div>
+            </div>
+        </div>
 
-<div class="tab-buttons">
-    <button class="tab-btn btn-info" onclick="showTab('medical')">🩺 看診紀錄</button>
-    <button class="tab-btn btn-vaccine" onclick="showTab('vaccine')">💉 疫苗</button>
-    <button class="tab-btn btn-deworm" onclick="showTab('deworm')"> 驅蟲</button>
-    <button class="tab-btn btn-report" onclick="showTab('report')">📄 報告</button>
-    <button class="tab-btn btn-daily" onclick="showTab('daily')">📘 生活記錄</button>
-    </div>
+        <!-- 健康分類標籤 -->
+        <div class="health-tabs">
+            <a href="?tab=medical" class="health-tab tab-medical {% if current_tab == 'medical' or not current_tab %}active{% endif %}">
+                <div class="health-tab-icon">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+                <h3 class="health-tab-title">看診紀錄</h3>
+                <p class="health-tab-count">{{ medical_records|length }} 筆記錄</p>
+            </a>
+            
+            <a href="?tab=vaccine" class="health-tab tab-vaccine {% if current_tab == 'vaccine' %}active{% endif %}">
+                <div class="health-tab-icon">
+                    <i class="fas fa-syringe"></i>
+                </div>
+                <h3 class="health-tab-title">疫苗記錄</h3>
+                <p class="health-tab-count">{{ vaccine_records|length }} 筆記錄</p>
+            </a>
+            
+            <a href="?tab=deworm" class="health-tab tab-deworm {% if current_tab == 'deworm' %}active{% endif %}">
+                <div class="health-tab-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="health-tab-title">驅蟲記錄</h3>
+                <p class="health-tab-count">{{ deworm_records|length }} 筆記錄</p>
+            </a>
+            
+            <a href="?tab=report" class="health-tab tab-report {% if current_tab == 'report' %}active{% endif %}">
+                <div class="health-tab-icon">
+                    <i class="fas fa-file-medical-alt"></i>
+                </div>
+                <h3 class="health-tab-title">檢驗報告</h3>
+                <p class="health-tab-count">{{ report_records|length }} 筆記錄</p>
+            </a>
+            
+            <a href="?tab=daily" class="health-tab tab-daily {% if current_tab == 'daily' %}active{% endif %}">
+                <div class="health-tab-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <h3 class="health-tab-title">生活記錄</h3>
+                <p class="health-tab-count">{{ daily_records|length }} 筆記錄</p>
+            </a>
+        </div>
 
-<!-- 病例區塊 -->
-<div id="medical" class="tab-content">
-  {% for pet in pets %}
-    <h3>
-      <button
-        onclick="toggleDetails('medical', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
-      >
-        {{ pet.name }} 的看診紀錄
-      </button>
-    </h3>
-    <div id="details-medical-{{ pet.id }}" style="display:none;" class="tab-content">
-      {% if pet.medicalrecord_set.all %}
-        <ul>
-          {% for record in pet.medicalrecord_set.all|dictsortreversed:"visit_date" %}
-            <li>
-              <strong>看診日期：</strong>{{ record.visit_date }}<br>
-              <strong>看診地點：</strong>{{ record.clinic_location }}<br>
-              <strong>診斷結果：</strong>{{ record.diagnosis|default:"未填寫" }}<br>
-              <strong>治療內容：</strong>{{ record.treatment|default:"未填寫" }}<br>
-              <strong>看診獸醫：</strong>{{ record.vet.user.last_name }}{{ record.vet.user.first_name }}<br>
-              <hr>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>無看診紀錄。</p>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
+        <!-- 內容區域 -->
+        <div class="health-content">
+            <div class="health-content-header">
+                <h2 class="health-content-title">
+                    {% if current_tab == 'medical' or not current_tab %}
+                        <i class="fas fa-stethoscope"></i> 看診紀錄
+                    {% elif current_tab == 'vaccine' %}
+                        <i class="fas fa-syringe"></i> 疫苗記錄
+                    {% elif current_tab == 'deworm' %}
+                        <i class="fas fa-shield-alt"></i> 驅蟲記錄
+                    {% elif current_tab == 'report' %}
+                        <i class="fas fa-file-medical-alt"></i> 檢驗報告
+                    {% elif current_tab == 'daily' %}
+                        <i class="fas fa-calendar-day"></i> 生活記錄
+                    {% endif %}
+                </h2>
+                
+                {% if pets.first %}
+                    {% if current_tab == 'daily' %}
+                    <a href="{% url 'add_daily_record' pets.first.id %}" class="health-add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>新增生活記錄</span>
+                    </a>
+                    {% else %}
+                    <div class="health-actions">
+                        <a href="{% url 'add_daily_record' pets.first.id %}" class="health-add-btn secondary" title="隨時記錄寵物生活點滴">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>新增生活記錄</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
 
-
-<!-- 疫苗區塊 -->
-<div id="vaccine" class="tab-content">
-  {% for pet in pets %}
-    <h3>
-      <button
-        onclick="toggleDetails('vaccine', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
-      >
-        {{ pet.name }} 的疫苗記錄
-      </button>
-    </h3>
-    <div id="details-vaccine-{{ pet.id }}" style="display:none;" class="tab-content">
-      {% if pet.vaccine_records.all %}
-        <ul>
-          {% for record in pet.vaccine_records.all|dictsortreversed:"date" %}
-            <li>
-              <strong>疫苗名稱：</strong>{{ record.name }}<br>
-              <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
-              <strong>施打地點：</strong>{{ record.location }}<br>
-              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
-              <a href="{% url 'delete_vaccine' record.id %}" onclick="return confirm('確定刪除這筆疫苗紀錄嗎？')">🗑️刪除</a>
-              <hr>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>無疫苗紀錄。</p>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
-
-<!-- 驅蟲區塊 -->
-<div id="deworm" class="tab-content">
-  {% for pet in pets %}
-    <h3>
-      <button
-        onclick="toggleDetails('deworm', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
-      >
-        {{ pet.name }} 的驅蟲記錄
-      </button>
-    </h3>
-    <div id="details-deworm-{{ pet.id }}" style="display:none;" class="tab-content">
-      {% if pet.deworm_records.all %}
-        <ul>
-          {% for record in pet.deworm_records.all|dictsortreversed:"date" %}
-            <li>
-              <strong>驅蟲品牌：</strong>{{ record.name }}<br>
-              <strong>施打日期：</strong>{{ record.date|date:"Y-m-d" }}<br>
-              <strong>施打地點：</strong>{{ record.location }}<br>
-              <strong>施打獸醫：</strong>{{ record.vet.get_full_name }}<br>
-              <a href="{% url 'delete_deworm' record.id %}" onclick="return confirm('確定刪除這筆驅蟲紀錄嗎？')">🗑️刪除</a>
-              <hr>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>無驅蟲紀錄。</p>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
-
-
-
-<!-- 報告區塊 -->
-<div id="report" class="tab-content">
-  {% for pet in pets %}
-    <h3>
-      <button
-        onclick="toggleDetails('report', {{ pet.id }})"
-        style="all: unset; cursor: pointer; color: #6d9773; text-decoration: underline;"
-      >
-        {{ pet.name }} 的報告
-      </button>
-    </h3>
-
-    <div id="details-report-{{ pet.id }}" style="display:none;" class="tab-content">
-      {% if pet.reports.all %}
-        <ul>
-          {% for record in pet.reports.all|dictsortreversed:"date_uploaded" %}
-            <li>
-              <strong>標題：</strong>{{ record.title }}<br>
-              <strong>檔案：</strong><a href="{{ record.pdf.url }}" target="_blank">{{ record.pdf }}</a><br>
-
-              <a href="{% url 'delete_report' record.id %}" onclick="return confirm('確定刪除這筆報告嗎？')">🗑️刪除</a>
-              <hr>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>尚無報告。</p>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
-
-
-<!-- 生活記錄區塊 -->
-<div id="daily" class="tab-content">
-    <h3>📘 生活記錄</h3>
-
-    {% if grouped_records %}
-        <p>已載入 {{ grouped_records|length }} 筆寵物的生活記錄。</p>
-        {% for group in grouped_records %}
-            <h4>
-                <button class="pet-name-btn" onclick="toggleRecordVisibility('records-{{ group.pet.id }}')">
-                     {{  group.pet.name  }}
-                </button>
-            </h4>
-
-            <div id="records-{{ group.pet.id }}" class="record-block" style="display: none;">
-                <div class="record-details">
-                    <!-- 左側：體溫、飲食、過敏原 -->
-                    <div class="left-col">
-                        <!-- 體溫趨勢圖 -->
-                        <div class="chart-container">
-                            <div class="record-header">
-                                <h5>體溫</h5>
-                                <a href="{% url 'add_tem' group.pet.id %}" class="add-btn">＋ 新增</a>
-                            </div>
-                                <div class="month-nav">
-                                        <button onclick="changeTempMonth({{ group.pet.id }}, -1)">＜</button>
-                                        <span id="month-label-{{ group.pet.id }}"></span>
-                                        <button onclick="changeTempMonth({{ group.pet.id }}, 1)">＞</button>
+            <!-- 看診紀錄內容 -->
+            <div class="health-records-grid health-tab-content" data-tab="medical">
+                {% for record in medical_records %}
+                        <div class="health-record-card enhanced-card">
+                            <div class="health-record-header">
+                                <div class="health-record-info">
+                                    <h3>{{ record.pet.name }} - {{ record.clinic_location|default:"診所" }}</h3>
+                                    <p class="health-record-date">
+                                        <i class="fas fa-calendar"></i>
+                                        {{ record.visit_date|date:"Y年m月d日" }}
+                                    </p>
+                                </div>
+                                <div class="health-record-actions">
+                                    <div class="health-action-btn disabled" title="完整診療記錄">
+                                        <i class="fas fa-file-medical"></i>
                                     </div>
-                                <div id="tempChartWrapper-{{ group.pet.id }}">
-                                    <canvas id="tempChart-{{ group.pet.id }}"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="health-record-content">
+                                <!-- 基本資訊 -->
+                                <div class="medical-section">
+                                    <div class="section-header">
+                                        <h4 class="section-title">🏥基本資訊</h4>
+                                    </div>
+                                    <div class="section-content">
+                                        <div class="clinical-info-grid">
+                                            <div class="info-card">
+                                                <span class="label">🩺看診獸醫</span>
+                                                <span class="value">{% if record.attending_vet and record.attending_vet.user %}{{ record.attending_vet.user.get_full_name|default:record.attending_vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                            </div>
+                                            <div class="info-card">
+                                                <span class="label">看診地點</span>
+                                                <span class="value">{% if record.attending_vet and record.attending_vet.clinic %}{{ record.attending_vet.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                            </div>
+                                            <div class="info-card">
+                                                <span class="label">看診日期</span>
+                                                <span class="value">{{ record.visit_date|date:"Y年m月d日" }} {{ record.created_at|date:"H:i" }}</span>
+                                            </div>
+                                            {% if record.total_cost %}
+                                            <div class="info-card">
+                                                <span class="label">診療費用</span>
+                                                <span class="value highlight">NT$ {{ record.total_cost }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
 
-                            <div>
-                                <a href="{% url 'tem_rec' group.pet.id %}" class="btn btn-info">更多訊息</a>
+                                <!-- 診斷資訊 -->
+                                <div class="medical-section">
+                                    <div class="section-header">
+                                        <h4 class="section-title">🔬診斷資訊</h4>
+                                    </div>
+                                    <div class="section-content">
+                                        <div class="clinical-info-grid">
+                                            <div class="info-card">
+                                                <span class="label">飼主主訴</span>
+                                                <span class="value">{{ record.chief_complaint|default:"未填寫" }}</span>
+                                            </div>
+                                            {% if record.medical_details.symptoms %}
+                                            <div class="info-card">
+                                                <span class="label">症狀</span>
+                                                <span class="value">
+                                                    {% for symptom in record.medical_details.symptoms %}
+                                                        {{ symptom.name }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            <div class="info-card">
+                                                <span class="label">理學檢查</span>
+                                                <span class="value">{{ record.physical_examination|default:"未填寫" }}</span>
+                                            </div>
+                                            <div class="info-card">
+                                                <span class="label">診斷結果</span>
+                                                <span class="value">{{ record.diagnosis|default:"未填寫" }}</span>
+                                            </div>
+                                            <div class="info-card">
+                                                <span class="label">治療計畫</span>
+                                                <span class="value">{{ record.treatment_plan|default:"未填寫" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 生命徵象 -->
+                                {% if record.medical_details.vital_signs %}
+                                <div class="medical-section">
+                                    <div class="section-header">
+                                        <h4 class="section-title">💓生命徵象</h4>
+                                    </div>
+                                    <div class="section-content">
+                                        <div class="vital-signs-grid">
+                                            {% if record.medical_details.vital_signs.weight %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-weight"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.weight }}kg</span>
+                                                    <span class="vital-label">體重</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.medical_details.vital_signs.temperature %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-thermometer-half"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.temperature }}°C</span>
+                                                    <span class="vital-label">體溫</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.medical_details.vital_signs.heart_rate %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-heartbeat"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.heart_rate }}bpm</span>
+                                                    <span class="vital-label">心率</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.medical_details.vital_signs.respiratory_rate %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-lungs"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.respiratory_rate }}/min</span>
+                                                    <span class="vital-label">呼吸率</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 處方藥品 -->
+                                {% if record.medical_details.prescriptions %}
+                                <div class="medical-section">
+                                    <div class="section-header">
+                                        <h4 class="section-title">💊處方藥品</h4>
+                                    </div>
+                                    <div class="section-content">
+                                        <div class="prescription-list">
+                                            {% for prescription in record.medical_details.prescriptions %}
+                                            <div class="prescription-card">
+                                                <div class="drug-header">
+                                                    <strong class="drug-name">{{ prescription.medication }}</strong>
+                                                </div>
+                                                <ul class="drug-details">
+                                                    <li class="drug-detail">
+                                                        <strong class="detail-label">劑量</strong>
+                                                        <span class="detail-value">{{ prescription.dosage|default:"未填寫" }}</span>
+                                                    </li>
+                                                    <li class="drug-detail">
+                                                        <strong class="detail-label">給藥頻率</strong>
+                                                        <span class="detail-value">{{ prescription.frequency|translate_frequency|default:"未填寫" }}</span>
+                                                    </li>
+                                                    <li class="drug-detail">
+                                                        <strong class="detail-label">給藥途徑</strong>
+                                                        <span class="detail-value">{{ prescription.route|translate_route|default:"未填寫" }}</span>
+                                                    </li>
+                                                    <li class="drug-detail">
+                                                        <strong class="detail-label">用藥說明</strong>
+                                                        <span class="detail-value">{{ prescription.instructions|default:"未填寫" }}</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if record.has_detailed_info %}
+                                <!-- 隱藏舊的詳細資訊區塊 -->
+                                <div class="detailed-medical-info" id="details-{{ record.id }}" style="display: none;">
+                                    {% if record.medical_details.vital_signs %}
+                                    <div class="vital-signs-section">
+                                        <h4><i class="fas fa-heartbeat"></i> 生理指標</h4>
+                                        <div class="vital-signs-grid">
+                                            {% if record.medical_details.vital_signs.weight %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-weight"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.weight }}kg</span>
+                                                    <span class="vital-label">體重</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.medical_details.vital_signs.temperature %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-thermometer-half"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.temperature }}°C</span>
+                                                    <span class="vital-label">體溫</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.medical_details.vital_signs.heart_rate %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-heartbeat"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.heart_rate }}bpm</span>
+                                                    <span class="vital-label">心率</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.medical_details.vital_signs.respiratory_rate %}
+                                            <div class="vital-card">
+                                                <div class="vital-icon"><i class="fas fa-lungs"></i></div>
+                                                <div class="vital-info">
+                                                    <span class="vital-value">{{ record.medical_details.vital_signs.respiratory_rate }}/min</span>
+                                                    <span class="vital-label">呼吸率</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if record.medical_details.symptoms %}
+                                    <div class="symptoms-section">
+                                        <h4><i class="fas fa-exclamation-triangle"></i> 症狀記錄</h4>
+                                        <div class="symptoms-list">
+                                            {% for symptom in record.medical_details.symptoms %}
+                                            <div class="symptom-tag">
+                                                <span class="symptom-name">{{ symptom.name }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if record.medical_details.prescriptions %}
+                                    <div class="prescriptions-section">
+                                        <h4><i class="fas fa-pills"></i> 處方用藥</h4>
+                                        <div class="prescription-list">
+                                            {% for prescription in record.medical_details.prescriptions %}
+                                            <div class="prescription-card">
+                                                <div class="prescription-header">
+                                                    <strong>{{ prescription.medication }}</strong>
+                                                    <span class="dosage-badge">{{ prescription.dosage }}</span>
+                                                </div>
+                                                <div class="prescription-details">
+                                                    <span><i class="fas fa-route"></i> {{ prescription.route|translate_route|default:"口服" }}</span>
+                                                    <span><i class="fas fa-clock"></i> {{ prescription.frequency|translate_frequency|default:"依醫師指示" }}</span>
+                                                </div>
+                                                {% if prescription.instructions %}
+                                                <div class="prescription-instructions">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    {{ prescription.instructions }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="health-record-meta">
+                                <div class="health-meta-item">
+                                    <i class="fas fa-user-md"></i>
+                                    <span>{{ record.attending_vet.user.get_full_name|default:"未指定獸醫師" }}</span>
+                                </div>
+                                <div class="health-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ record.created_at|date:"m月d日 H:i" }}</span>
+                                </div>
                             </div>
                         </div>
+                {% endfor %}
+
+                {% if not medical_records %}
+                <div class="health-empty-state">
+                    <div class="health-empty-icon">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <h3 class="health-empty-title">尚無看診紀錄</h3>
+                    <p class="health-empty-description">
+                        當毛孩有看診紀錄時，就會在這裡顯示<br>
+                        定期健康檢查是維持毛孩健康的重要關鍵
+                    </p>
+                </div>
+                {% endif %}
+            </div>
 
 
-
-                       <!-- 飲食紀錄 -->
-                        <div class="record-category">
-                          <div class="record-header">
-                            <h5>飲食習慣</h5>
-                            <button class="add-btn" onclick="toggleInputBlock(this)">＋ 新增 </button>
-                          </div>
-                          <ul class="record-list">
-                            {% for record in group.records %}
-                              {% if record.category == 'diet' and record.content %}
-                              <li id="diet-record-{{ record.id }}" class="record-item">
-                                <span id="diet-content-{{ record.id }}">{{ record.content }}</span>
-                                <input type="text" id="diet-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
-
-                                <!-- 按鈕群組（預設都隱藏） -->
-                                <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
-                                <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
-                                <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
-                              </li>
-                              {% endif %}
-                            {% endfor %}
-                          </ul>
-                          <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="diet" style="display:none;">
-                            <textarea placeholder="輸入內容..."></textarea>
-                            <div class="button-group">
-                              <button class="save-btn" onclick="saveRecord(this)">儲存</button>
-                              <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
-                            </div>
-                          </div>
-                        </div>
-
-
-
-                        <!-- 過敏原紀錄 -->
-                        <div class="record-category">
-                            <div class="record-header">
-                                <h5>過敏原</h5>
-                                <button class="add-btn" onclick="toggleInputBlock(this)">
-                                    ＋ 新增</button>
-                                </div>
-                            <ul class="record-list">
-                            {% for record in group.records %}
-                              {% if record.category == 'allergen' and record.content %}
-                              <li id="allergen-record-{{ record.id }}" class="record-item">
-                                <span id="allergen-content-{{ record.id }}">{{ record.content }}</span>
-                                <input type="text" id="allergen-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
-
-                                <!-- 按鈕群組（預設都隱藏） -->
-                                <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
-                                <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
-                                <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
-                              </li>
-                              {% endif %}
-                            {% endfor %}
-                          </ul>
-                          <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="allergen" style="display:none;">
-                            <textarea placeholder="輸入內容..."></textarea>
-                            <div class="button-group">
-                              <button class="save-btn" onclick="saveRecord(this)">儲存</button>
-                              <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
-                                </div>
-                            </div>
+            <!-- 疫苗記錄內容 -->
+            <div class="health-records-grid health-tab-content" data-tab="vaccine" style="display: none;">
+                {% for record in vaccine_records %}
+                <div class="health-record-card">
+                    <div class="health-record-header">
+                        <div class="health-record-info">
+                            <h3>{{ record.pet.name }} - {{ record.name }}</h3>
+                            <p class="health-record-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ record.date|date:"Y年m月d日" }}
+                            </p>
                         </div>
                     </div>
-
-                    <!-- 右側：體重、運動、其他 -->
-                    <div class="right-col">
-                        <!-- 體重趨勢圖 -->
-                            <div class="chart-container">
-                                <div class="record-header">
-                                    <h5>體重</h5>
-                                    <a href="{% url 'add_weight' group.pet.id %}" class="add-btn">＋ 新增</a>
-                                </div>
-                                <div class="month-nav">
-                                    <button onclick="changeWeightMonth({{ group.pet.id }}, -1)">＜</button>
-                                    <span id="month-labelw-{{ group.pet.id }}"></span>
-                                    <button onclick="changeWeightMonth({{ group.pet.id }}, 1)">＞</button>
-                                </div>
-                                <div id="weightChartWrapper-{{ group.pet.id }}">
-                                    <canvas id="weightChart-{{ group.pet.id }}"></canvas>
-                                </div>
-                                <div style="text-align: right; margin-top: 10px;">
-                                    <a href="{% url 'weight_rec' group.pet.id %}" class="btn btn-info">更多訊息</a>
-                                </div>
+                    <div class="health-record-content">
+                        <div class="medical-section">
+                            <div class="section-header">
+                                <h4 class="section-title">💉疫苗資訊</h4>
                             </div>
-
-
-                        <!-- 運動紀錄 -->
-                        <div class="record-category">
-                            <div class="record-header">
-                                 <h5>運動習慣</h5>
-                                 <button class="add-btn" onclick="toggleInputBlock(this)">
-                                     ＋ 新增</button>
-                                </div>
-                            <ul class="record-list">
-                                {% for record in group.records %}
-                                  {% if record.category == 'exercise' and record.content %}
-                                  <li id="exercise-record-{{ record.id }}" class="record-item">
-                                    <span id="exercise-content-{{ record.id }}">{{ record.content }}</span>
-                                    <input type="text" id="exercise-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
-
-                                    <!-- 按鈕群組（預設都隱藏） -->
-                                    <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
-                                    <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                    <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
-                                    <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
-                                  </li>
-                                  {% endif %}
-                                {% endfor %}
-                              </ul>
-                              <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="exercise" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea>
-                                <div class="button-group">
-                                  <button class="save-btn" onclick="saveRecord(this)">儲存</button>
-                                  <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 其他紀錄 -->
-                        <div class="record-category">
-                            <div class="record-header">
-                                <h5>其他</h5>
-                                <button class="add-btn" onclick="toggleInputBlock(this)">
-                                    ＋ 新增</button>
-                                </div>
-                            <ul class="record-list">
-                                {% for record in group.records %}
-                                  {% if record.category == 'other' and record.content %}
-                                  <li id="other-record-{{ record.id }}" class="record-item">
-                                    <span id="other-content-{{ record.id }}">{{ record.content }}</span>
-                                    <input type="text" id="other-input-{{ record.id }}" value="{{ record.content }}" style="display: none;">
-
-                                    <!-- 按鈕群組（預設都隱藏） -->
-                                    <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
-                                    <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('{{ record.id }}', '{{ group.pet.id }}')" style="display: none;">刪除</button>
-                                    <button class="save-btn" onclick="event.stopPropagation(); saveEdit({{ record.id }})" style="display: none;">儲存</button>
-                                    <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
-                                  </li>
-                                  {% endif %}
-                                {% endfor %}
-                              </ul>
-                              <div class="input-block" data-pet-id="{{ group.pet.id }}" data-category="other" style="display:none;">
-                                <textarea placeholder="輸入內容..."></textarea>
-                                <div class="button-group">
-                                  <button class="save-btn" onclick="saveRecord(this)">儲存</button>
-                                  <button class="cancel-btn" onclick="closeInputBlock(this)">取消</button>
+                            <div class="section-content">
+                                <div class="clinical-info-grid">
+                                    <div class="info-card">
+                                        <span class="label">疫苗名稱</span>
+                                        <span class="value">{{ record.name }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">施打地點</span>
+                                        <span class="value">{{ record.location|default:"未記錄" }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">施打獸醫</span>
+                                        <span class="value">{% if record.vet %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">施打日期</span>
+                                        <span class="value">{{ record.date|date:"Y年m月d日" }}</span>
                                     </div>
                                 </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
+                
+                {% if not vaccine_records %}
+                <div class="health-empty-state">
+                    <div class="health-empty-icon">
+                        <i class="fas fa-syringe"></i>
+                    </div>
+                    <h3 class="health-empty-title">尚無疫苗記錄</h3>
+                    <p class="health-empty-description">
+                        疫苗接種記錄將會顯示在這裡<br>
+                        記得按時為毛孩接種疫苗，保護健康！
+                    </p>
+                </div>
+                {% endif %}
             </div>
-        {% endfor %}
-    {% else %}
-        <p>先到寵物資料新增生活記錄喔。</p>
-    {% endif %}
+
+            <!-- 驅蟲記錄內容 -->
+            <div class="health-records-grid health-tab-content" data-tab="deworm" style="display: none;">
+                {% for record in deworm_records %}
+                <div class="health-record-card">
+                    <div class="health-record-header">
+                        <div class="health-record-info">
+                            <h3>{{ record.pet.name }} - {{ record.name }}</h3>
+                            <p class="health-record-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ record.date|date:"Y年m月d日" }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="health-record-content">
+                        <div class="medical-section">
+                            <div class="section-header">
+                                <h4 class="section-title">🛡️驅蟲資訊</h4>
+                            </div>
+                            <div class="section-content">
+                                <div class="clinical-info-grid">
+                                    <div class="info-card">
+                                        <span class="label">驅蟲品牌</span>
+                                        <span class="value">{{ record.name }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">施藥地點</span>
+                                        <span class="value">{{ record.location|default:"未記錄" }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">施藥獸醫</span>
+                                        <span class="value">{% if record.vet %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">施藥日期</span>
+                                        <span class="value">{{ record.date|date:"Y年m月d日" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not deworm_records %}
+                <div class="health-empty-state">
+                    <div class="health-empty-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="health-empty-title">尚無驅蟲記錄</h3>
+                    <p class="health-empty-description">
+                        驅蟲記錄將會顯示在這裡<br>
+                        定期驅蟲是維護毛孩健康的重要措施
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+
+
+            <!-- 檢驗報告內容 -->
+            <div class="health-records-grid health-tab-content" data-tab="report" style="display: none;">
+                {% for record in report_records %}
+                <div class="health-record-card">
+                    <div class="health-record-header">
+                        <div class="health-record-info">
+                            <h3>{{ record.pet.name }} - {{ record.title }}</h3>
+                            <p class="health-record-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ record.date_uploaded|date:"Y年m月d日" }}
+                            </p>
+                        </div>
+                        <div class="health-record-actions">
+                            {% if record.pdf %}
+                            <a href="{{ record.pdf.url }}" class="health-action-btn btn-download" title="下載報告" target="_blank">
+                                <i class="fas fa-download"></i>
+                                <span>下載</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="health-record-content">
+                        <div class="medical-section">
+                            <div class="section-header">
+                                <h4 class="section-title">📋檢驗報告</h4>
+                            </div>
+                            <div class="section-content">
+                                <div class="clinical-info-grid">
+                                    <div class="info-card">
+                                        <span class="label">報告標題</span>
+                                        <span class="value">{{ record.title }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">檢驗獸醫</span>
+                                        <span class="value">{% if record.vet %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">檢驗地點</span>
+                                        <span class="value">{% if record.clinic %}{{ record.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">上傳日期</span>
+                                        <span class="value">{{ record.date_uploaded|date:"Y年m月d日" }}</span>
+                                    </div>
+                                    {% if record.pdf %}
+                                    <div class="info-card">
+                                        <span class="label">檔案名稱</span>
+                                        <span class="value">{{ record.pdf.name|slice:"8:"|default:record.pdf.name }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">檔案大小</span>
+                                        <span class="value">{{ record.pdf.size|filesizeformat }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% if record.pdf %}
+                                <div class="report-download-section">
+                                    <a href="{{ record.pdf.url }}" class="btn-download-full" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <span>查看/下載完整報告</span>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not report_records %}
+                <div class="health-empty-state">
+                    <div class="health-empty-icon">
+                        <i class="fas fa-file-medical-alt"></i>
+                    </div>
+                    <h3 class="health-empty-title">尚無檢驗報告</h3>
+                    <p class="health-empty-description">
+                        檢驗報告將會顯示在這裡<br>
+                        定期健康檢查讓您更了解毛孩的狀況
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+
+            <!-- 生活記錄內容 -->
+            <div class="health-records-grid health-tab-content" data-tab="daily" style="display: none;">
+                <!-- 分類篩選按鈕 -->
+                <div class="daily-filters">
+                    <button class="daily-filter-btn active" data-category="all">
+                        <i class="fas fa-th"></i>
+                        <span>全部記錄</span>
+                    </button>
+                    
+                    
+                    <!-- 生活筆記類別 -->
+                    <div class="filter-section">
+                        <span class="filter-section-title">📝 生活筆記</span>
+                        <div class="filter-buttons">
+                            <button class="daily-filter-btn note-type" data-category="diet">
+                                <i class="fas fa-utensils"></i>
+                                <span>飲食</span>
+                            </button>
+                            <button class="daily-filter-btn note-type" data-category="medication">
+                                <i class="fas fa-pills"></i>
+                                <span>用藥</span>
+                            </button>
+                            <button class="daily-filter-btn note-type" data-category="allergen">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>過敏</span>
+                            </button>
+                            <button class="daily-filter-btn note-type" data-category="mood">
+                                <i class="fas fa-smile"></i>
+                                <span>觀察</span>
+                            </button>
+                            <button class="daily-filter-btn note-type" data-category="other">
+                                <i class="fas fa-note-sticky"></i>
+                                <span>其他</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 趨勢圖區域 -->
+                <div class="chart-section" style="margin: 2rem 0;">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line"></i> 數據趨勢圖</h3>
+                        <div class="chart-controls">
+                            <select id="chart-category" class="form-control">
+                                <option value="temperature">體溫趨勢</option>
+                                <option value="weight">體重趨勢</option>
+                                <option value="exercise">運動趨勢</option>
+                            </select>
+                            <select id="chart-days" class="form-control">
+                                <option value="7">最近7天</option>
+                                <option value="14">最近14天</option>
+                                <option value="30" selected>最近30天</option>
+                                <option value="60">最近60天</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart" width="800" height="400"></canvas>
+                    </div>
+                </div>
+
+                <!-- 生活記錄卡片 -->
+                <div class="daily-records-container">
+                    {% for record in daily_records %}
+                    <div class="daily-record-card" data-category="{{ record.category }}">
+                        <div class="daily-record-header">
+                            <div class="daily-record-pet">
+                                <div class="daily-pet-avatar">
+                                    {% if record.pet.picture %}
+                                        <img src="{{ record.pet.picture.url }}" alt="{{ record.pet.name }}">
+                                    {% else %}
+                                        <i class="fas fa-paw"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="daily-pet-info">
+                                    <h4>{{ record.pet.name }}</h4>
+                                    <span class="daily-category daily-category-{{ record.category }}">
+                                        {% if record.category == 'temperature' %}
+                                            <i class="fas fa-thermometer-half"></i> 📊 體溫數據
+                                        {% elif record.category == 'weight' %}
+                                            <i class="fas fa-weight"></i> 📊 體重數據
+                                        {% elif record.category == 'exercise' %}
+                                            <i class="fas fa-running"></i> 📊 運動數據
+                                        {% elif record.category == 'diet' %}
+                                            <i class="fas fa-utensils"></i> 📝 飲食筆記
+                                        {% elif record.category == 'allergen' %}
+                                            <i class="fas fa-exclamation-triangle"></i> ⚠️ 過敏記錄
+                                        {% elif record.category == 'medication' %}
+                                            <i class="fas fa-pills"></i> 💊 用藥記錄
+                                        {% elif record.category == 'mood' %}
+                                            <i class="fas fa-smile"></i> 😊 行為觀察
+                                        {% else %}
+                                            <i class="fas fa-note-sticky"></i> 📄 其他筆記
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="daily-record-date">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>{{ record.date|date:"m月d日" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="daily-record-content">
+                            <!-- 健康數據：只顯示數值，用於趨勢分析 -->
+                            {% if record.category == 'temperature' and record.temperature %}
+                                <div class="record-value temperature-value data-only">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span class="value">{{ record.temperature }}°C</span>
+                                    {% if record.temperature|floatformat:1 <= '37.4' %}
+                                        <span class="status low">偏低</span>
+                                    {% elif record.temperature|floatformat:1 >= '39.3' %}
+                                        <span class="status high">偏高</span>
+                                    {% else %}
+                                        <span class="status normal">正常</span>
+                                    {% endif %}
+                                </div>
+                            {% elif record.category == 'weight' and record.weight %}
+                                <div class="record-value weight-value data-only">
+                                    <i class="fas fa-weight"></i>
+                                    <span class="value">{{ record.weight }}kg</span>
+                                    <span class="data-hint">用於成長追蹤</span>
+                                </div>
+                            {% elif record.category == 'exercise' and record.exercise_duration %}
+                                <div class="record-value exercise-value data-only">
+                                    <i class="fas fa-running"></i>
+                                    <span class="value">{{ record.exercise_duration }}分鐘</span>
+                                    <span class="data-hint">用於習慣分析</span>
+                                </div>
+                            
+                            <!-- 生活筆記：顯示內容記錄 -->
+                            {% else %}
+                                {% if record.category == 'medication' and record.medication_dosage %}
+                                    <div class="record-note medication-note">
+                                        <i class="fas fa-pills"></i>
+                                        <span class="note-label">用藥：</span>
+                                        <span class="note-value">{{ record.medication_dosage }}</span>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if record.content %}
+                                    <p class="record-text">{{ record.content }}</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="daily-record-actions">
+                            <button class="daily-action-btn edit-daily-btn" data-record-id="{{ record.id }}">
+                                <i class="fas fa-edit"></i>
+                                <span>編輯</span>
+                            </button>
+                            <button class="daily-action-btn delete-daily-btn" data-record-id="{{ record.id }}">
+                                <i class="fas fa-trash"></i>
+                                <span>刪除</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if not daily_records %}
+                <div class="health-empty-state">
+                    <div class="health-empty-icon">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <h3 class="health-empty-title">尚無生活記錄</h3>
+                    <p class="health-empty-description">
+                        記錄毛孩的日常生活點滴<br>
+                        每個美好時刻都值得被記住
+                    </p>
+                    {% if pets.first %}
+                    <a href="{% url 'add_daily_record' pets.first.id %}" class="health-add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>開始記錄</span>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // 切換顯示與隱藏生活記錄
-    function toggleRecordVisibility(recordId) {
-        const recordDiv = document.getElementById(recordId);
-        recordDiv.style.display = recordDiv.style.display === "none" ? "block" : "none";
-    }
-    // ===== 取得 CSRF Token =====
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      cookie = cookie.trim();
-      if (cookie.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-function getCSRFToken() {
-  return getCookie('csrftoken');
-}
-
-
-
-    function showTab(tabId) {
-        rebindClickHandlers();
-        const tabs = document.querySelectorAll('.tab-content');
-        tabs.forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.getElementById(tabId).classList.add('active');
-    }
-        function toggleInputBlock(button) {
-        // 若目前有正在編輯的紀錄，先取消編輯
-        if (editingRecordId !== null) {
-          const li = document.querySelector(`[id$='-record-${editingRecordId}']`);
-          if (li) cancelEdit(li);
-        }
-          // 強制結束其他編輯
-          hideAllActionButtons();
-          editingRecordId = null;
-
-          // 切換輸入區塊
-          const block = button.closest('.record-category').querySelector('.input-block');
-          block.style.display = block.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function closeInputBlock(button) {
-            const block = button.closest('.input-block');
-            block.style.display = 'none';
-            block.querySelector('textarea').value = '';
-        }
-
-
-// ===== 全域變數：目前正在編輯的紀錄ID（字串） =====
-let editingRecordId = null;
-
-// ===== 點擊事件的 handler，綁定在每個 li =====
-function clickHandler(event) {
-  const li = event.currentTarget;
-  const id = li.id.split('-').pop();
-  toggleActionButtons(li, id);
-}
-function rebindClickHandlers() {
-  document.querySelectorAll('.record-item').forEach(li => {
-    li.removeEventListener('click', clickHandler);
-    li.addEventListener('click', clickHandler);
-  });
-}
-
-
-// ===== 切換顯示編輯、刪除按鈕 =====
-function toggleActionButtons(li, id) {
-  if (editingRecordId && editingRecordId !== id) return;  // 已有其他項目在編輯，阻止切換
-
-  if (li.classList.contains('editing')) return; // 自己正在編輯，不切換按鈕顯示
-
-  const alreadyVisible = li.classList.contains('showing-actions');
-
-  hideAllActionButtons();
-  document.querySelectorAll('.input-block').forEach(block => block.style.display = 'none');
-
-  if (!alreadyVisible) {
-    li.classList.add('showing-actions');
-    li.querySelector('.edit-btn').style.display = 'inline';
-    li.querySelector('.delete-btn').style.display = 'inline';
-  }
-}
-
-
-// ===== 進入編輯模式 =====
-function enterEditMode(li) {
-  if (editingRecordId !== null) return; // 防止多重編輯
-
-  const id = li.id.split('-').pop();
-  editingRecordId = id;
-
-  li.classList.add('editing');
-  li.removeEventListener('click', clickHandler); // 移除點擊事件，避免點擊時切換按鈕顯示
-
-  const [category] = li.id.split('-');
-
-  document.getElementById(`${category}-content-${id}`).style.display = 'none';
-  document.getElementById(`${category}-input-${id}`).style.display = 'inline';
-
-  li.querySelector('.edit-btn').style.display = 'none';
-  li.querySelector('.delete-btn').style.display = 'none';
-  li.querySelector('.save-btn').style.display = 'inline';
-  li.querySelector('.cancel-btn').style.display = 'inline';
-}
-
-// ===== 取消編輯，還原狀態 =====
-function cancelEdit(li) {
-  const id = li.id.split('-').pop();
-  editingRecordId = null;
-
-
-  li.classList.remove('editing');
-  li.addEventListener('click', clickHandler); // 恢復點擊事件
-  rebindClickHandlers();
-  const [category] = li.id.split('-');
-
-  document.getElementById(`${category}-content-${id}`).style.display = 'inline';
-  document.getElementById(`${category}-input-${id}`).style.display = 'none';
-
-  li.querySelector('.edit-btn').style.display = 'inline';
-  li.querySelector('.delete-btn').style.display = 'inline';
-  li.querySelector('.save-btn').style.display = 'none';
-  li.querySelector('.cancel-btn').style.display = 'none';
-
-  hideAllActionButtons();
-}
-
-
-// ===== 隱藏所有項目的操作按鈕 =====
-function hideAllActionButtons() {
-  rebindClickHandlers();
-  document.querySelectorAll('.record-item').forEach(li => {
-    li.classList.remove('showing-actions');
-
-    li.querySelectorAll('.edit-btn, .delete-btn, .save-btn, .cancel-btn').forEach(btn => {
-      if (btn) btn.style.display = 'none';
-    });
-
-    const id = li.id.split('-').pop();
-    const categories = ['diet', 'allergen', 'exercise', 'other'];
-    categories.forEach(category => {
-      const content = document.getElementById(`${category}-content-${id}`);
-      const input = document.getElementById(`${category}-input-${id}`);
-
-      if (content) content.style.display = 'inline';
-      if (input) input.style.display = 'none';
-    });
-  });
-}
-
-
-function saveRecord(button) {
-  const inputBlock = button.closest('.input-block');
-  const textarea = inputBlock.querySelector('textarea');
-  const content = textarea.value.trim();
-  const petId = inputBlock.getAttribute('data-pet-id');
-  const category = inputBlock.getAttribute('data-category');
-
-  if (!content) {
-    alert('請輸入內容');
-    return;
-  }
-
-  const data = {
-    pet_id: petId,
-    category: category,
-    content: content
-  };
-
-  fetch('/save_daily_record/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken(),
-    },
-    body: JSON.stringify(data)
-  })
-  .then(response => {
-    if (!response.ok) throw new Error('儲存失敗');
-    return response.json();
-  })
-  .then(json => {
-    if (json.success) {
-      const ul = inputBlock.previousElementSibling;
-      const li = document.createElement('li');
-      li.id = `${category}-record-${json.record_id}`;
-      li.className = 'record-item';
-
-      // 綁定點擊事件顯示操作按鈕
-      li.addEventListener('click', clickHandler);
-      rebindClickHandlers();
-
-      li.innerHTML = `
-        <span id="${category}-content-${json.record_id}">${content}</span>
-        <input type="text" id="${category}-input-${json.record_id}" value="${content}" style="display: none;">
-        <button class="edit-btn" onclick="event.stopPropagation(); enterEditMode(this.parentElement)" style="display: none;">編輯</button>
-        <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('${json.record_id}', '${petId}')" style="display: none;">刪除</button>
-        <button class="save-btn" onclick="event.stopPropagation(); saveEdit(${json.record_id})" style="display: none;">儲存</button>
-        <button class="cancel-btn" onclick="event.stopPropagation(); cancelEdit(this.parentElement)" style="display: none;">取消</button>
-      `;
-
-      ul.appendChild(li);
-      textarea.value = '';
-      inputBlock.style.display = 'none';
-
-      hideAllActionButtons();
-    } else {
-      alert(json.message || '儲存失敗');
-    }
-  })
-  .catch(error => {
-    console.error(error);
-    alert('儲存過程中發生錯誤');
-  });
-}
-
-
-// ===== 儲存編輯後的生活記錄 =====
-function saveEdit(id) {
-  const li = document.querySelector(`[id$='-record-${id}']`);
-  const [category] = li.id.split('-');
-
-  const newContent = document.getElementById(`${category}-input-${id}`).value.trim();
-  if (!newContent) {
-    alert('內容不得為空');
-    return;
-  }
-
-  fetch(`/daily_record/${id}/update/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken(),
-    },
-    body: JSON.stringify({ content: newContent })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      document.getElementById(`${category}-content-${id}`).textContent = newContent;
-      cancelEdit(li);
-      hideAllActionButtons();
-    } else {
-      alert('更新失敗：' + data.error);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert('更新過程發生錯誤');
-  });
-}
-
-
-
-// ===== 刪除生活記錄 =====
-function deleteRecord(recordId, petId) {
-  if (!confirm('確定要刪除這筆紀錄嗎？')) return;
-
-  fetch(`/pet/${petId}/health/delete_record/`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken(),
-    },
-    body: JSON.stringify({
-      'record_id': recordId,
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      // 嘗試移除所有分類下的該紀錄元素（只會有一個存在）
-      ['diet', 'allergen', 'exercise', 'other'].forEach(category => {
-        const el = document.getElementById(`${category}-record-${recordId}`);
-        if (el) el.remove();
-      });
-
-      alert('紀錄已刪除');
-    } else {
-      alert('刪除失敗');
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert('刪除過程發生錯誤');
-  });
-}
-// ===== 頁面載入後自動綁定 li 點擊事件 =====
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.record-item').forEach(li => {
-    li.addEventListener('click', clickHandler);
-  });
-});
-
-
-// ===== 體溫相關 =====
-const petTemperatures = {{ pet_temperatures|safe }};
-const currentTempMonthMap = {};
-
-function getMonthString(date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function renderTemperatureChart(petId) {
-    const chartId = `tempChart-${petId}`;
-    const ctx = document.getElementById(chartId);
-    if (!ctx) return;
-
-    const current = currentTempMonthMap[petId];
-    const monthKey = getMonthString(current);
-    const monthData = (petTemperatures[petId] && petTemperatures[petId][monthKey]) || [];
-
-    const labels = monthData.map(item => item.date);
-    const data = monthData.map(item => item.temperature);
-
-    if (ctx.chart) ctx.chart.destroy();
-    ctx.chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: '體溫 (°C)',
-                data,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    ticks: {
-                        stepSize: 1,
-                        callback: value => value.toFixed(1) + '°C'
-                    }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: context => context.raw.toFixed(1) + '°C'
-                    }
-                }
-            }
-        }
-    });
-
-    const labelEl = document.getElementById(`month-label-${petId}`);
-    if (labelEl) {
-        labelEl.textContent = `${current.getFullYear()}年${current.getMonth() + 1}月`;
-    }
-}
-
-function changeTempMonth(petId, offset) {
-    const current = currentTempMonthMap[petId];
-    const newDate = new Date(current);
-    newDate.setMonth(newDate.getMonth() + offset);
-
-    const today = new Date();
-    if (getMonthString(newDate) > getMonthString(today)) return;
-
-    const year = newDate.getFullYear();
-    const month = newDate.getMonth() + 1;
-    const monthKey = getMonthString(newDate);
-
-    const chartWrapper = document.getElementById(`tempChartWrapper-${petId}`);
-    if (chartWrapper) chartWrapper.classList.add('opacity-50');
-
-    if (petTemperatures[petId] && petTemperatures[petId][monthKey]) {
-        currentTempMonthMap[petId] = newDate;
-        renderTemperatureChart(petId);
-        if (chartWrapper) chartWrapper.classList.remove('opacity-50');
-        return;
-    }
-
-    fetch(`/api/pet/${petId}/temperature/${year}/${month}/`)
-        .then(response => {
-            if (!response.ok) throw new Error("Network error");
-            return response.json();
-        })
-        .then(data => {
-            if (!petTemperatures[petId]) petTemperatures[petId] = {};
-            petTemperatures[petId][monthKey] = data;
-            currentTempMonthMap[petId] = newDate;
-            renderTemperatureChart(petId);
-        })
-        .catch(err => {
-            alert("無法載入體溫資料，請稍後再試");
-            console.error(err);
-        })
-        .finally(() => {
-            if (chartWrapper) chartWrapper.classList.remove('opacity-50');
-        });
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    const now = new Date();
-    Object.keys(petTemperatures).forEach(petId => {
-        currentTempMonthMap[petId] = new Date(now.getFullYear(), now.getMonth(), 1);
-        renderTemperatureChart(petId);
-    });
-    Object.keys(petWeights).forEach(petId => {
-        currentWeightMonthMap[petId] = new Date(now.getFullYear(), now.getMonth(), 1);
-        renderWeightChart(petId);
-    });
-});
-
-
-
-// ===== 體重相關 =====
-const petWeights = {{ pet_weights|safe }};
-const currentWeightMonthMap = {};
-
-function renderWeightChart(petId) {
-    const chartId = `weightChart-${petId}`;
-    const ctx = document.getElementById(chartId);
-    if (!ctx) return;
-
-    const current = currentWeightMonthMap[petId];
-    const monthKey = getMonthString(current);
-    const monthData = (petWeights[petId] && petWeights[petId][monthKey]) || [];
-
-    const labels = monthData.map(item => item.date);
-    const data = monthData.map(item => item.weight);
-
-    if (ctx.chart) ctx.chart.destroy();
-    ctx.chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: '體重 (kg)',
-                data,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    ticks: {
-                        stepSize: 1,
-                        callback: value => value.toFixed(1) + 'kg'
-                    }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: context => context.raw.toFixed(1) + 'kg'
-                    }
-                }
-            }
-        }
-    });
-
-    const labelEl = document.getElementById(`month-labelw-${petId}`);
-    if (labelEl) {
-        labelEl.textContent = `${current.getFullYear()}年${current.getMonth() + 1}月`;
-    }
-}
-function changeWeightMonth(petId, offset) {
-    const current = currentWeightMonthMap[petId];
-    const newDate = new Date(current);
-    newDate.setMonth(newDate.getMonth() + offset);
-
-    const today = new Date();
-    if (getMonthString(newDate) > getMonthString(today)) return;
-
-    const year = newDate.getFullYear();
-    const month = newDate.getMonth() + 1;
-    const monthKey = getMonthString(newDate);
-
-    const chartWrapper = document.getElementById(`weightChartWrapper-${petId}`);
-    if (chartWrapper) chartWrapper.classList.add('opacity-50');
-
-    if (petWeights[petId] && petWeights[petId][monthKey]) {
-        currentWeightMonthMap[petId] = newDate;
-        renderWeightChart(petId);
-        if (chartWrapper) chartWrapper.classList.remove('opacity-50');
-        return;
-    }
-
-    fetch(`/api/pet/${petId}/weight/${year}/${month}/`)
-        .then(response => {
-            if (!response.ok) throw new Error("Network error");
-            return response.json();
-        })
-        .then(data => {
-            if (!petWeights[petId]) petWeights[petId] = {};
-            petWeights[petId][monthKey] = data;
-            currentWeightMonthMap[petId] = newDate;
-            renderWeightChart(petId);
-        })
-        .catch(err => {
-            alert("無法載入體重資料，請稍後再試");
-            console.error(err);
-        })
-        .finally(() => {
-            if (chartWrapper) chartWrapper.classList.remove('opacity-50');
-        });
-}
-
-
-    function toggleDetails(type, petId) {
-          const el = document.getElementById(`details-${type}-${petId}`);
-          el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
-        }
-
-
-
-</script>
 {% endblock %}
 
 {% block extra_js %}
-    {{ block.super }}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/health/health_records.js' %}"></script>
+<script>
+// 健康記錄詳情切換功能
+function toggleHealthDetails(recordId) {
+    const detailsDiv = document.getElementById('details-' + recordId);
+    const iconElement = document.getElementById('icon-' + recordId);
+
+    if (!detailsDiv || !iconElement) {
+        console.error('找不到詳情元素:', recordId);
+        return;
+    }
+
+    if (detailsDiv.style.display === 'none' || detailsDiv.style.display === '') {
+        detailsDiv.style.display = 'block';
+        iconElement.className = 'fas fa-chevron-up';
+        // 平滑展開動畫
+        detailsDiv.style.maxHeight = 'none';
+        detailsDiv.style.opacity = '1';
+    } else {
+        detailsDiv.style.display = 'none';
+        iconElement.className = 'fas fa-chevron-down';
+        detailsDiv.style.opacity = '0';
+    }
+}
+</script>
 {% endblock %}

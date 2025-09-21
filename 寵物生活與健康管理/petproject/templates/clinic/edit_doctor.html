@@ -1,832 +1,1324 @@
+<!-- templates/clinic/edit_doctor.html -->
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}編輯醫師 - {{ doctor.user.get_full_name|default:doctor.user.username }}{% endblock %}
+{% block title %}編輯醫師資料 - {{ clinic.name }}{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/clinic/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/clinic/edit-doctor.css' %}">
+<style>
+/* 多選專科領域樣式 */
+.multi-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.multi-select-display {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 40px 12px 16px;
+    font-size: 14px;
+    background: #fafafa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.multi-select-display:hover {
+    border-color: #cbd5e0;
+    background: white;
+}
+
+.multi-select-display.active {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.selected-text {
+    flex-grow: 1;
+    color: #4a5568;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selected-text.has-selection {
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.dropdown-icon {
+    color: #a0aec0;
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.multi-select-display.active .dropdown-icon {
+    transform: rotate(180deg);
+    color: #667eea;
+}
+
+.multi-select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 300px;
+    overflow: hidden;
+    display: none;
+    animation: dropdownShow 0.3s ease;
+}
+
+.multi-select-dropdown.show {
+    display: block;
+}
+
+@keyframes dropdownShow {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-search {
+    position: relative;
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dropdown-search input {
+    width: 100%;
+    padding: 8px 35px 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.dropdown-search input:focus {
+    border-color: #667eea;
+}
+
+.dropdown-search i {
+    position: absolute;
+    right: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+    font-size: 14px;
+}
+
+.dropdown-options {
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.dropdown-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-options::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.dropdown-options::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin: 0;
+    border: none;
+    font-size: 14px;
+}
+
+.option-item:hover {
+    background-color: #f0f4ff;
+}
+
+.option-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.option-item .checkmark {
+    height: 16px;
+    width: 16px;
+    background-color: #fff;
+    border: 2px solid #cbd5e0;
+    border-radius: 3px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.option-item input:checked ~ .checkmark {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.option-item .checkmark:after {
+    content: "";
+    display: none;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.option-item input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* 其他專科選項樣式 */
+.other-spec-item {
+    border-top: 1px solid #e8ecff;
+    margin-top: 4px;
+    padding-top: 12px !important;
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.05) 0%, rgba(245, 87, 108, 0.05) 100%);
+}
+
+.other-checkmark {
+    border-color: #f093fb !important;
+}
+
+.other-spec-item input:checked ~ .other-checkmark {
+    background-color: #f093fb;
+    border-color: #f093fb;
+}
+
+.other-checkmark:after {
+    content: "";
+    display: none;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.other-spec-item input:checked ~ .other-checkmark:after {
+    display: block;
+}
+
+/* 其他專科輸入區域 */
+.other-input-section {
+    padding: 12px;
+    border-top: 1px solid #e8ecff;
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.03) 0%, rgba(245, 87, 108, 0.03) 100%);
+    animation: slideDown 0.3s ease;
+}
+
+.other-input {
+    width: 100%;
+    border: 2px solid #f093fb;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.other-input:focus {
+    border-color: #e91e63;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
+}
+
+.other-input::placeholder {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+/* 已選擇標籤樣式 */
+.selected-tags {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f8f9ff;
+    border: 2px solid #e8ecff;
+    border-radius: 8px;
+    min-height: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.selected-tags.empty {
+    display: none !important;
+}
+
+.spec-tag {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 6px;
+    animation: tagFadeIn 0.3s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.spec-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.spec-tag .remove-tag {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.2s ease;
+    margin-left: 4px;
+}
+
+.spec-tag .remove-tag:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.spec-tag.other-tag {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.tags-count {
+    font-size: 12px;
+    color: #718096;
+    font-weight: 500;
+    padding: 4px 8px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 12px;
+    margin-left: auto;
+}
+
+@keyframes tagFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* 表單區塊樣式改進 */
+.form-section {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.form-section:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    border-color: #e8ecff;
+}
+
+.section-header h2 {
+    color: #2d3748;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-header h2 i {
+    color: #667eea;
+    font-size: 22px;
+}
+
+.section-header p {
+    color: #718096;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* 表單網格改進 */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-group label.required:after {
+    content: " *";
+    color: #e53e3e;
+}
+
+.form-control {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.form-text {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-text i {
+    color: #a0aec0;
+}
+
+/* 按鈕樣式改進 */
+.form-actions {
+    background: #f7fafc;
+    padding: 24px 32px;
+    margin: 0 -32px -32px -32px;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 16px 16px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.btn-outline-modern {
+    background: white;
+    color: #718096;
+    border: 2px solid #e2e8f0;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-outline-modern:hover {
+    background: #f7fafc;
+    color: #4a5568;
+    border-color: #cbd5e0;
+    text-decoration: none;
+}
+
+.btn-primary-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-primary-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* 驗證狀態樣式 */
+.verification-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.verification-status.verified {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.verification-status.unverified {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+/* 切換開關樣式 */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0;
+    position: relative;
+}
+
+.toggle-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background: #cbd5e0;
+    border-radius: 24px;
+    margin-right: 12px;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.toggle-slider:before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider {
+    background: #667eea;
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.setting-text {
+    font-weight: 600;
+    color: #2d3748;
+    user-select: none;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .form-section {
+        padding: 24px 20px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn-outline-modern,
+    .btn-primary-modern {
+        justify-content: center;
+    }
+}
+
+/* 載入動畫 */
+.form-section {
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="edit-doctor-container">
-  
-  <!-- 現代化頁面標題 -->
-  <div class="page-header-modern">
-    <div class="row align-items-center">
-      <div class="col-lg-8">
+<div class="dashboard-container">
+    <!-- 頁面標題區域 -->
+    <div class="page-header-modern">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'manage_doctors' %}" class="breadcrumb-item">
+                <i class="fas fa-arrow-left"></i> 返回醫師管理
+            </a>
+        </div>
+        
         <h1 class="page-title-modern">
-          <i class="bi bi-person-gear me-3"></i>
-          編輯醫師資料
+            <i class="fas fa-user-edit"></i>
+            {% if doctor.id %}編輯醫師資料{% else %}新增醫師{% endif %}
         </h1>
-        <div class="page-subtitle-modern">
-          <div class="doctor-info-quick">
-            <div class="doctor-avatar-mini">
-              {% if doctor.user.first_name %}
-                {{ doctor.user.first_name|first }}
-              {% else %}
-                {{ doctor.user.username|first|upper }}
-              {% endif %}
-            </div>
-            <div class="doctor-details-mini">
-              <span class="doctor-name">
-                {% if doctor.user.first_name %}
-                  Dr. {{ doctor.user.first_name }}
-                {% else %}
-                  Dr. {{ doctor.user.username }}
-                {% endif %}
-              </span>
-              <span class="doctor-email">{{ doctor.user.email }}</span>
-            </div>
-          </div>
-        </div>
         
-        <!-- 醫師狀態指示器 -->
-        <div class="doctor-status-indicators">
-          {% if doctor.is_active %}
-            <span class="status-indicator status-active">
-              <i class="bi bi-check-circle"></i>
-              帳號啟用
-            </span>
-          {% else %}
-            <span class="status-indicator status-inactive">
-              <i class="bi bi-pause-circle"></i>
-              帳號停用
-            </span>
-          {% endif %}
-          
-          {% if doctor.license_verified_with_moa %}
-            <span class="status-indicator status-verified">
-              <i class="bi bi-shield-check"></i>
-              執照已驗證
-            </span>
-          {% else %}
-            <span class="status-indicator status-unverified">
-              <i class="bi bi-clock"></i>
-              待驗證執照
-            </span>
-          {% endif %}
-          
-          {% if doctor.is_clinic_admin %}
-            <span class="status-indicator status-admin">
-              <i class="bi bi-crown"></i>
-              診所管理員
-            </span>
-          {% endif %}
-        </div>
-      </div>
-      
-      <div class="col-lg-4">
-        <div class="action-buttons-modern">
-          <a href="javascript:history.back()" class="btn-modern btn-outline-modern">
-            <i class="bi bi-arrow-left"></i>
-            <span>返回列表</span>
-          </a>
-          
-          {% if doctor.license_verified_with_moa %}
-          <a href="#" class="btn-modern btn-info-modern">
-            <i class="bi bi-calendar3"></i>
-            <span>管理排班</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 表單標籤頁導航 -->
-  <div class="tabs-navigation-modern">
-    <div class="nav nav-tabs-modern" role="tablist">
-      <button class="nav-link-modern active" data-tab="basic" type="button" role="tab" aria-selected="true">
-        <i class="bi bi-person-badge me-2"></i>
-        基本資料
-      </button>
-      <button class="nav-link-modern" data-tab="professional" type="button" role="tab" aria-selected="false">
-        <i class="bi bi-award me-2"></i>
-        專業資訊
-      </button>
-      <button class="nav-link-modern" data-tab="permissions" type="button" role="tab" aria-selected="false">
-        <i class="bi bi-shield-check me-2"></i>
-        權限設定
-      </button>
-      <button class="nav-link-modern" data-tab="security" type="button" role="tab" aria-selected="false">
-        <i class="bi bi-lock me-2"></i>
-        安全設定
-      </button>
-    </div>
-  </div>
-
-  <!-- 主要表單區域 -->
-  <div class="form-container-modern">
-    <form method="post" id="editDoctorForm" novalidate>
-      {% csrf_token %}
-      
-      <!-- 基本資料標籤 -->
-      <div class="tab-content-modern active" data-content="basic" aria-hidden="false">
-        <div class="section-header">
-          <h3 class="section-title">
-            <i class="bi bi-person-badge me-2"></i>
-            基本個人資料
-          </h3>
-          <p class="section-description">
-            更新醫師的基本個人資訊和聯絡方式
-          </p>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-6">
-            <div class="form-group-modern">
-              <label for="{{ form.first_name.id_for_label }}" class="form-label-modern">
-                <i class="bi bi-person me-1"></i>
-                {{ form.first_name.label }}
-                <span class="required-mark">*</span>
-              </label>
-              {{ form.first_name }}
-              <div class="form-help">醫師的真實姓名</div>
-              <div class="invalid-feedback"></div>
+        {% if doctor.id %}
+        <div class="doctor-preview-card">
+            <div class="doctor-avatar">
+                <i class="fas fa-user-md"></i>
             </div>
-          </div>
-          
-          <div class="col-md-6">
-            <div class="form-group-modern">
-              <label for="{{ form.email.id_for_label }}" class="form-label-modern">
-                <i class="bi bi-envelope me-1"></i>
-                {{ form.email.label }}
-                <span class="required-mark">*</span>
-              </label>
-              {{ form.email }}
-              <div class="form-help">用於接收系統通知</div>
-              <div class="invalid-feedback"></div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-6">
-            <div class="form-group-modern">
-              <label for="{{ form.phone_number.id_for_label }}" class="form-label-modern">
-                <i class="bi bi-telephone me-1"></i>
-                {{ form.phone_number.label }}
-              </label>
-              {{ form.phone_number }}
-              <div class="form-help">聯絡電話，格式：09xxxxxxxx</div>
-              <div class="invalid-feedback"></div>
-            </div>
-          </div>
-          
-          <div class="col-md-6">
-            <div class="form-group-modern">
-              <label class="form-label-modern">
-                <i class="bi bi-at me-1"></i>
-                使用者名稱
-              </label>
-              <input type="text" class="form-control" value="{{ doctor.user.username }}" readonly>
-              <div class="form-help">使用者名稱無法修改</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 帳號建立資訊 -->
-        <div class="account-info-card">
-          <h6 class="info-title">
-            <i class="bi bi-info-circle me-2"></i>
-            帳號資訊
-          </h6>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">建立日期：</span>
-              <span class="info-value">{{ doctor.user.date_joined|date:"Y年m月d日 H:i" }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">最後登入：</span>
-              <span class="info-value">
-                {% if doctor.user.last_login %}
-                  {{ doctor.user.last_login|date:"Y年m月d日 H:i" }}
-                {% else %}
-                  從未登入
-                {% endif %}
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">帳號狀態：</span>
-              <span class="info-value">
-                {% if doctor.is_active %}
-                  <span class="text-success">啟用中</span>
-                {% else %}
-                  <span class="text-warning">已停用</span>
-                {% endif %}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 專業資訊標籤 -->
-      <div class="tab-content-modern" data-content="professional" aria-hidden="true">
-        <div class="section-header">
-          <h3 class="section-title">
-            <i class="bi bi-award me-2"></i>
-            專業背景與執照
-          </h3>
-          <p class="section-description">
-            管理醫師的專業資訊和執照驗證狀態
-          </p>
-        </div>
-        
-        <!-- 執照驗證區域 -->
-        <div class="license-verification-card">
-          <div class="license-header">
-            <h6 class="license-title">
-              <i class="bi bi-card-text me-2"></i>
-              獸醫師執照驗證
-            </h6>
-            {% if doctor.license_verified_with_moa %}
-              <span class="verification-badge verified">
-                <i class="bi bi-shield-check me-1"></i>
-                已通過農委會驗證
-              </span>
-            {% else %}
-              <span class="verification-badge unverified">
-                <i class="bi bi-clock me-1"></i>
-                待驗證
-              </span>
-            {% endif %}
-          </div>
-          
-          {% if doctor.license_verified_with_moa %}
-            <!-- 已驗證的執照顯示 -->
-            <div class="license-number-protected">
-              <div class="license-info">
-                <div class="license-status-verified">
-                  <i class="bi bi-shield-check-fill me-2"></i>
-                  <span>執照已通過農委會驗證</span>
-                </div>
-                {% if doctor.vet_license_number %}
-                  <div class="license-number-masked">
-                    執照號碼：{{ doctor.vet_license_number|slice:":2" }}****{{ doctor.vet_license_number|slice:"-2:" }}
-                  </div>
-                {% endif %}
-                {% if doctor.moa_license_type %}
-                  <div class="license-type">
-                    <i class="bi bi-check-circle text-success me-1"></i>
-                    執照類別：{{ doctor.moa_license_type }}
-                  </div>
-                {% endif %}
-              </div>
-              <div class="license-actions">
-                {% if doctor.vet_license_number %}
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleLicenseVisibility">
-                  <i class="bi bi-eye"></i> 顯示完整號碼
-                </button>
-                {% endif %}
-                <button type="button" class="btn btn-sm btn-outline-warning" id="updateLicenseBtn">
-                  <i class="bi bi-pencil"></i> 更新執照
-                </button>
-              </div>
-            </div>
-            
-            <!-- 隱藏的執照輸入框供表單提交使用 -->
-            <input type="hidden" name="vet_license_number" value="{{ doctor.vet_license_number }}">
-            
-            <!-- 驗證詳細資訊 -->
-            <div class="verification-info">
-              <div class="verification-details">
-                <!-- 執照驗證狀態 -->
-                <div class="detail-item verification-status">
-                  <span class="detail-label">
-                    <i class="bi bi-shield-check me-1"></i>
-                    執照驗證狀態：
-                  </span>
-                  <span class="detail-value">
-                    {% if doctor.license_verified_with_moa %}
-                      <span class="status-badge verified">
-                        <i class="bi bi-check-circle-fill me-1"></i>
-                        已通過農委會驗證
-                      </span>
-                    {% else %}
-                      <span class="status-badge pending">
-                        <i class="bi bi-clock me-1"></i>
-                        等待驗證
-                      </span>
-                    {% endif %}
-                  </span>
-                </div>
-                
-                <!-- 驗證時間 -->
-                {% if doctor.license_verified_with_moa and doctor.verification_date %}
-                <div class="detail-item">
-                  <span class="detail-label">
-                    <i class="bi bi-calendar-check me-1"></i>
-                    驗證完成時間：
-                  </span>
-                  <span class="detail-value verification-time">
-                    {{ doctor.verification_date|date:"Y年m月d日 H:i" }}
-                    <small class="text-muted ms-2">
-                      ({{ doctor.verification_date|timesince }}前)
-                    </small>
-                  </span>
-                </div>
-                {% elif not doctor.license_verified_with_moa %}
-                <div class="detail-item">
-                  <span class="detail-label">
-                    <i class="bi bi-info-circle me-1"></i>
-                    驗證說明：
-                  </span>
-                  <span class="detail-value">
-                    {% if doctor.vet_license_number %}
-                      <span class="text-warning">
-                        執照號碼已填寫，等待管理員或本人進行驗證
-                      </span>
-                      <div class="verification-action mt-2">
-                        <button type="button" class="btn btn-sm btn-success" id="verifyLicenseBtn">
-                          <i class="bi bi-shield-check me-1"></i>
-                          立即驗證執照
-                        </button>
-                      </div>
-                    {% else %}
-                      <span class="text-muted">
-                        請先填寫執照號碼才能進行驗證
-                      </span>
-                    {% endif %}
-                  </span>
-                </div>
-                {% endif %}
-                
-                <!-- 執照詳細資訊 (已驗證才顯示) -->
+            <div class="doctor-info">
+                <h3>{{ doctor.user.get_full_name|default:doctor.user.username }}</h3>
+                <p>{{ doctor.role_display }} | {{ doctor.specialization|default:"尚未設定專科" }}</p>
                 {% if doctor.license_verified_with_moa %}
-                  {% if doctor.moa_license_type %}
-                  <div class="detail-item">
-                    <span class="detail-label">
-                      <i class="bi bi-award me-1"></i>
-                      執照類別：
-                    </span>
-                    <span class="detail-value">{{ doctor.moa_license_type }}</span>
-                  </div>
-                  {% endif %}
-                  
-                  {% if doctor.moa_clinic_name %}
-                  <div class="detail-item">
-                    <span class="detail-label">
-                      <i class="bi bi-building me-1"></i>
-                      農委會登記診所：
-                    </span>
-                    <span class="detail-value">{{ doctor.moa_clinic_name }}</span>
-                  </div>
-                  {% endif %}
-                {% endif %}
-                
-                <!-- 帳號時間資訊 -->
-                <div class="detail-item">
-                  <span class="detail-label">
-                    <i class="bi bi-person-plus me-1"></i>
-                    帳號建立時間：
-                  </span>
-                  <span class="detail-value">
-                    {{ doctor.created_at|date:"Y年m月d日 H:i" }}
-                    <small class="text-muted ms-2">
-                      ({{ doctor.created_at|timesince }}前建立)
-                    </small>
-                  </span>
-                </div>
-                
-                {% if doctor.updated_at %}
-                <div class="detail-item">
-                  <span class="detail-label">
-                    <i class="bi bi-arrow-clockwise me-1"></i>
-                    最後更新時間：
-                  </span>
-                  <span class="detail-value">
-                    {{ doctor.updated_at|date:"Y年m月d日 H:i" }}
-                    <small class="text-muted ms-2">
-                      ({{ doctor.updated_at|timesince }}前)
-                    </small>
-                  </span>
+                <div class="verification-badge">
+                    <i class="fas fa-shield-alt"></i> 已驗證獸醫師
                 </div>
                 {% endif %}
-              </div>
             </div>
-          {% else %}
-            <!-- 未驗證的執照輸入 -->
-            <div class="row">
-              <div class="col-md-8">
-                <div class="form-group-modern">
-                  <label for="{{ form.vet_license_number.id_for_label }}" class="form-label-modern">
-                    <i class="bi bi-card-text me-1"></i>
-                    {{ form.vet_license_number.label }}
-                  </label>
-                  <input type="text" 
-                         name="vet_license_number" 
-                         id="id_vet_license_number"
-                         class="form-control" 
-                         value="{{ doctor.vet_license_number|default:'' }}"
-                         placeholder="請輸入完整執照號碼，例如：**府農**字第****號"
-                         {% if not doctor.vet_license_number %}required{% endif %}>
-                  <div class="form-help privacy-protected">農委會核發的獸醫師執照號碼（隱私保護）</div>
-                  <div class="invalid-feedback"></div>
-                </div>
-              </div>
-              
-              <div class="col-md-4">
-                {% if doctor.vet_license_number and not doctor.license_verified_with_moa %}
-                  <div class="verify-action">
-                    <button type="button" class="btn-verify-license" id="verifyLicenseBtn">
-                      <i class="bi bi-shield-check"></i>
-                      立即驗證
-                    </button>
-                    <div class="verify-help">點擊進行農委會API驗證</div>
-                  </div>
-                {% endif %}
-              </div>
-            </div>
-          {% endif %}
         </div>
-        
-        <div class="row">
-          <div class="col-md-6">
-            <div class="form-group-modern">
-              <label for="{{ form.specialization.id_for_label }}" class="form-label-modern">
-                <i class="bi bi-star me-1"></i>
-                {{ form.specialization.label }}
-              </label>
-              {{ form.specialization }}
-              <div class="invalid-feedback"></div>
-            </div>
-          </div>
-          
-          <div class="col-md-6">
-            <div class="form-group-modern">
-              <label for="{{ form.years_of_experience.id_for_label }}" class="form-label-modern">
-                <i class="bi bi-calendar-check me-1"></i>
-                {{ form.years_of_experience.label }}
-              </label>
-              {{ form.years_of_experience }}
-              <div class="form-help">從取得執照開始計算的年資</div>
-              <div class="invalid-feedback"></div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-12">
-            <div class="form-group-modern">
-              <label for="{{ form.bio.id_for_label }}" class="form-label-modern">
-                <i class="bi bi-file-text me-1"></i>
-                {{ form.bio.label }}
-              </label>
-              {{ form.bio }}
-              <div class="form-help">醫師的專業背景和治療理念介紹</div>
-              <div class="character-counter">
-                <span class="current">{{ form.bio.value|length|default:0 }}</span> / <span class="max">500</span>
-              </div>
-              <div class="invalid-feedback"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 權限設定標籤 -->
-      <div class="tab-content-modern" data-content="permissions" aria-hidden="true">
-        <div class="section-header">
-          <h3 class="section-title">
-            <i class="bi bi-shield-check me-2"></i>
-            系統權限管理
-          </h3>
-          <p class="section-description">
-            設定醫師在系統中的權限和可使用的功能
-          </p>
-        </div>
-        
-        <div class="permission-cards">
-          <!-- 預約管理權限 -->
-          <div class="permission-card">
-            <div class="permission-header">
-              <h4 class="permission-title">
-                <i class="bi bi-calendar3 me-2"></i>
-                預約管理權限
-              </h4>
-              <div class="permission-toggle">
-                <div class="form-check form-switch">
-                  {{ form.can_manage_appointments }}
-                  <label for="{{ form.can_manage_appointments.id_for_label }}" class="form-check-label">
-                    啟用預約管理
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="permission-description">
-              允許醫師查看、確認、取消和修改預約。建議所有執業醫師都開啟此權限。
-            </div>
-            <div class="permission-features">
-              <div class="feature-item">
-                <i class="bi bi-check text-success"></i>
-                查看自己的預約列表
-              </div>
-              <div class="feature-item">
-                <i class="bi bi-check text-success"></i>
-                確認或取消預約
-              </div>
-              <div class="feature-item">
-                <i class="bi bi-check text-success"></i>
-                管理預約時段
-              </div>
-            </div>
-          </div>
-          
-          <!-- 診所管理員權限 -->
-          <div class="permission-card admin-permission">
-            <div class="permission-header">
-              <h4 class="permission-title">
-                <i class="bi bi-crown me-2"></i>
-                診所管理員權限
-              </h4>
-              <div class="permission-toggle">
-                <div class="form-check form-switch">
-                  <input type="checkbox" 
-                         id="isClinicAdmin" 
-                         name="is_clinic_admin" 
-                         class="form-check-input"
-                         {% if doctor.is_clinic_admin %}checked{% endif %}>
-                  <label for="isClinicAdmin" class="form-check-label">
-                    設為管理員
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="permission-description">
-              <i class="bi bi-info-circle text-info me-1"></i>
-              管理員權限將允許此醫師管理診所的所有設定和其他醫師帳號。醫師可以同時具有管理員和執業醫師身份。
-            </div>
-            <div class="permission-features">
-              <div class="feature-item">
-                <i class="bi bi-check text-warning"></i>
-                管理其他醫師帳號
-              </div>
-              <div class="feature-item">
-                <i class="bi bi-check text-warning"></i>
-                設定診所排班
-              </div>
-              <div class="feature-item">
-                <i class="bi bi-check text-warning"></i>
-                查看所有預約記錄
-              </div>
-              <div class="feature-item">
-                <i class="bi bi-check text-warning"></i>
-                管理診所基本設定
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 權限變更記錄 -->
-        <div class="permission-history">
-          <h6 class="history-title">
-            <i class="bi bi-clock-history me-2"></i>
-            最近權限變更
-          </h6>
-          <div class="history-list">
-            <div class="history-item">
-              <div class="history-date">{{ doctor.created_at|date:"Y年m月d日" }}</div>
-              <div class="history-action">帳號建立</div>
-              <div class="history-by">系統自動</div>
-            </div>
-            {% if doctor.is_clinic_admin %}
-            <div class="history-item">
-              <div class="history-date">{{ doctor.updated_at|date:"Y年m月d日" }}</div>
-              <div class="history-action">授予管理員權限</div>
-              <div class="history-by">{{ user.get_full_name|default:user.username }}</div>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- 安全設定標籤 -->
-      <div class="tab-content-modern" data-content="security" aria-hidden="true">
-        <div class="section-header">
-          <h3 class="section-title">
-            <i class="bi bi-lock me-2"></i>
-            帳號安全設定
-          </h3>
-          <p class="section-description">
-            管理醫師帳號的安全相關設定
-          </p>
-        </div>
-        
-        <!-- 密碼重設區域 -->
-        <div class="security-card">
-          <div class="security-header">
-            <h6 class="security-title">
-              <i class="bi bi-key me-2"></i>
-              密碼管理
-            </h6>
-          </div>
-          <div class="security-content">
-            <p class="security-description">
-              為了帳號安全，建議定期更新密碼。醫師也可以自行在個人設定中修改密碼。
-            </p>
-            <div class="security-actions">
-              <button type="button" class="btn-security" id="resetPasswordBtn">
-                <i class="bi bi-arrow-clockwise"></i>
-                發送密碼重設信件
-              </button>
-              <div class="security-help">
-                將發送密碼重設連結到醫師的註冊信箱
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 帳號狀態控制 -->
-        <div class="security-card">
-          <div class="security-header">
-            <h6 class="security-title">
-              <i class="bi bi-person-check me-2"></i>
-              帳號狀態控制
-            </h6>
-          </div>
-          <div class="security-content">
-            <div class="status-control">
-              <div class="status-info">
-                <div class="status-current">
-                  目前狀態：
-                  {% if doctor.is_active %}
-                    <span class="badge badge-success">帳號啟用</span>
-                  {% else %}
-                    <span class="badge badge-warning">帳號停用</span>
-                  {% endif %}
-                </div>
-                <div class="status-description">
-                  {% if doctor.is_active %}
-                    醫師可以正常登入和使用系統功能
-                  {% else %}
-                    醫師暫時無法登入，不會出現在預約選項中
-                  {% endif %}
-                </div>
-              </div>
-              
-              {% if doctor != vet_profile %}
-              <div class="status-actions">
-                {% if doctor.is_active %}
-                  <button type="button" class="btn-security btn-warning" id="deactivateAccountBtn">
-                    <i class="bi bi-pause-circle"></i>
-                    停用帳號
-                  </button>
-                {% else %}
-                  <button type="button" class="btn-security btn-success" id="activateAccountBtn">
-                    <i class="bi bi-play-circle"></i>
-                    啟用帳號
-                  </button>
-                {% endif %}
-              </div>
-              {% else %}
-              <div class="status-notice">
-                <i class="bi bi-info-circle text-info me-1"></i>
-                您無法修改自己的帳號狀態
-              </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        
-        <!-- 登入記錄 -->
-        <div class="security-card">
-          <div class="security-header">
-            <h6 class="security-title">
-              <i class="bi bi-clock-history me-2"></i>
-              最近登入記錄
-            </h6>
-          </div>
-          <div class="security-content">
-            {% if doctor.user.last_login %}
-              <div class="login-record">
-                <div class="login-time">{{ doctor.user.last_login|date:"Y年m月d日 H:i:s" }}</div>
-                <div class="login-detail">最後一次登入</div>
-              </div>
-            {% else %}
-              <div class="no-login">
-                <i class="bi bi-exclamation-circle text-muted me-1"></i>
-                此醫師從未登入過系統
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- 表單控制按鈕 -->
-      <div class="form-controls-modern">
-        <div class="controls-left">
-          <div class="save-status" id="saveStatus" style="display: none;">
-            <i class="bi bi-check-circle text-success me-1"></i>
-            <span>變更已儲存</span>
-          </div>
-        </div>
-        
-        <div class="controls-right">
-          <button type="button" class="btn-modern btn-outline-modern" id="cancelBtn">
-            <i class="bi bi-x"></i>
-            <span>取消</span>
-          </button>
-          
-          <button type="submit" class="btn-modern btn-primary-modern" id="saveBtn">
-            <i class="bi bi-check-circle"></i>
-            <span>儲存變更</span>
-            <div class="loading-spinner-modern"></div>
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <!-- 幫助提示區域 -->
-  <div class="help-section-modern">
-    <h6 class="help-title">
-      <i class="bi bi-lightbulb"></i>
-      編輯醫師注意事項
-    </h6>
-    
-    <div class="row">
-      <div class="col-md-6">
-        <ul class="help-list">
-          <li class="help-item">
-            <strong>基本資料：</strong>修改信箱後醫師會收到通知
-          </li>
-          <li class="help-item">
-            <strong>執照驗證：</strong>已驗證的執照會自動隱藏號碼保護隱私
-          </li>
-          <li class="help-item">
-            <strong>權限變更：</strong>變更會立即生效，請謹慎操作
-          </li>
-        </ul>
-      </div>
-      
-      <div class="col-md-6">
-        <ul class="help-list">
-          <li class="help-item">
-            <strong>管理員身份：</strong>可與執業醫師身份並存
-          </li>
-          <li class="help-item">
-            <strong>帳號狀態：</strong>停用帳號不會刪除資料
-          </li>
-          <li class="help-item">
-            <strong>自動儲存：</strong>表單會自動儲存您的變更
-          </li>
-        </ul>
-      </div>
+        {% endif %}
     </div>
-  </div>
 
+    <!-- 表單內容區域 -->
+    <div class="edit-doctor-container">
+        <form method="post" enctype="multipart/form-data" id="doctorForm" class="doctor-form">
+            {% csrf_token %}
+            
+            <!-- 基本資料區塊 -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user"></i> 基本資料</h2>
+                    <p>請填寫醫師的基本個人資料</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="first_name" class="required">醫師姓名</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" 
+                               value="{{ doctor.user.first_name|default:'' }}" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i>
+                            請輸入醫師的真實姓名
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email" class="required">電子信箱</label>
+                        <input type="email" id="email" name="email" class="form-control" 
+                               value="{{ doctor.user.email|default:'' }}" required>
+                        <div class="form-text">
+                            <i class="fas fa-envelope"></i>
+                            用於登入系統及接收通知
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone_number">聯絡電話</label>
+                        <input type="tel" id="phone_number" name="phone_number" class="form-control" 
+                               value="{{ doctor.phone_number|default:'' }}" placeholder="09xxxxxxxx">
+                        <div class="form-text">
+                            <i class="fas fa-phone"></i>
+                            台灣手機號碼格式
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 專業資料區塊 -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-graduation-cap"></i> 專業資料</h2>
+                    <p>請填寫醫師的專業背景與資格</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="vet_license_number">獸醫師執照號碼</label>
+                        <input type="text" id="vet_license_number" name="vet_license_number" class="form-control" 
+                               value="{{ doctor.vet_license_number|default:'' }}" 
+                               placeholder="例如：94府農畜字第13273號">
+                        <div class="form-text">
+                            <i class="fas fa-certificate"></i>
+                            填寫後需通過農委會驗證才能填寫醫療記錄
+                        </div>
+                        {% if doctor.vet_license_number and doctor.license_verified_with_moa %}
+                        <div class="verification-status verified">
+                            <i class="fas fa-check-circle"></i>
+                            已通過農委會驗證 ({{ doctor.verification_date|date:"Y/m/d" }})
+                            {% if doctor.moa_license_type %}
+                            <span class="license-type">{{ doctor.moa_license_type }}</span>
+                            {% endif %}
+                        </div>
+                        {% elif doctor.vet_license_number %}
+                        <div class="verification-status unverified">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            尚未驗證執照
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="years_of_experience">執業年資</label>
+                        <input type="number" id="years_of_experience" name="years_of_experience" 
+                               class="form-control" min="0" max="50"
+                               value="{{ doctor.years_of_experience|default:0 }}" placeholder="0">
+                        <div class="form-text">以年為單位</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 專長與簡介區塊 -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-stethoscope"></i> 專長與簡介</h2>
+                    <p>請填寫醫師的專業專長與個人簡介</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="specialization_multi_select">專科領域 <span class="text-muted">(可複選)</span></label>
+                        <div class="multi-select-wrapper">
+                            <div class="multi-select-display" id="multi_select_display" onclick="toggleMultiSelectDropdown()">
+                                <span class="selected-text">請選擇專科領域</span>
+                                <i class="fas fa-chevron-down dropdown-icon"></i>
+                            </div>
+                            
+                            <!-- 已選擇的專科標籤顯示區域 -->
+                            <div class="selected-tags" id="selected_tags" style="display: none;">
+                                <!-- 標籤將由JavaScript動態生成 -->
+                            </div>
+                            <div class="multi-select-dropdown" id="multi_select_dropdown">
+                                <div class="dropdown-search">
+                                    <input type="text" id="spec_search" placeholder="搜尋預設專科..." onkeyup="filterSpecializations()">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="dropdown-options" id="dropdown_options">
+                                    <label class="option-item">
+                                        <input type="checkbox" value="一般獸醫學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>一般獸醫學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="內科學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>內科學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="外科學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>外科學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="皮膚科" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>皮膚科</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="心臟科" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>心臟科</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="腫瘤科" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>腫瘤科</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="眼科" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>眼科</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="骨科" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>骨科</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="神經科" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>神經科</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="急診醫學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>急診醫學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="特殊動物醫學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>特殊動物醫學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="禽鳥醫學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>禽鳥醫學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="水生動物醫學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>水生動物醫學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="麻醉學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>麻醉學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="放射學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>放射學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="病理學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>病理學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="藥理學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>藥理學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="營養學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>營養學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="行為學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>行為學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="繁殖學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>繁殖學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="預防醫學" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>預防醫學</span>
+                                    </label>
+                                    <label class="option-item">
+                                        <input type="checkbox" value="公共衛生" onchange="updateSelectedSpecs()">
+                                        <span class="checkmark"></span>
+                                        <span>公共衛生</span>
+                                    </label>
+                                    <label class="option-item other-spec-item">
+                                        <input type="checkbox" id="other_checkbox" value="other" onchange="toggleOtherInput()">
+                                        <span class="checkmark other-checkmark"></span>
+                                        <span>其他專科</span>
+                                    </label>
+                                </div>
+                                <div class="other-input-section" id="other_input_section" style="display: none;">
+                                    <input type="text" id="specialization_other" name="specialization_other" 
+                                           class="form-control other-input" placeholder="請填寫其他專科領域" 
+                                           oninput="updateSelectedSpecs()" 
+                                           onclick="event.stopPropagation()">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-stethoscope"></i>
+                            請選擇醫師的專科領域（可複選），也可填寫其他專科
+                        </div>
+                        
+                        <!-- 隱藏欄位儲存最終的專科領域值 -->
+                        <input type="hidden" name="specialization" id="specialization" value="{{ doctor.specialization|default:'' }}">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="bio">醫師簡介</label>
+                        <textarea id="bio" name="bio" class="form-control" rows="4" 
+                                  placeholder="請簡要介紹醫師的專業背景、治療理念或特色...">{{ doctor.bio|default:'' }}</textarea>
+                        <div class="char-counter">
+                            <span id="bioCounter">0</span>/500 字
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系統設定區塊 -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> 系統設定</h2>
+                    <p>設定醫師在系統中的權限與狀態</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" name="is_active" {% if doctor.is_active %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                            <span class="setting-text">啟用醫師帳號</span>
+                        </label>
+                        <div class="form-text">停用後醫師將無法登入系統</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" name="is_active_veterinarian" {% if doctor.is_active_veterinarian %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                            <span class="setting-text">獸醫師身份</span>
+                        </label>
+                        <div class="form-text">啟用獸醫師功能權限</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" name="is_clinic_admin" {% if doctor.is_clinic_admin %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                            <span class="setting-text">診所管理員</span>
+                        </label>
+                        <div class="form-text">擁有診所管理權限</div>
+                    </div>
+                </div>
+                
+                <!-- 權限說明 -->
+                <div class="permission-info">
+                    <h6><i class="fas fa-info-circle"></i> 權限說明</h6>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>獸醫師身份：</strong>
+                            <ul>
+                                <li>管理預約</li>
+                                <li>填寫醫療記錄（需執照驗證）</li>
+                                <li>查看相關診所數據</li>
+                            </ul>
+                        </div>
+                        <div class="info-item">
+                            <strong>診所管理員：</strong>
+                            <ul>
+                                <li>管理其他醫師</li>
+                                <li>管理所有預約</li>
+                                <li>查看完整診所數據</li>
+                                <li>系統設定管理</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表單按鈕 -->
+            <div class="form-actions">
+                <div class="action-buttons">
+                    <a href="{% url 'manage_doctors' %}" class="btn-outline-modern">
+                        <i class="fas fa-arrow-left"></i> 返回列表
+                    </a>
+                    
+                    <button type="submit" class="btn-primary-modern" id="saveBtn">
+                        <i class="fas fa-save"></i> 
+                        {% if doctor.id %}儲存變更{% else %}新增醫師{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/clinic/edit-doctor.js' %}"></script>
-
 <script>
+// 多選下拉選單邏輯
+let isDropdownOpen = false;
+
+function toggleMultiSelectDropdown() {
+    const display = document.getElementById('multi_select_display');
+    const dropdown = document.getElementById('multi_select_dropdown');
+    
+    isDropdownOpen = !isDropdownOpen;
+    
+    if (isDropdownOpen) {
+        display.classList.add('active');
+        dropdown.classList.add('show');
+        // 聚焦搜尋框
+        const searchInput = document.getElementById('spec_search');
+        setTimeout(() => searchInput.focus(), 100);
+    } else {
+        display.classList.remove('active');
+        dropdown.classList.remove('show');
+    }
+}
+
+// 更新選中的專科顯示
+function updateSelectedSpecs() {
+    const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]:checked');
+    const otherInput = document.getElementById('specialization_other');
+    const selectedText = document.querySelector('.selected-text');
+    const selectedTags = document.getElementById('selected_tags');
+    const hiddenField = document.getElementById('specialization');
+    
+    // 收集選中的專科
+    const selectedSpecs = Array.from(checkboxes).map(cb => cb.value);
+    
+    // 加入其他專科（如果有填寫）
+    const otherSpec = otherInput.value.trim();
+    if (otherSpec) {
+        selectedSpecs.push(otherSpec);
+    }
+    
+    // 更新下拉顯示文字
+    if (selectedSpecs.length === 0) {
+        selectedText.textContent = '請選擇專科領域';
+        selectedText.classList.remove('has-selection');
+    } else if (selectedSpecs.length === 1) {
+        selectedText.textContent = selectedSpecs[0];
+        selectedText.classList.add('has-selection');
+    } else {
+        selectedText.textContent = `已選擇 ${selectedSpecs.length} 項專科`;
+        selectedText.classList.add('has-selection');
+    }
+    
+    // 更新標籤顯示
+    updateSpecTags(selectedSpecs, otherSpec);
+    
+    // 更新隱藏欄位
+    hiddenField.value = selectedSpecs.join('、');
+}
+
+// 更新專科標籤顯示
+function updateSpecTags(selectedSpecs, otherSpec) {
+    const selectedTags = document.getElementById('selected_tags');
+    
+    // 清空現有標籤
+    selectedTags.innerHTML = '';
+    
+    if (selectedSpecs.length === 0) {
+        selectedTags.style.display = 'none';
+        selectedTags.classList.add('empty');
+        return;
+    }
+    
+    selectedTags.style.display = 'flex';
+    selectedTags.classList.remove('empty');
+    
+    // 添加預設專科標籤
+    const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]:checked');
+    checkboxes.forEach(checkbox => {
+        const tag = createSpecTag(checkbox.value, false, checkbox);
+        selectedTags.appendChild(tag);
+    });
+    
+    // 添加其他專科標籤
+    if (otherSpec) {
+        const tag = createSpecTag(otherSpec, true);
+        selectedTags.appendChild(tag);
+    }
+    
+    // 添加計數標籤
+    if (selectedSpecs.length > 3) {
+        const countTag = document.createElement('span');
+        countTag.className = 'tags-count';
+        countTag.textContent = `總計 ${selectedSpecs.length} 項`;
+        selectedTags.appendChild(countTag);
+    }
+}
+
+// 創建專科標籤
+function createSpecTag(specName, isOther, checkbox = null) {
+    const tag = document.createElement('span');
+    tag.className = `spec-tag${isOther ? ' other-tag' : ''}`;
+    
+    const text = document.createElement('span');
+    text.textContent = specName;
+    tag.appendChild(text);
+    
+    const removeBtn = document.createElement('span');
+    removeBtn.className = 'remove-tag';
+    removeBtn.innerHTML = '×';
+    removeBtn.title = '移除此專科';
+    removeBtn.onclick = function(e) {
+        e.stopPropagation();
+        removeSpecTag(specName, isOther, checkbox);
+    };
+    tag.appendChild(removeBtn);
+    
+    return tag;
+}
+
+// 移除專科標籤
+function removeSpecTag(specName, isOther, checkbox) {
+    if (isOther) {
+        // 清空其他專科輸入框並取消勾選其他checkbox
+        const otherInput = document.getElementById('specialization_other');
+        const otherInputSection = document.getElementById('other_input_section');
+        const otherCheckbox = document.getElementById('other_checkbox');
+        
+        otherInput.value = '';
+        otherInputSection.style.display = 'none';
+        otherCheckbox.checked = false;
+    } else if (checkbox) {
+        // 取消勾選對應的checkbox
+        checkbox.checked = false;
+    }
+    
+    // 更新顯示
+    updateSelectedSpecs();
+}
+
+// 搜尋過濾功能
+function filterSpecializations() {
+    const searchInput = document.getElementById('spec_search');
+    const options = document.querySelectorAll('#dropdown_options .option-item:not(.other-spec-item)');
+    const otherSpecItem = document.querySelector('.other-spec-item');
+    const otherInputSection = document.getElementById('other_input_section');
+    const searchTerm = searchInput.value.toLowerCase();
+    
+    // 只過濾預設專科選項，不包括「其他專科」選項
+    options.forEach(option => {
+        const text = option.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            option.style.display = 'flex';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // 確保「其他專科」選項和輸入區域始終顯示
+    if (otherSpecItem) {
+        otherSpecItem.style.display = 'flex';
+    }
+    if (otherInputSection && document.getElementById('other_checkbox').checked) {
+        otherInputSection.style.display = 'block';
+    }
+}
+
+// 初始化專科領域顯示
+function initializeSpecializationDisplay() {
+    const hiddenField = document.getElementById('specialization');
+    const currentSpecs = hiddenField.value;
+    
+    if (currentSpecs) {
+        // 分割現有專科
+        const specList = currentSpecs.split('、').map(s => s.trim()).filter(Boolean);
+        
+        specList.forEach(spec => {
+            // 查找對應的checkbox
+            const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]');
+            let found = false;
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.value === spec) {
+                    checkbox.checked = true;
+                    found = true;
+                }
+            });
+            
+            // 如果沒找到對應的checkbox，放到其他欄位
+            if (!found) {
+                const otherInput = document.getElementById('specialization_other');
+                const otherInputSection = document.getElementById('other_input_section');
+                const otherCheckbox = document.getElementById('other_checkbox');
+                const currentOther = otherInput.value.trim();
+                
+                // 勾選其他專科checkbox並顯示輸入區域
+                otherCheckbox.checked = true;
+                otherInputSection.style.display = 'block';
+                
+                if (currentOther) {
+                    otherInput.value = currentOther + '、' + spec;
+                } else {
+                    otherInput.value = spec;
+                }
+            }
+        });
+        
+        // 更新顯示
+        updateSelectedSpecs();
+    }
+}
+
+// 切換其他專科輸入框顯示
+function toggleOtherInput() {
+    const otherCheckbox = document.getElementById('other_checkbox');
+    const otherInputSection = document.getElementById('other_input_section');
+    const otherInput = document.getElementById('specialization_other');
+    
+    if (otherCheckbox.checked) {
+        // 顯示輸入區域
+        otherInputSection.style.display = 'block';
+        setTimeout(() => otherInput.focus(), 100);
+    } else {
+        // 隱藏輸入區域並清空內容
+        otherInputSection.style.display = 'none';
+        otherInput.value = '';
+    }
+    
+    // 更新選中狀態
+    updateSelectedSpecs();
+}
+
+// 點擊外部關閉下拉選單
+document.addEventListener('click', function(event) {
+    const wrapper = document.querySelector('.multi-select-wrapper');
+    if (wrapper && !wrapper.contains(event.target) && isDropdownOpen) {
+        toggleMultiSelectDropdown();
+    }
+});
+
+// 字數統計功能
+function initCharCounters() {
+    const bioTextarea = document.getElementById('bio');
+    const counterElement = document.getElementById('bioCounter');
+    
+    if (bioTextarea && counterElement) {
+        function updateCounter() {
+            const count = bioTextarea.value.length;
+            counterElement.textContent = count;
+            
+            // 根據字數改變顏色
+            if (count > 450) {
+                counterElement.style.color = '#e53e3e';
+            } else if (count > 300) {
+                counterElement.style.color = '#d69e2e';
+            } else {
+                counterElement.style.color = '#718096';
+            }
+        }
+        
+        bioTextarea.addEventListener('input', updateCounter);
+        updateCounter(); // 初始化
+    }
+}
+
+// 表單驗證
+function initFormValidation() {
+    const form = document.getElementById('doctorForm');
+    const requiredFields = form.querySelectorAll('input[required], textarea[required]');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.style.borderColor = '#e53e3e';
+                isValid = false;
+                
+                // 移除錯誤樣式（在輸入時）
+                field.addEventListener('input', function() {
+                    field.style.borderColor = '';
+                }, { once: true });
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('請填寫所有必填欄位');
+            return false;
+        }
+        
+        // 更新專科領域
+        updateSpecializationField();
+    });
+}
+
+// 頁面載入完成後初始化
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🎯 編輯醫師頁面載入完成');
-  
-  // 初始化醫師資料（隱私保護）
-  window.doctorData = {
-    id: {{ doctor.id }},
-    isActive: {{ doctor.is_active|yesno:"true,false" }},
-    isVerified: {{ doctor.license_verified_with_moa|yesno:"true,false" }},
-    isAdmin: {{ doctor.is_clinic_admin|yesno:"true,false" }},
-    name: '{% if doctor.user.first_name %}{{ doctor.user.first_name|escapejs }}{% else %}{{ doctor.user.username|escapejs }}{% endif %}',
-    email: '{{ doctor.user.email|escapejs }}',
-    // 隱私保護：只在已驗證且需要時才包含執照號碼
-    {% if doctor.license_verified_with_moa and doctor.vet_license_number %}
-    licenseNumber: '{{ doctor.vet_license_number|escapejs }}',
-    licenseNumberMasked: '{{ doctor.vet_license_number|slice:":2"|escapejs }}****{{ doctor.vet_license_number|slice:"-2:"|escapejs }}',
-    {% else %}
-    licenseNumber: '{% if doctor.vet_license_number %}{{ doctor.vet_license_number|escapejs }}{% endif %}',
-    licenseNumberMasked: '',
-    {% endif %}
-    verificationDate: '{% if doctor.verification_date %}{{ doctor.verification_date|date:"Y年m月d日 H:i"|escapejs }}{% elif doctor.license_verified_with_moa %}{{ doctor.updated_at|date:"Y年m月d日 H:i"|escapejs }}{% endif %}'
-  };
-  
-  // 顯示表單錯誤（如果有）
-  {% if form.errors %}
-    {% for field, errors in form.errors.items %}
-      {% for error in errors %}
-        showFieldError('{{ field|escapejs }}', '{{ error|escapejs }}');
-      {% endfor %}
-    {% endfor %}
-  {% endif %}
-  
-  // 顯示成功訊息（如果有）
-  {% if messages %}
-    {% for message in messages %}
-      {% if message.tags == 'success' %}
-        showSuccessMessage('{{ message|escapejs }}');
-      {% elif message.tags == 'error' %}
-        showErrorMessage('{{ message|escapejs }}');
-      {% elif message.tags == 'info' %}
-        showInfoMessage('{{ message|escapejs }}');
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+    console.log('🏥 診所醫師編輯頁面載入');
+    
+    // 初始化各項功能
+    initializeSpecializationDisplay();
+    initCharCounters();
+    initFormValidation();
+    
+    // 阻止搜尋框的事件冒泡
+    const searchInput = document.getElementById('spec_search');
+    if (searchInput) {
+        searchInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+    
+    // 阻止下拉選單內部點擊關閉
+    const dropdown = document.getElementById('multi_select_dropdown');
+    if (dropdown) {
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+    
+    // 綁定其他專科輸入框事件
+    const otherInput = document.getElementById('specialization_other');
+    if (otherInput) {
+        // 阻止點擊事件冒泡
+        otherInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        // 監聽輸入變化
+        otherInput.addEventListener('input', function(e) {
+            updateSelectedSpecs();
+        });
+        
+        // 支援Enter鍵
+        otherInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateSelectedSpecs();
+            }
+        });
+    }
+    
+    console.log('✅ 醫師編輯頁面初始化完成');
 });
 </script>
-
-<!-- 無障礙支援 -->
-<div id="aria-live-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 {% endblock %}

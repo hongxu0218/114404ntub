@@ -34,7 +34,7 @@ class EmergencyMapApp {
             userIcon: '📍'
         };
         
-        console.log('🚨 急診地圖初始化 (Leaflet版本)...');
+//         console.log('🚨 急診地圖初始化 (Leaflet版本)...');
     }
     
     /**
@@ -47,7 +47,7 @@ class EmergencyMapApp {
             this.setupEventListeners();
             await this.getUserLocation();
             await this.loadEmergencyHospitals();
-            console.log('✅ 急診地圖初始化完成');
+//             console.log('✅ 急診地圖初始化完成');
         } catch (error) {
             console.error('❌ 急診地圖初始化失敗:', error);
             this.showError('急診地圖初始化失敗，請重新整理頁面');
@@ -89,7 +89,7 @@ class EmergencyMapApp {
         }).addTo(this.map);
     
         
-        console.log('🗺️ Leaflet 地圖初始化完成');
+//         console.log('🗺️ Leaflet 地圖初始化完成');
     }
     
     /**
@@ -199,7 +199,7 @@ class EmergencyMapApp {
      * 載入急診醫院資料
      */
     async loadEmergencyHospitals() {
-        console.log('🏥 載入急診醫院資料...');
+//         console.log('🏥 載入急診醫院資料...');
         
         try {
             this.showLoading(true, '載入急診醫院資料中...');
@@ -233,7 +233,7 @@ class EmergencyMapApp {
                 this.displayHospitalMarkers();
                 this.updateHospitalList();
                 this.updateFilterDisplay();
-                console.log(`✅ 載入 ${this.filteredHospitals.length} 間急診醫院`);
+//                 console.log(`✅ 載入 ${this.filteredHospitals.length} 間急診醫院`);
             } else {
                 throw new Error('API 回應格式錯誤');
             }
@@ -287,7 +287,7 @@ class EmergencyMapApp {
             });
         }
         
-        console.log(`🔍 篩選後顯示 ${this.filteredHospitals.length} 間急診醫院`);
+//         console.log(`🔍 篩選後顯示 ${this.filteredHospitals.length} 間急診醫院`);
     }
     
     /**
@@ -463,7 +463,7 @@ class EmergencyMapApp {
      * 顯示醫院標記
      */
     displayHospitalMarkers() {
-        console.log('📍 更新急診醫院標記...');
+//         console.log('📍 更新急診醫院標記...');
         
         // 清除現有標記
         this.markers.clearLayers();
@@ -851,11 +851,11 @@ class EmergencyMapApp {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     };
-                    console.log('✅ 獲取用戶位置成功:', this.userLocation);
+//                     console.log('✅ 獲取用戶位置成功:', this.userLocation);
                     resolve(this.userLocation);
                 },
                 (error) => {
-                    console.log('無法獲取用戶位置:', error.message);
+//                     console.log('無法獲取用戶位置:', error.message);
                     resolve(null);
                 },
                 {
@@ -1241,7 +1241,7 @@ let emergencyMapApp;
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚨 急診地圖頁面初始化 (Leaflet版本)...');
+//     console.log('🚨 急診地圖頁面初始化 (Leaflet版本)...');
     
     // 檢查必要的庫是否載入
     if (typeof L === 'undefined') {
@@ -1288,7 +1288,7 @@ function showErrorMessage(message) {
 window.addEventListener('beforeunload', function() {
     if (emergencyMapApp && emergencyMapApp.map) {
         emergencyMapApp.map.remove();
-        console.log('🧹 清理急診地圖資源');
+//         console.log('🧹 清理急診地圖資源');
     }
 });
 
@@ -1316,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.warn('⚠️ 缺少插件:', missingPlugins.map(p => p.name).join(', '));
             console.warn('某些功能可能無法正常運作');
         } else {
-            console.log('✅ 所有必要插件已載入');
+//             console.log('✅ 所有必要插件已載入');
         }
     }, 1000);
 });

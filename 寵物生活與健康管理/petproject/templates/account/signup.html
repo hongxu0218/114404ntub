@@ -180,7 +180,7 @@ button:hover {
         <button type="submit">註冊</button>
     </form>
 
-    <a href="{% url 'mark_from_signup_and_redirect' %}">
+    <a href="javascript:void(0)" onclick="signupWithGoogle()">
         <button type="button" class="google-login">使用 Google 帳號註冊</button>
     </a>
 
@@ -196,10 +196,16 @@ button:hover {
 document.addEventListener('DOMContentLoaded', function () {
     const accountType = document.getElementById('id_account_type');
     const vetFields = document.getElementById('vet-fields');
-    const cityInput = document.getElementById('vet_license_city');
-    const licenseInput = document.getElementById('vet_license');
+    const cityInput = document.getElementById('id_vet_license_city');
+    const licenseInput = document.getElementById('id_vet_license');
     const clinicNameInput = document.getElementById('id_clinic_name');
     const clinicAddressInput = document.getElementById('id_clinic_address');
+
+    // 檢查必要元素是否存在
+    if (!accountType || !vetFields) {
+        console.log('註冊表單元素未找到，跳過 JavaScript 初始化');
+        return;
+    }
 
     vetFields.style.display = 'none';
 
@@ -207,14 +213,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const isVet = accountType.value === 'vet';
         vetFields.style.display = isVet ? 'block' : 'none';
 
-        cityInput.required = isVet;
-        licenseInput.required = isVet;
-        clinicNameInput.required = isVet;
-        clinicAddressInput.required = isVet;
+        // 檢查元素是否存在才設置 required 屬性
+        if (cityInput) cityInput.required = isVet;
+        if (licenseInput) licenseInput.required = isVet;
+        if (clinicNameInput) clinicNameInput.required = isVet;
+        if (clinicAddressInput) clinicAddressInput.required = isVet;
     }
 
     accountType.addEventListener('change', toggleVetFields);
     toggleVetFields();
 });
+
+function signupWithGoogle() {
+    // 直接重定向到 Google 登入，由於我們已經修改adapter邏輯，
+    // 現在預設允許Google註冊並引導用戶到補充資料頁面
+    console.log('Redirecting to Google signup...');
+    window.location.href = '{% provider_login_url "google" %}';
+}
 </script>
 {% endblock %}

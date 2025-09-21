@@ -120,10 +120,11 @@
       <!-- 第三個功能卡片 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
         {% if user.is_authenticated and user.profile.account_type == 'clinic_admin' %}
-          <a href="{% url 'manage_schedules' %}" class="category-card">
+          <!-- 排班管理暫時移除，重新設計中 -->
+          <div class="category-card" style="opacity: 0.6; cursor: not-allowed;">
             <img src="{% static 'images/icon_time.png' %}" class="category-icon" alt="排班管理">
-            <div class="category-text">排班管理</div>
-          </a>
+            <div class="category-text">排班管理<br><small style="color: #666;">(重新設計中)</small></div>
+          </div>
         {% else %}
           <a href="{% url 'map' %}" class="category-card">
             <img src="{% static 'images/icon_location.png' %}" class="category-icon" alt="搜尋附近">

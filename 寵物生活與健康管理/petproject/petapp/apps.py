@@ -36,7 +36,7 @@ def email_confirmed_handler(request, email_address, **kwargs):
             user.email = email_address.email
             user.save()
         
-        print(f"🎉 信號處理：郵件 {email_address.email} 已驗證")
+        print(f"SUCCESS 信號處理：郵件 {email_address.email} 已驗證")
         
     except Exception as e:
-        print(f"❌ 信號處理錯誤: {e}")
+        print(f"ERROR 信號處理錯誤: {e}")

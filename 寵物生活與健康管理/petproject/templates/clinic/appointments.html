@@ -61,9 +61,9 @@
       
       <div class="col-lg-4">
         <div class="action-buttons-modern">
-          <a href="{% url 'manage_schedules' %}" class="btn-modern btn-primary-modern">
-            <i class="bi bi-calendar3"></i>
-            <span>排班管理</span>
+          <a href="{% url 'create_walkin_appointment' %}" class="btn-modern btn-primary-modern">
+            <i class="bi bi-person-walking"></i>
+            <span>現場預約</span>
           </a>
           <button class="btn-modern btn-secondary-modern" onclick="refreshAppointments()">
             <i class="bi bi-arrow-clockwise"></i>
@@ -277,11 +277,6 @@
           
           <!-- 操作按鈕區域 -->
           <div class="card-actions">
-            <button class="action-btn btn-info" onclick="viewAppointmentDetail({{ appointment.id }})">
-              <i class="bi bi-eye"></i>
-              <span>查看詳情</span>
-            </button>
-            
             {% if appointment.status == 'pending' %}
             <button class="action-btn btn-success" onclick="confirmAppointment({{ appointment.id }})">
               <i class="bi bi-check"></i>
@@ -406,10 +401,11 @@
           診所尚未收到任何預約，可以開始設定排班來接受預約
         {% endif %}
       </p>
-      <a href="{% url 'manage_schedules' %}" class="btn-modern btn-primary-modern">
-        <i class="bi bi-calendar3 me-2"></i>
-        設定排班時間
-      </a>
+      <!-- 排班管理已移除，重新設計中 -->
+      <button class="btn-modern btn-secondary-modern" disabled style="opacity: 0.6;">
+        <i class="bi bi-tools me-2"></i>
+        重新設計中
+      </button>
     </div>
     {% endif %}
   </div>
@@ -466,63 +462,6 @@
     </div>
   </div>
 
-  <!-- 操作指南 -->
-  <div class="help-section-modern">
-    <h6 class="help-title">
-      <i class="bi bi-lightbulb me-2"></i>
-      預約管理操作指南
-    </h6>
-    
-    <div class="row">
-      <div class="col-md-4">
-        <h6 class="text-muted mb-3">📋 預約狀態說明</h6>
-        <ul class="help-list">
-          <li class="help-item">
-            <span class="status-badge-modern status-pending me-2">待確認</span>
-            新預約，需要診所確認
-          </li>
-          <li class="help-item">
-            <span class="status-badge-modern status-confirmed me-2">已確認</span>
-            診所已確認的預約
-          </li>
-          <li class="help-item">
-            <span class="status-badge-modern status-completed me-2">已完成</span>
-            已完成看診的預約
-          </li>
-        </ul>
-      </div>
-      
-      <div class="col-md-4">
-        <h6 class="text-muted mb-3">🔧 快速操作</h6>
-        <ul class="help-list">
-          <li class="help-item">
-            <strong>批量確認：</strong>按住 Ctrl 鍵多選預約進行批量操作
-          </li>
-          <li class="help-item">
-            <strong>快速搜尋：</strong>使用搜尋框快速找到特定預約
-          </li>
-          <li class="help-item">
-            <strong>智能篩選：</strong>使用篩選條件快速分類查看預約
-          </li>
-        </ul>
-      </div>
-      
-      <div class="col-md-4">
-        <h6 class="text-muted mb-3">⚡ 鍵盤快捷鍵</h6>
-        <ul class="help-list">
-          <li class="help-item">
-            <kbd>Ctrl</kbd> + <kbd>R</kbd> : 重新整理預約列表
-          </li>
-          <li class="help-item">
-            <kbd>Ctrl</kbd> + <kbd>F</kbd> : 聚焦搜尋框
-          </li>
-          <li class="help-item">
-            <kbd>Ctrl</kbd> + <kbd>1/2</kbd> : 切換檢視模式
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
 
 </div>
 
@@ -541,8 +480,8 @@
 document.addEventListener('DOMContentLoaded', function() {
   window.appointmentPageData = {
     clinic: {
-      id: {{ clinic.id }},
-      name: '{{ clinic.clinic_name|escapejs }}'
+      id: {{ clinic.id|default:0 }}, 
+      name: "{{ clinic.clinic_name|default:'未知診所'|escapejs }}" 
     },
     appointments: [
       {% for appointment in appointments %}

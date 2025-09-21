@@ -1,0 +1,762 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load schedule_filters %}
+
+{% block title %}{{ schedule.title }} - 排班詳情{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/clinic/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/clinic/business-hours.css' %}">
+<style>
+/* 重新設計排班詳情頁面 - 診所管理風格 */
+.schedule-detail-container {
+    background: var(--dashboard-bg, #f8fafc);
+    min-height: 100vh;
+    padding: var(--spacing-lg, 1.5rem);
+}
+
+.schedule-header {
+    background: var(--card-bg, #ffffff);
+    border-radius: var(--radius-lg, 0.75rem);
+    box-shadow: var(--card-shadow);
+    padding: var(--spacing-xl, 2rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.schedule-header .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.schedule-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+}
+
+.schedule-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary-color, #2563eb), var(--primary-light, #3b82f6));
+    border-radius: var(--radius-md, 0.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.schedule-title h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-900, #0f172a);
+}
+
+.schedule-meta {
+    margin-top: var(--spacing-sm, 0.5rem);
+    display: flex;
+    gap: var(--spacing-lg, 1.5rem);
+    color: var(--gray-600, #475569);
+    font-size: 0.875rem;
+}
+
+.status-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md, 0.5rem);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.status-badge.active {
+    background: var(--success-color, #10b981);
+    color: white;
+}
+
+.status-badge.draft {
+    background: var(--gray-400, #94a3b8);
+    color: white;
+}
+
+.status-badge.suspended {
+    background: var(--warning-color, #f59e0b);
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-md, 1rem);
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md, 0.5rem);
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.btn-primary {
+    background: var(--primary-color, #2563eb);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark, #1d4ed8);
+}
+
+.btn-success {
+    background: var(--success-color, #10b981);
+    color: white;
+}
+
+.btn-warning {
+    background: var(--warning-color, #f59e0b);
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--gray-300, #cbd5e1);
+    color: var(--gray-700, #334155);
+}
+
+.btn-outline:hover {
+    background: var(--gray-50, #f8fafc);
+}
+
+/* 主要內容區域 */
+.schedule-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.content-card {
+    background: var(--card-bg, #ffffff);
+    border-radius: var(--radius-lg, 0.75rem);
+    box-shadow: var(--card-shadow);
+    padding: var(--spacing-xl, 2rem);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-lg, 1.5rem);
+    padding-bottom: var(--spacing-md, 1rem);
+    border-bottom: 2px solid var(--gray-100, #f1f5f9);
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-900, #0f172a);
+}
+
+.card-header i {
+    color: var(--primary-color, #2563eb);
+    font-size: 1.25rem;
+}
+
+/* 統計卡片 - 診所管理風格 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg, 1.5rem);
+    margin-bottom: var(--spacing-xl, 2rem);
+}
+
+.stat-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--gray-200, #e2e8f0);
+    border-radius: var(--radius-lg, 0.75rem);
+    padding: var(--spacing-lg, 1.5rem);
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    border-top: 4px solid var(--primary-color, #2563eb);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.stat-card:nth-child(2) {
+    border-top-color: var(--success-color, #10b981);
+}
+
+.stat-card:nth-child(3) {
+    border-top-color: var(--warning-color, #f59e0b);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    color: var(--gray-900, #0f172a);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--gray-600, #475569);
+    font-weight: 500;
+}
+
+/* 工作時段表格 */
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: var(--radius-md, 0.5rem);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.schedule-table th,
+.schedule-table td {
+    padding: var(--spacing-md, 1rem);
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200, #e2e8f0);
+}
+
+.schedule-table th {
+    background: var(--gray-50, #f8fafc);
+    font-weight: 600;
+    color: var(--gray-700, #334155);
+}
+
+.schedule-table tbody tr:hover {
+    background: var(--gray-50, #f8fafc);
+}
+
+.weekday-badge {
+    background: var(--primary-color, #2563eb);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.time-slot {
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-weight: 600;
+    color: var(--gray-700, #334155);
+}
+
+/* 側邊欄 */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 1.5rem);
+}
+
+.sidebar-card {
+    background: var(--card-bg, #ffffff);
+    border-radius: var(--radius-lg, 0.75rem);
+    box-shadow: var(--card-shadow);
+    padding: var(--spacing-lg, 1.5rem);
+}
+
+.sidebar-card h3 {
+    margin: 0 0 var(--spacing-md, 1rem) 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--gray-900, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+/* 快速操作按鈕 */
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 0.5rem);
+}
+
+.quick-action-btn {
+    padding: var(--spacing-md, 1rem);
+    border: 2px solid var(--gray-200, #e2e8f0);
+    border-radius: var(--radius-md, 0.5rem);
+    background: white;
+    text-decoration: none;
+    color: var(--gray-700, #334155);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md, 1rem);
+    transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+    border-color: var(--primary-color, #2563eb);
+    background: var(--primary-color, #2563eb);
+    color: white;
+}
+
+.quick-action-btn i {
+    font-size: 1.25rem;
+}
+
+.quick-action-btn.danger {
+    border-color: var(--danger-color, #dc3545);
+}
+
+.quick-action-btn.danger:hover {
+    background: var(--danger-color, #dc3545);
+    color: white;
+}
+
+/* 資訊網格 */
+.info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md, 1rem);
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm, 0.5rem) 0;
+    border-bottom: 1px solid var(--gray-100, #f1f5f9);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: var(--gray-600, #475569);
+    font-size: 0.875rem;
+}
+
+.info-item .value {
+    color: var(--gray-900, #0f172a);
+    font-weight: 500;
+    text-align: right;
+}
+
+/* 衝突警告卡片 */
+.sidebar-card.warning {
+    border-left: 4px solid var(--warning-color, #f59e0b);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.sidebar-card.warning h3 {
+    color: var(--warning-dark, #d97706);
+}
+
+.conflict-list {
+    margin: var(--spacing-md, 1rem) 0;
+}
+
+.conflict-item {
+    background: white;
+    border-radius: var(--radius-md, 0.5rem);
+    padding: var(--spacing-md, 1rem);
+    margin-bottom: var(--spacing-sm, 0.5rem);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.conflict-message {
+    font-weight: 600;
+    color: var(--warning-dark, #d97706);
+    margin-bottom: var(--spacing-sm, 0.5rem);
+}
+
+.conflict-schedule {
+    font-size: 0.75rem;
+    color: var(--gray-600, #475569);
+}
+
+/* 備註內容 */
+.notes-content {
+    padding: var(--spacing-lg, 1.5rem);
+    background: var(--gray-50, #f8fafc);
+    border-radius: var(--radius-md, 0.5rem);
+    border-left: 4px solid var(--primary-color, #2563eb);
+    font-style: italic;
+    line-height: 1.6;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .schedule-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .schedule-header .header-top {
+        flex-direction: column;
+        gap: var(--spacing-lg, 1.5rem);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        justify-content: stretch;
+    }
+    
+    .btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-detail-container">
+    {% csrf_token %}
+    
+    <!-- 排班標題區域 -->
+    <div class="schedule-header">
+        <div class="header-top">
+            <div class="schedule-title">
+                <div class="schedule-icon">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+                <div>
+                    <h1>{{ schedule.title }}</h1>
+                    <div class="schedule-meta">
+                        <span><i class="bi bi-person-badge"></i> {{ schedule.doctor.user.get_full_name }}</span>
+                        <span><i class="bi bi-building"></i> {{ schedule.clinic.clinic_name }}</span>
+                        <span><i class="bi bi-calendar-range"></i> {{ schedule.start_date|date:"Y/m/d" }} - {% if schedule.end_date %}{{ schedule.end_date|date:"Y/m/d" }}{% else %}持續有效{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-section">
+                <div class="status-badge {{ schedule.status }}">
+                    {{ schedule.get_status_display }}
+                </div>
+                {% if schedule.has_conflicts %}
+                <div class="status-badge warning">
+                    <i class="bi bi-exclamation-triangle"></i> 有衝突
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            {% if can_edit %}
+                {% if schedule.status in 'draft,suspended' %}
+                <a href="{% url 'schedule_edit' schedule.id %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i>編輯排班
+                </a>
+                {% endif %}
+                
+                {% if schedule.status == 'draft' %}
+                <button class="btn btn-success" onclick="activateSchedule()">
+                    <i class="bi bi-play-circle"></i>啟用排班
+                </button>
+                {% elif schedule.status == 'active' %}
+                <button class="btn btn-warning" onclick="suspendSchedule()">
+                    <i class="bi bi-pause-circle"></i>暫停排班
+                </button>
+                {% elif schedule.status == 'suspended' %}
+                <button class="btn btn-success" onclick="activateSchedule()">
+                    <i class="bi bi-play-circle"></i>重新啟用排班
+                </button>
+                {% endif %}
+            {% endif %}
+            
+            <a href="{% url 'schedule_list' %}" class="btn btn-outline">
+                <i class="bi bi-arrow-left"></i>返回列表
+            </a>
+        </div>
+    </div>
+    
+    <!-- 主要內容區域 -->
+    <div class="schedule-content">
+        <!-- 左側主要內容 -->
+        <div class="main-content">
+            <!-- 統計概覽 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ schedule.total_work_hours_per_week }}</div>
+                    <div class="stat-label">週工作時數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ schedule.weekdays|length }}</div>
+                    <div class="stat-label">工作天數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ schedule.appointment_duration }}</div>
+                    <div class="stat-label">預約時長(分)</div>
+                </div>
+            </div>
+            
+            <!-- 工作時段表格 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <i class="bi bi-clock"></i>
+                    <h2>工作時段設定</h2>
+                </div>
+                
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>工作日</th>
+                            <th>時段</th>
+                            <th>預約設定</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for weekday in schedule.weekdays %}
+                        <tr>
+                            <td>
+                                <span class="weekday-badge">{{ weekday|get_weekday_name }}</span>
+                            </td>
+                            <td>
+                                {% with slots=schedule.daily_time_slots|get_item:weekday %}
+                                {% if slots %}
+                                    {% for slot in slots %}
+                                    <div class="time-slot">{{ slot.start }} - {{ slot.end }}</div>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">未設定時段</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ schedule.appointment_duration }}分/{{ schedule.max_appointments_per_slot }}人</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if schedule.notes %}
+            <!-- 備註資訊 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <i class="bi bi-sticky-note"></i>
+                    <h2>備註資訊</h2>
+                </div>
+                <div class="notes-content">{{ schedule.notes }}</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 側邊欄 -->
+        <div class="sidebar">
+            <!-- 排班資訊 -->
+            <div class="sidebar-card">
+                <h3><i class="bi bi-info-circle"></i>排班資訊</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">診所</span>
+                        <span class="value">{{ schedule.clinic.clinic_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">類型</span>
+                        <span class="value">{{ schedule.get_schedule_type_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">期間</span>
+                        <span class="value">{{ schedule.start_date|date:"Y/m/d" }} - {% if schedule.end_date %}{{ schedule.end_date|date:"Y/m/d" }}{% else %}持續有效{% endif %}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">緩衝時間</span>
+                        <span class="value">{{ schedule.buffer_time }} 分鐘</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 衝突警告 -->
+            {% if schedule.has_conflicts %}
+            <div class="sidebar-card warning">
+                <h3><i class="bi bi-exclamation-triangle"></i>衝突警告</h3>
+                {% if schedule.conflict_details.conflicts %}
+                    <div class="conflict-list">
+                        {% for conflict in schedule.conflict_details.conflicts %}
+                        <div class="conflict-item">
+                            <div class="conflict-message">{{ conflict.message }}</div>
+                            {% if conflict.schedule_title %}
+                            <div class="conflict-schedule">相關：{{ conflict.schedule_title }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <button class="btn btn-warning btn-sm" onclick="checkConflicts()">
+                    <i class="bi bi-arrow-clockwise"></i>重新檢查
+                </button>
+            </div>
+            {% endif %}
+            
+            <!-- 快速操作 -->
+            <div class="sidebar-card">
+                <h3><i class="bi bi-lightning"></i>快速操作</h3>
+                <div class="quick-actions">
+                    <a href="{% url 'schedule_list' %}" class="quick-action-btn">
+                        <i class="bi bi-list"></i>
+                        <span>排班列表</span>
+                    </a>
+                    <a href="{% url 'weekly_calendar' %}" class="quick-action-btn">
+                        <i class="bi bi-calendar-week"></i>
+                        <span>週檢視</span>
+                    </a>
+                    <a href="{% url 'monthly_calendar' %}" class="quick-action-btn">
+                        <i class="bi bi-calendar-month"></i>
+                        <span>月檢視</span>
+                    </a>
+                    {% if can_edit %}
+                    <button class="quick-action-btn" onclick="checkConflicts()">
+                        <i class="bi bi-search"></i>
+                        <span>檢查衝突</span>
+                    </button>
+                    {% if schedule.status != 'active' %}
+                    <button class="quick-action-btn danger" onclick="deleteSchedule()">
+                        <i class="bi bi-trash"></i>
+                        <span>刪除排班</span>
+                    </button>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function activateSchedule() {
+    if (confirm('確定要啟用此排班嗎？')) {
+        fetch(`/vet/schedule/{{ schedule.id }}/activate/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('排班已啟用');
+                location.reload();
+            } else {
+                alert(data.message || '啟用失敗');
+            }
+        })
+        .catch(error => {
+            alert('網路錯誤');
+        });
+    }
+}
+
+function suspendSchedule() {
+    if (confirm('確定要暫停此排班嗎？')) {
+        fetch(`/vet/schedule/{{ schedule.id }}/suspend/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('排班已暫停');
+                location.reload();
+            } else {
+                alert(data.message || '暫停失敗');
+            }
+        })
+        .catch(error => {
+            alert('網路錯誤');
+        });
+    }
+}
+
+function deleteSchedule() {
+    if (confirm('確定要刪除此排班嗎？此操作無法復原！')) {
+        fetch(`/vet/schedule/{{ schedule.id }}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('排班已刪除');
+                window.location.href = '{% url "schedule_list" %}';
+            } else {
+                alert(data.message || '刪除失敗');
+            }
+        })
+        .catch(error => {
+            alert('網路錯誤');
+        });
+    }
+}
+
+function checkConflicts() {
+    fetch(`/api/schedule/{{ schedule.id }}/conflicts/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.has_conflicts) {
+            let message = `發現 ${data.conflicts.length} 個衝突：\n\n`;
+            data.conflicts.forEach(conflict => {
+                message += `• ${conflict.message}\n`;
+            });
+            alert(message);
+        } else {
+            alert('沒有發現排班衝突');
+        }
+    })
+    .catch(error => {
+        alert('檢查衝突時發生錯誤');
+    });
+}
+
+function getCsrfToken() {
+    // 先嘗試從隱藏的input獲取
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput && csrfInput.value) {
+        return csrfInput.value;
+    }
+    
+    // 備用：從cookie獲取
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+    
+    return cookieValue || '';
+}
+</script>
+{% endblock %}

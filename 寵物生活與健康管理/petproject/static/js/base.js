@@ -17,6 +17,8 @@ window.PawDayApp = {
   state: {
     isLoggedIn: false,
     userType: null,
+    userProfile: null,
+    currentTheme: null,
     notificationTimer: null,
     isLoading: false
   },
@@ -25,7 +27,7 @@ window.PawDayApp = {
    * 初始化應用程式
    */
   init: function() {
-    console.log('🐾 毛日好系統啟動中...');
+    // console.log('🐾 毛日好系統啟動中...');
     
     // 檢查是否已準備好
     if (document.readyState === 'loading') {
@@ -40,6 +42,7 @@ window.PawDayApp = {
    */
   onReady: function() {
     this.setupUser();
+    // this.setupTheme(); // 暫時停用自動主題切換
     this.setupNavigation();
     this.setupMessages();
     this.setupForms();
@@ -48,7 +51,7 @@ window.PawDayApp = {
     this.setupLoadingIndicators();
     this.setupErrorHandling();
     
-    console.log('✅ 毛日好系統初始化完成');
+//     console.log('✅ 毛日好系統初始化完成');
   },
 
   /**
@@ -60,12 +63,70 @@ window.PawDayApp = {
     if (userElement) {
       this.state.isLoggedIn = userElement.dataset.userAuthenticated === 'true';
       this.state.userType = userElement.dataset.userType || null;
+      this.state.userProfile = userElement.dataset.userProfile || null;
     }
     
     PD.debug.log('使用者狀態:', {
       isLoggedIn: this.state.isLoggedIn,
-      userType: this.state.userType
+      userType: this.state.userType,
+      userProfile: this.state.userProfile
     });
+  },
+
+  /**
+   * 設定主題風格
+   */
+  setupTheme: function() {
+    if (!this.state.isLoggedIn) {
+      PD.debug.log('未登入用戶，使用預設主題');
+      return;
+    }
+
+    // 移除所有現有主題類別
+    document.body.classList.remove('vet-theme', 'admin-theme', 'owner-theme');
+    
+    // 根據用戶角色決定主題
+    let themeClass = '';
+    const userType = this.state.userType;
+    const userProfile = this.state.userProfile;
+    
+    // 獸醫師主題 - 專業醫療藍色
+    if (userProfile === 'veterinarian' || userType === 'vet') {
+      themeClass = 'vet-theme';
+      PD.debug.log('應用獸醫師主題');
+    }
+    // 診所管理員主題 - 管理紫色
+    else if (userProfile === 'clinic_admin' || userType === 'clinic_admin') {
+      themeClass = 'admin-theme';
+      PD.debug.log('應用診所管理員主題');
+    }
+    // 飼主主題 - 溫暖橙色（預設）
+    else if (userProfile === 'pet_owner' || userType === 'owner') {
+      themeClass = 'owner-theme';
+      PD.debug.log('應用飼主主題');
+    }
+    
+    // 應用主題類別
+    if (themeClass) {
+      document.body.classList.add(themeClass);
+      this.state.currentTheme = themeClass;
+      
+      // 同時應用到導航欄
+      const navbar = document.querySelector('.navbar');
+      if (navbar) {
+        navbar.classList.add('medical-navbar');
+      }
+      
+      // 觸發主題變更事件
+      const themeEvent = new CustomEvent('themeChanged', {
+        detail: { theme: themeClass, userType: userType, userProfile: userProfile }
+      });
+      document.dispatchEvent(themeEvent);
+      
+      PD.debug.log(`✅ 已應用 ${themeClass} 主題`);
+    } else {
+      PD.debug.log('⚠️ 無法識別用戶角色，使用預設主題');
+    }
   },
 
   /**
@@ -523,6 +584,40 @@ window.PawDayApp = {
   cleanup: function() {
     this.stopNotificationUpdates();
     PD.debug.log('應用程式資源已清理');
+  },
+
+  /**
+   * 取得當前主題資訊
+   */
+  getThemeInfo: function() {
+    return {
+      theme: this.state.currentTheme,
+      userType: this.state.userType,
+      userProfile: this.state.userProfile,
+      isLoggedIn: this.state.isLoggedIn
+    };
+  },
+
+  /**
+   * 手動切換主題（用於測試）
+   */
+  switchTheme: function(themeClass) {
+    if (!themeClass) return;
+    
+    // 移除所有現有主題
+    document.body.classList.remove('vet-theme', 'admin-theme', 'owner-theme');
+    
+    // 應用新主題
+    document.body.classList.add(themeClass);
+    this.state.currentTheme = themeClass;
+    
+    // 觸發事件
+    const themeEvent = new CustomEvent('themeChanged', {
+      detail: { theme: themeClass, manual: true }
+    });
+    document.dispatchEvent(themeEvent);
+    
+    PD.debug.log(`手動切換到 ${themeClass} 主題`);
   }
 };
 
