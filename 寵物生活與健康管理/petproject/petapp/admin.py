@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile,VetDoctor,VetClinic
+from .models import Profile, VetDoctor, VetClinic, Pet, PetTag
 from django.utils.html import format_html
 
 from allauth.account.models import EmailAddress
@@ -37,7 +37,7 @@ class ProfileAdmin(admin.ModelAdmin):
     
 
     def is_staff_display(self, obj):
-        return '✔️' if obj.user.is_staff else '❌'
+        return 'Yes' if obj.user.is_staff else 'No'
     is_staff_display.short_description = '系統管理員'
 
 @admin.register(VetDoctor)
@@ -51,8 +51,8 @@ class VetDoctorAdmin(admin.ModelAdmin):
     
     def license_verified_display(self, obj):
         if obj.license_verified_with_moa:
-            return "✅ 已驗證"
-        return "⏳ 未驗證"
+            return "已驗證"
+        return "未驗證"
     license_verified_display.short_description = '執照驗證狀態'
     
     actions = ['verify_selected_licenses']
@@ -77,6 +77,51 @@ class VetClinicAdmin(admin.ModelAdmin):
     list_filter = ('is_verified', 'moa_county')
     search_fields = ('clinic_name', 'license_number')
     readonly_fields = ('verification_date', 'created_at', 'updated_at')
+
+@admin.register(PetTag)
+class PetTagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'tag_type', 'color', 'is_system_tag', 'created_at')
+    list_filter = ('tag_type', 'color', 'is_system_tag')
+    search_fields = ('name', 'description')
+    readonly_fields = ('created_at',)
+    
+    fieldsets = (
+        ('基本資訊', {
+            'fields': ('name', 'tag_type', 'color')
+        }),
+        ('詳細資訊', {
+            'fields': ('description', 'is_system_tag', 'created_at')
+        }),
+    )
+
+@admin.register(Pet)
+class PetAdmin(admin.ModelAdmin):
+    list_display = ('name', 'owner', 'species', 'age_display', 'has_recent_visit', 'is_active')
+    list_filter = ('species', 'gender', 'is_active', 'tags')
+    search_fields = ('name', 'owner__username', 'owner__first_name', 'chip')
+    filter_horizontal = ('tags',)
+    readonly_fields = ('age_display', 'has_recent_visit', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('基本資訊', {
+            'fields': ('owner', 'name', 'species', 'breed', 'gender')
+        }),
+        ('詳細資訊', {
+            'fields': ('birth_date', 'age_display', 'weight', 'sterilization_status', 'chip')
+        }),
+        ('醫療資訊', {
+            'fields': ('tags', 'last_visit_date', 'has_recent_visit', 'medical_notes')
+        }),
+        ('緊急聯絡', {
+            'fields': ('emergency_contact', 'emergency_phone')
+        }),
+        ('其他', {
+            'fields': ('feature', 'picture', 'is_active')
+        }),
+        ('系統資訊', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
 
 # 安全地取消註冊，如果有被註冊的話才移除
 for model in [EmailAddress, SocialAccount, SocialApp, SocialToken]:
