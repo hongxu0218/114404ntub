@@ -24,10 +24,10 @@ class Command(BaseCommand):
 
 這是您預約的提醒通知：
 
-🐾 寵物：{pet.name}  
-📅 日期：{appt.date}  
-🕒 時間：{appt.time.strftime('%H:%M')}  
-🏥 診所：{vet.clinic_name or '（未填寫）'}
+寵物：{pet.name}  
+日期：{appt.date}  
+時間：{appt.time.strftime('%H:%M')}  
+診所：{vet.clinic_name or '（未填寫）'}
 
 請準時到診，如需取消請盡早操作，謝謝您！
 
