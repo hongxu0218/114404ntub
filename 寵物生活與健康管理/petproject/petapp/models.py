@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, date
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from .choices import SPECIES_CHOICES
 
 
 # ===== 全域常數定義
@@ -236,8 +237,8 @@ class VetDoctor(models.Model):
     
     @property
     def can_write_medical_records(self):
-        """能否填寫醫療記錄 - 只有有執照驗證的獸醫師才能寫"""
-        return self.is_veterinarian
+        """能否填寫醫療記錄 - 啟用獸醫師身份即可"""
+        return self.is_active and self.is_active_veterinarian
     
     @property
     def can_manage_schedules(self):
@@ -1139,7 +1140,7 @@ class PetTag(models.Model):
 
 class Pet(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets', verbose_name='飼主')
-    species = models.CharField(max_length=50, verbose_name='種類')
+    species = models.CharField(max_length=50, choices=SPECIES_CHOICES, verbose_name='種類')
     breed = models.CharField(max_length=50, verbose_name='品種')
     name = models.CharField(max_length=100)
     sterilization_status = models.CharField(max_length=20, choices=SterilizationStatus.choices)
@@ -1929,6 +1930,30 @@ class AdoptionPet(models.Model):
 
         return age_str
 
+# 送養轉交請求
+class AdoptionTransferRequest(models.Model):
+    adoption = models.ForeignKey(AdoptionPet, on_delete=models.CASCADE, verbose_name='送養紀錄')
+    from_owner = models.ForeignKey(User, related_name='sent_adoption_transfers', on_delete=models.CASCADE, verbose_name='原飼主')
+    to_email = models.EmailField(verbose_name='新飼主信箱')
+    to_phone = models.CharField(max_length=20, verbose_name='新飼主電話')
+    to_user = models.ForeignKey(User, null=True, blank=True, related_name='received_adoption_transfers', on_delete=models.SET_NULL, verbose_name='新飼主')
+    transfer_note = models.TextField(blank=True, verbose_name='轉交說明')
+    status = models.CharField(max_length=20, choices=[
+        ('pending', '待確認'),
+        ('accepted', '已接受'),
+        ('rejected', '已拒絕'),
+    ], default='pending', verbose_name='狀態')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='創建時間')
+    from_owner_has_seen = models.BooleanField(default=False, verbose_name='原飼主已讀')
+    to_user_has_seen = models.BooleanField(default=False, verbose_name='新飼主已讀')
+
+    def __str__(self):
+        return f"{self.adoption.name} 轉交請求 ({self.from_owner.username} → {self.to_email})"
+
+    class Meta:
+        verbose_name = "送養轉交請求"
+        verbose_name_plural = "送養轉交請求"
+
 # 更改飼主
 class TransferRequest(models.Model):
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
@@ -2394,3 +2419,196 @@ class AnimalDrug(models.Model):
             search_conditions,
             is_active=True
         ).distinct()[:limit]
+
+
+#===========📱 社群媒體模組===============#
+
+class UserProfile(models.Model):
+    """用戶檔案擴展"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='social_profile')
+    bio = models.TextField(max_length=500, blank=True, verbose_name='個人簡介')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='頭像')
+    banner = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name='橫幅圖片')
+
+    # 統計
+    followers_count = models.PositiveIntegerField(default=0, verbose_name='粉絲數')
+    following_count = models.PositiveIntegerField(default=0, verbose_name='追蹤數')
+    posts_count = models.PositiveIntegerField(default=0, verbose_name='貼文數')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = '用戶檔案'
+        verbose_name_plural = '用戶檔案'
+
+    def __str__(self):
+        return f"{self.user.username}的檔案"
+
+
+class Follow(models.Model):
+    """追蹤關係"""
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following', verbose_name='追蹤者')
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers', verbose_name='被追蹤者')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('follower', 'following')
+        verbose_name = '追蹤關係'
+        verbose_name_plural = '追蹤關係'
+
+    def __str__(self):
+        return f"{self.follower.username} 追蹤 {self.following.username}"
+
+
+class Post(models.Model):
+    """貼文"""
+    POST_TYPE_CHOICES = [
+        ('text', '純文字'),
+        ('image', '圖片'),
+        ('video', '影片'),
+        ('mixed', '混合媒體'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts', verbose_name='發布者')
+    content = models.TextField(max_length=2000, verbose_name='內容')
+    post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default='text', verbose_name='貼文類型')
+    location = models.CharField(max_length=200, blank=True, null=True, verbose_name='位置')
+
+    # 互動統計
+    likes_count = models.PositiveIntegerField(default=0, verbose_name='點讚數')
+    comments_count = models.PositiveIntegerField(default=0, verbose_name='留言數')
+    shares_count = models.PositiveIntegerField(default=0, verbose_name='分享數')
+
+    # 轉發相關
+    original_post = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name='reposts', verbose_name='原始貼文')
+    is_repost = models.BooleanField(default=False, verbose_name='是否為轉發')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = '貼文'
+        verbose_name_plural = '貼文'
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:50]}..."
+
+    def get_display_user(self):
+        """獲取顯示的用戶（轉發時顯示原作者）"""
+        return self.original_post.user if self.is_repost and self.original_post else self.user
+
+    def get_display_content(self):
+        """獲取顯示的內容（轉發時顯示原內容）"""
+        return self.original_post.content if self.is_repost and self.original_post else self.content
+
+
+class PostMedia(models.Model):
+    """貼文媒體文件"""
+    MEDIA_TYPE_CHOICES = [
+        ('image', '圖片'),
+        ('video', '影片'),
+    ]
+
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='media_files', verbose_name='關聯貼文')
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, verbose_name='媒體類型')
+    file = models.FileField(upload_to='posts/', verbose_name='檔案')
+    order = models.PositiveIntegerField(default=0, verbose_name='排序')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = '貼文媒體'
+        verbose_name_plural = '貼文媒體'
+
+    def __str__(self):
+        return f"{self.post.user.username}的{self.media_type}"
+
+
+class Like(models.Model):
+    """點讚"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes', verbose_name='用戶')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_likes', verbose_name='貼文')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')
+        verbose_name = '點讚'
+        verbose_name_plural = '點讚'
+
+    def __str__(self):
+        return f"{self.user.username} 點讚 {self.post.id}"
+
+
+class Comment(models.Model):
+    """留言"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='留言者')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_comments', verbose_name='貼文')
+    content = models.TextField(max_length=1000, verbose_name='留言內容')
+
+    # 回覆功能
+    parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
+                                     related_name='replies', verbose_name='父留言')
+
+    likes_count = models.PositiveIntegerField(default=0, verbose_name='點讚數')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = '留言'
+        verbose_name_plural = '留言'
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:30]}..."
+
+
+class CommentLike(models.Model):
+    """留言點讚"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_likes', verbose_name='用戶')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_likes', verbose_name='留言')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'comment')
+        verbose_name = '留言點讚'
+        verbose_name_plural = '留言點讚'
+
+    def __str__(self):
+        return f"{self.user.username} 點讚留言 {self.comment.id}"
+
+
+# ===== 轉人工客服：工單與訊息 =====
+class HandoffTicket(models.Model):
+    session_key = models.CharField(max_length=64, db_index=True)
+    name = models.CharField(max_length=64, blank=True)
+    contact = models.CharField(max_length=128, blank=True)
+    channel = models.CharField(max_length=32, default='web')
+    is_open = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-is_open', '-created_at']
+        verbose_name = '人工客服工單'
+        verbose_name_plural = '人工客服工單'
+
+    def __str__(self):
+        return f'#{self.id} {self.session_key} ({ "OPEN" if self.is_open else "CLOSED"})'
+
+class HandoffMessage(models.Model):
+    ticket = models.ForeignKey('HandoffTicket', on_delete=models.CASCADE, related_name='messages')
+    sender = models.CharField(max_length=16, choices=[('user','user'),('agent','agent'),('system','system')])
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = '人工客服訊息'
+        verbose_name_plural = '人工客服訊息'
+
+    def __str__(self):
+        return f'[{self.created_at:%Y-%m-%d %H:%M:%S}] {self.sender}: {self.text[:30]}'

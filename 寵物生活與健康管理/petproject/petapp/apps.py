@@ -17,6 +17,9 @@ class PetappConfig(AppConfig):
             if model in admin.site._registry:
                 admin.site.unregister(model)
 
+        # 載入信號處理器
+        import petapp.signals
+
 @receiver(email_confirmed)
 def email_confirmed_handler(request, email_address, **kwargs):
     """確保郵件確認後狀態正確更新"""
