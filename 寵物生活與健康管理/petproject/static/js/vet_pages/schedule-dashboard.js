@@ -572,6 +572,22 @@ function generateTimelineItem(schedule) {
 }
 
 /**
+ * 載入團隊資料（團隊模式專用）
+ */
+async function loadTeamData() {
+    try {
+        // 如果不是團隊模式，直接返回
+        if (!isTeamMode()) return;
+
+        // TODO: 實作團隊資料載入邏輯
+        // 這裡可以載入其他醫師的排班、團隊統計等
+
+    } catch (error) {
+        console.error('載入團隊資料失敗:', error);
+    }
+}
+
+/**
  * 檢查排班衝突
  */
 async function checkScheduleConflicts() {

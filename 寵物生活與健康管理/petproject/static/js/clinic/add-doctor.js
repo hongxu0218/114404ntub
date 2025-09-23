@@ -575,23 +575,40 @@ function initializeProfessionalInfoStatus() {
 
 function updateProfessionalInfoStatus() {
     const statusItems = document.querySelectorAll('.status-item');
-    
+
     statusItems.forEach(item => {
         const fieldName = item.dataset.field;
-        const field = document.querySelector(`[name="${fieldName}"]`);
-        
+        let field = document.querySelector(`[name="${fieldName}"]`);
+
+        // 特殊處理專科領域欄位，因為它是隱藏欄位
+        if (fieldName === 'specialization') {
+            field = document.getElementById('specialization');
+        }
+
         if (field && field.value.trim()) {
             item.classList.add('filled');
+            // 更新圖示
+            const icon = item.querySelector('.status-icon');
+            if (icon) {
+                icon.classList.remove('bi-circle');
+                icon.classList.add('bi-check-circle-fill');
+            }
         } else {
             item.classList.remove('filled');
+            // 恢復圖示
+            const icon = item.querySelector('.status-icon');
+            if (icon) {
+                icon.classList.remove('bi-check-circle-fill');
+                icon.classList.add('bi-circle');
+            }
         }
     });
-    
+
     // 計算完整度百分比
     const totalItems = statusItems.length;
     const filledItems = document.querySelectorAll('.status-item.filled').length;
     const completeness = Math.round((filledItems / totalItems) * 100);
-    
+
     // 更新完整度顯示
     const summary = document.querySelector('.status-summary small');
     if (summary) {
@@ -1391,35 +1408,6 @@ function toggleOtherInput() {
     updateSelectedSpecs();
 }
 
-// 更新專業資訊完整度狀態
-function updateProfessionalInfoStatus() {
-    const specializationField = document.getElementById('specialization');
-    const statusItem = document.querySelector('.professional-info-status .status-item[data-field="specialization"]');
-    const statusSummary = document.querySelector('.professional-info-status .status-summary');
-    
-    if (!specializationField || !statusItem) return;
-    
-    const hasSpecialization = specializationField.value.trim() !== '';
-    
-    if (hasSpecialization) {
-        statusItem.classList.add('filled');
-        statusItem.querySelector('.status-icon').classList.remove('bi-circle');
-        statusItem.querySelector('.status-icon').classList.add('bi-check-circle-fill');
-    } else {
-        statusItem.classList.remove('filled');
-        statusItem.querySelector('.status-icon').classList.remove('bi-check-circle-fill');
-        statusItem.querySelector('.status-icon').classList.add('bi-circle');
-    }
-    
-    // 更新完整度摘要
-    if (statusSummary) {
-        const filledItems = document.querySelectorAll('.professional-info-status .status-item.filled');
-        const totalItems = document.querySelectorAll('.professional-info-status .status-item');
-        const percentage = Math.round((filledItems.length / totalItems.length) * 100);
-        
-        statusSummary.innerHTML = `<small class="text-muted">專業資訊完整度：${percentage}% (${filledItems.length}/${totalItems.length})</small>`;
-    }
-}
 
 // 在預覽數據更新函數中添加專科領域
 function updatePreviewSpecialization() {
