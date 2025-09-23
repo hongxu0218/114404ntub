@@ -500,3 +500,100 @@
     animation: none;
   }
 }
+
+/* === AI 客服懸浮元件 === */
+#chatbot-button{
+  position: fixed;
+  right: 20px;
+  bottom: 88px;                 /* 預留 88px，避免壓到回到頂部按鈕 */
+  width: 56px; height: 56px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #0b0b0b;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  cursor: pointer;
+  z-index: 9999;
+}
+
+#chatbot-box{
+  position: fixed;
+  right: 20px;
+  bottom: 160px;                /* 與按鈕垂直錯開 */
+  width: 360px; max-width: 92vw;
+  height: 520px; max-height: 75vh;
+  background: #0f1115; color: #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  display: none; flex-direction: column; overflow: hidden;
+  z-index: 10000;
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+#chatbot-header{
+  padding: 12px 14px;
+  font-weight: 700;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+  display: flex; align-items: center; justify-content: space-between;
+}
+#chatbot-close{ cursor: pointer; opacity: .8; }
+#chatbot-close:hover{ opacity: 1; }
+
+#chatbot-messages{
+  flex: 1; padding: 12px; overflow: auto;
+  scrollbar-width: thin;
+}
+.cb-bubble {
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin: 8px 0;
+  line-height: 1.55;
+  word-wrap: break-word;
+  white-space: pre-wrap;   /* ⭐ 保留換行與空白 */
+}
+
+.cb-user{ background:#2563eb; color:#fff; border-bottom-right-radius:4px; margin-left: 48px; }
+.cb-bot{ background:#1f2937; color:#fff; border-bottom-left-radius:4px; margin-right: 48px; }
+
+#chatbot-input{
+  display: flex; gap: 8px; padding: 12px; border-top: 1px solid #1f2937; background: #0b0c10;
+}
+#chatbot-text{
+  flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #273042;
+  background:#0f172a; color:#e5e7eb; outline: none;
+}
+#chatbot-send{
+  padding: 10px 14px; border-radius: 10px; border: none;
+  background:#22c55e; color:#0b0b0b; font-weight: 800; cursor: pointer;
+}
+#chatbot-send[disabled]{ opacity:.6; cursor: not-allowed; }
+
+/* 手機優化：把元件往上挪，避免壓到系統導覽列 */
+@media (max-width: 576px){
+  #chatbot-button{ bottom: 96px; right: 14px; }
+  #chatbot-box{ width: calc(100vw - 24px); right: 12px; bottom: 168px; height: 60vh; }
+}
+
+/* === 內嵌「轉人工客服」按鈕樣式 === */
+.cb-inline-btn{
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e5e7eb;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  margin: 0 2px;
+  font-size: 0.9em;
+}
+.cb-inline-btn:hover{
+  background: #111827;
+  border-color: #475569;
+}
+.cb-inline-btn:active{
+  transform: translateY(1px);
+}
