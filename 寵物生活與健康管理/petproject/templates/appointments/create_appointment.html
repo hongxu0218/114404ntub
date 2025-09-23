@@ -781,16 +781,17 @@ class AppointmentApp {
         grid.innerHTML = '<div class="loading">載入時段中...</div>';
         
         try {
-            // 檢查是否已選擇醫師
-            if (!this.selectedDoctor) {
-                console.warn('尚未選擇醫師，無法載入時段');
-                grid.innerHTML = '<div class="loading">請先選擇醫師</div>';
+            // 檢查是否已選擇診所
+            if (!this.selectedClinic) {
+                console.warn('尚未選擇診所，無法載入時段');
+                grid.innerHTML = '<div class="loading">請先選擇診所</div>';
                 return;
             }
-            
+
             // 調用後端 API 獲取實際可用時段
-            console.log('載入時段 - 醫師ID:', this.selectedDoctor, '日期:', date);
-            const response = await fetch(`/api/time-slots/?doctor_id=${this.selectedDoctor}&date=${date}`, {
+            console.log('載入時段 - 診所ID:', this.selectedClinic, '醫師ID:', this.selectedDoctor, '日期:', date);
+            const doctorParam = this.selectedDoctor ? `&doctor_id=${this.selectedDoctor}` : '';
+            const response = await fetch(`/api/time-slots/?clinic_id=${this.selectedClinic}${doctorParam}&date=${date}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -866,27 +867,33 @@ class AppointmentApp {
     
     renderTimeSlotsFromAPI(apiSlots) {
         const grid = document.getElementById('timeGrid');
-        
+
         if (!apiSlots || apiSlots.length === 0) {
             grid.innerHTML = '<div class="loading">當日無可用時段</div>';
             return;
         }
-        
+
         console.log('渲染 API 時段:', apiSlots);
-        
+
         // 處理不同時段狀態
         grid.innerHTML = apiSlots.map(slot => {
             const cssClass = slot.css_class || 'time-slot-available';
             const isClickable = slot.available !== false;
             const title = slot.title || slot.time;
-            
+
+            // 如果有醫師信息，顯示醫師名稱
+            const doctorInfo = slot.doctor_name ? `<br><small>${slot.doctor_name}</small>` : '';
+
             return `
-                <div class="time-slot ${cssClass}" 
+                <div class="time-slot ${cssClass}"
                      data-slot-id="${slot.time}"
                      data-available="${slot.available}"
+                     data-doctor-id="${slot.doctor_id || ''}"
+                     data-doctor-name="${slot.doctor_name || ''}"
                      title="${title}"
                      ${isClickable ? `onclick="appointmentApp.selectTimeSlot('${slot.time}', this, true)"` : ''}>
                     ${slot.time}
+                    ${doctorInfo}
                     ${slot.status === 'booked' ? '<br><small>已預約</small>' : ''}
                     ${slot.status === 'past' ? '<br><small>已過時</small>' : ''}
                 </div>
@@ -900,16 +907,48 @@ class AppointmentApp {
             console.log('時段不可用:', slotId);
             return;
         }
-        
+
         // 移除其他選中狀態
         document.querySelectorAll('.time-slot').forEach(slot => {
             slot.classList.remove('selected');
         });
-        
+
         // 選中當前時段
         element.classList.add('selected');
         this.selectedSlot = slotId;
         document.getElementById('selectedSlot').value = slotId;
+
+        // 如果有醫師信息，自動設定醫師
+        const doctorId = element.dataset.doctorId;
+        const doctorName = element.dataset.doctorName;
+
+        if (doctorId && doctorName) {
+            console.log('自動分配醫師:', doctorName, '(ID:', doctorId, ')');
+            this.selectedDoctor = doctorId;
+            document.getElementById('selectedDoctor').value = doctorId;
+
+            // 更新醫師選擇界面的顯示（如果需要）
+            this.updateDoctorSelection(doctorId);
+        }
+    }
+
+    updateDoctorSelection(doctorId) {
+        // 移除所有醫師卡片的選中狀態
+        document.querySelectorAll('.doctor-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // 選中對應的醫師卡片，如果找不到則選擇「任何醫師」
+        const targetCard = document.querySelector(`[data-doctor-id="${doctorId}"]`);
+        if (targetCard) {
+            targetCard.classList.add('selected');
+        } else {
+            // 如果找不到對應的醫師卡片，保持「任何醫師」選中
+            const anyDoctorCard = document.querySelector('.any-doctor-card');
+            if (anyDoctorCard) {
+                anyDoctorCard.classList.add('selected');
+            }
+        }
     }
     
     nextStep() {

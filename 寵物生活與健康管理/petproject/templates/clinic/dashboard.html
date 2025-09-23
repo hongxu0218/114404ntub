@@ -852,18 +852,7 @@ window.dashboardData = {
   csrfToken: "{{ csrf_token }}"
 };
 
-// 顯示訊息
-{% if messages %}
-  {% for message in messages %}
-    {% if message.tags == 'success' %}
-      showSuccessMessage('{{ message|escapejs }}');
-    {% elif message.tags == 'error' %}
-      showErrorMessage('{{ message|escapejs }}');
-    {% elif message.tags == 'warning' %}
-      showWarningMessage('{{ message|escapejs }}');
-    {% endif %}
-  {% endfor %}
-{% endif %}
+// 訊息顯示已由 base.html 處理，移除重複顯示
 
 // 頁面載入完成後的調試檢查
 document.addEventListener('DOMContentLoaded', function() {
@@ -1067,13 +1056,13 @@ function showModeSwitchConfirmation(newMode, newModeName) {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                showSuccessMessage(`已成功切換到${newModeName}`);
+            if (data.status === 'success') {
+                showSuccessMessage(data.message || `已成功切換到${newModeName}`);
                 setTimeout(() => {
                     location.reload();
                 }, 1500);
             } else {
-                showErrorMessage(data.error || '模式切換失敗，請稍後再試');
+                showErrorMessage(data.message || '模式切換失敗，請稍後再試');
             }
         })
         .catch(error => {

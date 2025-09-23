@@ -27,6 +27,402 @@
   {% block extra_css %}
   <!-- 子模板可以插入額外的 CSS -->
   {% endblock %}
+
+  <!-- AI 客服泡泡樣式 -->
+  <style>
+  #chatbot-button{
+    position: fixed;
+    right: 20px;
+    bottom: 88px;
+    width: 56px; height: 56px;
+    border-radius: 999px;
+    background: #22c55e;
+    color: #0b0b0b;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    cursor: pointer;
+    z-index: 9999;
+  }
+
+  #chatbot-box{
+    position: fixed;
+    right: 20px;
+    bottom: 160px;
+    width: 420px; max-width: 95vw;
+    height: 600px; max-height: 80vh;
+    min-width: 380px;
+    min-height: 450px;
+    background: #ffffff;
+    color: #333333;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: none; flex-direction: column;
+    z-index: 10000;
+    border: 1px solid #e5e7eb;
+    resize: both;
+    overflow: hidden;
+  }
+
+  #chatbot-header{
+    padding: 16px 20px;
+    font-weight: 600;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: move;
+    user-select: none;
+    border-radius: 12px 12px 0 0;
+    color: #374151;
+  }
+  .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #handoff-header-btn {
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    color: #6b7280;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+  }
+
+  #handoff-header-btn:hover {
+    opacity: 1;
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  #chatbot-close{
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    color: #6b7280;
+    font-size: 16px;
+    font-weight: 400;
+  }
+  #chatbot-close:hover{
+    opacity: 1;
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  #chatbot-messages{
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #ffffff;
+    color: #374151;
+    scrollbar-width: thin;
+    min-height: 200px;
+  }
+
+
+  /* 快速問題按鈕 */
+  .quick-questions {
+    padding: 16px;
+    background: rgba(255,255,255,0.95);
+    border-top: 1px solid rgba(0,0,0,0.1);
+  }
+  .quick-questions h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #666;
+    font-weight: 600;
+  }
+  .quick-question-btn {
+    display: inline-block;
+    margin: 4px 6px 4px 0;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    color: #666;
+    text-decoration: none;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .quick-question-btn:hover {
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+  }
+
+  #chatbot-input{
+    padding: 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border-radius: 0 0 12px 12px;
+  }
+  #chatbot-text{
+    flex: 1;
+    padding: 10px 14px;
+    background: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  #chatbot-text:focus{
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  #chatbot-send{
+    padding: 10px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+  }
+  #chatbot-send:hover{
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+  }
+
+  /* 轉人工客服按鈕樣式 */
+  .handoff-btn-inline {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    margin: 0 4px !important;
+    display: inline-block !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(238, 90, 82, 0.3) !important;
+  }
+
+  .handoff-btn-inline:hover {
+    background: linear-gradient(135deg, #ff5252, #d84338) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(238, 90, 82, 0.4) !important;
+  }
+
+  .handoff-btn-full {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    margin-top: 12px !important;
+    display: block !important;
+    width: auto !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 3px 8px rgba(238, 90, 82, 0.3) !important;
+  }
+
+  .handoff-btn-full:hover {
+    background: linear-gradient(135deg, #ff5252, #d84338) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(238, 90, 82, 0.4) !important;
+  }
+
+  /* 訊息樣式 */
+  .message {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .message.user {
+    justify-content: flex-end;
+  }
+
+  .message.ai {
+    justify-content: flex-start;
+    flex-direction: row;
+  }
+
+  .message-content {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    position: relative;
+    word-wrap: break-word;
+  }
+
+  .message.user .message-content {
+    background: #007bff;
+    color: white;
+    border-bottom-right-radius: 5px;
+  }
+
+  .message.ai .message-content {
+    background: #f1f5f9;
+    color: #374151;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 5px;
+  }
+
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 8px;
+    font-size: 16px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .message.user {
+    flex-direction: row-reverse;
+  }
+
+  .message.user .message-avatar {
+    background: #007bff;
+    color: white;
+  }
+
+  .message.ai .message-avatar {
+    background: #e2e8f0;
+    color: #64748b;
+  }
+
+  /* 打字指示器 */
+  .typing-indicator {
+    display: none;
+    margin-bottom: 12px;
+  }
+
+  .typing-dots {
+    display: inline-block;
+    padding: 10px 14px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    border-bottom-left-radius: 5px;
+  }
+
+  .typing-dots span {
+    height: 6px;
+    width: 6px;
+    float: left;
+    margin: 0 1px;
+    background-color: #94a3b8;
+    display: block;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: loadingFade 1s infinite;
+  }
+
+  .typing-dots span:nth-child(1) { animation-delay: 0s; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.1s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.2s; }
+
+  @keyframes loadingFade {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+    100% { opacity: 0.3; }
+  }
+
+  /* 快速問題區域 */
+  .quick-questions {
+    padding: 16px 18px;
+    background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .quick-questions h3 {
+    font-size: 15px;
+    margin: 0 0 12px 0;
+    color: #374151;
+    font-weight: 600;
+  }
+
+  .quick-question-btn {
+    display: inline-block;
+    margin: 5px 6px 5px 0;
+    padding: 8px 14px;
+    background: #ffffff;
+    color: #4b5563;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid #d1d5db;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .quick-question-btn:hover {
+    background: #f9fafb;
+    transform: translateY(-1px);
+    color: #374151;
+    text-decoration: none;
+    border-color: #9ca3af;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .handoff-btn-large {
+    background: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15) !important;
+  }
+
+  .handoff-btn-large:hover {
+    background: #2563eb !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25) !important;
+  }
+
+  @media (max-width: 768px) {
+    #chatbot-button{ bottom: 96px; right: 14px; }
+    #chatbot-box{
+      width: calc(100vw - 24px);
+      right: 12px;
+      bottom: 100px;
+      height: 70vh;
+      min-width: 320px;
+      min-height: 400px;
+    }
+  }
+  </style>
   
   <!-- Meta 資訊 -->
   <meta name="author" content="毛日好 Paw&Day">
@@ -105,9 +501,37 @@
   <div class="collapse navbar-collapse" id="navbarNav">
     <ul class="navbar-nav ms-auto">
       {% if user.is_authenticated %}
-        
+
+        <!-- 後台管理員專屬菜單 -->
+        {% if user.is_staff %}
+          <!-- 人工客服 -->
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'handoff_console' %}" aria-label="人工客服控台">
+              <i class="bi bi-headset me-1" aria-hidden="true"></i>人工客服
+            </a>
+          </li>
+
+          <!-- 系統管理 -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-gear me-1" aria-hidden="true"></i>系統管理
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                <i class="bi bi-gear me-2"></i>Django 後台
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'handoff_console' %}">
+                <i class="bi bi-headset me-2"></i>客服控台
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'notification_page' %}">
+                <i class="bi bi-bell me-2"></i>系統通知
+              </a></li>
+            </ul>
+          </li>
+
         <!-- 診所管理員菜單 -->
-        {% if user.profile.account_type == 'clinic_admin' %}
+        {% elif user.profile.account_type == 'clinic_admin' %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所功能
@@ -144,6 +568,9 @@
                 </a></li>
                 <li><a class="dropdown-item" href="{% url 'my_patients' %}">
                   <i class="bi bi-heart me-2"></i>我的病患
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'vet_medical_history' %}">
+                  <i class="bi bi-clock-history me-2"></i>診療歷史
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'schedule_dashboard' %}">
@@ -243,37 +670,50 @@
             </ul>
           </li>
           
-          <!-- 地圖服務下拉選單 -->
+          <!-- 社群專區下拉選單 -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>地圖服務
+              <i class="bi bi-chat-heart me-1" aria-hidden="true"></i>社群專區
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{% url 'map' %}">
-                <i class="bi bi-geo-alt me-2"></i>搜尋附近醫院
+              <li><a class="dropdown-item" href="{% url 'social:home' %}">
+                <i class="bi bi-house me-2"></i>社群首頁
               </a></li>
-              <li><a class="dropdown-item" href="{% url 'emergency_map' %}">
-                <i class="bi bi-exclamation-triangle me-2"></i>急診醫院地圖
+              <li><a class="dropdown-item" href="{% url 'social:profile' user.username %}">
+                <i class="bi bi-person me-2"></i>我的檔案
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><h6 class="dropdown-header">互動功能</h6></li>
+              <li><a class="dropdown-item" href="{% url 'social:search_posts' %}">
+                <i class="bi bi-search me-2"></i>搜尋貼文
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'ai_chat' %}">
+                <i class="bi bi-robot me-2"></i>AI 客服
               </a></li>
             </ul>
           </li>
-          
-          <!-- 領養專區 -->
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'adoption' %}" aria-label="寵物領養專區">
+
+          <!-- 領養專區下拉選單 -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-heart me-1" aria-hidden="true"></i>領養專區
             </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{% url 'adoption' %}">
+                <i class="bi bi-heart me-2"></i>瀏覽領養
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'my_adoption' %}">
+                <i class="bi bi-list-ul me-2"></i>我的送養
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'my_adoption_transfers' %}">
+                <i class="bi bi-arrow-left-right me-2"></i>轉交請求
+              </a></li>
+            </ul>
           </li>
         {% endif %}
 
         <!-- 共用菜單項目 -->
-        {% if user.is_staff %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'admin:index' %}" aria-label="系統後台">
-              <i class="bi bi-gear me-1" aria-hidden="true"></i>後台管理
-            </a>
-          </li>
-        {% else %}
+        {% if not user.is_staff %}
           <li class="nav-item">
             <a class="nav-link" href="{% url 'edit_profile' %}" aria-label="修改個人資料">
               <i class="bi bi-person-gear me-1" aria-hidden="true"></i>修改帳號資料
@@ -297,21 +737,13 @@
         </li>
 
       {% else %}
-        <!-- 未登入用戶的地圖服務下拉選單 -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>地圖服務
+        <!-- 未登入用戶的社群專區 -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'social:home' %}" aria-label="毛孩社群">
+            <i class="bi bi-chat-heart me-1" aria-hidden="true"></i>毛孩社群
           </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{% url 'map' %}">
-              <i class="bi bi-geo-alt me-2"></i>搜尋附近醫院
-            </a></li>
-            <li><a class="dropdown-item" href="{% url 'emergency_map' %}">
-              <i class="bi bi-exclamation-triangle me-2"></i>急診醫院地圖
-            </a></li>
-          </ul>
         </li>
-        
+
         <!-- 未登入用戶的領養專區 -->
         <li class="nav-item">
           <a class="nav-link" href="{% url 'adoption' %}" aria-label="寵物領養專區">
@@ -630,5 +1062,750 @@
   {% if not debug %}
   <!-- 在生產環境中插入 Google Analytics 代碼 -->
   {% endif %}
+
+  <!-- AI 客服浮動泡泡 (獸醫端不顯示) -->
+  {% if not user.vet_profile and user.profile.account_type != 'vet' %}
+  <div id="chatbot-button" title="AI 客服">💬</div>
+
+  <!-- AI 客服對話框 -->
+  <div id="chatbot-box">
+      <div id="chatbot-header">
+          <span>AI 客服</span>
+          <div class="header-buttons">
+              <button id="handoff-header-btn" title="轉接人工客服">👤</button>
+              <span id="chatbot-close">✖</span>
+          </div>
+      </div>
+      <div id="chatbot-messages">
+          <!-- 打字指示器 -->
+          <div class="typing-indicator" id="typing-indicator">
+              <div class="message ai">
+                  <div class="message-avatar">🤖</div>
+                  <div class="typing-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <!-- 快速問題區域 -->
+      <div class="quick-questions" id="quick-questions">
+          <h3>💬 常見問題：</h3>
+          <a href="#" class="quick-question-btn" data-question="如何幫寵物洗澡？">如何幫寵物洗澡？</a>
+          <a href="#" class="quick-question-btn" data-question="寵物疫苗接種時間？">寵物疫苗接種時間？</a>
+          <a href="#" class="quick-question-btn" data-question="寵物飲食注意事項？">寵物飲食注意事項？</a>
+          <a href="#" class="quick-question-btn" data-question="如何訓練寵物？">如何訓練寵物？</a>
+          <a href="#" class="quick-question-btn" data-question="寵物生病的症狀？">寵物生病的症狀？</a>
+      </div>
+
+      <div id="chatbot-input">
+          <input type="text" id="chatbot-text" placeholder="請輸入訊息..." />
+          <button id="chatbot-send">✈️</button>
+      </div>
+  </div>
+
+  <!-- AI 客服浮動泡泡 JavaScript (增強版：持久化 + 拖曳 + 縮放) -->
+  <script>
+    // 設置用戶資訊變數
+    const USER_INFO = {
+        name: {% if user.is_authenticated %}'{{ user.username|default:user.email|default:"網站用戶"|escapejs }}'{% else %}'訪客'{% endif %},
+        email: {% if user.is_authenticated %}'{{ user.email|default:""|escapejs }}'{% else %}''{% endif %}
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 調試：輸出用戶資訊
+        console.log('USER_INFO:', USER_INFO);
+
+        const chatbotButton = document.getElementById('chatbot-button');
+        const chatbotBox = document.getElementById('chatbot-box');
+        const chatbotClose = document.getElementById('chatbot-close');
+        const chatbotSend = document.getElementById('chatbot-send');
+        const chatbotText = document.getElementById('chatbot-text');
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        const chatbotHeader = document.getElementById('chatbot-header');
+
+        // 初始化會話Key和存儲Key
+        let sessionKey = getStoredSessionKey();
+        const storageKey = 'chatbot_conversation_' + sessionKey;
+
+        // 人工客服相關變數
+        let handoffTicketId = null;
+        let lastMessageId = 0;
+        let handoffPolling = null;
+
+        // 拖曳相關變數
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let boxStartX = 0;
+        let boxStartY = 0;
+
+        // 初始化聊天機器人
+        initializeChatbot();
+
+        // 拖曳功能
+        chatbotHeader.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', endDrag);
+
+        function startDrag(e) {
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+
+            const rect = chatbotBox.getBoundingClientRect();
+            boxStartX = rect.left;
+            boxStartY = rect.top;
+
+            // 防止文字選擇
+            e.preventDefault();
+            chatbotBox.style.transition = 'none';
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+
+            let newX = boxStartX + deltaX;
+            let newY = boxStartY + deltaY;
+
+            // 邊界檢查
+            const maxX = window.innerWidth - chatbotBox.offsetWidth;
+            const maxY = window.innerHeight - chatbotBox.offsetHeight;
+
+            newX = Math.max(0, Math.min(maxX, newX));
+            newY = Math.max(0, Math.min(maxY, newY));
+
+            chatbotBox.style.left = newX + 'px';
+            chatbotBox.style.top = newY + 'px';
+            chatbotBox.style.right = 'auto';
+            chatbotBox.style.bottom = 'auto';
+
+            // 保存位置
+            saveChatbotPosition(newX, newY);
+        }
+
+        function endDrag() {
+            if (isDragging) {
+                isDragging = false;
+                chatbotBox.style.transition = '';
+            }
+        }
+
+        // 打開聊天窗口
+        chatbotButton.addEventListener('click', function() {
+            chatbotBox.style.display = 'flex';
+            chatbotButton.style.display = 'none';
+
+            // 恢復位置
+            restoreChatbotPosition();
+
+            // 恢復對話記錄
+            loadConversationHistory();
+        });
+
+        // 關閉聊天窗口
+        chatbotClose.addEventListener('click', function() {
+            chatbotBox.style.display = 'none';
+            chatbotButton.style.display = 'flex';
+
+            // 保存對話記錄
+            saveConversationHistory();
+        });
+
+        // 發送訊息
+        chatbotSend.addEventListener('click', sendMessage);
+        chatbotText.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // 快速問題按鈕事件
+        document.querySelectorAll('.quick-question-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const question = this.getAttribute('data-question');
+                if (question) {
+                    chatbotText.value = question;
+                    sendMessage();
+                }
+            });
+        });
+
+        // 標題列人工客服按鈕事件
+        const handoffHeaderBtn = document.getElementById('handoff-header-btn');
+        if (handoffHeaderBtn) {
+            handoffHeaderBtn.addEventListener('click', requestHandoff);
+        }
+
+        function sendMessage() {
+            const message = chatbotText.value.trim();
+            if (!message) return;
+
+            // 顯示用戶訊息
+            addMessage('user', message);
+            chatbotText.value = '';
+
+            // 顯示打字指示器
+            showTypingIndicator();
+
+            // 發送到API
+            fetch('/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    message: message,
+                    session_key: sessionKey
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 隱藏打字指示器
+                hideTypingIndicator();
+
+                if (data.reply) {
+                    addMessage('bot', data.reply);
+                } else if (data.response) {
+                    addMessage('bot', data.response);
+                } else {
+                    addMessage('bot', '抱歉，服務暫時無法使用，請稍後再試。');
+                }
+
+                // 保存對話
+                saveConversationHistory();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hideTypingIndicator();
+                addMessage('bot', '抱歉，發生錯誤，請稍後再試。');
+                saveConversationHistory();
+            });
+        }
+
+        function addMessage(sender, message, isTemporary = false, isHTML = false) {
+            // 隱藏打字指示器
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) typingIndicator.style.display = 'none';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender === 'bot' ? 'ai' : 'user'}`;
+            if (isTemporary) messageDiv.className += ' temporary';
+
+            // 添加時間戳記
+            messageDiv.dataset.timestamp = Date.now();
+            messageDiv.dataset.sender = sender;
+            messageDiv.dataset.isHtml = isHTML;
+
+            // 創建頭像
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+
+            // 創建訊息內容
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            // 檢查是否為bot訊息且包含轉人工客服的提示
+            if (sender === 'bot' && message.includes('轉人工客服')) {
+                // 創建HTML內容而不是純文字
+                content.innerHTML = processHandoffMessage(message);
+                messageDiv.dataset.originalMessage = message;
+
+                // 為動態創建的按鈕添加事件監聽器
+                const handoffButtons = content.querySelectorAll('.handoff-btn-inline, .handoff-btn-full');
+                handoffButtons.forEach(button => {
+                    button.addEventListener('click', requestHandoff);
+                });
+            } else if (isHTML) {
+                // 使用HTML內容
+                content.innerHTML = message;
+                messageDiv.dataset.originalMessage = message;
+            } else {
+                // 使用純文字內容
+                content.textContent = message;
+                messageDiv.dataset.originalMessage = message;
+            }
+
+            // 組裝訊息結構
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+
+            // 插入訊息（在打字指示器之前）
+            if (typingIndicator && typingIndicator.parentNode) {
+                typingIndicator.parentNode.insertBefore(messageDiv, typingIndicator);
+            } else {
+                chatbotMessages.appendChild(messageDiv);
+            }
+
+            // 滾動到底部
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+            return messageDiv;
+        }
+
+        // 打字指示器控制函數
+        function showTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'block';
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+        }
+
+        function processHandoffMessage(message) {
+            // 處理包含轉人工客服的訊息，將其轉換為可點擊的按鈕
+            let processedMessage = message;
+
+            if (message.includes('【轉人工客服】')) {
+                processedMessage = processedMessage.replace(/【轉人工客服】/g,
+                    '<button class="handoff-btn-inline">【轉人工客服】</button>');
+            } else {
+                // 如果沒有特定格式，在訊息末尾添加轉人工客服按鈕
+                processedMessage += '<br><button class="handoff-btn-full">🎧 點擊轉人工客服</button>';
+            }
+
+            return processedMessage;
+        }
+
+        function requestHandoff() {
+            console.log('轉人工客服按鈕被點擊');
+
+            // 添加視覺反饋
+            addMessage('bot', '正在為您轉接人工客服，請稍候...');
+
+            // 獲取當前輸入的問題
+            const currentQuestion = chatbotText.value.trim();
+
+            fetch('/api/handoff/request/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    name: USER_INFO.name,
+                    contact: USER_INFO.email,
+                    last_question: currentQuestion,
+                    channel: 'web'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    // 清空輸入框
+                    chatbotText.value = '';
+
+                    // 保存工單ID並開始輪詢
+                    handoffTicketId = data.ticket_id;
+                    lastMessageId = 0;
+
+                    // 顯示轉接成功訊息
+                    const successMessage = '✅ 已為您成功轉接人工客服！<br>工單編號：' + data.ticket_id + '<br><br>人工客服將盡快透過系統回覆您的問題，請稍候。感謝您的耐心等待！';
+                    addMessage('bot', successMessage, false, true);
+
+                    // 開始輪詢人工客服回覆
+                    startHandoffPolling();
+
+                    // 保存人工客服狀態
+                    saveHandoffState();
+
+                    // 添加結束對話按鈕
+                    addEndSessionButton();
+                } else {
+                    const errorMessage = '❌ 轉接人工客服失敗：' + (data.error || '未知錯誤') + '<br>請稍後再試或直接聯繫客服。';
+                    addMessage('bot', errorMessage, false, true);
+                }
+
+                // 保存對話
+                saveConversationHistory();
+            })
+            .catch(error => {
+                console.error('Handoff error:', error);
+                addMessage('bot', '❌ 轉接人工客服時發生錯誤，請稍後再試。');
+                saveConversationHistory();
+            });
+        }
+
+        // 初始化聊天機器人
+        function initializeChatbot() {
+            // 如果是第一次訪問，顯示歡迎訊息
+            const hasWelcome = localStorage.getItem('chatbot_welcomed_' + sessionKey);
+            if (!hasWelcome) {
+                setTimeout(() => {
+                    addMessage('bot', '您好！我是AI客服助手，很高興為您服務。請問有什麼可以幫助您的嗎？');
+                    localStorage.setItem('chatbot_welcomed_' + sessionKey, 'true');
+                    saveConversationHistory();
+                }, 100);
+            }
+        }
+
+        // 獲取或創建會話Key
+        function getStoredSessionKey() {
+            let key = localStorage.getItem('chatbot_session_key');
+            if (!key) {
+                key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('chatbot_session_key', key);
+            }
+            return key;
+        }
+
+        // 保存對話記錄
+        function saveConversationHistory() {
+            const messages = [];
+            const messageElements = chatbotMessages.querySelectorAll('.message:not(.temporary)');
+
+            messageElements.forEach(elem => {
+                const content = elem.querySelector('.message-content');
+                messages.push({
+                    sender: elem.dataset.sender,
+                    message: elem.dataset.originalMessage || (content ? content.textContent : ''),
+                    timestamp: elem.dataset.timestamp,
+                    isHTML: elem.dataset.isHtml === 'true'
+                });
+            });
+
+            localStorage.setItem(storageKey, JSON.stringify(messages));
+        }
+
+        // 載入對話記錄
+        function loadConversationHistory() {
+            const saved = localStorage.getItem(storageKey);
+            if (!saved) return;
+
+            try {
+                const messages = JSON.parse(saved);
+                chatbotMessages.innerHTML = ''; // 清空現有訊息
+
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.sender === 'bot' ? 'ai' : 'user'}`;
+                    messageDiv.dataset.timestamp = msg.timestamp;
+                    messageDiv.dataset.sender = msg.sender;
+                    messageDiv.dataset.isHtml = msg.isHTML;
+                    messageDiv.dataset.originalMessage = msg.message;
+
+                    // 創建頭像
+                    const avatar = document.createElement('div');
+                    avatar.className = 'message-avatar';
+                    avatar.textContent = msg.sender === 'bot' ? '🤖' : '👤';
+
+                    // 創建訊息內容
+                    const content = document.createElement('div');
+                    content.className = 'message-content';
+
+                    // 處理轉人工客服按鈕
+                    if (msg.sender === 'bot' && msg.message.includes('轉人工客服')) {
+                        content.innerHTML = processHandoffMessage(msg.message);
+
+                        // 重新綁定事件
+                        const handoffButtons = content.querySelectorAll('.handoff-btn-inline, .handoff-btn-full');
+                        handoffButtons.forEach(button => {
+                            button.addEventListener('click', requestHandoff);
+                        });
+                    } else if (msg.isHTML) {
+                        content.innerHTML = msg.message;
+                    } else {
+                        content.textContent = msg.message;
+                    }
+
+                    // 組裝訊息結構
+                    messageDiv.appendChild(avatar);
+                    messageDiv.appendChild(content);
+
+                    chatbotMessages.appendChild(messageDiv);
+                });
+
+                // 滾動到底部
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            } catch (e) {
+                console.error('載入對話記錄失敗:', e);
+            }
+        }
+
+        // 保存聊天機器人位置
+        function saveChatbotPosition(x, y) {
+            localStorage.setItem('chatbot_position', JSON.stringify({x, y}));
+        }
+
+        // 恢復聊天機器人位置
+        function restoreChatbotPosition() {
+            const saved = localStorage.getItem('chatbot_position');
+            if (saved) {
+                try {
+                    const {x, y} = JSON.parse(saved);
+                    chatbotBox.style.left = x + 'px';
+                    chatbotBox.style.top = y + 'px';
+                    chatbotBox.style.right = 'auto';
+                    chatbotBox.style.bottom = 'auto';
+                } catch (e) {
+                    console.error('恢復位置失敗:', e);
+                }
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // 清理舊的對話記錄（防止localStorage過大）
+        function cleanupOldConversations() {
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('chatbot_conversation_'));
+            if (keys.length > 10) { // 保留最多10個對話
+                keys.sort().slice(0, keys.length - 10).forEach(key => {
+                    localStorage.removeItem(key);
+                });
+            }
+        }
+
+        // 人工客服輪詢功能
+        function startHandoffPolling() {
+            if (handoffPolling) {
+                clearInterval(handoffPolling);
+            }
+
+            handoffPolling = setInterval(() => {
+                if (!handoffTicketId) return;
+
+                fetch(`/api/handoff/poll/?ticket_id=${handoffTicketId}&since=${lastMessageId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.messages) {
+                        data.messages.forEach(msg => {
+                            if (msg.sender === 'agent') {
+                                addMessage('agent', `👨‍💼 人工客服：${msg.text}`);
+                            } else if (msg.sender === 'system') {
+                                addMessage('system', `📢 系統：${msg.text}`);
+                            }
+                        });
+
+                        if (data.last_id > lastMessageId) {
+                            lastMessageId = data.last_id;
+                            saveConversationHistory();
+                        }
+
+                        // 檢查工單是否已結案
+                        if (data.is_open === false) {
+                            addMessage('system', '📢 系統：本次人工客服會話已結束。感謝您的使用！如有其他問題，可以重新發起諮詢。');
+                            stopHandoffPolling();
+
+                            // 清除人工客服狀態，恢復AI對話
+                            handoffTicketId = null;
+                            lastMessageId = 0;
+                            localStorage.removeItem('handoff_ticket_id_' + sessionKey);
+                            localStorage.removeItem('handoff_last_msg_id_' + sessionKey);
+
+                            // 移除結束對話按鈕
+                            removeEndSessionButton();
+
+                            saveConversationHistory();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Handoff polling error:', error);
+                });
+            }, 3000); // 每3秒輪詢一次
+        }
+
+        function stopHandoffPolling() {
+            if (handoffPolling) {
+                clearInterval(handoffPolling);
+                handoffPolling = null;
+            }
+        }
+
+        // 修改sendMessage函數以支援向人工客服發送訊息
+        function sendToHandoff(message) {
+            if (!handoffTicketId) return false;
+
+            fetch('/api/handoff/user/send/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    ticket_id: handoffTicketId,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.ok) {
+                    addMessage('system', '❌ 發送訊息失敗，請稍後再試。');
+                }
+            })
+            .catch(error => {
+                console.error('Send to handoff error:', error);
+                addMessage('system', '❌ 發送訊息時發生錯誤。');
+            });
+
+            return true;
+        }
+
+        // 在發送訊息時檢查是否處於人工客服模式
+        const originalSendMessage = sendMessage;
+        sendMessage = function() {
+            const message = chatbotText.value.trim();
+            if (!message) return;
+
+            // 如果已經轉接到人工客服，則直接發送到人工客服
+            if (handoffTicketId) {
+                addMessage('user', message);
+                chatbotText.value = '';
+                sendToHandoff(message);
+                saveConversationHistory();
+                return;
+            }
+
+            // 否則按原來的AI聊天流程
+            originalSendMessage();
+        };
+
+        // 初始化時清理舊對話
+        cleanupOldConversations();
+
+        // 恢復人工客服狀態
+        function restoreHandoffState() {
+            const savedTicketId = localStorage.getItem('handoff_ticket_id_' + sessionKey);
+            if (savedTicketId) {
+                handoffTicketId = parseInt(savedTicketId);
+                lastMessageId = parseInt(localStorage.getItem('handoff_last_msg_id_' + sessionKey) || '0');
+                startHandoffPolling();
+            }
+        }
+
+        // 保存人工客服狀態
+        function saveHandoffState() {
+            if (handoffTicketId) {
+                localStorage.setItem('handoff_ticket_id_' + sessionKey, handoffTicketId.toString());
+                localStorage.setItem('handoff_last_msg_id_' + sessionKey, lastMessageId.toString());
+            }
+        }
+
+        // 添加結束對話按鈕
+        function addEndSessionButton() {
+            // 避免重複添加
+            if (document.getElementById('end-session-btn')) return;
+
+            const buttonHtml = `
+                <div id="end-session-container" style="text-align: center; padding: 10px; border-top: 1px solid #374151;">
+                    <button id="end-session-btn" style="
+                        background: #ef4444;
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: background 0.2s;
+                    " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                        🔚 結束人工客服對話
+                    </button>
+                </div>
+            `;
+
+            const inputContainer = document.getElementById('chatbot-input');
+            inputContainer.insertAdjacentHTML('beforebegin', buttonHtml);
+
+            // 綁定點擊事件
+            document.getElementById('end-session-btn').addEventListener('click', requestEndSession);
+        }
+
+        // 移除結束對話按鈕
+        function removeEndSessionButton() {
+            const container = document.getElementById('end-session-container');
+            if (container) {
+                container.remove();
+            }
+        }
+
+        // 請求結束會話
+        function requestEndSession() {
+            if (!handoffTicketId) return;
+
+            if (!confirm('確定要結束本次人工客服對話嗎？')) return;
+
+            // 發送結束會話請求
+            fetch('/api/handoff/user/end/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    ticket_id: handoffTicketId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    addMessage('system', '📢 系統：您已主動結束人工客服對話。感謝您的使用！');
+
+                    // 停止輪詢並清除狀態
+                    stopHandoffPolling();
+                    handoffTicketId = null;
+                    lastMessageId = 0;
+                    localStorage.removeItem('handoff_ticket_id_' + sessionKey);
+                    localStorage.removeItem('handoff_last_msg_id_' + sessionKey);
+
+                    // 移除結束對話按鈕
+                    removeEndSessionButton();
+
+                    saveConversationHistory();
+                } else {
+                    addMessage('system', '❌ 結束對話失敗，請稍後再試。');
+                }
+            })
+            .catch(error => {
+                console.error('End session error:', error);
+                addMessage('system', '❌ 結束對話時發生錯誤。');
+            });
+        }
+
+        // 在初始化時恢復人工客服狀態
+        restoreHandoffState();
+
+        // 如果恢復時有人工客服狀態，也要添加結束按鈕
+        if (handoffTicketId) {
+            setTimeout(() => {
+                addEndSessionButton();
+            }, 100);
+        }
+    });
+  </script>
+  {% endif %}
+
 </body>
 </html>

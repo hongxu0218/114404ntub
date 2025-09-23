@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}我的領養轉交請求{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
+<style>
+    .transfer-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .transfer-header {
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .transfer-body {
+        padding: 1.5rem;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .status-accepted {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-rejected {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .pet-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .pet-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .pet-details h5 {
+        margin: 0;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .pet-details p {
+        margin: 0;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .action-btn {
+        border-radius: 8px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-accept {
+        background: linear-gradient(135deg, #00b894, #00a085);
+        color: white;
+    }
+
+    .btn-accept:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+    }
+
+    .btn-reject {
+        background: linear-gradient(135deg, #e17055, #d63031);
+        color: white;
+    }
+
+    .btn-reject:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(225, 112, 85, 0.3);
+    }
+
+    .section-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-left: 1rem;
+        border-left: 4px solid #667eea;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #7f8c8d;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header mb-4">
+                <h2><i class="fas fa-exchange-alt me-2"></i>我的領養轉交請求</h2>
+                <p class="text-muted">管理您的領養轉交請求</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收到的轉交請求 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="section-title">收到的轉交請求</h3>
+            {% if received_requests %}
+                {% for transfer in received_requests %}
+                <div class="transfer-card">
+                    <div class="transfer-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">來自 {{ transfer.from_owner.username }} 的轉交請求</h5>
+                            <span class="status-badge status-{{ transfer.status }}">
+                                {% if transfer.status == 'pending' %}待確認
+                                {% elif transfer.status == 'accepted' %}已接受
+                                {% elif transfer.status == 'rejected' %}已拒絕
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="transfer-body">
+                        <div class="pet-info">
+                            {% if transfer.adoption.adopt_picture1 %}
+                                <img src="{{ transfer.adoption.adopt_picture1.url }}" alt="{{ transfer.adoption.name }}" class="pet-avatar">
+                            {% else %}
+                                <div class="pet-avatar d-flex align-items-center justify-content-center" style="background: #f8f9fa;">
+                                    <i class="fas fa-paw text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="pet-details">
+                                <h5>{{ transfer.adoption.name }}</h5>
+                                <p>{{ transfer.adoption.species }} • {{ transfer.adoption.breed }}</p>
+                            </div>
+                        </div>
+
+                        {% if transfer.transfer_note %}
+                        <div class="mb-3">
+                            <strong>轉交說明：</strong>
+                            <p class="text-muted mb-0">{{ transfer.transfer_note }}</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                發送時間：{{ transfer.created_at|date:"Y年m月d日 H:i" }}
+                            </small>
+                        </div>
+
+                        {% if transfer.status == 'pending' %}
+                        <div class="d-flex gap-2">
+                            <form method="post" action="{% url 'adoption_transfer_confirm' transfer.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="accept">
+                                <button type="submit" class="btn action-btn btn-accept" onclick="return confirm('確定要接受這個轉交請求嗎？')">
+                                    <i class="fas fa-check me-1"></i>接受
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'adoption_transfer_confirm' transfer.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn action-btn btn-reject" onclick="return confirm('確定要拒絕這個轉交請求嗎？')">
+                                    <i class="fas fa-times me-1"></i>拒絕
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="transfer-card">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h5>沒有收到轉交請求</h5>
+                        <p>當有人想要轉交領養給您時，會出現在這裡</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 發送的轉交請求 -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="section-title">我發送的轉交請求</h3>
+            {% if sent_requests %}
+                {% for transfer in sent_requests %}
+                <div class="transfer-card">
+                    <div class="transfer-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">發送給 {{ transfer.to_email }} 的轉交請求</h5>
+                            <span class="status-badge status-{{ transfer.status }}">
+                                {% if transfer.status == 'pending' %}待確認
+                                {% elif transfer.status == 'accepted' %}已接受
+                                {% elif transfer.status == 'rejected' %}已拒絕
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="transfer-body">
+                        <div class="pet-info">
+                            {% if transfer.adoption.adopt_picture1 %}
+                                <img src="{{ transfer.adoption.adopt_picture1.url }}" alt="{{ transfer.adoption.name }}" class="pet-avatar">
+                            {% else %}
+                                <div class="pet-avatar d-flex align-items-center justify-content-center" style="background: #f8f9fa;">
+                                    <i class="fas fa-paw text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="pet-details">
+                                <h5>{{ transfer.adoption.name }}</h5>
+                                <p>{{ transfer.adoption.species }} • {{ transfer.adoption.breed }}</p>
+                            </div>
+                        </div>
+
+                        {% if transfer.transfer_note %}
+                        <div class="mb-3">
+                            <strong>轉交說明：</strong>
+                            <p class="text-muted mb-0">{{ transfer.transfer_note }}</p>
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                發送時間：{{ transfer.created_at|date:"Y年m月d日 H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="transfer-card">
+                    <div class="empty-state">
+                        <i class="fas fa-paper-plane"></i>
+                        <h5>沒有發送轉交請求</h5>
+                        <p>您還沒有發送過任何轉交請求</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

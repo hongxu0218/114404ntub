@@ -256,6 +256,16 @@
                         {% endif %}
                         {% endwith %}
                     </div>
+
+                    <!-- 為此醫師排班的快速操作按鈕 -->
+                    {% if is_admin %}
+                    <div class="doctor-actions">
+                        <a href="{% url 'schedule_create' %}?doctor={{ doctor.id }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-calendar-plus"></i>
+                            為此醫師排班
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>

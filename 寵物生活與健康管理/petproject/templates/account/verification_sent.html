@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}驗證郵件已發送 - 毛日好{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/account.css' %}">
+<style>
+    .verification-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem 1rem;
+    }
+
+    .verification-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+    }
+
+    .verification-header {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .verification-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-10px);
+        }
+        60% {
+            transform: translateY(-5px);
+        }
+    }
+
+    .verification-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .verification-subtitle {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .verification-body {
+        padding: 2.5rem;
+    }
+
+    .email-info {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin: 2rem 0;
+        position: relative;
+    }
+
+    .email-info::before {
+        content: '📧';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 0 1rem;
+        font-size: 1.5rem;
+    }
+
+    .email-address {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .email-status {
+        color: #22c55e;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .instruction-box {
+        background: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .instruction-title {
+        color: #1976d2;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .instruction-content {
+        color: #1976d2;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .help-section {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .help-title {
+        color: #856404;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .help-content {
+        color: #856404;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .help-content ul {
+        margin-bottom: 0;
+        padding-left: 1.5rem;
+    }
+
+    .help-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-secondary-custom {
+        background: white;
+        color: #6c757d;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-secondary-custom:hover {
+        border-color: #22c55e;
+        color: #22c55e;
+        text-decoration: none;
+    }
+
+    .back-link {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .back-link a {
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: color 0.3s ease;
+    }
+
+    .back-link a:hover {
+        color: #495057;
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .verification-container {
+            padding: 1rem 0.5rem;
+        }
+
+        .verification-header {
+            padding: 2rem 1rem;
+        }
+
+        .verification-body {
+            padding: 2rem 1rem;
+        }
+
+        .verification-title {
+            font-size: 1.5rem;
+        }
+
+        .verification-icon {
+            font-size: 3rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verification-container">
+    <div class="verification-card">
+        <div class="verification-header">
+            <div class="verification-icon">📨</div>
+            <h1 class="verification-title">驗證郵件已發送</h1>
+            <p class="verification-subtitle">請查看您的電子信箱並完成驗證</p>
+        </div>
+
+        <div class="verification-body">
+            <div class="email-info">
+                <div class="email-address">{{ request.user.email|default:"您的信箱" }}</div>
+                <div class="email-status">✅ 驗證郵件已發送成功</div>
+            </div>
+
+            <div class="instruction-box">
+                <div class="instruction-title">
+                    <i class="bi bi-info-circle"></i>
+                    接下來該怎麼做？
+                </div>
+                <div class="instruction-content">
+                    我們已經向您的電子信箱發送了一封驗證郵件。請登入您的信箱，找到來自毛日好的郵件，並點擊郵件中的驗證連結來完成帳號啟用。
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-title">
+                    <i class="bi bi-question-circle"></i>
+                    沒有收到驗證郵件？
+                </div>
+                <div class="help-content">
+                    <ul>
+                        <li>請檢查您的<strong>垃圾郵件資料夾</strong>或<strong>促銷郵件</strong>分類</li>
+                        <li>確認您輸入的信箱地址是否正確</li>
+                        <li>郵件可能需要幾分鐘時間才會送達，請耐心等候</li>
+                        <li>如果超過10分鐘仍未收到，可以嘗試重新發送驗證郵件</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'account_email' %}" class="btn-primary-custom">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        重新發送驗證郵件
+                    </a>
+                    <a href="{% url 'account_email' %}" class="btn-secondary-custom">
+                        <i class="bi bi-gear"></i>
+                        管理信箱設定
+                    </a>
+                {% else %}
+                    <a href="{% url 'account_login' %}" class="btn-primary-custom">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        登入帳號
+                    </a>
+                    <a href="{% url 'account_signup' %}" class="btn-secondary-custom">
+                        <i class="bi bi-person-plus"></i>
+                        重新註冊
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-shield-check me-2"></i>
+                <strong>為什麼需要驗證信箱？</strong><br>
+                驗證信箱可以確保您能夠收到重要的帳號通知，包括預約提醒、健康記錄更新等訊息，同時也能保護您的帳號安全。
+            </div>
+
+            <div class="back-link">
+                <a href="{% url 'home' %}">
+                    <i class="bi bi-arrow-left"></i>
+                    返回首頁
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

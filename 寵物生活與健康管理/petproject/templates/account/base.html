@@ -26,18 +26,11 @@
                     <a href="{% url 'account_email' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-envelope"></i> 管理信箱
                     </a>
-                    {% if user.profile.account_type == 'owner' %}
-                        <a href="{% url 'pet_list' %}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-paw"></i> 我的寵物
-                        </a>
-                        <a href="{% url 'my_appointments' %}" class="list-group-item list-group-item-action">
-                            <i class="fas fa-calendar-check"></i> 我的預約
-                        </a>
-                    {% elif user.profile.account_type == 'clinic_admin' %}
+                    {% if user.profile.account_type == 'clinic_admin' %}
                         <a href="{% url 'clinic_dashboard' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-hospital"></i> 診所管理
                         </a>
-                    {% elif user.profile.account_type == 'veterinarian' %}
+                        <!-- 診所管理員同時也是獸醫師，顯示獸醫師功能 -->
                         <a href="{% url 'vet_appointments' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-stethoscope"></i> 我的預約
                         </a>
