@@ -837,38 +837,41 @@
             管理選項
           </h3>
           <div class="action-buttons">
+            <!-- 送養狀態按鈕 -->
             <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline;">
               {% csrf_token %}
-              {% if adoption.is_publish %}
-                {% if adoption.is_adopted %}
-                  <button type="submit" name="action" value="adopted" class="btn btn-secondary"
-                          onclick="return confirm('確定要將此寵物改為「待領養」嗎？');">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    恢復為待領養
-                  </button>
-                {% else %}
-                  <button type="submit" name="action" value="adopted" class="btn btn-success"
-                          onclick="return confirm('確定將此寵物標記為已送養？');">
-                    <i class="bi bi-check-circle"></i>
-                    標記為已送養
-                  </button>
-                {% endif %}
+              <input type="hidden" name="action" value="adopted">
+              {% if adoption.is_adopted %}
+                <button type="submit" class="btn btn-secondary"
+                        onclick="return confirm('確定要將此寵物改為「待領養」嗎？');">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  恢復為待領養
+                </button>
+              {% else %}
+                <button type="submit" class="btn btn-success"
+                        onclick="return confirm('確定將此寵物標記為已送養？');">
+                  <i class="bi bi-check-circle"></i>
+                  標記為已送養
+                </button>
               {% endif %}
+            </form>
 
-              {% if not adoption.is_adopted %}
-                {% if adoption.is_publish %}
-                  <button type="submit" name="action" value="publish" class="btn btn-secondary"
-                          onclick="return confirm('確定將此寵物設為暫不刊登嗎？');">
-                    <i class="bi bi-eye-slash"></i>
-                    暫不刊登
-                  </button>
-                {% else %}
-                  <button type="submit" name="action" value="publish" class="btn btn-success"
-                          onclick="return confirm('確定將此寵物設為已刊登嗎？');">
-                    <i class="bi bi-eye"></i>
-                    開始刊登
-                  </button>
-                {% endif %}
+            <!-- 刊登狀態按鈕 -->
+            <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline; margin-left: 10px;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="publish">
+              {% if adoption.is_publish %}
+                <button type="submit" class="btn btn-secondary"
+                        onclick="return confirm('確定將此寵物設為暫不刊登嗎？');">
+                  <i class="bi bi-eye-slash"></i>
+                  暫不刊登
+                </button>
+              {% else %}
+                <button type="submit" class="btn btn-success"
+                        onclick="return confirm('確定將此寵物重新上架刊登嗎？');">
+                  <i class="bi bi-eye"></i>
+                  重新上架
+                </button>
               {% endif %}
             </form>
 
@@ -876,6 +879,14 @@
               <i class="bi bi-pencil-square"></i>
               編輯資料
             </a>
+
+            <!-- 轉交功能 -->
+            {% if is_owner and adoption.is_adopted %}
+              <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#transferModal">
+                <i class="bi bi-arrow-left-right"></i>
+                轉交
+              </button>
+            {% endif %}
 
             <form method="post" action="{% url 'delete_adoption' adoption.pk %}" style="display:inline;"
                   onsubmit="return confirm('你確定要刪除這筆資料嗎？此操作無法復原。');">
@@ -901,6 +912,55 @@
     {% endif %}
   </div>
 </div>
+
+<!-- 轉交Modal -->
+{% if is_owner and adoption.is_adopted %}
+<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="transferModalLabel">
+          <i class="bi bi-arrow-left-right me-2"></i>轉交送養寵物
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'adoption_transfer_request' adoption.pk %}">
+        <div class="modal-body">
+          {% csrf_token %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            轉交功能允許您將已完成領養的寵物轉交給其他用戶。請填寫新飼主的聯絡資訊。
+          </div>
+
+          <div class="mb-3">
+            <label for="to_email" class="form-label">新飼主信箱 <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="to_email" name="to_email" required>
+            <div class="form-text">我們將發送轉交通知到此信箱</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="to_phone" class="form-label">新飼主電話 <span class="text-danger">*</span></label>
+            <input type="tel" class="form-control" id="to_phone" name="to_phone" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="transfer_note" class="form-label">轉交說明（選填）</label>
+            <textarea class="form-control" id="transfer_note" name="transfer_note" rows="3"
+                      placeholder="可以說明轉交原因或其他注意事項..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="btn btn-primary"
+                  onclick="return confirm('確定要發送轉交請求嗎？一旦發送就無法取消。');">
+            <i class="bi bi-send me-1"></i>發送轉交請求
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- 浮動聯絡按鈕 -->
 {% if adoption.phone or adoption.line_id %}

@@ -352,7 +352,7 @@
         {{ other_pet_names|default:"[]"|json_script:"otherPetNamesData" }}
         {{ my_pets|json_script:"myPetsData" }}
 
-        <form method="post" enctype="multipart/form-data" id="adoption-form">
+        <form method="post" enctype="multipart/form-data" id="add-adoption-form">
             {% csrf_token %}
 
             <!-- 錯誤顯示 -->
@@ -883,6 +883,19 @@ function setupQuickImport() {
     });
 }
 
+// 種類語言映射
+function mapSpeciesToChinese(species) {
+    const speciesMap = {
+        'dog': '狗',
+        'cat': '貓',
+        'other': '其他',
+        '狗': '狗',
+        '貓': '貓',
+        '其他': '其他'
+    };
+    return speciesMap[species] || species;
+}
+
 // 帶入寵物數據
 function importPetData(pet) {
     console.log('正在帶入寵物資料:', pet);
@@ -893,22 +906,60 @@ function importPetData(pet) {
         if (nameInput) nameInput.value = pet.name;
     }
 
+    // 種類處理 - 需要同步到隱藏欄位
     if (pet.species) {
         const speciesSelect = document.getElementById('species_select');
+        const hiddenSpecies = document.getElementById('id_species');
+
+        // 轉換種類為中文
+        const chineseSpecies = mapSpeciesToChinese(pet.species);
+        console.log('原始種類:', pet.species, '轉換後:', chineseSpecies);
+
         if (speciesSelect) {
-            speciesSelect.value = pet.species;
+            speciesSelect.value = chineseSpecies;
+            console.log('設置前端種類選擇器:', chineseSpecies);
+
+            // 直接設置隱藏欄位為原始值（保持資料庫格式）
+            if (hiddenSpecies) {
+                hiddenSpecies.value = pet.species;
+                console.log('設置隱藏種類欄位:', pet.species);
+            }
+
+            // 觸發change事件讓外部JS更新品種列表
             speciesSelect.dispatchEvent(new Event('change'));
         }
     }
 
+    // 品種處理 - 延遲執行以確保種類更新完成
     if (pet.breed) {
         setTimeout(() => {
             const breedSelect = document.getElementById('breed_select');
+            const hiddenBreed = document.getElementById('id_breed');
+
+            console.log('延遲處理品種 - 尋找元素:', {
+                breedSelect: !!breedSelect,
+                hiddenBreed: !!hiddenBreed,
+                petBreed: pet.breed
+            });
+
             if (breedSelect) {
                 breedSelect.value = pet.breed;
+                console.log('設置前端品種選擇器:', pet.breed);
+
+                // 直接設置隱藏欄位
+                if (hiddenBreed) {
+                    hiddenBreed.value = pet.breed;
+                    console.log('設置隱藏品種欄位:', pet.breed);
+                } else {
+                    console.error('找不到隱藏品種欄位 id_breed');
+                }
+
+                // 觸發change事件
                 breedSelect.dispatchEvent(new Event('change'));
+            } else {
+                console.error('找不到品種選擇器 breed_select');
             }
-        }, 100);
+        }, 300); // 增加延遲時間確保種類更新完成
     }
 
     if (pet.gender) {
@@ -945,6 +996,30 @@ function importPetData(pet) {
         const chipInput = document.getElementById('id_chip');
         if (chipInput) chipInput.value = pet.chip;
     }
+
+    // 驗證並確保隱藏欄位正確設置
+    setTimeout(() => {
+        const hiddenSpecies = document.getElementById('id_species');
+        const hiddenBreed = document.getElementById('id_breed');
+
+        console.log('最終驗證隱藏欄位:');
+        console.log('- 種類欄位:', hiddenSpecies?.value);
+        console.log('- 品種欄位:', hiddenBreed?.value);
+
+        // 如果隱藏欄位被清空，重新設置
+        if (pet.species && hiddenSpecies && !hiddenSpecies.value) {
+            hiddenSpecies.value = pet.species;
+            console.log('重新設置隱藏種類欄位:', pet.species);
+        }
+
+        if (pet.breed && hiddenBreed && !hiddenBreed.value) {
+            hiddenBreed.value = pet.breed;
+            console.log('重新設置隱藏品種欄位:', pet.breed);
+        }
+
+        // 最終確認
+        console.log('最終隱藏欄位值 - 種類:', hiddenSpecies?.value, '品種:', hiddenBreed?.value);
+    }, 500);
 
     // 提示用戶數據已帶入
     alert(`已成功帶入「${pet.name}」的基本資料！請檢查並完善其他必要資訊。`);
@@ -1214,31 +1289,6 @@ function removeImagePreview(index) {
     if (filename) filename.textContent = '';
 }
 
-// 表單提交前的同步
-document.getElementById('adoption-form').addEventListener('submit', function(e) {
-    // 同步種類和品種
-    const speciesSelect = document.getElementById('species_select');
-    const breedSelect = document.getElementById('breed_select');
-    const hiddenSpecies = document.getElementById('id_species');
-    const hiddenBreed = document.getElementById('id_breed');
-
-    if (speciesSelect && hiddenSpecies) {
-        if (speciesSelect.value === '其他') {
-            const speciesOtherInput = document.getElementById('id_species_other');
-            if (speciesOtherInput) hiddenSpecies.value = speciesOtherInput.value.trim();
-        } else {
-            hiddenSpecies.value = speciesSelect.value;
-        }
-    }
-
-    if (breedSelect && hiddenBreed) {
-        if (breedSelect.value === '其他') {
-            const breedOtherInput = document.getElementById('id_breed_other');
-            if (breedOtherInput) hiddenBreed.value = breedOtherInput.value.trim();
-        } else {
-            hiddenBreed.value = breedSelect.value;
-        }
-    }
-});
+// 表單提交處理由外部 add_adoption.js 處理
 </script>
 {% endblock %}

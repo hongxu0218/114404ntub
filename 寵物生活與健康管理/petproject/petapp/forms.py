@@ -409,13 +409,16 @@ class VetDoctorForm(forms.ModelForm):
     class Meta:
         model = VetDoctor
         fields = [
-            'vet_license_number', 'specialization', 'years_of_experience', 'bio'
+            'vet_license_number', 'specialization', 'years_of_experience', 'bio',
+            'is_active_veterinarian', 'is_clinic_admin'
         ]
         labels = {
             'vet_license_number': '獸醫師執照號碼',
             'specialization': '專科領域',
             'years_of_experience': '執業年資',
             'bio': '個人簡介',
+            'is_active_veterinarian': '獸醫師功能',
+            'is_clinic_admin': '診所管理員權限',
         }
         widgets = {
             'vet_license_number': forms.TextInput(attrs={
@@ -1089,14 +1092,49 @@ class SocialSignupExtraForm(forms.Form):
     )
     
     phone_number = forms.CharField(
-        label='手機號碼', 
-        required=True, 
+        label='手機號碼',
+        required=True,
         max_length=20,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': '例：0912345678'
         })
     )
+
+    password1 = forms.CharField(
+        label='設定密碼（可選）',
+        required=False,
+        min_length=8,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': '設定登入密碼（8位以上）'
+        }),
+        help_text='如果您想要使用密碼登入，請設定密碼。如果留空，將只能使用 Google 登入。'
+    )
+
+    password2 = forms.CharField(
+        label='確認密碼',
+        required=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': '再次輸入密碼確認'
+        })
+    )
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+
+        # 如果其中一個有值，則兩個都必須有值且相同
+        if password1 or password2:
+            if not password1:
+                raise forms.ValidationError('請輸入密碼')
+            if not password2:
+                raise forms.ValidationError('請確認密碼')
+            if password1 != password2:
+                raise forms.ValidationError('兩次輸入的密碼不一致')
+
+        return password2
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')
@@ -1155,6 +1193,15 @@ class EditProfileForm(forms.ModelForm):
             self.fields['username'].initial = self.user.username
             self.fields['first_name'].initial = self.user.first_name
             self.fields['last_name'].initial = self.user.last_name
+
+            # 初始化手機號碼，優先從 Profile 獲取，如果沒有再從 VetDoctor 獲取
+            if hasattr(self.user, 'profile') and self.user.profile.phone_number:
+                self.fields['phone_number'].initial = self.user.profile.phone_number
+            elif hasattr(self.user, 'vet_profile') and hasattr(self.user.vet_profile, 'user') and hasattr(self.user.vet_profile.user, 'profile'):
+                # 對於獸醫師用戶，從 VetDoctor 關聯的 Profile 獲取手機號碼
+                vet_profile = self.user.vet_profile.user.profile
+                if vet_profile.phone_number:
+                    self.fields['phone_number'].initial = vet_profile.phone_number
 
     def clean_phone_number(self):
         phone = self.cleaned_data.get('phone_number')

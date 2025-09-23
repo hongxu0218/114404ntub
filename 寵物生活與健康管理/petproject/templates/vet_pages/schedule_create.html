@@ -24,7 +24,13 @@
                     <i class="fas fa-calendar-plus"></i>
                     建立新排班
                 </h1>
-                <p class="subtitle">為 {{ vet_doctor.user.get_full_name }} 設定工作排班</p>
+                {% if preselected_doctor %}
+                    <p class="subtitle">為 {{ preselected_doctor.user.get_full_name }} 設定工作排班</p>
+                {% elif is_team_mode and is_admin and available_doctors.count > 1 %}
+                    <p class="subtitle">為診所獸醫師設定工作排班</p>
+                {% else %}
+                    <p class="subtitle">為 {{ vet_doctor.user.get_full_name }} 設定工作排班</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -43,17 +49,37 @@
             </div>
             
             <div class="form-grid">
+                {% if is_team_mode and is_admin and available_doctors.count > 1 %}
+                <div class="form-group">
+                    <label for="target_doctor" class="required">選擇醫師</label>
+                    <select id="target_doctor" name="target_doctor" class="form-control" required>
+                        <option value="">請選擇醫師</option>
+                        {% for doctor in available_doctors %}
+                        <option value="{{ doctor.id }}"
+                                {% if preselected_doctor and doctor.id == preselected_doctor.id %}selected
+                                {% elif not preselected_doctor and doctor.id == vet_doctor.id %}selected
+                                {% endif %}>
+                            {{ doctor.user.get_full_name }}{% if doctor.specialization %} - {{ doctor.specialization }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">選擇要設定排班的醫師</small>
+                </div>
+                {% else %}
+                <input type="hidden" name="target_doctor" value="{{ vet_doctor.id }}">
+                {% endif %}
+
                 <div class="form-group">
                     <label for="title" class="required">排班名稱</label>
-                    <input type="text" 
-                           id="title" 
-                           name="title" 
-                           class="form-control" 
-                           placeholder="例如：週一至週五常規門診" 
+                    <input type="text"
+                           id="title"
+                           name="title"
+                           class="form-control"
+                           placeholder="例如：週一至週五常規門診"
                            required>
                     <small class="form-text">建議使用清楚描述的名稱</small>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="schedule_type">排班類型</label>
                     <select id="schedule_type" name="schedule_type" class="form-control">
@@ -454,8 +480,6 @@ function selectWeekdays(days) {
     // 更新預覽
     updatePreview();
     
-    console.log('selectWeekdays called with:', days);
-    console.log('selectedWeekdays after update:', Array.from(selectedWeekdays));
 }
 
 
@@ -467,8 +491,7 @@ function removeTimeSlot(button) {
 }
 
 // 批量時段設定功能
-let selectedTemplate = null;
-let customSlotCounter = 1;
+// selectedTemplate 和 customSlotCounter 變量已在 schedule-create.js 中聲明
 
 // 初始化批量時段設定
 function initBatchTimeFeature() {
@@ -580,30 +603,20 @@ function applyToSelectedDays() {
 
 // 套用到指定工作日 (修正版 - 保存複選框狀態)
 function applyToSpecificDays(days) {
-    console.log('=== applyToSpecificDays DEBUG START ===');
-    console.log('Called with days:', days);
     
     // *** 關鍵修正：立即保存複選框狀態 ***
     const replaceCheckbox = document.getElementById('replaceExisting');
-    console.log('replaceCheckbox element:', replaceCheckbox);
-    console.log('replaceCheckbox exists:', !!replaceCheckbox);
     
     if (replaceCheckbox) {
-        console.log('replaceCheckbox.checked:', replaceCheckbox.checked);
-        console.log('replaceCheckbox.type:', replaceCheckbox.type);
-        console.log('replaceCheckbox.id:', replaceCheckbox.id);
     }
     
     const shouldReplace = replaceCheckbox ? replaceCheckbox.checked : false;
-    console.log('SAVED checkbox state (shouldReplace):', shouldReplace);
     
     const slots = getSelectedTimeSlots();
     if (!slots) {
-        console.log('No slots selected, aborting');
         return;
     }
     
-    console.log('selectedWeekdays before:', Array.from(selectedWeekdays));
     
     // 確保這些天數被選中
     days.forEach(day => {
@@ -612,7 +625,6 @@ function applyToSpecificDays(days) {
             if (!checkbox.checked) {
                 checkbox.checked = true;
                 selectedWeekdays.add(day);
-                console.log(`Added day ${day} to selection`);
             }
             
             // 初始化該日的時段資料
@@ -620,11 +632,9 @@ function applyToSpecificDays(days) {
                 timeSlotData[day] = [];
             }
         } else {
-            console.log(`Checkbox for day ${day} not found`);
         }
     });
     
-    console.log('selectedWeekdays after:', Array.from(selectedWeekdays));
     
     // 不要調用 updateTimeSlotsContainer()，因為它會清空現有時段
     // updateTimeSlotsContainer();
@@ -633,7 +643,6 @@ function applyToSpecificDays(days) {
     days.forEach(day => {
         const dayContainer = document.querySelector(`[data-day="${day}"]`);
         if (!dayContainer) {
-            console.log(`Day container not found for ${day}, need to call updateTimeSlotsContainer`);
             updateTimeSlotsContainer();
             return; // 如果需要重建，就重建後跳出
         }
@@ -641,49 +650,35 @@ function applyToSpecificDays(days) {
     
     // 短暫延遲確保容器更新完成，然後直接使用已選工作日的邏輯
     setTimeout(() => {
-        console.log('=== setTimeout CALLBACK START ===');
-        console.log('About to call applyTimeSlotsTodays with days:', days);
-        console.log('About to call applyTimeSlotsTodays with slots:', slots);
         applyTimeSlotsTodays(slots, days);
-        console.log('=== applyToSpecificDays DEBUG END ===');
     }, 100);
 }
 
 // 新函數：使用保存的複選框狀態執行時段套用
 function applyTimeSlotsWithSavedState(slots, days, savedReplaceState) {
-    console.log('applyTimeSlotsWithSavedState called');
-    console.log('savedReplaceState:', savedReplaceState);
-    console.log('days:', days);
-    console.log('slots:', slots);
     
     days.forEach(day => {
         const dayContainer = document.querySelector(`[data-day="${day}"]`);
         if (!dayContainer) {
-            console.log(`Day container not found for day ${day}`);
             return;
         }
         
-        console.log(`Processing day ${day}, savedReplaceState: ${savedReplaceState}`);
         
         // 使用保存的狀態決定是否替換
         if (savedReplaceState) {
             // 移除所有現有時段
             const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
-            console.log(`Removing ${existingSlots.length} existing slots for day ${day}`);
             existingSlots.forEach(slot => slot.remove());
             
             // 清空時段資料
             if (timeSlotData[day]) {
                 timeSlotData[day] = [];
-                console.log(`Cleared timeSlotData for day ${day}`);
             }
         } else {
             const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
-            console.log(`Keeping ${existingSlots.length} existing slots for day ${day}`);
         }
         
         // 添加新時段
-        console.log(`Adding ${slots.length} new slots to day ${day}`);
         slots.forEach(slot => {
             addTimeSlotToDay(day, slot.start, slot.end);
         });
@@ -698,7 +693,6 @@ function applyTimeSlotsWithSavedState(slots, days, savedReplaceState) {
     const dayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
     const dayNamesStr = days.map(d => dayNames[d]).join('、');
     const action = savedReplaceState ? '替換' : '新增';
-    console.log(`Showing toast: 已${action}時段到 ${dayNamesStr}`);
     showToast(`已${action}時段到 ${dayNamesStr}`, 'success');
 }
 
@@ -709,40 +703,29 @@ function applyTimeSlotsTodays(slots, days) {
     const replaceExisting = replaceCheckbox ? replaceCheckbox.checked : false;
     
     // 調試信息
-    console.log('applyTimeSlotsTodays called');
-    console.log('replaceCheckbox exists:', !!replaceCheckbox);
-    console.log('replaceExisting value:', replaceExisting);
-    console.log('days:', days);
-    console.log('slots:', slots);
     
     days.forEach(day => {
         const dayContainer = document.querySelector(`[data-day="${day}"]`);
         if (!dayContainer) {
-            console.log(`Day container not found for day ${day}`);
             return;
         }
         
-        console.log(`Processing day ${day}, replaceExisting: ${replaceExisting}`);
         
         // 如果要替換現有時段，先清空所有時段
         if (replaceExisting) {
             // 移除所有現有時段
             const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
-            console.log(`Removing ${existingSlots.length} existing slots for day ${day}`);
             existingSlots.forEach(slot => slot.remove());
             
             // 清空時段資料
             if (timeSlotData[day]) {
                 timeSlotData[day] = [];
-                console.log(`Cleared timeSlotData for day ${day}`);
             }
         } else {
             const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
-            console.log(`Keeping ${existingSlots.length} existing slots for day ${day}`);
         }
         
         // 添加新時段
-        console.log(`Adding ${slots.length} new slots to day ${day}`);
         slots.forEach(slot => {
             addTimeSlotToDay(day, slot.start, slot.end);
         });
@@ -757,7 +740,6 @@ function applyTimeSlotsTodays(slots, days) {
     const dayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
     const dayNamesStr = days.map(d => dayNames[d]).join('、');
     const action = replaceExisting ? '替換' : '新增';
-    console.log(`Showing toast: 已${action}時段到 ${dayNamesStr}`);
     showToast(`已${action}時段到 ${dayNamesStr}`, 'success');
 }
 

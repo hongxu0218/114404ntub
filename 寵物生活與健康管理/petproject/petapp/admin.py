@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Profile, VetDoctor, VetClinic, Pet, PetTag
+from .models import (
+    Profile, VetDoctor, VetClinic, Pet, PetTag,
+    UserProfile, Follow, Post, PostMedia, Like, Comment, CommentLike
+)
 from django.utils.html import format_html
 
 from allauth.account.models import EmailAddress
@@ -127,3 +130,84 @@ class PetAdmin(admin.ModelAdmin):
 for model in [EmailAddress, SocialAccount, SocialApp, SocialToken]:
     if model in admin.site._registry:
         admin.site.unregister(model)
+
+
+# ===== 社群媒體模組管理 =====
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'followers_count', 'following_count', 'posts_count', 'created_at')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    readonly_fields = ('followers_count', 'following_count', 'posts_count', 'created_at', 'updated_at')
+
+    fieldsets = (
+        ('基本資訊', {
+            'fields': ('user', 'bio')
+        }),
+        ('媒體', {
+            'fields': ('avatar', 'banner')
+        }),
+        ('統計', {
+            'fields': ('followers_count', 'following_count', 'posts_count')
+        }),
+        ('時間', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('follower', 'following', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('follower__username', 'following__username')
+
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('user', 'content_preview', 'post_type', 'likes_count', 'comments_count', 'is_repost', 'created_at')
+    list_filter = ('post_type', 'is_repost', 'created_at')
+    search_fields = ('user__username', 'content')
+    readonly_fields = ('likes_count', 'comments_count', 'shares_count', 'created_at', 'updated_at')
+
+    def content_preview(self, obj):
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = '內容預覽'
+
+
+class PostMediaInline(admin.TabularInline):
+    model = PostMedia
+    extra = 0
+
+
+@admin.register(PostMedia)
+class PostMediaAdmin(admin.ModelAdmin):
+    list_display = ('post', 'media_type', 'order', 'created_at')
+    list_filter = ('media_type', 'created_at')
+    search_fields = ('post__user__username', 'post__content')
+
+
+@admin.register(Like)
+class LikeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'post', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'post__content')
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'post', 'content_preview', 'parent_comment', 'likes_count', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'content', 'post__content')
+    readonly_fields = ('likes_count', 'created_at', 'updated_at')
+
+    def content_preview(self, obj):
+        return obj.content[:30] + '...' if len(obj.content) > 30 else obj.content
+    content_preview.short_description = '內容預覽'
+
+
+@admin.register(CommentLike)
+class CommentLikeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'comment', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'comment__content')

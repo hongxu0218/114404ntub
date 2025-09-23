@@ -1,0 +1,1999 @@
+{% extends 'social/base.html' %}
+{% load static %}
+
+{% block title %}毛日好社群{% endblock %}
+
+{% block extra_css %}
+<style>
+    .social-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+        border-radius: 0 0 20px 20px;
+    }
+    .social-hero h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .social-hero p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+    .main-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    .post-composer {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255,255,255,0.18);
+    }
+    .composer-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .composer-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #FFB6C1;
+        flex-shrink: 0;
+    }
+    .composer-input-container {
+        margin-bottom: 1.5rem;
+    }
+    .composer-input {
+        width: 100%;
+        border: 2px solid #FFE4E1;
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        font-size: 1.2rem;
+        resize: vertical;
+        transition: all 0.3s ease;
+        min-height: 180px;
+        background: #fafafa;
+        line-height: 1.6;
+        font-family: inherit;
+    }
+    .composer-input:focus {
+        outline: none;
+        border-color: #FFB6C1;
+        box-shadow: 0 0 15px rgba(255, 182, 193, 0.3);
+        background: white;
+    }
+    .composer-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #FFE4E1;
+    }
+    .media-buttons {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+    .media-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #FFE4E1;
+        background: white;
+        border-radius: 12px;
+        color: #8B4513;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    .media-btn:hover {
+        background: #FFE4E1;
+        border-color: #FFB6C1;
+        color: #654321;
+        transform: translateY(-2px);
+    }
+    .media-btn.active {
+        background: #FFB6C1;
+        border-color: #FF69B4;
+        color: white;
+    }
+    .post-btn {
+        background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 182, 193, 0.4);
+    }
+    .post-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(255, 105, 180, 0.5);
+    }
+    .post-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .feed-container {
+        display: grid;
+        grid-template-columns: 300px 1fr 300px;
+        gap: 2rem;
+        align-items: start;
+    }
+    .sidebar {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        padding: 2rem;
+        position: sticky;
+        top: 2rem;
+    }
+    .sidebar h3 {
+        color: #333;
+        margin-bottom: 1.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .trending-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+    }
+    .trending-item:hover {
+        background: #f8f9fa;
+        transform: translateX(5px);
+    }
+    .trending-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 6px rgba(255, 182, 193, 0.3);
+    }
+    .post-feed {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    .post-item {
+        padding: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+    .post-item:hover {
+        background: #fafbfc;
+    }
+    .post-item:last-child {
+        border-bottom: none;
+    }
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .post-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e9ecef;
+    }
+    .post-avatar-link {
+        text-decoration: none;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+    }
+    .post-avatar-link:hover {
+        transform: scale(1.05);
+    }
+    .post-username-link {
+        text-decoration: none;
+        color: inherit;
+        transition: color 0.3s ease;
+    }
+    .post-username-link:hover {
+        color: #FF69B4;
+        text-decoration: underline;
+    }
+    .post-username-link h4 {
+        margin: 0;
+        font-weight: 600;
+    }
+    .post-user-info h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+    .post-time {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .post-content {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 1rem;
+        white-space: pre-wrap;
+    }
+    .post-location {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #8B4513;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        padding: 0.25rem 0.5rem;
+        background: #FFE4E1;
+        border-radius: 12px;
+        border: 1px solid #FFB6C1;
+    }
+    .post-location i {
+        font-size: 0.8rem;
+    }
+    .post-media {
+        margin: 1.5rem 0;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .post-media.multiple {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+    }
+    .post-image {
+        width: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 15px;
+    }
+    .post-media:not(.multiple) .post-image {
+        max-height: 500px;
+    }
+    .post-media.multiple .post-image {
+        height: 250px;
+    }
+    .post-video {
+        width: 100%;
+        border-radius: 15px;
+        background: #000;
+        object-fit: cover;
+    }
+    .post-media:not(.multiple) .post-video {
+        max-height: 400px;
+    }
+    .post-media.multiple .post-video {
+        height: 250px;
+    }
+    .post-actions {
+        display: flex;
+        gap: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+    .action-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+        transform: translateY(-1px);
+    }
+    .action-btn.active {
+        color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+    }
+    .quick-stats {
+        background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 50%, #F8F8FF 100%);
+        color: #8B4513;
+        padding: 1.5rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
+        border: 2px solid #FFB6C1;
+    }
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .stat-item h4 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-item p {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    /* 響應式設計 */
+    @media (max-width: 992px) {
+        .feed-container {
+            grid-template-columns: 1fr;
+        }
+        .sidebar {
+            order: -1;
+            position: static;
+        }
+        .social-hero h1 {
+            font-size: 2rem;
+        }
+    }
+    @media (max-width: 576px) {
+        .composer-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .media-buttons {
+            order: 2;
+            width: 100%;
+            justify-content: center;
+        }
+        .post-composer {
+            padding: 1.5rem;
+        }
+    }
+
+    /* 留言區域樣式 */
+    .comments-section {
+        margin-top: 1rem;
+        border-top: 1px solid #eee;
+        padding-top: 1rem;
+        background: #f8f9fa;
+        border-radius: 0 0 15px 15px;
+        padding: 1rem;
+    }
+    .comments-header h5 {
+        margin: 0 0 1rem 0;
+        color: #8B4513;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .comment-form {
+        display: flex;
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+        align-items: flex-start;
+    }
+    .comment-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #FFE4E1;
+    }
+    .comment-input-container {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        background: white;
+        border-radius: 20px;
+        border: 2px solid #FFE4E1;
+        padding: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .comment-input-container:focus-within {
+        border-color: #FFB6C1;
+        box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.1);
+    }
+    .comment-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        resize: none;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        padding: 0.5rem;
+        background: transparent;
+        max-height: 100px;
+    }
+    .comment-submit-btn {
+        background: #FFB6C1;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .comment-submit-btn:hover {
+        background: #FF69B4;
+        transform: scale(1.1);
+    }
+    .comments-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .comment-item {
+        display: flex;
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+        background: white;
+        padding: 0.8rem;
+        border-radius: 12px;
+        border: 1px solid #f0f0f0;
+    }
+    .comment-content {
+        flex: 1;
+    }
+    .comment-author {
+        font-weight: 600;
+        color: #8B4513;
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+    }
+    .comment-text {
+        color: #333;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-bottom: 0.3rem;
+    }
+    .comment-time {
+        color: #999;
+        font-size: 0.8rem;
+    }
+    .comment-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    .comment-action-btn {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 0.2rem 0;
+        transition: color 0.3s ease;
+    }
+    .comment-action-btn:hover {
+        color: #FF69B4;
+    }
+    .comment-action-btn.active {
+        color: #FF69B4;
+        font-weight: 600;
+    }
+    .loading-comments {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .no-comments {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+        font-size: 0.9rem;
+    }
+
+    /* 用戶搜尋樣式 */
+    .search-users-card {
+        background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 100%);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px solid #FFB6C1;
+        box-shadow: 0 4px 12px rgba(255, 182, 193, 0.2);
+    }
+    .search-users-card h3 {
+        color: #8B4513;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    .search-form {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .search-form input {
+        flex: 1;
+        border: 2px solid #FFE4E1;
+        border-radius: 10px;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .search-form input:focus {
+        outline: none;
+        border-color: #FFB6C1;
+        box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.1);
+    }
+    .search-form button {
+        background: #FFB6C1;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    .search-form button:hover {
+        background: #FF69B4;
+        transform: translateY(-1px);
+    }
+    .search-results {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    .search-result-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #f0f0f0;
+    }
+    .search-result-item:hover {
+        background: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .search-result-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #FFE4E1;
+    }
+    .search-result-info {
+        flex: 1;
+    }
+    .search-result-name {
+        font-weight: 600;
+        color: #8B4513;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* 推薦關注連結樣式 */
+    .trending-link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.8rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .trending-link:hover {
+        color: inherit;
+        text-decoration: none;
+        background: rgba(255, 182, 193, 0.1);
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+    {% if user.is_authenticated %}
+    <!-- 發文編輯器 -->
+    <div class="post-composer">
+        <div class="composer-header">
+            <img src="{% if user.social_profile.avatar and user.social_profile.avatar.name %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                 alt="{{ user.username }}" class="composer-avatar">
+            <div class="flex-1">
+                <h4 class="mb-1">{{ user.username }}，分享新鮮事吧！</h4>
+                <small class="text-muted">與毛友們分享你的寵物生活</small>
+            </div>
+        </div>
+        <form id="postForm" method="post">
+            {% csrf_token %}
+            <div class="composer-input-container">
+                <textarea class="composer-input" id="postContent" name="content"
+                         placeholder="分享你和毛小孩的故事，寵物日常點滴，或是給其他寵物家長的經驗分享..."></textarea>
+            </div>
+            <div class="composer-actions">
+                <div class="media-buttons">
+                    <button type="button" class="media-btn" title="上傳圖片">
+                        <i class="bi bi-image"></i>
+                        <span>圖片</span>
+                    </button>
+                    <button type="button" class="media-btn" title="錄製影片">
+                        <i class="bi bi-camera-video"></i>
+                        <span>影片</span>
+                    </button>
+                    <button type="button" class="media-btn" title="轉發貼文">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>轉發</span>
+                    </button>
+                    <button type="button" class="media-btn" title="標記位置">
+                        <i class="bi bi-geo-alt"></i>
+                        <span>位置</span>
+                    </button>
+                </div>
+                <button type="button" class="post-btn" id="submitPost" disabled>
+                    <i class="bi bi-send"></i>
+                    發佈貼文
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 主要內容區域 -->
+    <div class="feed-container">
+        <!-- 左側邊欄 -->
+        <div class="sidebar">
+            {% if user.is_authenticated %}
+            <div class="quick-stats">
+                <h3 class="mb-0">我的社群數據</h3>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <h4>{{ user.social_profile.posts_count|default:0 }}</h4>
+                        <p>貼文</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>{{ user.social_profile.followers_count|default:0 }}</h4>
+                        <p>粉絲</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>{{ user.social_profile.following_count|default:0 }}</h4>
+                        <p>追蹤</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <h3><i class="bi bi-fire"></i> 熱門話題</h3>
+            {% for topic in trending_topics %}
+            <div class="trending-item" onclick="searchTopic('{{ topic.title }}')" style="cursor: pointer;">
+                <div class="trending-icon">
+                    <i class="{{ topic.icon }}"></i>
+                </div>
+                <div>
+                    <strong>{{ topic.title }}</strong>
+                    <br><small class="text-muted">{{ topic.count }} 則貼文</small>
+                </div>
+            </div>
+            {% empty %}
+            <div class="trending-item">
+                <div class="trending-icon">
+                    <i class="bi bi-chat"></i>
+                </div>
+                <div>
+                    <strong>暫無熱門話題</strong>
+                    <br><small class="text-muted">快來發佈第一篇貼文吧！</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 中間動態區 -->
+        <div class="post-feed">
+            {% if posts %}
+                {% for post in posts %}
+                <div class="post-item" data-post-id="{{ post.id }}">
+                    <div class="post-header">
+                        <a href="{% url 'social:profile' post.user.username %}" class="post-avatar-link">
+                            <img src="{% if post.user.social_profile.avatar and post.user.social_profile.avatar.name %}{{ post.user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                                 alt="{{ post.user.username }}" class="post-avatar">
+                        </a>
+                        <div class="post-user-info">
+                            <a href="{% url 'social:profile' post.user.username %}" class="post-username-link">
+                                <h4>{{ post.user.username }}</h4>
+                            </a>
+                            <div class="post-time">{{ post.created_at|timesince }}前</div>
+                        </div>
+                    </div>
+                    <div class="post-content">{{ post.content }}</div>
+
+                    <!-- 顯示位置信息 -->
+                    {% if post.location %}
+                        <div class="post-location">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            <span>{{ post.location }}</span>
+                        </div>
+                    {% endif %}
+
+                    <!-- 顯示媒體內容 -->
+                    {% if post.media_files.all %}
+                        <div class="post-media{% if post.media_files.all|length > 1 %} multiple{% endif %}">
+                            {% for media in post.media_files.all %}
+                                {% if media.media_type == 'image' %}
+                                    <img src="{{ media.file.url }}" alt="貼文圖片" class="post-image">
+                                {% elif media.media_type == 'video' %}
+                                    <video controls class="post-video">
+                                        <source src="{{ media.file.url }}" type="video/mp4">
+                                        您的瀏覽器不支援影片播放。
+                                    </video>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="post-actions">
+                        <button class="action-btn like-btn {% if post.user_liked %}active{% endif %}"
+                                onclick="toggleLike({{ post.id }})">
+                            <i class="bi bi-heart{% if post.user_liked %}-fill{% endif %}"></i>
+                            <span class="like-count">{{ post.likes_count }}</span>
+                        </button>
+                        <button class="action-btn comment-btn" onclick="toggleComments({{ post.id }})">
+                            <i class="bi bi-chat"></i>
+                            <span>{{ post.comments_count }}</span>
+                        </button>
+                        <button class="action-btn share-btn" onclick="repostPost({{ post.id }}, '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>{{ post.shares_count }}</span>
+                        </button>
+                    </div>
+
+                    <!-- 留言區域 -->
+                    <div class="comments-section" id="comments-{{ post.id }}" style="display: none;">
+                        <div class="comments-header">
+                            <h5><i class="bi bi-chat-dots"></i> 留言</h5>
+                        </div>
+
+                        <!-- 留言輸入框 -->
+                        {% if user.is_authenticated %}
+                        <div class="comment-form">
+                            <img src="{% if user.social_profile.avatar and user.social_profile.avatar.name %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                                 alt="{{ user.username }}" class="comment-avatar">
+                            <div class="comment-input-container">
+                                <textarea class="comment-input" id="comment-input-{{ post.id }}"
+                                         placeholder="寫下你的留言..." rows="1"></textarea>
+                                <button class="comment-submit-btn" onclick="submitComment({{ post.id }})">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- 留言列表 -->
+                        <div class="comments-list" id="comments-list-{{ post.id }}">
+                            <!-- 留言將通過 JavaScript 動態載入 -->
+                            <div class="loading-comments">
+                                <i class="bi bi-arrow-repeat rotating"></i>
+                                載入留言中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-chat-square-dots"></i>
+                <h3>還沒有任何貼文</h3>
+                <p>成為第一個分享的人，開始與毛友們互動吧！</p>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg mt-3">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    立即登入開始分享
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 右側邊欄 -->
+        <div class="sidebar">
+            <!-- 用戶搜尋功能 -->
+            <div class="search-users-card">
+                <h3><i class="bi bi-search"></i> 尋找朋友</h3>
+                <div class="search-form">
+                    <input type="text" id="userSearchInput" placeholder="搜尋用戶名..." class="form-control">
+                    <button onclick="searchUsers()" class="btn btn-primary">搜尋</button>
+                </div>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <h3><i class="bi bi-people"></i> 推薦關注</h3>
+            {% if following_list %}
+                {% for follow in following_list %}
+                <a href="{% url 'social:profile' follow.following.username %}" class="trending-item trending-link">
+                    <img src="{% if follow.following.social_profile.avatar and follow.following.social_profile.avatar.name %}{{ follow.following.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                         alt="{{ follow.following.username }}" class="composer-avatar" style="width: 40px; height: 40px;">
+                    <div>
+                        <strong>{{ follow.following.username }}</strong>
+                        <br><small class="text-muted">{{ follow.following.social_profile.followers_count }} 位粉絲</small>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+            <div class="text-center text-muted">
+                <i class="bi bi-person-plus" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <p>開始關注其他用戶<br>獲得更多有趣內容</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 載入更多按鈕 -->
+{% if posts.has_next %}
+<div class="text-center mt-4">
+    <button class="btn btn-outline-primary btn-lg" onclick="loadMorePosts()">
+        <i class="bi bi-arrow-down-circle"></i>
+        載入更多貼文
+    </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 啟用發文按鈕
+document.getElementById('postContent').addEventListener('input', function() {
+    const submitBtn = document.getElementById('submitPost');
+    submitBtn.disabled = this.value.trim() === '';
+});
+
+// 媒體按鈕功能
+document.querySelectorAll('.media-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const type = this.getAttribute('title');
+
+        // 切換按鈕狀態
+        this.classList.toggle('active');
+
+        switch(type) {
+            case '上傳圖片':
+                // 創建文件輸入元素
+                const imageInput = document.createElement('input');
+                imageInput.type = 'file';
+                imageInput.accept = 'image/*';
+                imageInput.multiple = true; // 支持多選
+                imageInput.style.display = 'none';
+                imageInput.onchange = function(e) {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                        files.forEach((file, index) => {
+                            const fileId = Date.now() + index;
+                            mediaFiles.push({
+                                type: 'image',
+                                file: file,
+                                id: fileId
+                            });
+
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                showImagePreview(e.target.result, fileId);
+                            };
+                            reader.readAsDataURL(file);
+                        });
+
+                        // 顯示選擇的文件數量
+                        console.log(`已選擇 ${files.length} 個圖片文件`);
+                    }
+                };
+                document.body.appendChild(imageInput);
+                imageInput.click();
+                document.body.removeChild(imageInput);
+                break;
+
+            case '錄製影片':
+                // 創建文件輸入元素
+                const videoInput = document.createElement('input');
+                videoInput.type = 'file';
+                videoInput.accept = 'video/*';
+                videoInput.multiple = true; // 支持多選
+                videoInput.style.display = 'none';
+                videoInput.onchange = function(e) {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                        let validFiles = 0;
+                        files.forEach((file, index) => {
+                            // 檢查文件大小 (限制50MB)
+                            if (file.size > 50 * 1024 * 1024) {
+                                alert(`影片文件 "${file.name}" 太大，請選擇小於50MB的文件`);
+                                return;
+                            }
+
+                            const fileId = Date.now() + index;
+                            mediaFiles.push({
+                                type: 'video',
+                                file: file,
+                                id: fileId
+                            });
+
+                            showVideoPreview(file, fileId);
+                            validFiles++;
+                        });
+
+                        // 顯示選擇的文件數量
+                        if (validFiles > 0) {
+                            console.log(`已選擇 ${validFiles} 個影片文件`);
+                        }
+                    }
+                };
+                document.body.appendChild(videoInput);
+                videoInput.click();
+                document.body.removeChild(videoInput);
+                this.classList.remove('active');
+                break;
+
+            case '轉發貼文':
+                // 顯示轉發選擇器
+                showRepostSelector();
+                this.classList.remove('active');
+                break;
+
+            case '標記位置':
+                showLocationSelector();
+                this.classList.remove('active');
+                break;
+        }
+    });
+});
+
+// 影片預覽功能
+function showVideoPreview(videoFile, fileId) {
+    // 創建預覽元素
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'media-preview video-preview';
+    previewDiv.dataset.fileId = fileId;
+    previewDiv.style.cssText = `
+        margin: 0.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 2px solid #FFE4E1;
+        position: relative;
+        display: inline-block;
+        vertical-align: top;
+    `;
+
+    const video = document.createElement('video');
+    video.src = URL.createObjectURL(videoFile);
+    video.controls = true;
+    video.style.cssText = `
+        width: 150px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        display: block;
+    `;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.innerHTML = '✕';
+    removeBtn.style.cssText = `
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: #FF69B4;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 10;
+    `;
+    removeBtn.onclick = function() {
+        removeMediaFile(fileId);
+        previewDiv.remove();
+    };
+
+    previewDiv.appendChild(video);
+    previewDiv.appendChild(removeBtn);
+
+    // 插入到媒體容器中
+    getOrCreateMediaContainer().appendChild(previewDiv);
+}
+
+// 轉發選擇器功能
+function showRepostSelector() {
+    // 移除現有選擇器
+    const existing = document.querySelector('.repost-selector');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+
+    const selectorDiv = document.createElement('div');
+    selectorDiv.className = 'repost-selector';
+    selectorDiv.style.cssText = `
+        margin-top: 1rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 15px;
+        border: 2px solid #FFE4E1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    `;
+
+    const title = document.createElement('h5');
+    title.textContent = '🔄 選擇要轉發的貼文';
+    title.style.cssText = `
+        margin-bottom: 1rem;
+        color: #8B4513;
+        text-align: center;
+    `;
+
+    const searchContainer = document.createElement('div');
+    searchContainer.style.cssText = `
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    `;
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = '輸入用戶名搜尋貼文...';
+    searchInput.style.cssText = `
+        flex: 1;
+        padding: 0.8rem;
+        border: 2px solid #FFE4E1;
+        border-radius: 8px;
+        font-size: 1rem;
+    `;
+
+    const searchBtn = document.createElement('button');
+    searchBtn.textContent = '搜尋';
+    searchBtn.style.cssText = `
+        padding: 0.8rem 1.5rem;
+        background: #FFB6C1;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+    `;
+
+    const resultsDiv = document.createElement('div');
+    resultsDiv.style.cssText = `
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #f0f0f0;
+        border-radius: 8px;
+        padding: 0.5rem;
+        background: #f8f9fa;
+    `;
+
+    // 預設顯示最近的公開貼文
+    resultsDiv.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: #666;">
+            <i class="bi bi-search"></i>
+            <p>輸入用戶名來搜尋要轉發的貼文</p>
+            <small>或者從下方選擇最近的熱門貼文</small>
+        </div>
+    `;
+
+    searchBtn.onclick = function() {
+        const query = searchInput.value.trim();
+        if (query) {
+            // 搜尋真實的貼文
+            fetch(`/social/search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.text())
+                .then(html => {
+                    // 解析搜尋結果並顯示可轉發的貼文
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const posts = doc.querySelectorAll('.post-result');
+
+                    if (posts.length > 0) {
+                        let resultsHtml = '';
+                        posts.forEach((post, index) => {
+                            if (index < 5) { // 限制顯示5個結果
+                                const username = post.querySelector('.post-username')?.textContent?.trim() || '未知用戶';
+                                const content = post.querySelector('.post-content')?.textContent?.trim() || '無內容';
+                                const postId = post.getAttribute('data-post-id') || '';
+                                const shortContent = content.length > 50 ? content.substring(0, 50) + '...' : content;
+
+                                resultsHtml += `
+                                    <div style="padding: 1rem; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; background: white;"
+                                         onclick="selectPostToRepost('${postId}', '${username}', '${shortContent}')">
+                                        <strong>@${username}</strong>
+                                        <p style="margin: 0.5rem 0; color: #666;">${shortContent}</p>
+                                        <small style="color: #999;">點擊轉發</small>
+                                    </div>
+                                `;
+                            }
+                        });
+                        resultsDiv.innerHTML = resultsHtml || '<p style="text-align: center; color: #666;">沒有找到相關貼文</p>';
+                    } else {
+                        resultsDiv.innerHTML = '<p style="text-align: center; color: #666;">沒有找到相關貼文</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('搜尋錯誤:', error);
+                    resultsDiv.innerHTML = '<p style="text-align: center; color: #666;">搜尋失敗，請重試</p>';
+                });
+        }
+    };
+
+    searchContainer.appendChild(searchInput);
+    searchContainer.appendChild(searchBtn);
+    selectorDiv.appendChild(title);
+    selectorDiv.appendChild(searchContainer);
+    selectorDiv.appendChild(resultsDiv);
+
+    // 插入到輸入框後面
+    const textarea = document.getElementById('postContent');
+    textarea.parentNode.insertBefore(selectorDiv, textarea.nextSibling);
+}
+
+// 選擇要轉發的貼文
+function selectPostToRepost(postId, username, content) {
+    if (confirm(`確定要轉發 @${username} 的貼文嗎？`)) {
+        // 調用後端轉發 API
+        fetch(`/social/post/${postId}/repost/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('轉發成功！');
+                // 移除選擇器
+                const selector = document.querySelector('.repost-selector');
+                if (selector) {
+                    selector.remove();
+                }
+                // 重新載入頁面以顯示轉發的貼文
+                location.reload();
+            } else {
+                alert('轉發失敗：' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('轉發錯誤:', error);
+            alert('轉發失敗，請重試');
+        });
+    }
+}
+
+// 直接轉發貼文（從貼文按鈕觸發）
+function repostPost(postId, username, content) {
+    if (confirm(`確定要轉發 @${username} 的貼文嗎？`)) {
+        fetch(`/social/post/${postId}/repost/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('轉發成功！');
+                // 更新分享數量
+                const shareBtn = document.querySelector(`[onclick*="repostPost(${postId}"]`);
+                if (shareBtn) {
+                    const countSpan = shareBtn.querySelector('span');
+                    if (countSpan) {
+                        countSpan.textContent = data.shares_count;
+                    }
+                }
+                // 重新載入頁面以顯示轉發的貼文
+                location.reload();
+            } else {
+                alert('轉發失敗：' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('轉發錯誤:', error);
+            alert('轉發失敗，請重試');
+        });
+    }
+}
+
+// 位置選擇器功能
+function showLocationSelector() {
+    // 移除現有選擇器
+    const existing = document.querySelector('.location-selector');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+
+    const selectorDiv = document.createElement('div');
+    selectorDiv.className = 'location-selector';
+    selectorDiv.style.cssText = `
+        margin-top: 1rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 15px;
+        border: 2px solid #FFE4E1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    `;
+
+    const title = document.createElement('h5');
+    title.textContent = '📍 你在哪裡？';
+    title.style.cssText = `
+        margin-bottom: 1rem;
+        color: #8B4513;
+        text-align: center;
+    `;
+
+    const inputContainer = document.createElement('div');
+    inputContainer.style.cssText = `
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    `;
+
+    const locationInput = document.createElement('input');
+    locationInput.type = 'text';
+    locationInput.placeholder = '輸入地址或地點名稱...';
+    locationInput.style.cssText = `
+        flex: 1;
+        padding: 0.8rem;
+        border: 2px solid #FFE4E1;
+        border-radius: 8px;
+        font-size: 1rem;
+    `;
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = '確認';
+    confirmBtn.style.cssText = `
+        padding: 0.8rem 1.5rem;
+        background: #FFB6C1;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+    `;
+
+    confirmBtn.onclick = function() {
+        const location = locationInput.value.trim();
+        if (location) {
+            // 存儲位置信息到一個全局變量
+            window.selectedLocation = location;
+
+            // 顯示位置標籤
+            showLocationTag(location);
+
+            selectorDiv.remove();
+        }
+    };
+
+    // 常用位置建議
+    const suggestions = ['家裡', '公園', '寵物醫院', '寵物美容店', '寵物用品店', '咖啡廳', '公司', '學校'];
+    const suggestionsDiv = document.createElement('div');
+    suggestionsDiv.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    `;
+
+    suggestions.forEach(place => {
+        const placeBtn = document.createElement('button');
+        placeBtn.textContent = place;
+        placeBtn.style.cssText = `
+            padding: 0.4rem 0.8rem;
+            background: #FFE4E1;
+            border: 1px solid #FFB6C1;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        `;
+        placeBtn.onclick = function() {
+            locationInput.value = place;
+            // 自動確認選擇
+            window.selectedLocation = place;
+            showLocationTag(place);
+            selectorDiv.remove();
+        };
+        suggestionsDiv.appendChild(placeBtn);
+    });
+
+    inputContainer.appendChild(locationInput);
+    inputContainer.appendChild(confirmBtn);
+    selectorDiv.appendChild(title);
+    selectorDiv.appendChild(inputContainer);
+    selectorDiv.appendChild(suggestionsDiv);
+
+    // 插入到輸入框後面
+    const textarea = document.getElementById('postContent');
+    textarea.parentNode.insertBefore(selectorDiv, textarea.nextSibling);
+}
+
+// 顯示位置標籤
+function showLocationTag(location) {
+    // 移除現有的位置標籤
+    const existingTag = document.querySelector('.location-tag');
+    if (existingTag) {
+        existingTag.remove();
+    }
+
+    const locationTag = document.createElement('div');
+    locationTag.className = 'location-tag';
+    locationTag.style.cssText = `
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #FFE4E1;
+        border: 1px solid #FFB6C1;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #8B4513;
+    `;
+
+    locationTag.innerHTML = `
+        <i class="bi bi-geo-alt-fill"></i>
+        <span>${location}</span>
+        <button onclick="removeLocationTag()" style="
+            background: none;
+            border: none;
+            color: #8B4513;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            margin-left: 0.25rem;
+        ">×</button>
+    `;
+
+    const textarea = document.getElementById('postContent');
+    textarea.parentNode.insertBefore(locationTag, textarea.nextSibling);
+}
+
+// 移除位置標籤
+function removeLocationTag() {
+    const locationTag = document.querySelector('.location-tag');
+    if (locationTag) {
+        locationTag.remove();
+    }
+    window.selectedLocation = null;
+}
+
+// 輔助函數：將十六進制顏色轉換為RGB
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ?
+        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` :
+        '0, 0, 0';
+}
+
+// 圖片預覽功能
+function showImagePreview(imageSrc, fileId) {
+    // 創建預覽元素
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'media-preview image-preview';
+    previewDiv.dataset.fileId = fileId;
+    previewDiv.style.cssText = `
+        margin: 0.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 2px solid #FFE4E1;
+        position: relative;
+        display: inline-block;
+        vertical-align: top;
+    `;
+
+    const img = document.createElement('img');
+    img.src = imageSrc;
+    img.style.cssText = `
+        width: 150px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        display: block;
+    `;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.innerHTML = '✕';
+    removeBtn.style.cssText = `
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: #FF69B4;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 10;
+    `;
+    removeBtn.onclick = function() {
+        removeMediaFile(fileId);
+        previewDiv.remove();
+    };
+
+    previewDiv.appendChild(img);
+    previewDiv.appendChild(removeBtn);
+
+    // 插入到媒體容器中
+    getOrCreateMediaContainer().appendChild(previewDiv);
+}
+
+// 媒體管理函數
+function getOrCreateMediaContainer() {
+    let container = document.querySelector('.media-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'media-container';
+        container.style.cssText = `
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-radius: 15px;
+            border: 2px solid #FFE4E1;
+            box-shadow: 0 4px 8px rgba(255, 182, 193, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        `;
+
+        // 添加媒體計數器
+        const counter = document.createElement('div');
+        counter.className = 'media-counter';
+        counter.style.cssText = `
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: #FF69B4;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+        `;
+        container.style.position = 'relative';
+        container.appendChild(counter);
+
+        const textarea = document.getElementById('postContent');
+        textarea.parentNode.insertBefore(container, textarea.nextSibling);
+    }
+
+    // 更新媒體計數器
+    const counter = container.querySelector('.media-counter');
+    if (counter) {
+        const totalFiles = mediaFiles.length;
+        const imageCount = mediaFiles.filter(f => f.type === 'image').length;
+        const videoCount = mediaFiles.filter(f => f.type === 'video').length;
+
+        let text = `${totalFiles} 個文件`;
+        if (imageCount > 0 && videoCount > 0) {
+            text = `${imageCount} 圖片 + ${videoCount} 影片`;
+        } else if (imageCount > 0) {
+            text = `${imageCount} 圖片`;
+        } else if (videoCount > 0) {
+            text = `${videoCount} 影片`;
+        }
+        counter.textContent = text;
+    }
+
+    return container;
+}
+
+// 搜尋話題功能
+function searchTopic(keyword) {
+    // 跳轉到搜尋頁面
+    window.location.href = `/social/search/?q=${encodeURIComponent(keyword)}`;
+}
+
+function removeMediaFile(fileId) {
+    mediaFiles = mediaFiles.filter(file => file.id !== fileId);
+
+    // 如果沒有媒體文件了，移除容器
+    if (mediaFiles.length === 0) {
+        const container = document.querySelector('.media-container');
+        if (container) {
+            container.remove();
+        }
+    } else {
+        // 更新媒體計數器
+        getOrCreateMediaContainer();
+    }
+}
+
+// 發佈貼文
+let isSubmitting = false;
+let mediaFiles = [];
+
+// 提交邏輯函數
+function handlePostSubmission() {
+    // 防止重複提交
+    if (isSubmitting) {
+        console.log('重複提交被阻止');
+        return;
+    }
+
+    console.log('開始處理貼文提交，媒體文件數量:', mediaFiles.length);
+
+    const content = document.getElementById('postContent').value.trim();
+    if (!content) {
+        alert('請輸入貼文內容');
+        return;
+    }
+
+    isSubmitting = true;
+    const submitBtn = document.getElementById('submitPost');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat rotating"></i> 發佈中...';
+
+    // 收集表單數據
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('post_type', 'text');
+
+    // 添加位置信息
+    if (window.selectedLocation) {
+        formData.append('location', window.selectedLocation);
+    }
+
+    // 使用媒體文件陣列來支持多媒體發佈
+    async function handleSubmission() {
+        try {
+            // 添加所有媒體文件
+            if (mediaFiles.length > 0) {
+                let hasImage = false;
+                let hasVideo = false;
+
+                mediaFiles.forEach((mediaFile, index) => {
+                    if (mediaFile.type === 'image') {
+                        formData.append('images', mediaFile.file);
+                        hasImage = true;
+                    } else if (mediaFile.type === 'video') {
+                        formData.append('videos', mediaFile.file);
+                        hasVideo = true;
+                    }
+                });
+
+                // 設置貼文類型
+                if (hasImage && hasVideo) {
+                    formData.set('post_type', 'mixed');
+                } else if (hasImage) {
+                    formData.set('post_type', 'image');
+                } else if (hasVideo) {
+                    formData.set('post_type', 'video');
+                }
+            }
+
+            // 提交貼文
+            await submitPost(formData);
+        } catch (error) {
+            console.error('檔案處理錯誤:', error);
+            alert('檔案處理失敗，請重新嘗試');
+            resetSubmissionState();
+        }
+    }
+
+    handleSubmission();
+
+    function resetSubmissionState() {
+        isSubmitting = false;
+        const submitBtn = document.getElementById('submitPost');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send"></i> 發佈貼文';
+
+        // 清空媒體文件陣列
+        mediaFiles = [];
+
+        // 移除媒體容器
+        const mediaContainer = document.querySelector('.media-container');
+        if (mediaContainer) {
+            mediaContainer.remove();
+        }
+    }
+
+    async function submitPost(data) {
+        try {
+            const response = await fetch('{% url "social:create_post" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: data
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 清空表單
+                document.getElementById('postContent').value = '';
+                const mediaContainer = document.querySelector('.media-container');
+                const repostSelector = document.querySelector('.repost-selector');
+                const locationSelector = document.querySelector('.location-selector');
+                const locationTag = document.querySelector('.location-tag');
+
+                // 清除媒體文件和位置信息
+                mediaFiles = [];
+                window.selectedLocation = null;
+
+                if (mediaContainer) mediaContainer.remove();
+                if (repostSelector) repostSelector.remove();
+                if (locationSelector) locationSelector.remove();
+                if (locationTag) locationTag.remove();
+
+                // 重置媒體按鈕狀態
+                document.querySelectorAll('.media-btn').forEach(btn => btn.classList.remove('active'));
+
+                // 重置按鈕狀態
+                resetSubmissionState();
+
+                // 重新載入頁面
+                location.reload();
+            } else {
+                alert('發佈失敗：' + result.error);
+                resetSubmissionState();
+            }
+        } catch (error) {
+            console.error('提交錯誤:', error);
+            alert('發佈失敗，請稍後再試');
+            resetSubmissionState();
+        }
+    }
+}
+
+// 防止表單默認提交
+document.getElementById('postForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+});
+
+// 為提交按鈕添加事件監聽器
+document.getElementById('submitPost').addEventListener('click', handlePostSubmission);
+
+// 按讚功能
+function toggleLike(postId) {
+    {% if not user.is_authenticated %}
+        alert('請先登入');
+        return;
+    {% endif %}
+
+    const btn = document.querySelector(`[data-post-id="${postId}"] .like-btn`);
+    const icon = btn.querySelector('i');
+    const countEl = btn.querySelector('.like-count');
+
+    fetch(`/social/post/${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.liked) {
+                btn.classList.add('active');
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+            } else {
+                btn.classList.remove('active');
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+            }
+            countEl.textContent = data.likes_count;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// 分享功能
+function sharePost(postId) {
+    if (navigator.share) {
+        navigator.share({
+            title: '毛日好社群分享',
+            text: '來看看這篇有趣的貼文！',
+            url: window.location.origin + `/social/post/${postId}/`
+        });
+    } else {
+        // 複製連結到剪貼板
+        navigator.clipboard.writeText(window.location.origin + `/social/post/${postId}/`)
+            .then(() => alert('連結已複製到剪貼板'))
+            .catch(() => alert('分享失敗'));
+    }
+}
+
+// 留言功能
+function toggleComments(postId) {
+    {% if not user.is_authenticated %}
+        alert('請先登入');
+        return;
+    {% endif %}
+
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    const commentsList = document.getElementById(`comments-list-${postId}`);
+    const commentBtn = document.querySelector(`[data-post-id="${postId}"] .comment-btn`);
+
+    if (commentsSection.style.display === 'none' || commentsSection.style.display === '') {
+        // 顯示留言區域
+        commentsSection.style.display = 'block';
+        commentBtn.classList.add('active');
+
+        // 載入留言
+        loadComments(postId);
+    } else {
+        // 隱藏留言區域
+        commentsSection.style.display = 'none';
+        commentBtn.classList.remove('active');
+    }
+}
+
+function loadComments(postId) {
+    const commentsList = document.getElementById(`comments-list-${postId}`);
+
+    // 顯示載入狀態
+    commentsList.innerHTML = `
+        <div class="loading-comments">
+            <i class="bi bi-arrow-repeat rotating"></i>
+            載入留言中...
+        </div>
+    `;
+
+    // 獲取留言
+    fetch(`/social/post/${postId}/comments/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.comments.length === 0) {
+                    commentsList.innerHTML = `
+                        <div class="no-comments">
+                            <i class="bi bi-chat-square-text"></i>
+                            <p>還沒有留言，快來留下第一個留言吧！</p>
+                        </div>
+                    `;
+                } else {
+                    let commentsHtml = '';
+                    data.comments.forEach(comment => {
+                        commentsHtml += `
+                            <div class="comment-item">
+                                <img src="${comment.avatar_url || '{% static "images/default_pet.jpg" %}'}"
+                                     alt="${comment.username}" class="comment-avatar">
+                                <div class="comment-content">
+                                    <div class="comment-author">${comment.username}</div>
+                                    <div class="comment-text">${comment.content}</div>
+                                    <div class="comment-time">${comment.created_at}</div>
+                                    <div class="comment-actions">
+                                        <button class="comment-action-btn ${comment.user_liked ? 'active' : ''}"
+                                                onclick="toggleCommentLike(${comment.id})">
+                                            <i class="bi bi-heart${comment.user_liked ? '-fill' : ''}"></i>
+                                            ${comment.likes_count || 0}
+                                        </button>
+                                        ${comment.is_own_comment ? `
+                                            <button class="comment-action-btn" onclick="deleteComment(${comment.id}, ${postId})">
+                                                <i class="bi bi-trash"></i> 刪除
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    commentsList.innerHTML = commentsHtml;
+                }
+            } else {
+                commentsList.innerHTML = `
+                    <div class="no-comments">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <p>載入留言失敗，請稍後再試</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading comments:', error);
+            commentsList.innerHTML = `
+                <div class="no-comments">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <p>載入留言失敗，請稍後再試</p>
+                </div>
+            `;
+        });
+}
+
+function submitComment(postId) {
+    const commentInput = document.getElementById(`comment-input-${postId}`);
+    const content = commentInput.value.trim();
+
+    if (!content) {
+        alert('請輸入留言內容');
+        return;
+    }
+
+    const submitBtn = commentInput.nextElementSibling;
+    const originalContent = submitBtn.innerHTML;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat rotating"></i>';
+
+    fetch(`/social/post/${postId}/comment/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 清空輸入框
+            commentInput.value = '';
+
+            // 重新載入留言列表
+            loadComments(postId);
+
+            // 更新留言數量
+            const commentCountSpan = document.querySelector(`[data-post-id="${postId}"] .comment-btn span`);
+            if (commentCountSpan) {
+                const currentCount = parseInt(commentCountSpan.textContent) || 0;
+                commentCountSpan.textContent = currentCount + 1;
+            }
+        } else {
+            alert('留言失敗：' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('留言失敗，請稍後再試');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
+    });
+}
+
+// 留言按讚功能
+function toggleCommentLike(commentId) {
+    {% if not user.is_authenticated %}
+        alert('請先登入');
+        return;
+    {% endif %}
+
+    const btn = document.querySelector(`button[onclick="toggleCommentLike(${commentId})"]`);
+    const icon = btn.querySelector('i');
+
+    fetch(`/social/comment/${commentId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.liked) {
+                btn.classList.add('active');
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+            } else {
+                btn.classList.remove('active');
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+            }
+            // 更新按讚數量
+            btn.innerHTML = btn.innerHTML.replace(/\d+/, data.likes_count);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// 刪除留言功能
+function deleteComment(commentId, postId) {
+    if (confirm('確定要刪除這則留言嗎？')) {
+        // 這裡需要實作刪除留言的後端功能
+        alert('刪除留言功能開發中...');
+    }
+}
+
+// 搜尋用戶功能
+function searchUsers() {
+    const query = document.getElementById('userSearchInput').value.trim();
+    const resultsContainer = document.getElementById('searchResults');
+
+    if (!query) {
+        resultsContainer.innerHTML = '';
+        return;
+    }
+
+    // 顯示載入狀態
+    resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #666;"><i class="bi bi-arrow-repeat rotating"></i> 搜尋中...</div>';
+
+    // 模擬搜尋API請求（這裡您可以實作真實的搜尋功能）
+    setTimeout(() => {
+        // 暫時的模擬搜尋結果
+        if (query.length > 0) {
+            resultsContainer.innerHTML = `
+                <div class="search-result-item" onclick="window.location.href='/social/profile/${query}/'">
+                    <img src="{% static 'images/default_pet.jpg' %}" alt="${query}" class="search-result-avatar">
+                    <div class="search-result-info">
+                        <h5 class="search-result-name">${query}</h5>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">找不到相關用戶</div>';
+        }
+    }, 500);
+}
+
+// Enter 鍵搜尋
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('userSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        });
+    }
+});
+
+// 留言輸入框自動調整高度
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('comment-input')) {
+            const textarea = e.target;
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+        }
+    });
+});
+
+// CSS 動畫
+const style = document.createElement('style');
+style.textContent = `
+    .rotating {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

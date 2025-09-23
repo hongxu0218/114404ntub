@@ -1,0 +1,578 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}毛日好 AI 客服{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ai_chat.css' %}">
+<style>
+.chat-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.chat-header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.chat-header p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+.chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8f9fa;
+}
+
+.message {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message.ai {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message.user .message-content {
+    background: #007bff;
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.message.ai .message-content {
+    background: white;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    border-bottom-left-radius: 5px;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 8px;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.message.user .message-avatar {
+    background: #007bff;
+    color: white;
+    order: 2;
+}
+
+.message.ai .message-avatar {
+    background: #667eea;
+    color: white;
+    order: 1;
+}
+
+.chat-input-area {
+    padding: 20px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.form-control {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    outline: none;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.btn-send {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-send:hover {
+    background: #0056b3;
+}
+
+.btn-send:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-handoff {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 16px;
+}
+
+.btn-handoff:hover {
+    background: #1e7e34;
+}
+
+.btn-handoff:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.typing-indicator {
+    display: none;
+    margin-bottom: 15px;
+}
+
+.typing-dots {
+    display: inline-block;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 18px;
+    border-bottom-left-radius: 5px;
+}
+
+.typing-dots span {
+    height: 8px;
+    width: 8px;
+    float: left;
+    margin: 0 1px;
+    background-color: #9E9EA1;
+    display: block;
+    border-radius: 50%;
+    opacity: 0.4;
+    animation: loadingFade 1s infinite;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.1s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.2s; }
+
+@keyframes loadingFade {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+}
+
+.quick-questions {
+    padding: 0 20px 20px 20px;
+    background: white;
+}
+
+.quick-questions h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.quick-question-btn {
+    display: inline-block;
+    margin: 5px 5px 5px 0;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 15px;
+    color: #666;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.quick-question-btn:hover {
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+}
+
+.alert {
+    margin: 10px 20px;
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.ai-status {
+    text-align: center;
+    padding: 10px;
+    background: #e9ecef;
+    font-size: 12px;
+    color: #666;
+}
+
+.status-online {
+    color: #28a745;
+}
+
+.status-offline {
+    color: #dc3545;
+}
+
+.handoff-link-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 0 2px;
+}
+
+.handoff-link-btn:hover {
+    background: #1e7e34;
+}
+
+.handoff-btn-large {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    margin: 10px auto;
+    display: block;
+    width: fit-content;
+}
+
+.handoff-btn-large:hover {
+    background: linear-gradient(135deg, #1e7e34, #1bc2a4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.handoff-btn-large:active {
+    transform: translateY(0);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>🐾 毛日好 AI 客服</h1>
+        <p>有任何寵物相關問題都可以問我喔！</p>
+    </div>
+
+    <div class="ai-status" id="ai-status">
+        <span class="status-offline">● 正在檢查 AI 服務狀態...</span>
+    </div>
+
+    <div class="quick-questions">
+        <h3>💬 常見問題：</h3>
+        <a href="#" class="quick-question-btn" data-question="如何幫寵物洗澡？">如何幫寵物洗澡？</a>
+        <a href="#" class="quick-question-btn" data-question="寵物疫苗接種時間？">寵物疫苗接種時間？</a>
+        <a href="#" class="quick-question-btn" data-question="寵物飲食注意事項？">寵物飲食注意事項？</a>
+        <a href="#" class="quick-question-btn" data-question="如何訓練寵物？">如何訓練寵物？</a>
+        <a href="#" class="quick-question-btn" data-question="寵物生病的症狀？">寵物生病的症狀？</a>
+        <br><br>
+        <button class="handoff-btn-large" id="permanent-handoff-btn">
+            🎧 轉接人工客服
+        </button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+        <div class="message ai">
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                您好！我是毛日好的AI客服助理，很高興為您服務！🐾<br>
+                我可以回答各種寵物相關的問題，包括：
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>寵物健康與醫療</li>
+                    <li>寵物飲食與營養</li>
+                    <li>寵物訓練與行為</li>
+                    <li>寵物美容與護理</li>
+                    <li>寵物用品推薦</li>
+                </ul>
+                請隨時問我任何問題！
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="message ai">
+                <div class="message-avatar">🤖</div>
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <div class="input-group">
+            <button class="btn-handoff" id="handoff-btn" title="轉人工客服">
+                <i class="bi bi-person-headset"></i>
+            </button>
+            <input type="text"
+                   class="form-control"
+                   id="message-input"
+                   placeholder="請輸入您的問題..."
+                   maxlength="500">
+            <button class="btn-send" id="send-btn">
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const handoffBtn = document.getElementById('handoff-btn');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const aiStatus = document.getElementById('ai-status');
+
+    // 檢查AI服務狀態
+    checkAIStatus();
+
+    // 快捷問題點擊事件
+    document.querySelectorAll('.quick-question-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const question = this.getAttribute('data-question');
+            messageInput.value = question;
+            sendMessage();
+        });
+    });
+
+    // 發送按鈕點擊事件
+    sendBtn.addEventListener('click', sendMessage);
+
+    // 轉人工客服按鈕點擊事件
+    handoffBtn.addEventListener('click', requestHandoff);
+
+    // 大轉人工客服按鈕點擊事件
+    const permanentHandoffBtn = document.getElementById('permanent-handoff-btn');
+    if (permanentHandoffBtn) {
+        permanentHandoffBtn.addEventListener('click', requestHandoff);
+    }
+
+    // 輸入框回車事件
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function checkAIStatus() {
+        fetch('/ai-health/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.rag_service && data.rag_service.ok) {
+                    aiStatus.innerHTML = '<span class="status-online">● AI 服務已就緒</span>';
+                } else {
+                    aiStatus.innerHTML = '<span class="status-offline">● AI 服務離線</span>';
+                }
+            })
+            .catch(error => {
+                aiStatus.innerHTML = '<span class="status-offline">● 無法連接 AI 服務</span>';
+            });
+    }
+
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // 顯示用戶訊息
+        addMessage(message, 'user');
+        messageInput.value = '';
+
+        // 顯示輸入中指示器
+        showTypingIndicator();
+
+        // 禁用發送按鈕
+        sendBtn.disabled = true;
+
+        // 發送到後端
+        fetch('/ai-chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                question: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            sendBtn.disabled = false;
+
+            if (data.success) {
+                addMessage(data.answer, 'ai');
+            } else {
+                addMessage('抱歉，我暫時無法回答您的問題。錯誤：' + data.message, 'ai');
+            }
+        })
+        .catch(error => {
+            hideTypingIndicator();
+            sendBtn.disabled = false;
+            addMessage('抱歉，系統發生錯誤，請稍後再試。', 'ai');
+            console.error('Error:', error);
+        });
+    }
+
+    function addMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.textContent = sender === 'user' ? '👤' : '🤖';
+
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+
+        // 檢查是否包含轉人工客服的提示並添加按鈕
+        if (sender === 'ai' && content.includes('轉人工客服')) {
+            // 按順序進行替換，避免重複
+            if (content.includes('【轉人工客服】')) {
+                content = content.replace(/【轉人工客服】/g, '<button class="handoff-link-btn" onclick="requestHandoff()">【轉人工客服】</button>');
+            } else if (content.includes('[轉人工客服]')) {
+                content = content.replace(/\[轉人工客服\]/g, '<button class="handoff-link-btn" onclick="requestHandoff()">[轉人工客服]</button>');
+            } else {
+                // 在消息末尾添加轉人工客服按鈕
+                content += '<br><button class="handoff-link-btn" onclick="requestHandoff()" style="margin-top: 10px;">點擊轉人工客服</button>';
+            }
+        }
+
+        messageContent.innerHTML = content.replace(/\n/g, '<br>');
+
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageContent);
+
+        // 插入到typing indicator之前
+        messagesContainer.insertBefore(messageDiv, typingIndicator);
+        scrollToBottom();
+    }
+
+    function showTypingIndicator() {
+        typingIndicator.style.display = 'block';
+        scrollToBottom();
+    }
+
+    function hideTypingIndicator() {
+        typingIndicator.style.display = 'none';
+    }
+
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function requestHandoff() {
+        // 禁用按鈕
+        handoffBtn.disabled = true;
+
+        // 獲取當前輸入的問題作為last_question
+        const currentQuestion = messageInput.value.trim();
+
+        fetch('/api/handoff/request/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: '用戶',
+                contact: '',
+                last_question: currentQuestion,
+                channel: 'web'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                // 清空輸入框
+                messageInput.value = '';
+
+                // 顯示轉接成功訊息
+                addMessage('已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
+
+                // 可以選擇跳轉到人工客服頁面或保持在當前頁面
+                setTimeout(() => {
+                    if (confirm('已成功轉接人工客服！是否前往人工客服聊天室？')) {
+                        // 這裡可以跳轉到人工客服聊天頁面（如果有的話）
+                        // window.location.href = '/handoff-chat/' + data.ticket_id + '/';
+                        alert('人工客服將透過系統回覆您的問題，請稍候。');
+                    }
+                }, 1000);
+            } else {
+                addMessage('轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
+            }
+        })
+        .catch(error => {
+            addMessage('轉接人工客服時發生錯誤，請稍後再試。', 'ai');
+            console.error('Handoff error:', error);
+        })
+        .finally(() => {
+            handoffBtn.disabled = false;
+        });
+    }
+});
+</script>
+{% endblock %}

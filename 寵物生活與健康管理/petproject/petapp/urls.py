@@ -3,6 +3,7 @@
 from django.urls import path, include  # 匯入 path，用來定義每個 URL 與對應的 view 函數
 from . import views  # 匯入目前資料夾下的 views 模組
 from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
+from . import chat_service, views_handoff  # 匯入進階AI客服和人工客服模組
 from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 from django.contrib import admin
@@ -193,6 +194,9 @@ urlpatterns = [
     path('adoption/edit/<int:pk>/', views.edit_adoption, name='edit_adoption'),
     path('adoption/delete/<int:pk>/', views.delete_adoption, name='delete_adoption'),
     path('adoption/toggle_status/<int:pk>/', views.toggle_status, name='toggle_status'),
+    path('adoption/transfer_request/<int:pk>/', views.adoption_transfer_request, name='adoption_transfer_request'),
+    path('adoption/transfers/my/', views.my_adoption_transfers, name='my_adoption_transfers'),
+    path('adoption/transfer/confirm/<int:transfer_id>/', views.adoption_transfer_confirm, name='adoption_transfer_confirm'),
     path('adoption/send_for_adoption/<int:pet_id>/', views.send_for_adoption, name='send_for_adoption'),
     path('adoption/delete_image/<int:adoption_id>/<str:picture_field>/', views.delete_adoption_image, name='delete_adoption_image'),
     path('adoption/delete_file/<int:adoption_id>/<str:field_name>/', views.delete_file, name='delete_adoption_file'),
@@ -209,6 +213,43 @@ urlpatterns = [
 
     # ============ 醫療記錄 API ============
     path('api/medical-records/<int:record_id>/', views.api_medical_record_detail, name='api_medical_record_detail'),
+
+    # ============ 登入重導向 ============
+    path('login-redirect/', views.login_redirect, name='login_redirect'),
+
+    # ============ 帳號刪除 ============
+    path('account/delete/confirm/', views.delete_account_confirm, name='delete_account_confirm'),
+    path('account/delete/', views.delete_account, name='delete_account'),
+
+    # ============ AI 客服功能 ============
+    path('ai-chat/', views.ai_chat, name='ai_chat'),
+    path('ai-health/', views.ai_health_check, name='ai_health_check'),
+
+    # ============ 進階AI客服API ============
+    path('api/chat/', include([
+        path('', chat_service.api_chat, name='api_chat'),
+        path('stream/', chat_service.api_chat_stream, name='api_chat_stream'),
+        path('kb_status/', chat_service.api_kb_status, name='api_kb_status'),
+    ])),
+
+    # ============ 人工客服轉接 ============
+    path('api/handoff/', include([
+        path('request/', views_handoff.api_handoff_request, name='api_handoff_request'),
+        path('user/send/', views_handoff.api_handoff_user_send, name='api_handoff_user_send'),
+        path('user/end/', views_handoff.api_handoff_user_end, name='api_handoff_user_end'),
+        path('poll/', views_handoff.api_handoff_poll, name='api_handoff_poll'),
+    ])),
+
+    # ============ 客服控台（職員端） ============
+    path('staff/handoff/', include([
+        path('', views_handoff.handoff_console, name='handoff_console'),
+        path('<int:ticket_id>/', views_handoff.handoff_console, name='handoff_console_ticket'),
+        path('tickets/poll/', views_handoff.handoff_staff_tickets_poll, name='handoff_staff_tickets_poll'),
+        path('<int:ticket_id>/reply/', views_handoff.handoff_agent_reply, name='handoff_agent_reply'),
+        path('<int:ticket_id>/close/', views_handoff.handoff_agent_close, name='handoff_agent_close'),
+        path('<int:ticket_id>/accept/', views_handoff.handoff_agent_accept, name='handoff_agent_accept'),
+        path('<int:ticket_id>/poll/', views_handoff.handoff_staff_poll, name='handoff_staff_poll'),
+    ])),
 ]
 
 # 靜態檔案處理

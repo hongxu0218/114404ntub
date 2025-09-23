@@ -47,8 +47,9 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             logger.info("Redirecting to extra signup page")
             return '/accounts/social/signup/extra/'
 
-        # 使用預設重定向
-        return super().get_login_redirect_url(request, sociallogin)
+        # 使用智能重導向邏輯
+        logger.info("Using smart login redirect")
+        return '/login-redirect/'
     
     def save_user(self, request, sociallogin, form=None):
         """保存用戶後的處理"""

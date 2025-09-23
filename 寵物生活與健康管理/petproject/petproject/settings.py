@@ -164,10 +164,10 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # 登入與登出成功後導向頁面
-LOGIN_REDIRECT_URL = '/'  # 登入成功導向首頁
+LOGIN_REDIRECT_URL = '/login-redirect/'  # 登入成功導向智能重導向頁面
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # allauth 登出後導向首頁
 LOGOUT_REDIRECT_URL = '/accounts/logout-success/'  # 自訂登出成功頁面
-SOCIALACCOUNT_LOGIN_REDIRECT_URL = '/'  # Google 登入後導向首頁
+# SOCIALACCOUNT_LOGIN_REDIRECT_URL = '/'  # 註解掉，讓 adapter 的 get_login_redirect_url() 決定
 
 # 設定登入方式為 email，email 為必填
 
@@ -192,8 +192,24 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # 若你部署沒 SSL 就改為 "http"
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
 # 自訂 Google 登入行為
-SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_ADAPTER = 'petapp.adapter.MySocialAccountAdapter'
+
+# 禁用 allauth 的重複登入訊息
+SOCIALACCOUNT_STORE_TOKENS = False
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # 已存在，但確保設定
+SOCIALACCOUNT_LOGIN_ON_GET = True  # 已存在，但確保設定
+
+# 禁用 allauth 的預設登入成功訊息
+ACCOUNT_SESSION_REMEMBER = None
+ACCOUNT_LOGIN_ATTEMPTS_LIMIT = None
+ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = None
+
+# 自訂 allauth 訊息標籤以避免重複
+ACCOUNT_MESSAGES = {
+    'logged_in': '',  # 禁用預設登入成功訊息
+    'logged_out': '',  # 禁用預設登出訊息
+}
 
 
 # ===== 郵件後端設定（開發階段使用 console 模式）=====
@@ -213,6 +229,7 @@ ADMIN_EMAIL = config('ADMIN_EMAIL')
 # ===== 靜態與媒體檔案設定 =====
 # 靜態檔案設定（CSS、JS）
 STATIC_URL = 'static/'  # 靜態檔案 URL 路徑前綴
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # 產品環境的靜態檔案收集路徑
 STATICFILES_DIRS = [
     BASE_DIR / 'static' # 加入 static 路徑
 ]
@@ -236,6 +253,30 @@ SOCIALACCOUNT_PROVIDERS = {
             'key': ''  # 預設空值即可
         }
     }
+}
+
+# ===== Logging 配置 =====
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'petapp.adapter': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'petapp.views': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
 }
 
 

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}週檢視排班 - {{ clinic.clinic_name }}{% endblock %}
 
@@ -95,22 +96,22 @@
                         <!-- 排班內容 -->
                         {% if date_info.schedules %}
                             {% for schedule in date_info.schedules %}
-                            <div class="schedule-item professional">
+                            <div class="schedule-item professional" style="border-left: 4px solid {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }}; background-color: rgba(255, 255, 255, 0.95); color: #333;">
                                 <div class="schedule-content">
                                     <div class="schedule-header">
-                                        <div class="schedule-time">
-                                            <i class="bi bi-clock me-1"></i>
+                                        <div class="schedule-time" style="color: #333;">
+                                            <i class="bi bi-clock me-1" style="color: {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }};"></i>
                                             {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}
                                         </div>
-                                        <div class="schedule-badge">
+                                        <div class="schedule-badge" style="background-color: {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }}; color: white;">
                                             {{ schedule.schedule_type|default:"排班" }}
                                         </div>
                                     </div>
-                                    <div class="schedule-doctor">
-                                        <i class="bi bi-person-badge me-1"></i>
+                                    <div class="schedule-doctor" style="color: #333;">
+                                        <i class="bi bi-person-badge me-1" style="color: {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }};"></i>
                                         {{ schedule.doctor_name }}
                                     </div>
-                                    <div class="schedule-clinic">
+                                    <div class="schedule-clinic" style="color: #666;">
                                         {{ schedule.schedule.clinic.clinic_name }}
                                     </div>
                                 </div>

@@ -1,0 +1,621 @@
+{% extends 'social/base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }} - 個人檔案{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-hero {
+        position: relative;
+        height: 300px;
+        background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 50%, #FFE4E1 100%);
+        border-radius: 0 0 30px 30px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    {% if profile.banner and profile.banner.name %}
+    .profile-hero.has-banner {
+        background-image: url('{{ profile.banner.url }}');
+    }
+    {% endif %}
+
+    .profile-hero.has-banner::before {
+        background: rgba(0,0,0,0.3);
+        opacity: 1;
+    }
+    .profile-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300"><defs><pattern id="pattern" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="white" opacity="0.1"/></pattern></defs><rect fill="url(%23pattern)" width="100%" height="100%"/></svg>');
+        opacity: 0.3;
+    }
+    .profile-container {
+        position: relative;
+        max-width: 1200px;
+        margin: -100px auto 0;
+        padding: 0 2rem;
+        z-index: 10;
+    }
+    .profile-card {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        padding: 3rem;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    .profile-main {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 2rem;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .profile-avatar-large {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 6px solid white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .profile-info h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 0.5rem 0;
+    }
+    .profile-handle {
+        color: #6c757d;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    .profile-bio {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #495057;
+        max-width: 500px;
+    }
+    .profile-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .profile-btn {
+        padding: 0.8rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        text-align: center;
+        white-space: nowrap;
+        min-width: 150px;
+    }
+    .btn-follow {
+        background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 182, 193, 0.4);
+    }
+    .btn-follow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(255, 105, 180, 0.5);
+        color: white;
+    }
+    .btn-following {
+        background: #28a745;
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+    .btn-following:hover {
+        background: #dc3545;
+        box-shadow: 0 6px 25px rgba(220, 53, 69, 0.4);
+        color: white;
+    }
+    .btn-following:hover::after {
+        content: ' 取消追蹤';
+    }
+    .btn-following:hover .follow-text {
+        display: none;
+    }
+    .btn-edit {
+        background: #f8f9fa;
+        color: #495057;
+        border: 2px solid #dee2e6;
+    }
+    .btn-edit:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        padding: 2rem 0;
+        border-top: 1px solid #e9ecef;
+    }
+    .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        background: #e9ecef;
+        transform: translateY(-5px);
+    }
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #FF69B4;
+        margin-bottom: 0.5rem;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    .posts-section {
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    .section-header {
+        background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%);
+        color: white;
+        padding: 2rem 3rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .posts-grid {
+        padding: 2rem 3rem;
+    }
+    .post-card-profile {
+        background: #f8f9fa;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+    .post-card-profile:hover {
+        background: white;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .post-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+    .post-content-profile {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 1.5rem;
+        white-space: pre-wrap;
+    }
+    .post-engagement {
+        display: flex;
+        gap: 2rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .engagement-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .empty-profile {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    .empty-profile i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.3;
+    }
+    .back-btn {
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        background: rgba(255,255,255,0.9);
+        border: none;
+        padding: 0.8rem 1.2rem;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #495057;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+    }
+    .back-btn:hover {
+        background: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+        .profile-hero {
+            height: 200px;
+        }
+        .profile-container {
+            margin-top: -50px;
+            padding: 0 1rem;
+        }
+        .profile-card {
+            padding: 2rem 1.5rem;
+        }
+        .profile-main {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 1.5rem;
+        }
+        .profile-avatar-large {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+        .profile-info h1 {
+            font-size: 2rem;
+        }
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .posts-section {
+            border-radius: 20px;
+        }
+        .section-header,
+        .posts-grid {
+            padding: 1.5rem;
+        }
+        .post-card-profile {
+            padding: 1.5rem;
+        }
+    }
+
+    /* 個人檔案媒體樣式 */
+    .post-media-profile {
+        margin: 1rem 0;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .post-image-profile {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        display: block;
+        border-radius: 15px;
+    }
+    .post-video-profile {
+        width: 100%;
+        max-height: 300px;
+        border-radius: 15px;
+        background: #000;
+    }
+
+    /* 貼文操作按鈕 */
+    .post-actions-profile {
+        margin: 1rem 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    .action-btn-profile {
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .delete-btn {
+        background: #ffebee;
+        color: #c62828;
+        border: 1px solid #ffcdd2;
+    }
+    .delete-btn:hover {
+        background: #c62828;
+        color: white;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-hero{% if profile.banner and profile.banner.name %} has-banner{% endif %}"{% if profile.banner and profile.banner.name %} style="background-image: url('{{ profile.banner.url }}');"{% endif %}>
+    <button class="back-btn" onclick="history.back()">
+        <i class="bi bi-arrow-left"></i>
+        返回
+    </button>
+</div>
+
+<div class="profile-container">
+    <!-- 個人資料卡片 -->
+    <div class="profile-card">
+        <div class="profile-main">
+            <img src="{% if profile.avatar and profile.avatar.name %}{{ profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                 alt="{{ profile_user.username }}" class="profile-avatar-large">
+
+            <div class="profile-info">
+                <h1>{{ profile_user.username }}</h1>
+                <div class="profile-handle">@{{ profile_user.username }}</div>
+                {% if profile.bio %}
+                <div class="profile-bio">{{ profile.bio }}</div>
+                {% else %}
+                <div class="profile-bio text-muted">這個人很神秘，還沒有寫自我介紹...</div>
+                {% endif %}
+            </div>
+
+            <div class="profile-actions">
+                {% if is_own_profile %}
+                    <a href="{% url 'social:edit_profile' %}" class="profile-btn btn-edit">
+                        <i class="bi bi-pencil"></i>
+                        編輯檔案
+                    </a>
+                {% else %}
+                    <button class="profile-btn {% if is_following %}btn-following{% else %}btn-follow{% endif %}"
+                            onclick="toggleFollow('{{ profile_user.username }}')">
+                        {% if is_following %}
+                            <span class="follow-text">
+                                <i class="bi bi-check-circle"></i>
+                                已追蹤
+                            </span>
+                        {% else %}
+                            <i class="bi bi-person-plus"></i>
+                            追蹤
+                        {% endif %}
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 統計數據 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ profile.posts_count|default:0 }}</div>
+                <div class="stat-label">貼文</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ profile.followers_count|default:0 }}</div>
+                <div class="stat-label">粉絲</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ profile.following_count|default:0 }}</div>
+                <div class="stat-label">追蹤中</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ posts|length }}</div>
+                <div class="stat-label">本頁貼文</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 貼文區域 -->
+    <div class="posts-section">
+        <div class="section-header">
+            <i class="bi bi-grid-3x3"></i>
+            {{ profile_user.username }} 的貼文
+        </div>
+
+        <div class="posts-grid">
+            {% if posts %}
+                {% for post in posts %}
+                <div class="post-card-profile" data-post-id="{{ post.id }}">
+                    <div class="post-meta">
+                        <div>
+                            <i class="bi bi-calendar3"></i>
+                            {{ post.created_at|date:"Y年n月j日" }}
+                        </div>
+                        <div>
+                            <i class="bi bi-clock"></i>
+                            {{ post.created_at|time:"H:i" }}
+                        </div>
+                    </div>
+
+                    <div class="post-content-profile">{{ post.content }}</div>
+
+                    <!-- 顯示媒體內容 -->
+                    {% if post.media_files.all %}
+                        <div class="post-media-profile">
+                            {% for media in post.media_files.all %}
+                                {% if media.media_type == 'image' %}
+                                    <img src="{{ media.file.url }}" alt="貼文圖片" class="post-image-profile">
+                                {% elif media.media_type == 'video' %}
+                                    <video controls class="post-video-profile">
+                                        <source src="{{ media.file.url }}" type="video/mp4">
+                                        您的瀏覽器不支援影片播放。
+                                    </video>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- 貼文操作 -->
+                    {% if is_own_profile %}
+                    <div class="post-actions-profile">
+                        <button class="action-btn-profile delete-btn" onclick="deletePost({{ post.id }})">
+                            <i class="bi bi-trash"></i>
+                            刪除
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <div class="post-engagement">
+                        <div class="engagement-item">
+                            <i class="bi bi-heart{% if post.user_liked %}-fill text-danger{% endif %}"></i>
+                            {{ post.likes_count }} 個讚
+                        </div>
+                        <div class="engagement-item">
+                            <i class="bi bi-chat"></i>
+                            {{ post.comments_count }} 則留言
+                        </div>
+                        <div class="engagement-item">
+                            <i class="bi bi-share"></i>
+                            {{ post.shares_count }} 次分享
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- 分頁 -->
+                {% if posts.has_next %}
+                <div class="text-center mt-4">
+                    <a href="?page={{ posts.next_page_number }}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-arrow-down-circle"></i>
+                        載入更多貼文
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+            <div class="empty-profile">
+                <i class="bi bi-chat-square-text"></i>
+                <h3>還沒有任何貼文</h3>
+                {% if is_own_profile %}
+                    <p>開始分享你的第一篇貼文吧！</p>
+                    <a href="{% url 'social:home' %}" class="btn btn-primary btn-lg mt-3">
+                        <i class="bi bi-pencil-square"></i>
+                        發佈貼文
+                    </a>
+                {% else %}
+                    <p>{{ profile_user.username }} 還沒有分享任何內容</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 追蹤/取消追蹤功能
+function toggleFollow(username) {
+    {% if not user.is_authenticated %}
+        alert('請先登入');
+        return;
+    {% endif %}
+
+    const btn = document.querySelector('.btn-follow, .btn-following');
+    const originalContent = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat rotating"></i> 處理中...';
+
+    fetch(`/social/follow/${username}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.following) {
+                btn.className = 'profile-btn btn-following';
+                btn.innerHTML = `
+                    <span class="follow-text">
+                        <i class="bi bi-check-circle"></i>
+                        已追蹤
+                    </span>
+                `;
+            } else {
+                btn.className = 'profile-btn btn-follow';
+                btn.innerHTML = `
+                    <i class="bi bi-person-plus"></i>
+                    追蹤
+                `;
+            }
+
+            // 更新粉絲數
+            const followersCount = document.querySelector('.stat-card:nth-child(2) .stat-number');
+            if (followersCount) {
+                followersCount.textContent = data.followers_count;
+            }
+        } else {
+            alert('操作失敗：' + data.error);
+            btn.innerHTML = originalContent;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失敗，請稍後再試');
+        btn.innerHTML = originalContent;
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
+}
+
+// 載入動畫CSS
+const style = document.createElement('style');
+style.textContent = `
+    .rotating {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+
+// 刪除貼文功能
+function deletePost(postId) {
+    if (confirm('確定要刪除這篇貼文嗎？')) {
+        fetch(`/social/post/${postId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 移除貼文元素
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.remove();
+                }
+                alert('貼文已刪除');
+            } else {
+                alert('刪除失敗：' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('刪除失敗，請稍後再試');
+        });
+    }
+}
+
+// 平滑滾動效果
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+</script>
+{% endblock %}

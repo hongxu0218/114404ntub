@@ -1093,14 +1093,21 @@
   opacity: 1;
 }
 
-/* 專業資訊完整度狀態更新 */
-.professional-info-status .status-item[data-field="specialization"].filled .status-icon {
-  color: var(--success-color);
+/* 專業資訊完整度狀態更新 - 統一樣式 */
+.professional-info-status .status-item.filled .status-icon {
+  color: var(--success-color) !important;
 }
 
-.professional-info-status .status-item[data-field="specialization"].filled .status-text {
-  color: var(--gray-800);
+.professional-info-status .status-item.filled .status-text {
+  color: var(--gray-800) !important;
   font-weight: 500;
+}
+
+/* 確保所有欄位的打勾顏色一致 */
+.professional-info-status .status-item[data-field="specialization"].filled .status-icon,
+.professional-info-status .status-item[data-field="bio"].filled .status-icon,
+.professional-info-status .status-item[data-field="vet_license_number"].filled .status-icon {
+  color: #10b981 !important; /* 統一的綠色 */
 }
 
 /* 響應式設計 */

@@ -101,16 +101,16 @@
                             <div class="day-content">
                                 {% if day_data.schedules %}
                                     {% for schedule in day_data.schedules %}
-                                    <div class="mini-schedule-card professional">
-                                        <div class="schedule-time">
-                                            <i class="bi bi-clock"></i>
+                                    <div class="mini-schedule-card professional" style="border-left: 4px solid {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }}; background-color: rgba(255, 255, 255, 0.95); color: #333;">
+                                        <div class="schedule-time" style="color: #333;">
+                                            <i class="bi bi-clock" style="color: {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }};"></i>
                                             {{ schedule.start_time|time:"H:i" }}-{{ schedule.end_time|time:"H:i" }}
                                         </div>
-                                        <div class="schedule-doctor">
-                                            <i class="bi bi-person-badge"></i>
+                                        <div class="schedule-doctor" style="color: #333;">
+                                            <i class="bi bi-person-badge" style="color: {{ doctor_colors|get_item:schedule.doctor_id|default:'#3498db' }};"></i>
                                             {{ schedule.doctor_name|truncatechars:6 }}
                                         </div>
-                                        <div class="schedule-title">{{ schedule.title|truncatechars:8|default:"排班" }}</div>
+                                        <div class="schedule-title" style="color: #666;">{{ schedule.title|truncatechars:8|default:"排班" }}</div>
                                     </div>
                                     {% endfor %}
                                 {% else %}
