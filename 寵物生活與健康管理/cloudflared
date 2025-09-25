@@ -12,13 +12,13 @@ or 自行建立
 pawday114404.duckdns.org {
     # 1. 靜態檔案（collectstatic 之後）
     handle_path /static/* {
-        root * "D:\git\114404ntub\寵物生活與健康管理\petproject\staticfiles"
+        root * "你的檔案路徑\staticfiles"
         file_server
     }
 
     # 2. 媒體檔案（使用者上傳）
     handle_path /media/* {
-        root * "D:\git\114404ntub\寵物生活與健康管理\petproject\media"
+        root * "你的檔案路徑\media"
         file_server
     }
 
