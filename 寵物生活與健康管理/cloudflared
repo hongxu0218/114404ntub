@@ -21,7 +21,17 @@ pawday114404.duckdns.org {
         root * "你的檔案路徑\media"
         file_server
     }
+    # 提供 rag/chroma_db 資料
+    handle_path /chroma/* {
+        root * "你的檔案路徑\chroma_db"
+        file_server
+    }
 
+    # 提供 rag/data 資料 (含 Excel 檔案)
+    handle_path /data/* {
+        root * "你的檔案路徑\data"
+        file_server
+    }
     # 3. 其他請求交給 Django
     handle {
         reverse_proxy 127.0.0.1:8000 {
