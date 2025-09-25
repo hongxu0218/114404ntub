@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+{% load i18n %}
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Google 登入確認｜寵物生活管理系統</title>
+    <style>
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-box {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            max-width: 420px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #6c63ff;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            margin-bottom: 25px;
+        }
+
+        .email-highlight {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .confirm-btn {
+            background-color: #6c63ff;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .confirm-btn:hover {
+            background-color: #574fd6;
+        }
+
+        .back-link {
+            margin-top: 15px;
+        }
+
+        .back-link a {
+            color: #6c63ff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        {% csrf_token %}
+        <h2>Google 登入確認</h2>
+        <p>您即將以 <span class="email-highlight">{{ user.email }}</span> 的身份登入。</p>
+        <form method="post" action="{% url 'socialaccount_connections' %}">
+            {% csrf_token %}
+            <button type="submit" class="confirm-btn">繼續</button>
+        </form>
+        <div class="back-link">
+            <a href="{% url 'account_login' %}">← 返回登入頁面</a>
+        </div>
+    </div>
+</body>
+</html>

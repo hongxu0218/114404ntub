@@ -1,0 +1,608 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}醫師管理 - {{ clinic.clinic_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/clinic/doctor-management.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="doctor-management-container">
+  
+  <!-- 優化後的頁面標題 -->
+  <div class="page-header-enhanced">
+    <div class="header-background"></div>
+    
+    <div class="row align-items-center position-relative">
+      <div class="col-lg-8">
+        <div class="title-section">
+          <div class="title-icon-wrapper">
+            <div class="title-icon">
+              <i class="bi bi-people-fill"></i>
+            </div>
+          </div>
+          
+          <div class="title-content">
+            <h1 class="page-title-enhanced">醫師管理中心</h1>
+            <div class="page-subtitle-enhanced">管理您的醫療團隊，打造專業服務</div>
+          </div>
+        </div>
+        
+        <div class="clinic-info-card">
+          <div class="clinic-avatar">
+            <i class="bi bi-hospital-fill"></i>
+          </div>
+          <div class="clinic-details">
+            <h3 class="clinic-name">{{ clinic.clinic_name }}</h3>
+            <div class="clinic-meta">
+              <div class="meta-item">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span>{{ clinic.clinic_address }}</span>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-telephone-fill"></i>
+                <span>{{ clinic.clinic_phone }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 優化後的統計卡片 -->
+        <div class="stats-container">
+          <div class="stat-card stat-primary">
+            <div class="stat-icon">
+              <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="totalDoctors">{{ doctors.count }}</div>
+              <div class="stat-label">總醫師數</div>
+            </div>
+          </div>
+          
+          <div class="stat-card stat-success">
+            <div class="stat-icon">
+              <i class="bi bi-person-check"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="activeDoctors">
+                {% for doctor in doctors %}{% if doctor.is_active %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+              </div>
+              <div class="stat-label">啟用中</div>
+            </div>
+          </div>
+          
+          <div class="stat-card stat-info">
+            <div class="stat-icon">
+              <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="verifiedDoctors">
+                {% for doctor in doctors %}{% if doctor.is_verified %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+              </div>
+              <div class="stat-label">已驗證</div>
+            </div>
+          </div>
+          
+          <div class="stat-card stat-warning">
+            <div class="stat-icon">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number" id="pendingDoctors">
+                {% for doctor in doctors %}{% if not doctor.license_verified_with_moa %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+              </div>
+              <div class="stat-label">待驗證</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-4">
+        <div class="action-panel">
+          <a href="{% url 'add_doctor' %}" class="btn-enhanced btn-primary-enhanced">
+            <div class="btn-icon">
+              <i class="bi bi-person-plus"></i>
+            </div>
+            <div class="btn-content">
+              <div class="btn-title">新增醫師</div>
+              <div class="btn-subtitle">建立新的醫師帳號</div>
+            </div>
+          </a>
+          
+          <button class="btn-enhanced btn-secondary-enhanced" onclick="showBatchActionsModal()">
+            <div class="btn-icon">
+              <i class="bi bi-gear-fill"></i>
+            </div>
+            <div class="btn-content">
+              <div class="btn-title">批量操作</div>
+              <div class="btn-subtitle">管理多位醫師</div>
+            </div>
+          </button>
+          
+          <a href="{% url 'clinic_dashboard' %}" class="btn-enhanced btn-outline-enhanced">
+            <div class="btn-icon">
+              <i class="bi bi-arrow-left-circle"></i>
+            </div>
+            <div class="btn-content">
+              <div class="btn-title">返回主控台</div>
+              <div class="btn-subtitle">回到管理介面</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 搜尋與篩選工具列 -->
+  <div class="toolbar-section">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="search-section">
+          <div class="search-input-group">
+            <div class="search-icon">
+              <i class="bi bi-search"></i>
+            </div>
+            <input 
+              type="text" 
+              id="doctorSearch" 
+              class="search-input" 
+              placeholder="搜尋醫師姓名、專長、執照號碼..."
+              autocomplete="off"
+            >
+            <button class="search-clear" id="clearSearch" style="display: none;">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="filter-chips">
+            <div class="filter-chip active" data-filter="all">
+              <i class="bi bi-people me-1"></i>
+              全部醫師
+            </div>
+            <div class="filter-chip" data-filter="active">
+              <i class="bi bi-check-circle me-1"></i>
+              啟用中
+            </div>
+            <div class="filter-chip" data-filter="verified">
+              <i class="bi bi-shield-check me-1"></i>
+              已驗證
+            </div>
+            <div class="filter-chip" data-filter="pending">
+              <i class="bi bi-hourglass-split me-1"></i>
+              待驗證
+            </div>
+          </div>
+          
+          <div class="view-options">
+            <div class="sort-dropdown">
+              <select id="sortBy" class="sort-select">
+                <option value="name">依姓名排序</option>
+                <option value="created">依加入時間</option>
+                <option value="specialization">依專長排序</option>
+                <option value="status">依狀態排序</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 醫師卡片列表 -->
+  <div class="doctors-grid" id="doctorsGrid">
+    {% for doctor in doctors %}
+    <div class="doctor-card-modern" data-doctor-id="{{ doctor.id }}" data-filter-tags="{{ doctor.user.get_full_name|default:doctor.user.username|lower }} {{ doctor.specialization|lower }} {{ doctor.vet_license_number|lower }}">
+      
+      <!-- 醫師頭像與基本資訊 -->
+      <div class="doctor-header">
+        <div class="doctor-avatar">
+          {% if doctor.user.first_name %}
+            {{ doctor.user.first_name|first }}{{ doctor.user.last_name|first|default:"" }}
+          {% else %}
+            {{ doctor.user.username|first|upper }}
+          {% endif %}
+        </div>
+        
+        <div class="doctor-info">
+          <h3 class="doctor-name">
+            {{ doctor.user.get_full_name|default:doctor.user.username }}
+            {% if doctor.is_clinic_admin %}
+              <span class="admin-badge">
+                <i class="bi bi-crown"></i>
+                管理員
+              </span>
+            {% endif %}
+          </h3>
+          
+          <div class="doctor-meta">
+            <div class="meta-item">
+              <i class="bi bi-envelope"></i>
+              <span>{{ doctor.user.email }}</span>
+            </div>
+            
+            {% if doctor.user.profile.phone_number %}
+            <div class="meta-item">
+              <i class="bi bi-telephone"></i>
+              <span>{{ doctor.user.profile.phone_number }}</span>
+            </div>
+            {% endif %}
+            
+          </div>
+        </div>
+        
+        <div class="doctor-status">
+          <!-- 啟用狀態 -->
+          {% if doctor.is_active %}
+            <div class="status-badge-modern status-active-modern">
+              <i class="bi bi-check-circle"></i>
+              <span>啟用中</span>
+            </div>
+          {% else %}
+            <div class="status-badge-modern status-inactive-modern">
+              <i class="bi bi-pause-circle"></i>
+              <span>已停用</span>
+            </div>
+          {% endif %}
+          
+          <!-- 驗證狀態 -->
+          {% if doctor.license_verified_with_moa %}
+            <div class="verification-badge verified">
+              <i class="bi bi-shield-check"></i>
+              <span>執照已驗證</span>
+            </div>
+          {% elif doctor.vet_license_number %}
+            <div class="verification-badge pending">
+              <i class="bi bi-hourglass-split"></i>
+              <span>待驗證</span>
+            </div>
+          {% else %}
+            <div class="verification-badge none">
+              <i class="bi bi-shield-x"></i>
+              <span>未填寫執照</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- 醫師詳細資訊 -->
+      <div class="doctor-details">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">專長領域</div>
+            <div class="detail-value">{{ doctor.specialization|default:"未填寫" }}</div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-label">執業年資</div>
+            <div class="detail-value">{{ doctor.years_of_experience|default:0 }} 年</div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-label">執照號碼</div>
+            <div class="detail-value">
+              {% if doctor.vet_license_number %}
+                {{ doctor.vet_license_number }}
+              {% else %}
+                <span class="text-muted">未填寫</span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="detail-label">加入時間</div>
+            <div class="detail-value">{{ doctor.created_at|date:"Y/m/d" }}</div>
+          </div>
+        </div>
+        
+        {% if doctor.bio %}
+        <div class="doctor-bio">
+          <div class="bio-label">
+            <i class="bi bi-card-text me-1"></i>
+            個人簡介
+          </div>
+          <div class="bio-content">{{ doctor.bio }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- 權限顯示 -->
+        <div class="permissions-display">
+          <div class="permission-item {% if doctor.can_manage_appointments %}active{% endif %}">
+            <i class="bi bi-calendar-check"></i>
+            <span>管理預約</span>
+          </div>
+          {% if doctor.is_clinic_admin %}
+          <div class="permission-item active">
+            <i class="bi bi-people"></i>
+            <span>管理醫師</span>
+          </div>
+          {% endif %}
+          {% if doctor.can_write_medical_records %}
+          <div class="permission-item active">
+            <i class="bi bi-file-medical"></i>
+            <span>填寫病歷</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- 操作按鈕組 -->
+      <div class="action-buttons-group">
+        <a 
+          href="{% url 'edit_doctor' doctor.id %}" 
+          class="action-btn btn-edit"
+          title="編輯醫師資料"
+        >
+          <i class="bi bi-pencil"></i>
+        </a>
+        
+        <a 
+          href="{% url 'schedule_list' %}?doctor_id={{ doctor.id }}" 
+          class="action-btn btn-schedule"
+          title="管理排班"
+        >
+          <i class="bi bi-calendar3"></i>
+        </a>
+        
+        <button 
+          class="action-btn btn-info"
+          onclick="viewDoctorDetails({{ doctor.id }})"
+          title="查看詳細資料"
+        >
+          <i class="bi bi-info-circle"></i>
+        </button>
+        
+        {% if not doctor.is_clinic_admin %}
+        <button 
+          class="action-btn {% if doctor.is_active %}btn-toggle-active{% else %}btn-toggle-inactive{% endif %} toggle-doctor-btn"
+          data-doctor-id="{{ doctor.id }}"
+          data-action="{% if doctor.is_active %}deactivate{% else %}activate{% endif %}"
+          title="{% if doctor.is_active %}停用醫師{% else %}啟用醫師{% endif %}"
+        >
+          <i class="bi bi-{% if doctor.is_active %}pause{% else %}play{% endif %}"></i>
+          <div class="loading-spinner-modern"></div>
+        </button>
+        {% endif %}
+        
+        {% if not doctor.license_verified_with_moa and doctor.vet_license_number %}
+        <button 
+          class="action-btn btn-verify"
+          onclick="verifyDoctorLicense({{ doctor.id }})"
+          title="驗證執照"
+        >
+          <i class="bi bi-shield-check"></i>
+        </button>
+        {% endif %}
+      </div>
+      
+    </div>
+    {% empty %}
+    
+    <!-- 空狀態 -->
+    <div class="empty-state-modern">
+      <div class="empty-icon">
+        <i class="bi bi-people"></i>
+      </div>
+      <h3 class="empty-title">尚未新增任何醫師</h3>
+      <p class="empty-description">
+        開始建立您的醫療團隊吧！<br>
+        新增醫師後，他們就能開始接受預約並提供醫療服務。
+      </p>
+      <a href="{% url 'add_doctor' %}" class="btn-modern btn-primary-modern">
+        <i class="bi bi-person-plus"></i>
+        <span>新增第一位醫師</span>
+      </a>
+    </div>
+    
+    {% endfor %}
+  </div>
+
+  <!-- 搜尋結果為空的狀態 -->
+  <div id="noResultsState" class="empty-state-modern" style="display: none;">
+    <div class="empty-icon">
+      <i class="bi bi-search"></i>
+    </div>
+    <h3 class="empty-title">找不到相符的醫師</h3>
+    <p class="empty-description">
+      請嘗試：<br>
+      • 調整搜尋關鍵字<br>
+      • 使用不同的篩選條件<br>
+      • 檢查拼字是否正確
+    </p>
+    <button class="btn-modern btn-outline-modern" onclick="clearAllFilters()">
+      <i class="bi bi-arrow-clockwise"></i>
+      <span>清除篩選</span>
+    </button>
+  </div>
+
+  <!-- 醫師詳細資料 Modal -->
+  <div id="doctorDetailsModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container modal-lg">
+      <div class="modal-header">
+        <h3 id="doctorDetailsTitle">醫師詳細資料</h3>
+        <button class="modal-close" onclick="closeDoctorDetailsModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body" id="doctorDetailsContent">
+        <!-- 詳細資料將透過 JavaScript 動態載入 -->
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-modern btn-outline-modern" onclick="closeDoctorDetailsModal()">
+          關閉
+        </button>
+        <button type="button" class="btn-modern btn-primary-modern" id="editDoctorFromModal">
+          編輯資料
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量操作 Modal -->
+  <div id="batchActionsModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container modal-sm">
+      <div class="modal-header">
+        <h3>批量操作</h3>
+        <button class="modal-close" onclick="closeBatchActionsModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <p>選擇要執行的批量操作：</p>
+        
+        <div class="batch-options">
+          <button class="batch-option-btn" onclick="batchActivateAll()">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            <div class="option-content">
+              <div class="option-title">啟用所有醫師</div>
+              <div class="option-desc">將所有停用的醫師設為啟用狀態</div>
+            </div>
+          </button>
+          
+          <button class="batch-option-btn" onclick="batchSendWelcomeEmails()">
+            <i class="bi bi-envelope-heart text-info"></i>
+            <div class="option-content">
+              <div class="option-title">發送歡迎信</div>
+              <div class="option-desc">向所有新加入的醫師發送歡迎信件</div>
+            </div>
+          </button>
+          
+          <button class="batch-option-btn" onclick="exportDoctorsList()">
+            <i class="bi bi-download text-primary"></i>
+            <div class="option-content">
+              <div class="option-title">匯出醫師清單</div>
+              <div class="option-desc">下載包含所有醫師資料的 Excel 檔案</div>
+            </div>
+          </button>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-modern btn-outline-modern" onclick="closeBatchActionsModal()">
+          取消
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+<!-- 隱藏的表單用於 AJAX 請求 -->
+<form id="ajaxForm" style="display: none;">
+  {% csrf_token %}
+</form>
+
+<!-- 確認操作Modal -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="w-100 text-center">
+          <div class="modal-icon mb-3">
+            <i class="bi bi-question-circle-fill text-warning" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="modal-title fw-bold" id="confirmActionModalLabel">確認操作</h5>
+        </div>
+      </div>
+      <div class="modal-body text-center pt-0">
+        <p class="modal-message text-muted mb-4">確定要執行此操作嗎？</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" id="confirmActionBtn">確認</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 結果提示Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div class="w-100 text-center">
+          <div class="result-icon mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body text-center pt-0">
+        <h6 class="fw-bold mb-2" id="resultModalTitle">操作成功</h6>
+        <p class="text-muted mb-0" id="resultModalMessage">操作已完成</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">確定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/clinic/doctor-management.js' %}"></script>
+
+<script>
+// 頁面專用初始化
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎯 醫師管理頁面載入完成');
+
+
+  initializeDoctorManagement();
+  // 初始化Modal
+  initializeModals();
+
+  // 傳遞 Django 數據到 JavaScript
+  window.doctorPageData = {
+    clinicId: {{ clinic.id }},
+    clinicName: '{{ clinic.clinic_name|escapejs }}',
+    canManage: {{ vet_profile.can_manage_doctors|yesno:"true,false" }},
+    csrfToken: '{{ csrf_token }}',
+    doctors: [
+      {% for doctor in doctors %}
+      {
+        id: {{ doctor.id }},
+        name: '{{ doctor.user.get_full_name|default:doctor.user.username|escapejs }}',
+        email: '{{ doctor.user.email|escapejs }}',
+        phone: '{{ doctor.user.profile.phone_number|default:""|escapejs }}',
+        specialization: '{{ doctor.specialization|default:""|escapejs }}',
+        yearsOfExperience: {{ doctor.years_of_experience|default:0 }},
+        bio: '{{ doctor.bio|default:""|escapejs }}',
+        vetLicenseNumber: '{{ doctor.vet_license_number|default:""|escapejs }}',
+        isActive: {{ doctor.is_active|yesno:"true,false" }},
+        isVerified: {{ doctor.license_verified_with_moa|yesno:"true,false" }},
+        isAdmin: {{ doctor.is_clinic_admin|yesno:"true,false" }},
+        createdAt: '{{ doctor.created_at|date:"Y-m-d" }}'
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ],
+    urls: {
+      toggleDoctor: '{% url "toggle_doctor_status" 0 %}'.replace('0', '{id}'),
+      editDoctor: '{% url "edit_doctor" 0 %}'.replace('0', '{id}'),
+      manageSchedules: '{% url "schedule_list" %}?doctor_id={id}'
+    }
+  };
+  
+  // 顯示訊息
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == 'success' %}
+        showSuccessMessage('{{ message|escapejs }}');
+      {% elif message.tags == 'error' %}
+        showErrorMessage('{{ message|escapejs }}');
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  
+  // 初始化醫師管理系統
+  initializeDoctorManagement();
+});
+</script>
+{% endblock %}

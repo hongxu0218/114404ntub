@@ -1,0 +1,850 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}建立排班 - {{ clinic.clinic_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/vet_pages/schedule-create.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="schedule-create-container">
+    <!-- 頁面標題 -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="breadcrumb">
+                <a href="{% url 'schedule_dashboard' %}">排班管理</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>建立排班</span>
+            </div>
+            
+            <div class="title-section">
+                <h1>
+                    <i class="fas fa-calendar-plus"></i>
+                    建立新排班
+                </h1>
+                {% if preselected_doctor %}
+                    <p class="subtitle">為 {{ preselected_doctor.user.get_full_name }} 設定工作排班</p>
+                {% elif is_team_mode and is_admin and available_doctors.count > 1 %}
+                    <p class="subtitle">為診所獸醫師設定工作排班</p>
+                {% else %}
+                    <p class="subtitle">為 {{ vet_doctor.user.get_full_name }} 設定工作排班</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 排班建立表單 -->
+    <form method="post" id="scheduleForm" class="schedule-form">
+        {% csrf_token %}
+        
+        <!-- 基本資訊 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-info-circle"></i>
+                    基本資訊
+                </h2>
+            </div>
+            
+            <div class="form-grid">
+                {% if is_team_mode and is_admin and available_doctors.count > 1 %}
+                <div class="form-group">
+                    <label for="target_doctor" class="required">選擇醫師</label>
+                    <select id="target_doctor" name="target_doctor" class="form-control" required>
+                        <option value="">請選擇醫師</option>
+                        {% for doctor in available_doctors %}
+                        <option value="{{ doctor.id }}"
+                                {% if preselected_doctor and doctor.id == preselected_doctor.id %}selected
+                                {% elif not preselected_doctor and doctor.id == vet_doctor.id %}selected
+                                {% endif %}>
+                            {{ doctor.user.get_full_name }}{% if doctor.specialization %} - {{ doctor.specialization }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">選擇要設定排班的醫師</small>
+                </div>
+                {% else %}
+                <input type="hidden" name="target_doctor" value="{{ vet_doctor.id }}">
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="title" class="required">排班名稱</label>
+                    <input type="text"
+                           id="title"
+                           name="title"
+                           class="form-control"
+                           placeholder="例如：週一至週五常規門診"
+                           required>
+                    <small class="form-text">建議使用清楚描述的名稱</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="schedule_type">排班類型</label>
+                    <select id="schedule_type" name="schedule_type" class="form-control">
+                        {% for value, display in schedule_types %}
+                        <option value="{{ value }}" {% if value == 'regular' %}selected{% endif %}>
+                            {{ display }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="start_date" class="required">開始日期</label>
+                    <input type="date" 
+                           id="start_date" 
+                           name="start_date" 
+                           class="form-control" 
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="end_date">結束日期</label>
+                    <input type="date" 
+                           id="end_date" 
+                           name="end_date" 
+                           class="form-control">
+                    <small class="form-text">留空表示持續有效</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工作日設定 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-calendar-week"></i>
+                    工作日設定
+                </h2>
+            </div>
+            
+            <div class="weekdays-selection">
+                {% for day_num, day_name in weekdays %}
+                <div class="weekday-item">
+                    <input type="checkbox" 
+                           id="weekday_{{ day_num }}" 
+                           name="weekday_{{ day_num }}" 
+                           value="{{ day_num }}"
+                           {% if day_num < 5 %}checked{% endif %}>
+                    <label for="weekday_{{ day_num }}" class="weekday-label">
+                        <span class="weekday-name">{{ day_name }}</span>
+                        <i class="fas fa-check"></i>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="quick-select-buttons">
+                <button type="button" class="btn btn-outline" onclick="selectWeekdays([0,1,2,3,4])">
+                    <i class="fas fa-business-time"></i>
+                    週一至週五
+                </button>
+                <button type="button" class="btn btn-outline" onclick="selectWeekdays([0,1,2,3,4,5])">
+                    <i class="fas fa-calendar-alt"></i>
+                    週一至週六
+                </button>
+                <button type="button" class="btn btn-outline" onclick="selectWeekdays([0,1,2,3,4,5,6])">
+                    <i class="fas fa-calendar"></i>
+                    全週
+                </button>
+                <button type="button" class="btn btn-outline" onclick="selectWeekdays([])">
+                    <i class="fas fa-times"></i>
+                    清除全部
+                </button>
+            </div>
+        </div>
+
+        <!-- 時段設定 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-clock"></i>
+                    時段設定
+                </h2>
+                <p class="section-description">為每個工作日設定具體的工作時段</p>
+            </div>
+            
+            <!-- 批量時段設定面板 -->
+            <div class="batch-time-panel" id="batchTimePanel">
+                <div class="panel-header">
+                    <h3>
+                        <i class="fas fa-magic"></i>
+                        批量時段設定
+                    </h3>
+                    <p>選擇常用時段模板，一鍵套用到多個工作日</p>
+                </div>
+                
+                <div class="batch-controls">
+                    <!-- 時段模板選擇 -->
+                    <div class="template-selection">
+                        <label>選擇時段模板：</label>
+                        <div class="template-buttons">
+                            <button type="button" class="template-btn" data-template="full-day">
+                                <i class="fas fa-sun"></i>
+                                <span>全日門診</span>
+                            </button>
+                            <button type="button" class="template-btn" data-template="morning-only">
+                                <i class="fas fa-cloud-sun"></i>
+                                <span>上午時段</span>
+                            </button>
+                            <button type="button" class="template-btn" data-template="afternoon-only">
+                                <i class="fas fa-sun"></i>
+                                <span>下午時段</span>
+                            </button>
+                            <button type="button" class="template-btn" data-template="evening">
+                                <i class="fas fa-moon"></i>
+                                <span>晚間時段</span>
+                            </button>
+                            <button type="button" class="template-btn" data-template="custom">
+                                <i class="fas fa-edit"></i>
+                                <span>自訂時段</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 自訂時段設定 -->
+                    <div class="custom-template" id="customTemplate" style="display: none;">
+                        <div class="custom-slots">
+                            <div class="custom-slot">
+                                <label>時段 1：</label>
+                                <input type="time" id="customStart1" value="09:00">
+                                <span>到</span>
+                                <input type="time" id="customEnd1" value="17:00">
+                                <button type="button" class="btn-sm btn-outline" onclick="removeCustomSlot(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="addCustomSlot()">
+                            <i class="fas fa-plus"></i>
+                            新增時段
+                        </button>
+                    </div>
+                    
+                    <!-- 套用目標選擇 -->
+                    <div class="apply-targets">
+                        <label>套用到：</label>
+                        <div class="target-buttons">
+                            <button type="button" class="apply-btn" onclick="applyToSelectedDays()">
+                                <i class="fas fa-check-square"></i>
+                                已選工作日
+                            </button>
+                            <button type="button" class="apply-btn" onclick="applyToSpecificDays([0,1,2,3,4])">
+                                <i class="fas fa-business-time"></i>
+                                週一至週五
+                            </button>
+                            <button type="button" class="apply-btn" onclick="applyToSpecificDays([5,6])">
+                                <i class="fas fa-calendar-week"></i>
+                                週末
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 套用選項 -->
+                    <div class="apply-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="replaceExisting" checked>
+                            <span>替換現有時段</span>
+                            <small>（不勾選則保留現有時段並新增）</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="time-slots-container" id="timeSlotsContainer">
+                <!-- 動態生成的時段設定區域 -->
+            </div>
+        </div>
+
+        <!-- 預約設定 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-user-clock"></i>
+                    預約設定
+                </h2>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="appointment_duration">預約時長 (分鐘)</label>
+                    <select id="appointment_duration" name="appointment_duration" class="form-control">
+                        <option value="15">15分鐘</option>
+                        <option value="20">20分鐘</option>
+                        <option value="30" selected>30分鐘</option>
+                        <option value="45">45分鐘</option>
+                        <option value="60">60分鐘</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_appointments_per_slot">每時段最大預約數</label>
+                    <input type="number" 
+                           id="max_appointments_per_slot" 
+                           name="max_appointments_per_slot" 
+                           class="form-control" 
+                           min="1" 
+                           max="10" 
+                           value="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="buffer_time">緩衝時間 (分鐘)</label>
+                    <select id="buffer_time" name="buffer_time" class="form-control">
+                        <option value="0" selected>無緩衝</option>
+                        <option value="5">5分鐘</option>
+                        <option value="10">10分鐘</option>
+                        <option value="15">15分鐘</option>
+                    </select>
+                    <small class="form-text">每個預約間的休息時間</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 備註 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-sticky-note"></i>
+                    備註資訊
+                </h2>
+            </div>
+            
+            <div class="form-single">
+                <div class="form-group">
+                    <label for="notes">備註</label>
+                    <textarea id="notes" 
+                              name="notes" 
+                              class="form-control" 
+                              rows="4" 
+                              placeholder="其他重要資訊或特殊說明..."></textarea>
+                    <small class="form-text">可以記錄特殊休假、臨時調整或其他注意事項</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 預覽區域 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-eye"></i>
+                    排班預覽
+                </h2>
+            </div>
+            
+            <div class="schedule-preview" id="schedulePreview">
+                <div class="preview-placeholder">
+                    <i class="fas fa-calendar-day"></i>
+                    <p>請先選擇工作日和設定時段，這裡將顯示排班預覽</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表單操作按鈕 -->
+        <div class="form-actions">
+            <div class="actions-left">
+                <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                    <i class="fas fa-save"></i>
+                    儲存草稿
+                </button>
+            </div>
+            
+            <div class="actions-right">
+                <a href="{% url 'schedule_dashboard' %}" class="btn btn-outline">
+                    <i class="fas fa-times"></i>
+                    取消
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i>
+                    建立排班
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- 時段設定模板 -->
+<template id="timeSlotTemplate">
+    <div class="time-slot-day">
+        <div class="day-header">
+            <h3 class="day-name"></h3>
+            <button type="button" class="btn btn-sm btn-outline">
+                <i class="fas fa-plus"></i>
+                新增時段
+            </button>
+        </div>
+        
+        <div class="time-slots" data-day=""></div>
+    </div>
+</template>
+
+<template id="timeSlotItemTemplate">
+    <div class="time-slot-item">
+        <div class="time-inputs">
+            <div class="input-group">
+                <label>開始時間</label>
+                <input type="time" class="form-control start-time" required>
+            </div>
+            <div class="time-separator">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+            <div class="input-group">
+                <label>結束時間</label>
+                <input type="time" class="form-control end-time" required>
+            </div>
+        </div>
+        
+        <div class="slot-actions">
+            <button type="button" class="btn-icon btn-danger" onclick="removeTimeSlot(this)" title="刪除時段">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+</template>
+
+<!-- 衝突警告模態框 -->
+<div class="modal fade" id="conflictModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    排班衝突警告
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="conflictDetails"></div>
+                <div class="mt-3">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        您仍可以建立此排班，但建議先解決衝突以避免預約問題。
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    返回修改
+                </button>
+                <button type="button" class="btn btn-warning" onclick="submitWithConflicts()">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    仍要建立
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vet_pages/schedule-create.js' %}"></script>
+<script>
+// 初始化頁面
+document.addEventListener('DOMContentLoaded', function() {
+    initScheduleCreatePage();
+    initBatchTimeFeature();
+    
+    // 設定預設日期為今天
+    document.getElementById('start_date').value = new Date().toISOString().split('T')[0];
+});
+
+// 快速選擇工作日
+function selectWeekdays(days) {
+    // 清除所有選項
+    selectedWeekdays.clear();
+    document.querySelectorAll('.weekdays-selection input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    // 選擇指定的天數
+    days.forEach(day => {
+        const checkbox = document.getElementById(`weekday_${day}`);
+        if (checkbox) {
+            checkbox.checked = true;
+            selectedWeekdays.add(day);
+            
+            // 初始化該日的時段資料
+            if (!timeSlotData[day]) {
+                timeSlotData[day] = [];
+            }
+        }
+    });
+    
+    // 更新時段設定區域
+    updateTimeSlotsContainer();
+    
+    // 更新預覽
+    updatePreview();
+    
+}
+
+
+// 移除時段
+function removeTimeSlot(button) {
+    const slotItem = button.closest('.time-slot-item');
+    slotItem.remove();
+    updatePreview();
+}
+
+// 批量時段設定功能
+// selectedTemplate 和 customSlotCounter 變量已在 schedule-create.js 中聲明
+
+// 初始化批量時段設定
+function initBatchTimeFeature() {
+    // 模板選擇事件
+    document.querySelectorAll('.template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 清除其他選中狀態
+            document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('selected'));
+            
+            // 設定當前選中
+            this.classList.add('selected');
+            selectedTemplate = this.dataset.template;
+            
+            // 顯示/隱藏自訂時段面板
+            const customPanel = document.getElementById('customTemplate');
+            if (selectedTemplate === 'custom') {
+                customPanel.style.display = 'block';
+            } else {
+                customPanel.style.display = 'none';
+            }
+        });
+    });
+}
+
+// 取得選定的時段模板
+function getSelectedTimeSlots() {
+    if (!selectedTemplate) {
+        alert('請先選擇時段模板');
+        return null;
+    }
+    
+    const templates = {
+        'full-day': [
+            { start: '09:00', end: '17:00' }
+        ],
+        'morning-only': [
+            { start: '08:30', end: '12:00' }
+        ],
+        'afternoon-only': [
+            { start: '14:00', end: '18:00' }
+        ],
+        'evening': [
+            { start: '18:00', end: '21:00' }
+        ],
+        'custom': getCustomTimeSlots()
+    };
+    
+    return templates[selectedTemplate];
+}
+
+// 取得自訂時段
+function getCustomTimeSlots() {
+    const slots = [];
+    document.querySelectorAll('.custom-slot').forEach(slot => {
+        const start = slot.querySelector('input[type="time"]:first-of-type').value;
+        const end = slot.querySelector('input[type="time"]:last-of-type').value;
+        
+        if (start && end && start < end) {
+            slots.push({ start, end });
+        }
+    });
+    
+    return slots.length > 0 ? slots : null;
+}
+
+// 新增自訂時段
+function addCustomSlot() {
+    customSlotCounter++;
+    const customSlots = document.querySelector('.custom-slots');
+    const newSlot = document.createElement('div');
+    newSlot.className = 'custom-slot';
+    newSlot.innerHTML = `
+        <label>時段 ${customSlotCounter}：</label>
+        <input type="time" value="09:00">
+        <span>到</span>
+        <input type="time" value="17:00">
+        <button type="button" class="btn-sm btn-outline" onclick="removeCustomSlot(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    customSlots.appendChild(newSlot);
+}
+
+// 移除自訂時段
+function removeCustomSlot(button) {
+    const slot = button.closest('.custom-slot');
+    const customSlots = document.querySelector('.custom-slots');
+    
+    if (customSlots.children.length > 1) {
+        slot.remove();
+    } else {
+        alert('至少需要保留一個時段');
+    }
+}
+
+// 套用到已選工作日
+function applyToSelectedDays() {
+    const slots = getSelectedTimeSlots();
+    if (!slots) return;
+    
+    const selectedDays = Array.from(selectedWeekdays);
+    if (selectedDays.length === 0) {
+        alert('請先選擇工作日');
+        return;
+    }
+    
+    applyTimeSlotsTodays(slots, selectedDays);
+}
+
+// 套用到指定工作日 (修正版 - 保存複選框狀態)
+function applyToSpecificDays(days) {
+    
+    // *** 關鍵修正：立即保存複選框狀態 ***
+    const replaceCheckbox = document.getElementById('replaceExisting');
+    
+    if (replaceCheckbox) {
+    }
+    
+    const shouldReplace = replaceCheckbox ? replaceCheckbox.checked : false;
+    
+    const slots = getSelectedTimeSlots();
+    if (!slots) {
+        return;
+    }
+    
+    
+    // 確保這些天數被選中
+    days.forEach(day => {
+        const checkbox = document.getElementById(`weekday_${day}`);
+        if (checkbox) {
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                selectedWeekdays.add(day);
+            }
+            
+            // 初始化該日的時段資料
+            if (!timeSlotData[day]) {
+                timeSlotData[day] = [];
+            }
+        } else {
+        }
+    });
+    
+    
+    // 不要調用 updateTimeSlotsContainer()，因為它會清空現有時段
+    // updateTimeSlotsContainer();
+    
+    // 只確保目標日期的容器存在（如果不存在才創建）
+    days.forEach(day => {
+        const dayContainer = document.querySelector(`[data-day="${day}"]`);
+        if (!dayContainer) {
+            updateTimeSlotsContainer();
+            return; // 如果需要重建，就重建後跳出
+        }
+    });
+    
+    // 短暫延遲確保容器更新完成，然後直接使用已選工作日的邏輯
+    setTimeout(() => {
+        applyTimeSlotsTodays(slots, days);
+    }, 100);
+}
+
+// 新函數：使用保存的複選框狀態執行時段套用
+function applyTimeSlotsWithSavedState(slots, days, savedReplaceState) {
+    
+    days.forEach(day => {
+        const dayContainer = document.querySelector(`[data-day="${day}"]`);
+        if (!dayContainer) {
+            return;
+        }
+        
+        
+        // 使用保存的狀態決定是否替換
+        if (savedReplaceState) {
+            // 移除所有現有時段
+            const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
+            existingSlots.forEach(slot => slot.remove());
+            
+            // 清空時段資料
+            if (timeSlotData[day]) {
+                timeSlotData[day] = [];
+            }
+        } else {
+            const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
+        }
+        
+        // 添加新時段
+        slots.forEach(slot => {
+            addTimeSlotToDay(day, slot.start, slot.end);
+        });
+    });
+    
+    // 更新預覽
+    setTimeout(() => {
+        updatePreview();
+    }, 100);
+    
+    // 顯示成功訊息
+    const dayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+    const dayNamesStr = days.map(d => dayNames[d]).join('、');
+    const action = savedReplaceState ? '替換' : '新增';
+    showToast(`已${action}時段到 ${dayNamesStr}`, 'success');
+}
+
+
+// 套用時段到指定天數
+function applyTimeSlotsTodays(slots, days) {
+    const replaceCheckbox = document.getElementById('replaceExisting');
+    const replaceExisting = replaceCheckbox ? replaceCheckbox.checked : false;
+    
+    // 調試信息
+    
+    days.forEach(day => {
+        const dayContainer = document.querySelector(`[data-day="${day}"]`);
+        if (!dayContainer) {
+            return;
+        }
+        
+        
+        // 如果要替換現有時段，先清空所有時段
+        if (replaceExisting) {
+            // 移除所有現有時段
+            const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
+            existingSlots.forEach(slot => slot.remove());
+            
+            // 清空時段資料
+            if (timeSlotData[day]) {
+                timeSlotData[day] = [];
+            }
+        } else {
+            const existingSlots = dayContainer.querySelectorAll('.time-slot-item');
+        }
+        
+        // 添加新時段
+        slots.forEach(slot => {
+            addTimeSlotToDay(day, slot.start, slot.end);
+        });
+    });
+    
+    // 更新預覽
+    setTimeout(() => {
+        updatePreview();
+    }, 100);
+    
+    // 顯示成功訊息
+    const dayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+    const dayNamesStr = days.map(d => dayNames[d]).join('、');
+    const action = replaceExisting ? '替換' : '新增';
+    showToast(`已${action}時段到 ${dayNamesStr}`, 'success');
+}
+
+// 添加時段到指定天數
+function addTimeSlotToDay(dayValue, startTime, endTime) {
+    const dayContainer = document.querySelector(`[data-day="${dayValue}"]`);
+    if (!dayContainer) return;
+    
+    const template = document.getElementById('timeSlotItemTemplate');
+    const newSlot = template.content.cloneNode(true);
+    
+    // 設定時間值
+    const startInput = newSlot.querySelector('.start-time');
+    const endInput = newSlot.querySelector('.end-time');
+    startInput.value = startTime;
+    endInput.value = endTime;
+    
+    // 綁定完整的事件
+    startInput.addEventListener('change', handleTimeSlotChange);
+    startInput.addEventListener('input', handleTimeSlotChange);
+    endInput.addEventListener('change', handleTimeSlotChange);
+    endInput.addEventListener('input', handleTimeSlotChange);
+    
+    // 綁定刪除按鈕事件
+    const deleteButton = newSlot.querySelector('.btn-danger');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', function() {
+            removeTimeSlot(this);
+        });
+    }
+    
+    dayContainer.appendChild(newSlot);
+    
+    // 更新時段資料
+    updateTimeSlotData(dayValue);
+    
+    // 添加動畫效果
+    const addedSlot = dayContainer.lastElementChild;
+    if (addedSlot) {
+        addedSlot.style.opacity = '0';
+        addedSlot.style.transform = 'translateY(10px)';
+        
+        setTimeout(() => {
+            addedSlot.style.transition = 'all 0.3s ease';
+            addedSlot.style.opacity = '1';
+            addedSlot.style.transform = 'translateY(0)';
+        }, 50);
+    }
+}
+
+// 儲存草稿
+function saveDraft() {
+    const formData = new FormData(document.getElementById('scheduleForm'));
+    formData.set('status', 'draft');
+    
+    fetch('', {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('草稿已儲存', 'success');
+        } else {
+            showToast(data.message || '儲存失敗', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('網路錯誤', 'error');
+    });
+}
+
+// 提交含衝突的排班
+function submitWithConflicts() {
+    const form = document.getElementById('scheduleForm');
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'ignore_conflicts';
+    hiddenInput.value = '1';
+    form.appendChild(hiddenInput);
+    
+    form.submit();
+}
+
+// 工具函數
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function showToast(message, type = 'info') {
+    // 簡單的 toast 通知實作
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    
+    // 添加樣式和邏輯...
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

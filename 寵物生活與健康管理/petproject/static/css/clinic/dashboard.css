@@ -1,0 +1,1502 @@
+/* static/css/clinic/dashboard.css */
+
+/* ========== 繼承基礎 CSS 變數 ========== */
+:root {
+  /* 主色調 */
+  --primary-color: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --secondary-color: #64748b;
+  
+  /* 狀態顏色 */
+  --success-color: #10b981;
+  --success-light: #34d399;
+  --warning-color: #f59e0b;
+  --warning-light: #fbbf24;
+  --danger-color: #ef4444;
+  --danger-light: #f87171;
+  --info-color: #06b6d4;
+  --info-light: #22d3ee;
+  
+  /* Dashboard 專用顏色 */
+  --dashboard-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --card-shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* 灰色調 */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* 間距與圓角 */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* 陰影與過渡 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* ========== 主容器 ========== */
+.dashboard-container {
+  background: var(--dashboard-bg);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+/* ========== 頁面標題區域（診所資訊） ========== */
+.page-header-modern {
+  background: linear-gradient(135deg, #ffffff 0%, var(--gray-50) 100%);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--info-color), var(--success-color));
+}
+
+.page-title-modern {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--spacing-lg);
+}
+
+.clinic-info-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.clinic-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+.clinic-details {
+  flex: 1;
+}
+
+.clinic-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.verified-badge {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.clinic-meta {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.admin-info {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.quick-actions {
+  text-align: right;
+}
+
+/* ========== 操作按鈕（繼承樣式） ========== */
+.action-buttons-modern {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-modern {
+  position: relative;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-primary-modern {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-secondary-modern {
+  background: linear-gradient(135deg, var(--info-color), var(--info-light));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-outline-modern {
+  background: white;
+  color: var(--gray-700);
+  border: 2px solid var(--gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-outline-modern:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+/* ========== 統計數據區域 ========== */
+.stats-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  transition: transform var(--transition-normal);
+}
+
+.stat-card.stat-primary::before {
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+}
+
+.stat-card.stat-success::before {
+  background: linear-gradient(90deg, var(--success-color), var(--success-light));
+}
+
+.stat-card.stat-warning::before {
+  background: linear-gradient(90deg, var(--warning-color), var(--warning-light));
+}
+
+.stat-card.stat-info::before {
+  background: linear-gradient(90deg, var(--info-color), var(--info-light));
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.stat-card:hover::before {
+  transform: scaleY(2);
+}
+
+.stat-card-body {
+  padding: var(--spacing-xl);
+}
+
+.stat-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--gray-800);
+  margin: 0 0 var(--spacing-sm) 0;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin: 0 0 var(--spacing-sm) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-change {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.stat-change.positive {
+  color: var(--success-color);
+}
+
+.stat-change.negative {
+  color: var(--danger-color);
+}
+
+.stat-icon {
+  font-size: 3rem;
+  opacity: 0.1;
+  color: var(--gray-800);
+}
+
+/* ========== 主要功能區域 ========== */
+.main-content-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.management-section {
+  background: var(--card-bg);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--gray-200);
+  margin-bottom: var(--spacing-2xl);
+}
+
+/* ========== 功能卡片 ========== */
+.feature-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(37, 99, 235, 0.02) 100%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--primary-color);
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+/* 特殊的設定卡片樣式 */
+.feature-card.settings-card {
+  position: relative;
+}
+
+.feature-card.settings-card:hover {
+  border-color: var(--info-color);
+  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15);
+}
+
+.feature-card.settings-card::after {
+  content: '點擊進入設定';
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--info-color);
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.feature-card.settings-card:hover::after {
+  opacity: 1;
+}
+
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  margin-bottom: var(--spacing-lg);
+}
+
+.feature-icon.doctor-icon {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+
+.feature-icon.schedule-icon {
+  background: linear-gradient(135deg, var(--success-color), var(--success-light));
+}
+
+.feature-icon.appointment-icon {
+  background: linear-gradient(135deg, var(--info-color), var(--info-light));
+}
+
+.feature-icon.settings-icon {
+  background: linear-gradient(135deg, var(--gray-600), var(--gray-500));
+}
+
+.feature-content {
+  flex: 1;
+  margin-bottom: var(--spacing-lg);
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-sm);
+}
+
+.feature-description {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-md);
+}
+
+.feature-stats {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.stat-item {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.feature-actions {
+  margin-top: auto;
+}
+
+.btn-feature {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 2px solid var(--gray-200);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all var(--transition-fast);
+}
+
+.btn-feature.btn-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-feature.btn-success {
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.btn-feature.btn-info {
+  border-color: var(--info-color);
+  color: var(--info-color);
+}
+
+.btn-feature.btn-secondary {
+  border-color: var(--gray-400);
+  color: var(--gray-600);
+}
+
+.btn-feature:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+
+.btn-feature.btn-primary:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-feature.btn-success:hover {
+  background: var(--success-color);
+  color: white;
+}
+
+.btn-feature.btn-info:hover {
+  background: var(--info-color);
+  color: white;
+}
+
+.btn-feature.btn-secondary:hover {
+  background: var(--gray-500);
+  color: white;
+}
+
+/* ========== 近期預約區域 ========== */
+.recent-appointments-section {
+  background: var(--card-bg);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--gray-200);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.btn-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  transition: all var(--transition-fast);
+}
+
+.btn-link:hover {
+  color: var(--primary-dark);
+  text-decoration: none;
+  transform: translateX(2px);
+}
+
+.appointments-card {
+  background: var(--gray-50);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+
+.appointments-header {
+  background: white;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.date-selector {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.date-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.date-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.date-btn:hover:not(.active) {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+}
+
+.appointments-body {
+  padding: var(--spacing-lg);
+  min-height: 280px;
+  background: white;
+}
+
+.loading-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--gray-500);
+  gap: var(--spacing-md);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--gray-300);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========== 右側快速資訊 ========== */
+.clinic-status-card,
+.quick-actions-card,
+.tips-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--gray-200);
+  margin-bottom: var(--spacing-xl);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* 診所狀態 */
+.status-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.status-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+}
+
+.status-icon.online {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+}
+
+.status-content {
+  flex: 1;
+}
+
+.status-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.status-value {
+  font-weight: 600;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray-400);
+}
+
+.status-indicator.online {
+  background: var(--success-color);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* 快速操作 */
+.quick-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.quick-action-btn {
+  background: none;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  text-align: left;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.02);
+  transform: translateX(2px);
+}
+
+.action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+  transition: all var(--transition-fast);
+}
+
+.quick-action-btn:hover .action-icon {
+  background: var(--primary-color);
+  color: white;
+}
+
+.action-content {
+  flex: 1;
+}
+
+.action-title {
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-xs);
+}
+
+.action-desc {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+/* 使用提示 */
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.tip-item {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.tip-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tip-content {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+/* ========== Modal 對話框 ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-container {
+  background: white;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  transition: transform var(--transition-normal);
+}
+
+.modal-overlay.show .modal-container {
+  transform: scale(1);
+}
+
+.modal-header {
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--gray-400);
+  transition: color var(--transition-fast);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+}
+
+.modal-close:hover {
+  color: var(--gray-600);
+  background: var(--gray-100);
+}
+
+/* 標籤頁容器 */
+.modal-tabs-wrapper {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+
+.settings-tabs {
+  display: flex;
+  padding: 0 var(--spacing-xl);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  color: var(--gray-600);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  background: white;
+}
+
+.tab-btn:hover:not(.active) {
+  color: var(--gray-800);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 可滾動的內容區域 */
+.modal-body-scrollable {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.tab-content {
+  display: none;
+  padding: var(--spacing-xl);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-footer {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  flex-shrink: 0;
+  background: var(--gray-50);
+}
+
+/* ========== 表單樣式 ========== */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+  background: var(--gray-50);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control[readonly] {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  cursor: not-allowed;
+}
+
+.form-text {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ========== 通知設定樣式 ========== */
+.notification-settings {
+  max-width: 600px;
+}
+
+.setting-group {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.setting-group h6 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.setting-item {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--gray-200);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.toggle-label input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: var(--gray-300);
+  border-radius: 12px;
+  transition: all var(--transition-normal);
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label input:checked + .toggle-slider {
+  background: var(--success-color);
+}
+
+.toggle-label input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+.setting-text {
+  font-weight: 600;
+  color: var(--gray-800);
+  flex: 1;
+}
+
+.setting-desc {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ========== 預約項目樣式 ========== */
+.appointment-item {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.appointment-item:last-child {
+  margin-bottom: 0;
+}
+
+.appointment-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  background: white;
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.appointment-time {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.appointment-time i {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.appointment-status {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.appointment-status.confirmed {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.appointment-status.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.appointment-status.completed {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--gray-600);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.appointment-status.cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.appointment-info {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.appointment-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+.appointment-row:last-child {
+  margin-bottom: 0;
+}
+
+.appointment-row i {
+  width: 16px;
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.owner-pet-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.owner-name {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.pet-name {
+  color: var(--gray-600);
+}
+
+.info-separator {
+  color: var(--gray-400);
+  margin: 0 var(--spacing-xs);
+}
+
+.doctor-info {
+  color: var(--gray-600);
+}
+
+.reason-info {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.empty-appointments {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  color: var(--gray-500);
+}
+
+.empty-appointments i {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.3;
+  color: var(--gray-400);
+}
+
+.empty-appointments p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--gray-500);
+}
+
+/* ========== 訊息提示系統 ========== */
+.message-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  max-width: 400px;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--gray-200);
+  z-index: 1050;
+  animation: slideInRight 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+}
+
+.message-toast.message-success {
+  border-left: 4px solid var(--success-color);
+}
+
+.message-toast.message-error {
+  border-left: 4px solid var(--danger-color);
+}
+
+.message-toast.message-warning {
+  border-left: 4px solid var(--warning-color);
+}
+
+.message-toast.message-info {
+  border-left: 4px solid var(--info-color);
+}
+
+.message-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.message-content i {
+  font-size: 1.25rem;
+}
+
+.message-toast.message-success .message-content i {
+  color: var(--success-color);
+}
+
+.message-toast.message-error .message-content i {
+  color: var(--danger-color);
+}
+
+.message-toast.message-warning .message-content i {
+  color: var(--warning-color);
+}
+
+.message-toast.message-info .message-content i {
+  color: var(--info-color);
+}
+
+.message-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--gray-400);
+  padding: var(--spacing-xs);
+  margin-left: var(--spacing-md);
+}
+
+.message-close:hover {
+  color: var(--gray-600);
+}
+
+.message-toast.fade-out {
+  animation: slideOutRight 0.3s ease-out forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 1200px) {
+  .dashboard-container {
+    padding: var(--spacing-md);
+  }
+  
+  .page-header-modern {
+    padding: var(--spacing-xl);
+  }
+  
+  .management-section {
+    padding: var(--spacing-xl);
+  }
+  
+  .modal-container {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title-modern {
+    font-size: 2rem;
+  }
+  
+  .clinic-info-header {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-md);
+  }
+  
+  .clinic-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .action-buttons-modern {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .clinic-meta {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+  
+  .date-selector {
+    flex-wrap: wrap;
+  }
+  
+  .quick-actions {
+    text-align: center;
+  }
+  
+  .settings-tabs {
+    flex-direction: column;
+    padding: 0;
+  }
+  
+  .tab-btn {
+    text-align: center;
+    border-bottom: none;
+    border-right: 3px solid transparent;
+  }
+  
+  .tab-btn.active {
+    border-right-color: var(--primary-color);
+    border-bottom-color: transparent;
+  }
+  
+  .appointment-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+  
+  .appointment-time {
+    font-size: 1rem;
+  }
+  
+  .appointment-info {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title-modern {
+    font-size: 1.75rem;
+  }
+  
+  .modal-container {
+    width: 98%;
+    margin: var(--spacing-sm);
+    max-height: 95vh;
+  }
+  
+  .modal-header,
+  .modal-footer {
+    padding: var(--spacing-lg);
+  }
+  
+  .tab-content {
+    padding: var(--spacing-lg);
+  }
+  
+  .feature-card {
+    padding: var(--spacing-lg);
+  }
+  
+  .feature-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+  
+  .appointments-body {
+    padding: var(--spacing-md);
+  }
+  
+  .appointment-item {
+    padding: var(--spacing-md);
+  }
+  
+  .date-btn {
+    font-size: 0.8rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+  
+  .message-toast {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}找不到頁面 - 毛日好{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-lg-6 col-md-8 text-center">
+      <div class="error-card p-5">
+        <!-- 錯誤圖示 -->
+        <div class="error-icon mb-4">
+          <i class="bi bi-question-circle" style="font-size: 5rem; color: var(--info-color);"></i>
+        </div>
+        
+        <!-- 錯誤代碼 -->
+        <h1 class="error-code mb-3" style="font-size: 4rem; font-weight: 700; color: var(--primary-orange);">404</h1>
+        
+        <!-- 錯誤標題 -->
+        <h2 class="error-title mb-3" style="color: var(--text-dark);">
+          <i class="bi bi-search me-2"></i>
+          找不到頁面
+        </h2>
+        
+        <!-- 錯誤描述 -->
+        <div class="error-description mb-4">
+          <p class="lead text-muted">哎呀！您要找的頁面好像跑丟了 🐕</p>
+          <p class="text-muted">
+            可能的原因：
+          </p>
+          <ul class="list-unstyled text-muted">
+            <li><i class="bi bi-dot text-info"></i> 網址輸入錯誤</li>
+            <li><i class="bi bi-dot text-info"></i> 頁面已被移動或刪除</li>
+            <li><i class="bi bi-dot text-info"></i> 連結已過期</li>
+          </ul>
+        </div>
+      
+        
+        <!-- 操作按鈕 -->
+        <div class="error-actions mb-4">
+          <a href="{% url 'home' %}" class="btn btn-primary-custom btn-lg me-3">
+            <i class="bi bi-house-door me-2"></i>
+            回到首頁
+          </a>
+          
+          <button onclick="history.back()" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            上一頁
+          </button>
+        </div>
+
+<style>
+.error-card {
+  background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px var(--shadow-light);
+  border: 1px solid var(--border-light);
+}
+
+.error-icon {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
+}
+
+.quick-links .btn {
+  font-size: 0.9rem;
+  padding: 0.5rem;
+}
+
+.min-vh-100 {
+  min-height: calc(100vh - 200px);
+}
+</style>
+{% endblock %}

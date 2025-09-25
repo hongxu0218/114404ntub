@@ -1,0 +1,1708 @@
+/* 健康紀錄 - 飼主專用現代化設計 */
+
+:root {
+    /* 健康管理專用色彩系統 */
+    --health-primary: #4caf50;      /* 健康綠 */
+    --health-secondary: #81c784;    /* 淺健康綠 */
+    --health-accent: #2196f3;       /* 藍色強調 */
+    --health-warm: #ff9800;         /* 溫暖橘色 */
+    --health-warning: #ff5722;      /* 警告紅 */
+    
+    /* 專項顏色 */
+    --vaccine-color: #9c27b0;       /* 疫苗紫色 */
+    --deworm-color: #795548;        /* 驅蟲棕色 */
+    --medical-color: #f44336;       /* 醫療紅色 */
+    --daily-color: #607d8b;         /* 日常藍灰色 */
+    --report-color: #3f51b5;        /* 報告深藍色 */
+    
+    /* 數值專用顏色 */
+    --temperature-color: #ff6b35;   /* 體溫橘色 */
+    --weight-color: #6c5ce7;        /* 體重紫色 */
+    --exercise-color: #00b894;      /* 運動綠色 */
+    --medication-color: #e17055;    /* 用藥橘紅色 */
+    --mood-color: #fdcb6e;          /* 情緒黃色 */
+    
+    /* 基礎色彩 */
+    --surface: #ffffff;
+    --background: #fafafa;
+    --card-background: #ffffff;
+    --border: #e0e0e0;
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --text-muted: #9e9e9e;
+    
+    /* 陰影與圓角 */
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+}
+
+/* ===== 主容器 ===== */
+.health-records-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--background) 0%, #e8f5e8 100%);
+    padding: 2rem 0;
+}
+
+.health-records-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* ===== 頁面標題 ===== */
+.health-header {
+    background: var(--card-background);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.health-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.health-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.health-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--health-primary), var(--health-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+}
+
+.health-title h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.health-subtitle {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+}
+
+.health-nav-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pet-filter-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.15);
+    padding: 0.6rem 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.pet-filter-container:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.pet-filter-icon {
+    color: rgba(255,255,255,0.8);
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.pet-filter-container:hover .pet-filter-icon {
+    color: white;
+    transform: scale(1.1);
+}
+
+.pet-filter-select {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-width: 100px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    padding: 0;
+}
+
+.pet-filter-arrow {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.pet-filter-container:hover .pet-filter-arrow {
+    color: rgba(255,255,255,0.9);
+}
+
+.pet-filter-select:focus + .pet-filter-arrow {
+    transform: rotate(180deg);
+}
+
+.pet-filter-select option {
+    background: var(--health-primary, #4caf50);
+    color: white;
+    padding: 8px 12px;
+}
+
+.health-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    color: var(--health-primary);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.health-nav-btn:hover {
+    background: var(--health-primary);
+    color: white;
+    border-color: var(--health-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== 分頁標籤 ===== */
+.health-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.health-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    background: var(--card-background);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.health-tab:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--health-primary);
+}
+
+.health-tab.active {
+    background: var(--health-primary);
+    color: white;
+    border-color: var(--health-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.health-tab-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.health-tab.tab-medical .health-tab-icon { background: var(--medical-color); }
+.health-tab.tab-vaccine .health-tab-icon { background: var(--vaccine-color); }
+.health-tab.tab-deworm .health-tab-icon { background: var(--deworm-color); }
+.health-tab.tab-report .health-tab-icon { background: var(--report-color); }
+.health-tab.tab-daily .health-tab-icon { background: var(--daily-color); }
+
+.health-tab.active .health-tab-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.health-tab-title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.health-tab-count {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    margin: 0;
+}
+
+/* ===== 內容區域 ===== */
+.health-content {
+    background: var(--card-background);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    min-height: 400px;
+}
+
+.health-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.health-content-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.health-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--health-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.health-add-btn:hover {
+    background: var(--health-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== 記錄卡片 ===== */
+.health-records-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.health-record-card {
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.health-record-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    border-color: var(--health-primary);
+}
+
+.health-record-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: var(--health-primary);
+}
+
+.health-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.health-record-info h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.health-record-date {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.health-record-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.health-action-btn {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-secondary);
+}
+
+.health-action-btn:hover {
+    background: var(--health-primary);
+    color: white;
+    border-color: var(--health-primary);
+}
+
+.health-record-content {
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.health-record-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.health-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* ===== 圖表區域 ===== */
+.health-chart-container {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.health-chart-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+    text-align: center;
+}
+
+.health-chart-canvas {
+    max-height: 300px;
+    margin-bottom: 1rem;
+}
+
+.health-chart-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.health-chart-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.health-chart-btn:hover,
+.health-chart-btn.active {
+    background: var(--health-primary);
+    color: white;
+    border-color: var(--health-primary);
+}
+
+/* ===== 空狀態 ===== */
+.health-empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.health-empty-icon {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.health-empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.health-empty-description {
+    margin: 0 0 2rem 0;
+    line-height: 1.6;
+}
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 768px) {
+    .health-records-container {
+        padding: 0 0.5rem;
+    }
+    
+    .health-header-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+    
+    .health-tabs {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .health-tab {
+        padding: 1rem 0.75rem;
+    }
+    
+    .health-title h1 {
+        font-size: 1.8rem;
+    }
+    
+    .health-content {
+        padding: 1.5rem;
+    }
+    
+    .health-content-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .health-tabs {
+        grid-template-columns: 1fr;
+    }
+    
+    .health-nav-buttons {
+        justify-content: center;
+    }
+    
+    .health-record-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ===============================
+   生活記錄專用樣式
+   =============================== */
+
+.daily-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.daily-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--card-background);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 90px;
+    justify-content: center;
+}
+
+.daily-filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--health-primary);
+}
+
+.daily-filter-btn.active {
+    background: var(--health-primary);
+    color: white;
+    border-color: var(--health-primary);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.daily-filter-btn i {
+    font-size: 1.1rem;
+}
+
+.daily-records-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.daily-record-card {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.daily-record-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--health-primary);
+}
+
+.daily-record-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--health-primary), var(--health-secondary));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.daily-record-card:hover::before {
+    opacity: 1;
+}
+
+.daily-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.daily-record-pet {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.daily-pet-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--health-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.daily-pet-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.daily-pet-avatar i {
+    color: white;
+    font-size: 1.2rem;
+}
+
+.daily-pet-info h4 {
+    margin: 0 0 6px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.daily-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.daily-category-diet {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+}
+
+.daily-category-exercise {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+.daily-category-allergen {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+}
+
+.daily-category-temperature {
+    background: rgba(156, 39, 176, 0.1);
+    color: #9c27b0;
+}
+
+.daily-category-weight {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196f3;
+}
+
+.daily-category-medication {
+    background: rgba(225, 112, 85, 0.1);
+    color: #e17055;
+}
+
+.daily-category-mood {
+    background: rgba(253, 203, 110, 0.1);
+    color: #fdcb6e;
+}
+
+.daily-category-other {
+    background: rgba(96, 125, 139, 0.1);
+    color: #607d8b;
+}
+
+.daily-record-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.daily-record-date i {
+    color: var(--health-primary);
+}
+
+.daily-record-content {
+    margin: 16px 0;
+}
+
+.daily-record-content p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.daily-record-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.daily-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    justify-content: center;
+}
+
+.daily-action-btn:hover {
+    background: var(--background);
+}
+
+.edit-daily-btn:hover {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: var(--health-primary);
+    color: var(--health-primary);
+}
+
+.delete-daily-btn:hover {
+    background: rgba(244, 67, 54, 0.1);
+    border-color: #f44336;
+    color: #f44336;
+}
+
+.daily-action-btn i {
+    font-size: 0.9rem;
+}
+
+/* 生活記錄篩選動畫 */
+.daily-record-card.hidden {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+.daily-record-card.show {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+}
+
+/* 響應式設計 - 生活記錄 */
+@media (max-width: 768px) {
+    .daily-records-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .daily-filters {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .daily-filter-btn {
+        min-width: auto;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .daily-filters {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .daily-record-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .daily-record-actions {
+        flex-direction: column;
+    }
+}
+
+/* ===== 數值記錄樣式 ===== */
+.record-value {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-weight: 600;
+}
+
+.record-value i {
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+}
+
+.record-value .value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.record-value .status {
+    margin-left: auto;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* 體溫記錄 */
+.temperature-value {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.30));
+    border-left: 4px solid var(--temperature-color);
+    color: var(--temperature-color);
+}
+
+.temperature-value .status.normal {
+    background: var(--health-primary);
+    color: white;
+}
+
+.temperature-value .status.high {
+    background: var(--health-warning);
+    color: white;
+}
+
+.temperature-value .status.low {
+    background: var(--health-accent);
+    color: white;
+}
+
+/* 體重記錄 */
+.weight-value {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.15), rgba(108, 92, 231, 0.30));
+    border-left: 4px solid var(--weight-color);
+    color: var(--weight-color);
+}
+
+/* 運動記錄 */
+.exercise-value {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.15), rgba(0, 184, 148, 0.30));
+    border-left: 4px solid var(--exercise-color);
+    color: var(--exercise-color);
+}
+
+/* 用藥記錄 */
+.medication-value {
+    background: linear-gradient(135deg, rgba(225, 112, 85, 0.15), rgba(225, 112, 85, 0.30));
+    border-left: 4px solid var(--medication-color);
+    color: var(--medication-color);
+}
+
+.record-text {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+/* ===== 健康數據專用樣式 ===== */
+.record-value.data-only {
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8fffe, #e8f5e8);
+    border: 2px solid var(--health-primary);
+}
+
+.data-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* ===== 生活筆記專用樣式 ===== */
+.record-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f3e5f5, #fce4ec);
+    border-radius: var(--radius);
+    border-left: 4px solid #9c27b0;
+}
+
+.note-label {
+    font-weight: 600;
+    color: #7b1fa2;
+    font-size: 0.9rem;
+}
+
+.note-value {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.record-note i {
+    color: #9c27b0;
+    font-size: 1rem;
+}
+
+/* 篩選按鈕增強 */
+.daily-filter-btn[data-category="temperature"] {
+    background: linear-gradient(135deg, var(--temperature-color), #ff8f65);
+}
+
+.daily-filter-btn[data-category="weight"] {
+    background: linear-gradient(135deg, var(--weight-color), #a29bfe);
+}
+
+.daily-filter-btn[data-category="medication"] {
+    background: linear-gradient(135deg, var(--medication-color), #fab1a0);
+}
+
+.daily-filter-btn[data-category="mood"] {
+    background: linear-gradient(135deg, var(--mood-color), #f39c12);
+}
+
+.daily-filter-btn[data-category="temperature"]:hover,
+.daily-filter-btn[data-category="weight"]:hover,
+.daily-filter-btn[data-category="medication"]:hover,
+.daily-filter-btn[data-category="mood"]:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ===== 圖表樣式 ===== */
+.chart-section {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    margin: 2rem 0;
+    border: 1px solid var(--border);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.chart-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.chart-header i {
+    color: var(--health-primary);
+    font-size: 1.3rem;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.chart-controls select {
+    padding: 8px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: white;
+    font-size: 0.9rem;
+    min-width: 120px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chart-controls select:focus {
+    outline: none;
+    border-color: var(--health-primary);
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: var(--radius);
+    border: 1px solid #eee;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 響應式圖表設計 */
+@media (max-width: 768px) {
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .chart-controls select {
+        width: 100%;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+}
+
+/* ===== 次要操作按鈕樣式 ===== */
+.health-add-btn.secondary {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: var(--health-primary);
+    border: 2px solid var(--health-primary);
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    opacity: 0.9;
+}
+
+.health-add-btn.secondary:hover {
+    background: linear-gradient(135deg, var(--health-primary), var(--health-secondary));
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    opacity: 1;
+}
+
+.health-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ===== 篩選器分區樣式 ===== */
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.filter-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+
+.daily-filter-btn.note-type {
+    background: linear-gradient(135deg, #f3e5f5, #fce4ec);
+    border: 2px solid #9c27b0;
+    color: #7b1fa2;
+}
+
+.daily-filter-btn.note-type.active,
+.daily-filter-btn.note-type:hover {
+    background: linear-gradient(135deg, #9c27b0, #ba68c8);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        margin: 0.5rem 0;
+    }
+    
+    .filter-buttons {
+        gap: 0.3rem;
+    }
+    
+    .daily-filter-btn {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+}
+
+/* ===== 增強醫療記錄卡片樣式 ===== */
+.enhanced-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+}
+
+.enhanced-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 詳細醫療資訊區域 */
+.detailed-medical-info {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: var(--radius);
+    border: 2px solid var(--health-accent);
+    transition: all 0.3s ease;
+}
+
+.detailed-medical-info h4 {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 生理指標網格 */
+.vital-signs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.vital-card {
+    background: white;
+    border: 2px solid var(--health-secondary);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.vital-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--health-primary), var(--health-secondary));
+}
+
+.vital-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.2);
+}
+
+.vital-icon {
+    font-size: 1.2rem;
+    color: var(--health-primary);
+    margin-bottom: 0.5rem;
+}
+
+.vital-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.vital-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--health-primary);
+}
+
+.vital-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* 症狀記錄樣式 */
+.symptoms-section {
+    margin-bottom: 1.5rem;
+}
+
+.symptoms-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.symptom-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    border: 2px solid;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.symptom-tag:hover {
+    transform: scale(1.05);
+}
+
+.symptom-name {
+    font-weight: 600;
+}
+
+.symptom-severity {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: white;
+}
+
+/* 症狀嚴重程度顏色 */
+.severity-輕微 {
+    border-color: #4caf50;
+    color: #2e7d32;
+}
+
+.severity-輕微 .symptom-severity {
+    background: #4caf50;
+}
+
+.severity-中等 {
+    border-color: #ff9800;
+    color: #ef6c00;
+}
+
+.severity-中等 .symptom-severity {
+    background: #ff9800;
+}
+
+.severity-嚴重 {
+    border-color: #f44336;
+    color: #c62828;
+}
+
+.severity-嚴重 .symptom-severity {
+    background: #f44336;
+}
+
+/* 處方用藥樣式 */
+.prescriptions-section {
+    margin-bottom: 1.5rem;
+}
+
+.prescription-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.prescription-card {
+    background: white;
+    border: 1px solid #8b5cf6;
+    border-radius: var(--radius);
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.prescription-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.prescription-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.prescription-header strong {
+    color: #8b5cf6;
+    font-size: 1rem;
+}
+
+.dosage-badge {
+    background: #8b5cf6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.prescription-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.prescription-details span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.prescription-instructions {
+    background: rgba(139, 92, 246, 0.1);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    border-left: 3px solid #8b5cf6;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+/* 操作按鈕增強 */
+.health-action-btn {
+    transition: all 0.3s ease;
+}
+
+.health-action-btn:hover {
+    transform: scale(1.1);
+    color: var(--health-accent);
+}
+
+.health-action-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.health-action-btn.disabled:hover {
+    transform: none;
+    color: inherit;
+}
+
+/* 基本資訊區域 */
+.basic-info {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .vital-signs-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .vital-card {
+        padding: 0.75rem;
+    }
+
+    .prescription-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .prescription-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .symptoms-list {
+        gap: 0.25rem;
+    }
+
+    .symptom-tag {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+/* ===== 重新設計的診斷內容和治療計畫樣式（健康記錄頁面版本） ===== */
+.diagnosis-section, .treatment-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.section-header i {
+    color: var(--health-primary);
+    font-size: 1.2rem;
+}
+
+.section-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.diagnosis-content-card, .treatment-content-card {
+    background: #f8fafe;
+    border: 1px solid #e3f2fd;
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.content-text {
+    line-height: 1.6;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+/* 治療計畫特殊格式 */
+.treatment-step {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #e8f5e8;
+    border-left: 4px solid var(--health-primary);
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.treatment-item {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.treatment-item::before {
+    content: '●';
+    position: absolute;
+    left: 0;
+    color: var(--health-primary);
+    font-size: 0.8rem;
+}
+
+.treatment-paragraph {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+    line-height: 1.7;
+}
+
+/* 診斷內容特殊樣式 */
+.diagnosis-content-card .content-text {
+    font-weight: 500;
+    font-size: 1rem;
+    color: #1a365d;
+}
+
+/* 響應式 */
+@media (max-width: 768px) {
+    .section-header {
+        gap: 0.5rem;
+    }
+
+    .diagnosis-content-card, .treatment-content-card {
+        padding: 1rem;
+    }
+
+    .treatment-step {
+        margin-bottom: 0.5rem;
+        padding: 0.4rem 0.6rem;
+    }
+}
+
+/* ===== 醫療記錄新增樣式 ===== */
+.medical-section {
+    margin-bottom: 1.5rem;
+    background: var(--card-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.section-content {
+    margin-top: 1rem;
+}
+
+.clinical-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
+
+.info-card .label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-card .value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.info-card .value.highlight {
+    color: var(--health-primary);
+    font-weight: 600;
+}
+
+.drug-details {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0 0;
+}
+
+.drug-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.drug-detail:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 80px;
+}
+
+.detail-value {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    text-align: right;
+    flex: 1;
+}
+
+.drug-header {
+    margin-bottom: 0.5rem;
+}
+
+.drug-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--health-primary);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .clinical-info-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .medical-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .drug-detail {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .detail-value {
+        text-align: left;
+    }
+}
+
+/* ===== 檢驗報告下載按鈕樣式 ===== */
+.btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--health-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.btn-download:hover {
+    background: var(--health-secondary);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-download-full {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--health-primary), var(--health-secondary));
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-download-full:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-download-full i {
+    font-size: 1.2rem;
+    color: #ff6b6b;
+}
+
+.report-download-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+/* 健康紀錄按鈕調整 */
+.health-action-btn.btn-download {
+    background: var(--health-primary);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.health-action-btn.btn-download:hover {
+    background: var(--health-secondary);
+}

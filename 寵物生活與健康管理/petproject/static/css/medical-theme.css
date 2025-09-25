@@ -1,0 +1,303 @@
+/* static/css/medical-theme.css - 專業醫療風格主題 */
+
+/* ========== 醫療風格色彩系統 ========== */
+:root {
+  /* === 基礎醫療色彩 === */
+  --medical-primary: #2563eb;        /* 專業醫療藍 */
+  --medical-primary-dark: #1d4ed8;   /* 深醫療藍 */
+  --medical-primary-light: #60a5fa;  /* 淺醫療藍 */
+  --medical-primary-ultra-light: #eff6ff; /* 極淺背景藍 */
+  
+  /* === 醫療輔助色彩 === */
+  --medical-secondary: #047857;      /* 醫療綠(健康) */
+  --medical-secondary-light: #10b981; /* 淺醫療綠 */
+  --medical-tertiary: #7c3aed;       /* 醫療紫(專業) */
+  --medical-accent: #0891b2;         /* 醫療青(科技感) */
+  
+  /* === 功能狀態色彩 === */
+  --medical-success: #059669;        /* 成功/健康 */
+  --medical-warning: #d97706;        /* 警告/注意 */
+  --medical-danger: #dc2626;         /* 危險/緊急 */
+  --medical-info: #0284c7;           /* 資訊/提示 */
+  
+  /* === 醫療環境色彩 === */
+  --medical-bg-primary: #f8fafc;     /* 主背景(潔白) */
+  --medical-bg-secondary: #f1f5f9;   /* 次背景(淺灰) */
+  --medical-bg-card: #ffffff;        /* 卡片背景 */
+  --medical-bg-sidebar: #1e293b;     /* 側邊欄(深色) */
+  
+  /* === 醫療文字色彩 === */
+  --medical-text-primary: #1e293b;   /* 主文字 */
+  --medical-text-secondary: #475569; /* 次文字 */
+  --medical-text-muted: #64748b;     /* 淡化文字 */
+  --medical-text-inverse: #ffffff;   /* 反色文字 */
+  
+  /* === 醫療邊框色彩 === */
+  --medical-border-light: #e2e8f0;   /* 淺邊框 */
+  --medical-border-medium: #cbd5e1;  /* 中等邊框 */
+  --medical-border-focus: #3b82f6;   /* 焦點邊框 */
+  
+  /* === 醫療陰影效果 === */
+  --medical-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --medical-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --medical-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --medical-shadow-card: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
+}
+
+/* ========== 角色特定色彩系統 ========== */
+
+/* === 獸醫師專區色彩 === */
+body.vet-theme {
+  --theme-primary: var(--medical-primary);
+  --theme-primary-dark: var(--medical-primary-dark);
+  --theme-primary-light: var(--medical-primary-light);
+  --theme-bg: var(--medical-bg-primary);
+  --theme-accent: var(--medical-tertiary);
+  --navbar-bg: var(--medical-primary);
+  --sidebar-bg: var(--medical-bg-sidebar);
+}
+
+/* === 診所管理員色彩 === */
+body.admin-theme {
+  --theme-primary: #7c3aed;          /* 管理紫 */
+  --theme-primary-dark: #6d28d9;     /* 深管理紫 */
+  --theme-primary-light: #a855f7;    /* 淺管理紫 */
+  --theme-bg: var(--medical-bg-primary);
+  --theme-accent: var(--medical-accent);
+  --navbar-bg: #7c3aed;
+  --sidebar-bg: #1e1b4b;
+}
+
+/* === 飼主區域色彩 === */
+body.owner-theme {
+  --theme-primary: #f59e0b;          /* 溫暖橙(保持原風格) */
+  --theme-primary-dark: #d97706;     /* 深橙 */
+  --theme-primary-light: #fbbf24;    /* 淺橙 */
+  --theme-bg: #fffbeb;               /* 溫暖背景 */
+  --theme-accent: #10b981;
+  --navbar-bg: #f59e0b;
+  --sidebar-bg: #78350f;
+}
+
+/* ========== 醫療風格組件樣式 ========== */
+
+/* === 專業按鈕風格 === */
+.btn-medical {
+  background: var(--medical-primary);
+  border: 1px solid var(--medical-primary);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.btn-medical:hover {
+  background: var(--medical-primary-dark);
+  border-color: var(--medical-primary-dark);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--medical-shadow-md);
+}
+
+.btn-medical-outline {
+  background: transparent;
+  border: 1px solid var(--medical-primary);
+  color: var(--medical-primary);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-medical-outline:hover {
+  background: var(--medical-primary);
+  color: white;
+}
+
+/* === 醫療卡片風格 === */
+.medical-card {
+  background: var(--medical-bg-card);
+  border: 1px solid var(--medical-border-light);
+  border-radius: 8px;
+  box-shadow: var(--medical-shadow-card);
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.medical-card:hover {
+  box-shadow: var(--medical-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.medical-card-header {
+  background: var(--medical-primary-ultra-light);
+  color: var(--medical-primary);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--medical-border-light);
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+/* === 狀態指示器 === */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-healthy { background: var(--medical-success); }
+.status-warning { background: var(--medical-warning); }
+.status-danger { background: var(--medical-danger); }
+.status-info { background: var(--medical-info); }
+
+/* === 專業表格風格 === */
+.medical-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--medical-shadow-sm);
+}
+
+.medical-table th {
+  background: var(--medical-primary-ultra-light);
+  color: var(--medical-primary);
+  font-weight: 600;
+  padding: 1rem;
+  border: none;
+}
+
+.medical-table td {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--medical-border-light);
+  vertical-align: middle;
+}
+
+.medical-table tbody tr:hover {
+  background: var(--medical-primary-ultra-light);
+}
+
+/* === 導航欄醫療風格 === */
+.navbar.medical-navbar {
+  background: var(--navbar-bg) !important;
+  box-shadow: var(--medical-shadow-md);
+  border-bottom: 3px solid var(--theme-accent);
+}
+
+.navbar.medical-navbar .navbar-brand {
+  color: white !important;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.navbar.medical-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.navbar.medical-navbar .nav-link:hover {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* === 側邊欄醫療風格 === */
+.medical-sidebar {
+  background: var(--sidebar-bg);
+  min-height: 100vh;
+  box-shadow: var(--medical-shadow-lg);
+}
+
+.medical-sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.75rem 1rem;
+  margin: 0.25rem 0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.medical-sidebar .nav-link:hover,
+.medical-sidebar .nav-link.active {
+  background: var(--theme-primary);
+  color: white;
+}
+
+/* === 儀表板統計卡片 === */
+.stats-card {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light));
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--medical-shadow-lg);
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 25px -3px rgba(37, 99, 235, 0.2);
+}
+
+.stats-card .stats-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+  margin-bottom: 1rem;
+}
+
+.stats-card .stats-number {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.stats-card .stats-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* === 表單醫療風格 === */
+.form-control.medical-input {
+  border: 1px solid var(--medical-border-medium);
+  border-radius: 6px;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+  background: var(--medical-bg-card);
+}
+
+.form-control.medical-input:focus {
+  border-color: var(--medical-border-focus);
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+  background: white;
+}
+
+/* === 醫療徽章 === */
+.badge.medical-badge {
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.badge.badge-success { background: var(--medical-success); }
+.badge.badge-warning { background: var(--medical-warning); }
+.badge.badge-danger { background: var(--medical-danger); }
+.badge.badge-info { background: var(--medical-info); }
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 768px) {
+  .medical-card {
+    padding: 1rem;
+  }
+  
+  .stats-card {
+    padding: 1.5rem;
+  }
+  
+  .stats-card .stats-number {
+    font-size: 1.5rem;
+  }
+}

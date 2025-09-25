@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block page_title %}毛日好 - 社群平台{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    {% load static %}
+
+    <!-- AI 客服泡泡樣式 - 從 BASE.HTML 提取 -->
+    <style>
+        /* AI 客服泡泡樣式 v3.0 - 最終版本：清潔代碼，修復頭像和背景 */
+
+        #chatbot-button{
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        #chatbot-button:hover{
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        }
+
+        #chatbot-box{
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.8);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        #chatbot-box.show {
+            display: flex;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        #chatbot-header{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border-radius: 20px 20px 0 0;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* 添加漸變邊框效果 */
+        #chatbot-header::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            border-radius: 22px 22px 2px 2px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #chatbot-header:hover::before {
+            opacity: 1;
+        }
+
+        /* 頭像樣式修正 */
+        #chatbot-header::after {
+            content: '🐾';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            background: rgba(255,255,255,0.2);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        #chatbot-close{
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            line-height: 1;
+        }
+
+        #chatbot-close:hover{
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        #chatbot-messages{
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        /* 修復AI訊息背景色問題 */
+        .message {
+            margin-bottom: 15px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: messageSlideIn 0.3s ease forwards;
+        }
+
+        @keyframes messageSlideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.user .message-content{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 18px 18px 5px 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .message.ai {
+            text-align: left;
+        }
+
+        .message.ai .message-content{
+            background: #ffffff !important;  /* 強制白色背景 */
+            color: #1e293b !important;       /* 深色文字 */
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 18px 18px 18px 5px;
+            max-width: 80%;
+            word-wrap: break-word;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 強制覆蓋任何可能的樣式 */
+        .message.ai .message-content * {
+            color: #1e293b !important;
+        }
+
+        .message .avatar{
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin: 0 8px;
+            object-fit: cover;
+        }
+
+        .message.user .avatar{
+            order: 1;
+        }
+
+        .message.ai .avatar{
+            order: -1;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            background: #ffffff;
+            border-radius: 18px;
+            margin-bottom: 15px;
+            max-width: 80px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+            display: inline-block;
+            margin: 0 1px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        #chatbot-input{
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+
+        #chatbot-input-field{
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        #chatbot-input-field:focus{
+            border-color: #667eea;
+        }
+
+        #chatbot-send{
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        #chatbot-send:hover{
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .end-session-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+
+        .end-session-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            #chatbot-box {
+                width: 90vw;
+                height: 80vh;
+                bottom: 20px;
+                right: 5vw;
+            }
+
+            #chatbot-button {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+
+    <!-- 社群媒體專區樣式 -->
+    <style>
+        .social-navbar {
+            background: linear-gradient(135deg, #FFB6C1 0%, #FFE4E1 50%, #FFF8DC 100%);
+            box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+            padding: 1rem 0;
+            border-bottom: 3px solid #FFB6C1;
+        }
+
+        .social-navbar .navbar-brand {
+            font-weight: 700;
+            color: #8B4513 !important;
+            font-size: 1.6rem;
+            transition: all 0.2s ease;
+        }
+
+        .social-navbar .navbar-brand:hover {
+            color: #A0522D !important;
+            transform: scale(1.02);
+        }
+
+        .social-navbar .navbar-brand::before {
+            content: '🐾';
+            font-size: 1.1rem;
+            margin-right: 0.5rem;
+            display: inline-block;
+        }
+
+        .social-navbar .nav-link {
+            color: #8B4513 !important;
+            font-weight: 500;
+            margin: 0 0.2rem;
+            border-radius: 15px;
+            padding: 0.6rem 1rem !important;
+            transition: all 0.3s ease;
+        }
+
+        .social-navbar .nav-link:hover,
+        .social-navbar .nav-link.active {
+            background: rgba(255, 255, 255, 0.7);
+            color: #654321 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(255, 182, 193, 0.4);
+        }
+
+        .nav-link i {
+            margin-right: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
+
+        .social-search {
+            max-width: 350px;
+            border-radius: 20px;
+            border: 2px solid #FFB6C1;
+            padding: 0.7rem 1.2rem;
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+
+        .social-search:focus {
+            box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.3);
+            outline: none;
+            border-color: #FF69B4;
+        }
+
+        .social-search::placeholder {
+            color: #999;
+        }
+
+        .social-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #FFB6C1;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(255, 182, 193, 0.3);
+        }
+
+        .social-avatar:hover {
+            transform: scale(1.05);
+            border-color: #FF69B4;
+            box-shadow: 0 3px 10px rgba(255, 105, 180, 0.4);
+        }
+
+        .btn-social {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #FFB6C1;
+            color: #8B4513;
+            border-radius: 18px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-social:hover {
+            background: rgba(255, 255, 255, 1);
+            color: #654321;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(255, 182, 193, 0.4);
+            border-color: #FF69B4;
+        }
+
+        .dropdown-menu {
+            border: 2px solid #FFB6C1;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+            background: rgba(255, 255, 255, 0.95);
+            margin-top: 0.3rem;
+        }
+
+        .dropdown-item {
+            border-radius: 10px;
+            margin: 0.2rem 0.5rem;
+            transition: all 0.2s ease;
+            font-weight: 400;
+        }
+
+        .dropdown-item:hover {
+            background: #FFE4E1;
+            color: #8B4513;
+        }
+
+        @media (max-width: 768px) {
+            .social-navbar {
+                padding: 0.8rem 0;
+            }
+
+            .social-navbar .navbar-brand {
+                font-size: 1.4rem;
+            }
+
+            .social-search {
+                max-width: 100%;
+                margin-top: 0.8rem;
+            }
+
+            .social-navbar .nav-link {
+                margin: 0.2rem 0;
+                padding: 0.6rem 0.8rem !important;
+            }
+
+            .navbar-nav .nav-link span {
+                display: none !important;
+            }
+
+            .navbar-nav .nav-link {
+                padding: 0.5rem !important;
+                margin: 0.2rem;
+            }
+        }
+
+        /* 友善的整體頁面樣式 */
+        body {
+            background: linear-gradient(135deg, #FFF8DC 0%, #FFE4E1 50%, #F0F8FF 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .layout {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -2px 10px rgba(255, 182, 193, 0.2);
+            min-height: calc(100vh - 120px);
+            margin-top: 1rem;
+            padding: 2rem 0;
+        }
+
+        /* 友善的按鈕樣式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
+            border: none;
+            border-radius: 15px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(255, 105, 180, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #FF69B4, #FF1493);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 20, 147, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #FFB6C1;
+            color: #8B4513;
+            border-radius: 15px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: #FFB6C1;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* 友善的卡片樣式 */
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(255, 182, 193, 0.2);
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 182, 193, 0.3);
+        }
+
+        /* 友善的表單樣式 */
+        .form-control {
+            border: 2px solid #FFE4E1;
+            border-radius: 12px;
+            padding: 0.7rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #FFB6C1;
+            box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.2);
+        }
+
+        /* 友善的文字樣式 */
+        h1, h2, h3, h4, h5, h6 {
+            color: #8B4513;
+            font-weight: 600;
+        }
+
+        .text-muted {
+            color: #A0522D !important;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 活潑的社群導覽列 -->
+    <nav class="navbar navbar-expand-lg social-navbar" id="socialNavbar">
+        <div class="container">
+            <!-- 品牌Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'social:home' %}" title="回到毛日好社群首頁">
+                <span>毛日好社群</span>
+            </a>
+
+            <!-- 手機版選單按鈕 -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#socialNavbarContent"
+                    style="border: none; background: rgba(255,255,255,0.2); border-radius: 15px;">
+                <span style="color: white; font-size: 1.5rem;">🐱</span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="socialNavbarContent">
+                <!-- 中間搜尋欄 -->
+                <div class="mx-auto d-none d-lg-block">
+                    <input type="text" class="form-control social-search"
+                           placeholder="🔍 搜尋毛友、貼文、話題..." autocomplete="off">
+                </div>
+
+                <!-- 右側選單 -->
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'social:home' %}" title="回到首頁">
+                                <i class="bi bi-house-heart"></i><span class="d-lg-inline">首頁</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'social:search_posts' %}" title="探索新內容">
+                                <i class="bi bi-compass"></i><span class="d-lg-inline">探索</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'social:profile' user.username %}" title="我的個人檔案">
+                                <i class="bi bi-person-heart"></i><span class="d-lg-inline">我的檔案</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'home' %}" title="回到寵物管理主站">
+                                <i class="bi bi-arrow-left-circle"></i><span class="d-lg-inline">主站</span>
+                            </a>
+                        </li>
+
+                        <!-- 用戶頭像下拉選單 -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle p-1" href="#" role="button" data-bs-toggle="dropdown"
+                               title="用戶選單">
+                                <img src="{% if user.social_profile and user.social_profile.avatar %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                                     alt="{{ user.username }}" class="social-avatar">
+                                <span class="ms-2 d-none d-xl-inline fw-bold" style="color: #8B4513;">{{ user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% if user.social_profile and user.social_profile.avatar %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                                             alt="{{ user.username }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                        <div class="ms-2">
+                                            <div class="fw-bold">{{ user.username }}</div>
+                                            <small class="text-muted">毛孩愛好者</small>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'social:edit_profile' %}">
+                                    <i class="bi bi-pencil-square me-2"></i>編輯檔案
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'account_logout' %}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>登出
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'social:home' %}" title="瀏覽社群內容">
+                                <i class="bi bi-house-heart"></i><span class="d-lg-inline">首頁</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'home' %}" title="回到主站">
+                                <i class="bi bi-arrow-left-circle"></i><span class="d-lg-inline">主站</span>
+                            </a>
+                        </li>
+                        <li class="nav-item me-2">
+                            <a href="{% url 'account_login' %}" class="btn btn-social" title="登入帳號">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>登入
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'account_signup' %}" class="btn btn-social" title="註冊新帳號">
+                                <i class="bi bi-person-plus me-1"></i>註冊
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主內容區 -->
+    <main class="layout">
+        {% block social_content %}{% endblock %}
+    </main>
+
+    <!-- AI 客服泡泡 - 從 BASE.HTML 提取 -->
+    <button id="chatbot-button" title="AI 客服小助手">🐾</button>
+    <div id="chatbot-box" role="dialog" aria-labelledby="chatbot-header" aria-hidden="true">
+        <div id="chatbot-header" tabindex="-1">
+            毛毛 AI 客服小助手
+            <button id="chatbot-close" aria-label="關閉客服">×</button>
+        </div>
+        <div id="chatbot-messages" aria-live="polite" role="log">
+            <div class="message ai">
+                <div class="message-content">
+                    您好！我是毛毛 AI 客服小助手 🐾<br>
+                    有什麼關於寵物的問題都可以問我喔！
+                </div>
+            </div>
+        </div>
+        <div id="chatbot-input">
+            <input type="text" id="chatbot-input-field" placeholder="輸入您的問題..." maxlength="500" aria-label="輸入問題">
+            <button id="chatbot-send" aria-label="發送訊息">➤</button>
+        </div>
+    </div>
+
+    <!-- 分享彈窗 -->
+    <div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="share-modal">
+            <button class="share-close" id="shareClose" aria-label="close">✕</button>
+            <h3>分享貼文</h3>
+            <div class="share-preview"><img id="sharePreviewImg" src="" alt="share preview" /></div>
+            <div class="share-channels" id="shareChannels"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- AI 客服功能 JavaScript - 從 BASE.HTML 提取 -->
+    <script>
+        // AI 客服泡泡功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatbotButton = document.getElementById('chatbot-button');
+            const chatbotBox = document.getElementById('chatbot-box');
+            const chatbotClose = document.getElementById('chatbot-close');
+            const chatbotMessages = document.getElementById('chatbot-messages');
+            const chatbotInputField = document.getElementById('chatbot-input-field');
+            const chatbotSend = document.getElementById('chatbot-send');
+
+            let conversationHistory = [];
+            let isWaitingForResponse = false;
+
+            // 開啟客服泡泡
+            chatbotButton.addEventListener('click', function() {
+                chatbotBox.classList.add('show');
+                chatbotBox.setAttribute('aria-hidden', 'false');
+                chatbotInputField.focus();
+            });
+
+            // 關閉客服泡泡
+            chatbotClose.addEventListener('click', function() {
+                chatbotBox.classList.remove('show');
+                chatbotBox.setAttribute('aria-hidden', 'true');
+            });
+
+            // 發送訊息
+            function sendMessage() {
+                if (isWaitingForResponse) return;
+
+                const message = chatbotInputField.value.trim();
+                if (!message) return;
+
+                addMessage(message, 'user');
+                chatbotInputField.value = '';
+                isWaitingForResponse = true;
+
+                // 顯示打字指示器
+                showTypingIndicator();
+
+                // 發送到後端
+                fetch('/ai-chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_history: conversationHistory
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideTypingIndicator();
+                    if (data.success) {
+                        addMessage(data.response, 'ai');
+                        conversationHistory = data.conversation_history;
+                    } else {
+                        addMessage('抱歉，我現在無法回應，請稍後再試。', 'ai');
+                    }
+                })
+                .catch(error => {
+                    hideTypingIndicator();
+                    addMessage('網路連線發生問題，請稍後再試。', 'ai');
+                })
+                .finally(() => {
+                    isWaitingForResponse = false;
+                });
+            }
+
+            // 添加訊息到聊天視窗
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.innerHTML = text;
+
+                messageDiv.appendChild(contentDiv);
+                chatbotMessages.appendChild(messageDiv);
+
+                // 滾動到底部
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            // 顯示打字指示器
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typing-indicator';
+                typingDiv.innerHTML = '<span></span><span></span><span></span>';
+                chatbotMessages.appendChild(typingDiv);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            }
+
+            // 隱藏打字指示器
+            function hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            // 獲取 CSRF Token
+            function getCSRFToken() {
+                const formToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (formToken) {
+                    return formToken.value;
+                }
+
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'csrftoken') {
+                        return decodeURIComponent(value);
+                    }
+                }
+
+                const metaToken = document.querySelector('meta[name="csrf-token"]');
+                if (metaToken) {
+                    return metaToken.getAttribute('content');
+                }
+
+                return '';
+            }
+
+            // 事件監聽
+            chatbotSend.addEventListener('click', sendMessage);
+            chatbotInputField.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // 強制修復所有AI訊息背景的腳本
+            setInterval(() => {
+                const aiContents = document.querySelectorAll('#chatbot-messages .message.ai .message-content');
+                aiContents.forEach(content => {
+                    const currentBg = window.getComputedStyle(content).backgroundColor;
+                    if (currentBg !== 'rgb(255, 255, 255)') {
+                        content.style.backgroundColor = '#ffffff';
+                        content.style.background = '#ffffff';
+                        content.style.color = '#1e293b';
+                    }
+                });
+            }, 500);
+        });
+
+        // 簡單的導覽列固定效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbar = document.getElementById('socialNavbar');
+            if (navbar) {
+                navbar.style.transition = 'all 0.3s ease';
+            }
+        });
+    </script>
+
+    <!-- 社群功能 JavaScript -->
+    <script src="{% static 'js/social/social.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

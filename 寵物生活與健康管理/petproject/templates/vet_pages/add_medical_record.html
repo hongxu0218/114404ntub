@@ -1,0 +1,13 @@
+{% extends "vet_pages/base.html" %}
+
+{% block content %}
+<h2>為 {{ pet.name }} 新增病例</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">儲存病例</button>
+</form>
+
+<a href="{% url 'my_patients' %}">← 返回列表</a>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}新增體溫{% endblock %}
+
+{% block extra_css %}
+<style>
+    .temperature-form {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 2em;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .temperature-form h2 {
+        text-align: center;
+        margin-bottom: 1.5em;
+        color: #2c3e50;
+    }
+
+    .temperature-form label {
+        margin-top: 1em;
+        font-weight: bold;
+    }
+
+    .temperature-form select,
+    .temperature-form input[type="text"] {
+        width: 100%;
+        padding: 0.6em;
+        margin-top: 0.3em;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .temperature-form .button-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2em;
+    }
+
+    .temperature-form .button-row button,
+    .temperature-form .button-row a button {
+        padding: 0.6em 1.5em;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        cursor: pointer;
+    }
+
+    .temperature-form .button-row button[type="submit"] {
+        background-color: #3498db;
+        color: #fff;
+    }
+
+    .temperature-form .button-row a button {
+        background-color: #95a5a6;
+        color: #fff;
+    }
+
+    .temperature-form .button-row button:hover {
+        opacity: 0.9;
+    }
+
+    .temperature-form ul {
+        padding-left: 1.2em;
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="temperature-form">
+    <h2>新增體溫</h2>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label for="month">月份</label>
+        <select id="month" name="month" onchange="updateDays()">
+            {% for m in months %}
+                <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="day">日期</label>
+        <select id="day" name="day"></select>
+
+        <label for="temperature">體溫（°C）</label>
+        <input type="text" name="temperature" id="temperature" value="{{ temperature|default:'' }}" required>
+
+        <div class="button-row">
+            <a href="{% url 'tem_rec' pet.id %}">
+                <button type="button">返回</button>
+            </a>
+            <button type="submit">送出</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function isLeapYear(year) {
+        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+    }
+
+    function updateDays() {
+        const month = parseInt(document.getElementById('month').value);
+        const daySelect = document.getElementById('day');
+        const year = new Date().getFullYear();
+        let daysInMonth = 31;
+
+        if ([4, 6, 9, 11].includes(month)) {
+            daysInMonth = 30;
+        } else if (month === 2) {
+            daysInMonth = isLeapYear(year) ? 29 : 28;
+        }
+
+        const currentSelected = parseInt(daySelect.value);
+        daySelect.innerHTML = '';
+        for (let i = 1; i <= daysInMonth; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.text = i;
+            if (i === currentSelected) {
+                opt.selected = true;
+            }
+            daySelect.appendChild(opt);
+        }
+    }
+
+    window.onload = function () {
+        updateDays();
+        const preselectDay = {{ day|default:1 }};
+        document.getElementById("day").value = preselectDay;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+<!-- templates/select_account_type.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>選擇帳號類型</title>
+    <style>
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #6c63ff;
+            margin-bottom: 30px;
+        }
+        form button {
+            padding: 12px 20px;
+            font-size: 16px;
+            margin: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .owner-btn {
+            background-color: #4caf50;
+            color: white;
+        }
+        .vet-btn {
+            background-color: #2196f3;
+            color: white;
+        }
+        .owner-btn:hover {
+            background-color: #3e8e41;
+        }
+        .vet-btn:hover {
+            background-color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>請選擇您的帳號類型</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" name="account_type" value="owner" class="owner-btn">我是飼主 🐶</button>
+            <button type="submit" name="account_type" value="vet" class="vet-btn">我是獸醫 🩺</button>
+        </form>
+    </div>
+</body>
+</html>
