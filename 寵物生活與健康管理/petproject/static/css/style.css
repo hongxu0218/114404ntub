@@ -1,0 +1,424 @@
+/* Reset 預設樣式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  padding-bottom: 40px;
+}
+
+main h1 {
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+
+/* 基本字體設定 */
+body {
+  font-family: "標楷體", "Noto Sans TC", sans-serif;
+  background-color: #fff8f0;
+  color: #333;
+  line-height: 1.6;
+  flex: 1;
+}
+
+/* Header 導覽列 */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: #fff8f0;
+}
+.header-left {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;      /* 移除連結底線 */
+  color: inherit;             /* 保持文字顏色一致 */
+  gap: 10px;
+  white-space: nowrap;     /* 不讓 LOGO 文字換行 */
+  flex-shrink: 0;           /* 防止 LOGO 被壓縮 */
+}
+.logo img {
+  width: 60px;
+  margin-right: auto;
+}
+nav a {
+  margin: 0 10px;
+  text-decoration: none;
+  color: #000;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  padding: 6px 16px;
+  border-radius: 20px;
+  transition: background-color 0.2s;
+
+  white-space: nowrap;     /* 避免文字換行 */
+  display: inline-block;   /* 保持一行內 */
+  max-width: 100%;         /* 在平板寬度下不會撐出螢幕 */
+}
+nav a:hover {
+  background-color: #ffe4b3;
+}
+/* ☰ 漢堡按鈕樣式 */
+.menu-toggle {
+  display: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 10px 20px;
+  margin-left: auto;
+  color: #333;
+}
+
+/* Hero 區塊 */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  padding: 30px;
+  align-items: center;
+}
+.hero-text {
+  max-width: 600%;
+}
+
+/* 最新消息區塊 */
+.latest-news {
+  margin-bottom: 60px;
+}
+.news-title {
+  text-align: left;
+  font-size: 24px;
+  margin: 50px 20px 20px 50px;
+  padding-left: 5px;
+  padding-top: 20px;
+}
+.news-scroll-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+.scroll-btn {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  color: #333;
+  font-size: 20px;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 10;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.scroll-btn.left {
+  margin-right: 10px;
+}
+.scroll-btn.right {
+  margin-left: 10px;
+}
+.news-container {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 10px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  flex-grow: 1;
+}
+.news-card {
+  flex: 0 0 auto;
+  width: 200px;
+  height: 130px;
+  border: 1px dashed #5cb6ff;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+.news-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.news-card.more {
+  background-color: #f7f0e8;
+  font-weight: bold;
+  color: #333;
+  font-size: 16px;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+/* 分類導覽圖示 */
+.section-icons div {
+  text-align: center;
+  width: 100px;
+}
+.section-icons img {
+  width: 50px;
+  height: 50px;
+}
+
+/* 給每個分類按鈕包覆白底卡片風格 */
+.category-buttons {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 20px 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+/* 加上 hover 效果（可選） */
+.category-buttons:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+
+/* Footer */
+footer {
+  background-color: #fef6ec;
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  border-top: 4px solid #ffe0b3;
+  flex-shrink: 0;
+}
+footer div {
+  max-width: 300px;
+}
+footer h4 {
+  margin-bottom: 10px;
+}
+
+/* 卡片與推薦樣式 */
+.card {
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin: 20px auto;
+  max-width: 90%;
+}
+.recommend-title {
+  margin: 50px 20px 20px 50px;
+  text-align: left;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 按鈕 */
+.btn {
+  padding: 10px 20px;
+  background-color: #ffaa00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  display: inline-block;
+  margin: 10px 10px 20px 0;
+  text-decoration: none;
+}
+.btn:hover {
+  background-color: #ff8800;
+}
+
+/* 圖片樣式 */
+img.responsive {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+img.article-img {
+  width: 100px;
+  height: auto;
+  border-radius: 8px;
+}
+img.news-img {
+  width: 300px;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* LOGO 不換行也不被擠壓 */
+.logo {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ☰ 漢堡按鈕樣式 */
+.menu-toggle {
+  display: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 10px 20px;
+  margin-left: auto;
+  color: #333;
+}
+
+
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 20px;
+}
+
+/* 分類按鈕整體區塊 */
+
+
+/* 分類按鈕卡片 */
+.category-buttons {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  padding: 20px 10px;
+  text-align: center;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+/* hover 效果 */
+.category-buttons:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* 內部連結樣式 */
+.category-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  font-size: 16px;
+  font-weight: bold;
+  gap: 10px;
+}
+
+/* 圖示統一大小 */
+.icon-img {
+  width: 48px;
+  height: 48px;
+}
+
+/* 使用 Grid 排版，每排兩個分類卡片 */
+.section-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 24px;
+  justify-items: center;
+  padding: 30px 20px;
+}
+
+/* === RWD：導覽列在小螢幕自動換行與漢堡選單 === */
+@media screen and (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .logo {
+    margin-bottom: 10px;
+    white-space: nowrap;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  nav#navbar {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  nav#navbar.show {
+    display: flex;
+  }
+
+  nav#navbar a {
+    margin: 6px 12px;
+    padding: 6px 16px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .hero-text {
+    width: 100%;
+    padding: 0 20px;
+  }
+
+  .hero img {
+    max-width: 90%;
+    height: auto;
+  }
+}
+
+/* === 導覽列在中寬度畫面保持整齊（平板寬） === */
+@media screen and (max-width: 1024px) and (min-width: 769px) {
+  nav#navbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    row-gap: 8px;
+  }
+
+  nav#navbar a {
+    padding: 6px 14px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .header-left {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+}
+

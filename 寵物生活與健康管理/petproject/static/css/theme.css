@@ -1,0 +1,70 @@
+/* static/css/theme.css - 毛日好主題變量 */
+
+:root {
+  /* 主要色彩 */
+  --primary-orange: #ffaa00;
+  --primary-orange-hover: #ff8800;
+  --primary-orange-light: #ffe4b3;
+  
+  /* 背景色彩 */
+  --warm-bg: #fff8f0;
+  --warm-card: #fef6ec;
+  --warm-light: #fff5e6;
+  
+  /* 文字色彩 */
+  --text-dark: #333;
+  --text-muted: #666;
+  --text-light: #999;
+  
+  /* 邊框與陰影 */
+  --border-light: #ffe0b3;
+  --shadow-light: rgba(0,0,0,0.1);
+  --shadow-medium: rgba(0,0,0,0.15);
+  --shadow-hover: rgba(255, 170, 0, 0.3);
+  
+  /* 狀態色彩 */
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+  --news-border: #5cb6ff;
+  
+  /* 間距 */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+  
+  /* 圓角 */
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+  --border-radius-xl: 25px;
+  
+  /* 字體大小 */
+  --font-size-xs: 0.8rem;
+  --font-size-sm: 0.9rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.1rem;
+  --font-size-xl: 1.2rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 3rem;
+  
+  /* 動畫時間 */
+  --transition-fast: 0.2s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
+  
+  /* Z-index層級 */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  --z-index-toast: 9999;
+}
