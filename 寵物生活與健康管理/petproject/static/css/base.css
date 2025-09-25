@@ -52,10 +52,32 @@ main {
 /* ===== 訊息提示系統 ===== */
 .messages-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: var(--z-index-modal);
-  max-width: 400px;
+  top: 80px; /* 確保在導覽列下方 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  z-index: 9998; /* 確保高於其他內容但低於導覽列 */
+  padding: 0 20px;
+  pointer-events: none; /* 讓容器本身不阻擋點擊 */
+}
+
+.messages-container .alert {
+  pointer-events: auto; /* 但讓alert可以被點擊 */
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  font-weight: 500;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .messages-container {
+    top: 70px; /* 手機版導覽列較低 */
+    padding: 0 15px;
+    max-width: 95%;
+  }
 }
 
 .alert-dismissible {
@@ -735,7 +757,7 @@ main {
 }
 
 /* ===== 響應式設計 - 導覽列優化 ===== */
-@media (max-width: 992px) {
+@media (max-width: 991.98px) {
   /* 平板和以下設備的導覽優化 */
   .navbar-collapse {
     background: rgba(255, 255, 255, 0.98);
