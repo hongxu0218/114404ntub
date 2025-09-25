@@ -8,6 +8,15 @@ pawday114404.duckdns.org {
 }
 "@ | Out-File -FilePath "Caddyfile" -Encoding UTF8 -NoNewline
 
+or 自行建立
+pawday114404.duckdns.org {
+    reverse_proxy 127.0.0.1:8000 {
+        header_up Host {host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+
 # 檢查檔案是否建立成功
 ls Caddyfile
 ------------------------------------------------------
