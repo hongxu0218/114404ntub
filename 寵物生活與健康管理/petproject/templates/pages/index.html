@@ -24,9 +24,7 @@
                class="btn btn-primary-custom btn-lg">
               <i class="bi bi-plus-circle me-2"></i>立即開始
             </a>
-            <a href="{% url 'map' %}" class="btn btn-outline-warning btn-lg">
-              <i class="bi bi-geo-alt me-2"></i>尋找附近
-            </a>
+            <!-- 地圖功能已移除 -->
           </div>
         </div>
       </div>
@@ -119,28 +117,12 @@
 
       <!-- 第三個功能卡片 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
-        {% if user.is_authenticated and user.profile.account_type == 'clinic_admin' %}
-          <!-- 排班管理暫時移除，重新設計中 -->
-          <div class="category-card" style="opacity: 0.6; cursor: not-allowed;">
-            <img src="{% static 'images/icon_time.png' %}" class="category-icon" alt="排班管理">
-            <div class="category-text">排班管理<br><small style="color: #666;">(重新設計中)</small></div>
-          </div>
-        {% else %}
-          <a href="{% url 'map' %}" class="category-card">
-            <img src="{% static 'images/icon_location.png' %}" class="category-icon" alt="搜尋附近">
-            <div class="category-text">搜尋附近</div>
-          </a>
-        {% endif %}
+        <!-- 地圖和排班管理功能已移除 -->
       </div>
       
-      <!-- 第四個功能卡片 -->
+      <!-- 急診功能已移除 -->
       <div class="col-lg-3 col-md-4 col-sm-6">
-        <a href="{% url 'emergency_map' %}" class="category-card">
-          <img src="{% static 'images/icon_emergency.png' %}" class="category-icon" alt="急診">
-          <div class="category-text">
-            <span class="text-danger">24H 急診</span>
-          </div>
-        </a>
+        <!-- 功能卡片預留位置 -->
       </div>
     </div>
   </div>
