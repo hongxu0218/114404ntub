@@ -10,11 +10,27 @@ pawday114404.duckdns.org {
 
 or 自行建立
 pawday114404.duckdns.org {
-    reverse_proxy 127.0.0.1:8000 {
-        header_up Host {host}
-        header_up X-Forwarded-Proto {scheme}
+    # 1. 靜態檔案（collectstatic 之後）
+    handle_path /static/* {
+        root * "D:\git\114404ntub\寵物生活與健康管理\petproject\staticfiles"
+        file_server
+    }
+
+    # 2. 媒體檔案（使用者上傳）
+    handle_path /media/* {
+        root * "D:\git\114404ntub\寵物生活與健康管理\petproject\media"
+        file_server
+    }
+
+    # 3. 其他請求交給 Django
+    handle {
+        reverse_proxy 127.0.0.1:8000 {
+            header_up Host {host}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 }
+
 
 
 # 檢查檔案是否建立成功
