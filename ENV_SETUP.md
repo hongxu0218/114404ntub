@@ -15,6 +15,23 @@ DEBUG=True  # 開發階段請設為 True，部署時建議設為 False
 ALLOWED_HOSTS=127.0.0.1,localhost,127.0.0.1:8000
 CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
 
+#============================
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "pawday114404.duckdns.org",
+    "pawday114484.duckdns.org",
+    "114494.duckdns.org",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "https://pawday114404.duckdns.org",
+    "https://pawday114484.duckdns.org",
+    "https://114494.duckdns.org",
+]
+#============================
+
 # ======== Google OAuth 登入用 ========
 GOOGLE_CLIENT_ID=your-google-client-id  # 從 Google Cloud Console 取得
 GOOGLE_CLIENT_SECRET=your-google-client-secret  # 從 Google Cloud Console 取得
