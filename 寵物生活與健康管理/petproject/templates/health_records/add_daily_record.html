@@ -197,6 +197,51 @@
     font-size: 0.9rem;
 }
 
+.pet-switcher {
+    margin-top: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pet-switcher label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.pet-select {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: 160px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pet-select:hover {
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.pet-select:focus {
+    outline: none;
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.7);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+}
+
+.pet-select option {
+    background: #4caf50;
+    color: white;
+    padding: 0.5rem;
+}
+
 @media (max-width: 768px) {
     .add-daily-container {
         padding: 0 0.5rem;
@@ -243,6 +288,22 @@
                 <div class="pet-details">
                     <h3>{{ pet.name }}</h3>
                     <p>{{ pet.species }} • {{ pet.breed }}</p>
+
+                    {% if user_pets.count > 1 %}
+                    <div class="pet-switcher">
+                        <label for="pet-select">
+                            <i class="fas fa-exchange-alt"></i> 切換寵物：
+                        </label>
+                        <select id="pet-select" class="pet-select" onchange="switchPet(this.value)">
+                            {% for user_pet in user_pets %}
+                                <option value="{{ user_pet.id }}"
+                                        {% if user_pet.id == current_pet_id %}selected{% endif %}>
+                                    {{ user_pet.name }} ({{ user_pet.species }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -315,6 +376,72 @@
 </div>
 
 <script>
+// 寵物切換功能
+function switchPet(petId) {
+    if (petId && petId !== '{{ current_pet_id }}') {
+        // 檢查表單是否有未保存的數據
+        const form = document.querySelector('.add-daily-form');
+        const formData = new FormData(form);
+        let hasData = false;
+
+        // 檢查表單是否有輸入內容
+        for (let [key, value] of formData.entries()) {
+            if (key !== 'csrfmiddlewaretoken' && value && value.trim() !== '') {
+                hasData = true;
+                break;
+            }
+        }
+
+        if (hasData) {
+            const confirmed = confirm('表單中有未保存的數據，切換寵物將會遺失這些數據。是否繼續？');
+            if (!confirmed) {
+                // 重設選擇器到原始值
+                document.getElementById('pet-select').value = '{{ current_pet_id }}';
+                return;
+            }
+        }
+
+        // 轉到新的寵物頁面
+        window.location.href = `/pet/${petId}/add_daily_record/`;
+    }
+}
+
+// 動態更新寵物資訊
+function updatePetInfo(petId) {
+    if (petId === '{{ current_pet_id }}') return;
+
+    // 透過AJAX獲取寵物資訊並更新顯示
+    fetch(`/api/pet/${petId}/info/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 更新頭像
+                const avatar = document.querySelector('.pet-avatar');
+                if (data.pet.picture) {
+                    avatar.innerHTML = `<img src="${data.pet.picture}" alt="${data.pet.name}">`;
+                } else {
+                    avatar.innerHTML = '<i class="fas fa-paw"></i>';
+                }
+
+                // 更新詳細資訊
+                const details = document.querySelector('.pet-details h3');
+                details.textContent = data.pet.name;
+
+                const species = document.querySelector('.pet-details p');
+                species.textContent = `${data.pet.species} • ${data.pet.breed}`;
+
+                // 更新標題
+                const subtitle = document.querySelector('.add-daily-subtitle');
+                subtitle.textContent = `記錄 ${data.pet.name} 的日常生活點滴`;
+            }
+        })
+        .catch(error => {
+            console.error('獲取寵物資訊失敗:', error);
+            // 如果AJAX失敗，直接跳轉
+            window.location.href = `/pet/${petId}/add_daily_record/`;
+        });
+}
+
 // 動態顯示/隱藏字段的函數
 function toggleFields(category) {
     // 隱藏所有特殊字段

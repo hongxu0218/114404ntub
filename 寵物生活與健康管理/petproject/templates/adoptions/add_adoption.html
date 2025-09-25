@@ -7,7 +7,7 @@
 <style>
 /* 簡潔的表單樣式 */
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -376,7 +376,12 @@
                         <option value="{{ pet.id }}">{{ pet.name }}</option>
                     {% endfor %}
                 </select>
-                <div class="form-text">選擇您已註冊的寵物來自動填入基本資料，加快填寫速度</div>
+                <div class="form-text">
+                    選擇您已註冊的寵物來自動填入基本資料，加快填寫速度
+                    {% if my_pets|length == 0 %}
+                    <br><small class="text-muted">💡 目前沒有可選擇的寵物（已刊登的寵物不會顯示在此列表中）</small>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- 基本資料 -->
@@ -606,7 +611,7 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="id_health_certificate">健康證明 (PDF)</label>
+                    <label for="id_health_certificate">健康證明 (PDF、JPG、PNG)</label>
                     {{ adoption_form.health_certificate }}
                     {% if adoption_form.health_certificate.errors %}
                     <div class="error-text">{{ adoption_form.health_certificate.errors }}</div>
@@ -614,7 +619,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="id_vaccine_certificate">疫苗接種證明 (PDF)</label>
+                    <label for="id_vaccine_certificate">疫苗接種證明 (PDF、JPG、PNG)</label>
                     {{ adoption_form.vaccine_certificate }}
                     {% if adoption_form.vaccine_certificate.errors %}
                     <div class="error-text">{{ adoption_form.vaccine_certificate.errors }}</div>

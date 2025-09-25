@@ -325,8 +325,6 @@
         border-radius: 8px;
         cursor: pointer;
         font-size: 0.85rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
     }
     .delete-btn {
         background: #ffebee;
@@ -473,6 +471,10 @@
                             <i class="bi bi-share"></i>
                             {{ post.shares_count }} 次分享
                         </div>
+                        <div class="engagement-item">
+                            <i class="bi bi-arrow-repeat"></i>
+                            {{ post.shares_count }} 次轉發
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -508,6 +510,11 @@
 
 {% block extra_js %}
 <script>
+// 獲取 CSRF Token 的函數
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
 // 追蹤/取消追蹤功能
 function toggleFollow(username) {
     {% if not user.is_authenticated %}
@@ -524,7 +531,7 @@ function toggleFollow(username) {
     fetch(`/social/follow/${username}/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': getCSRFToken()
         }
     })
     .then(response => response.json())

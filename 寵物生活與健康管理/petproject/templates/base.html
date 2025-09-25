@@ -1231,130 +1231,76 @@
   <!-- 子模板可以插入額外的 JS -->
   {% endblock %}
   
-  <!-- Enhanced Bootstrap Dropdown Fix -->
+  <!-- 簡化優化的下拉選單系統 -->
   <script>
-    // 增強的 Bootstrap 下拉選單修復
     document.addEventListener('DOMContentLoaded', function() {
-      // console.log('🔧 初始化下拉選單修復...');
-      
-      // 檢查 Bootstrap 是否載入
-      let bootstrapLoaded = false;
-      if (typeof bootstrap !== 'undefined') {
-        bootstrapLoaded = true;
-        // console.log('✅ Bootstrap 已載入，版本：', bootstrap.Tooltip?.VERSION || bootstrap.Modal?.VERSION || 'unknown');
-      } else {
-        console.warn('⚠️ Bootstrap 未載入，使用手動模式');
-      }
-      
-      // 找到所有下拉選單
-      const dropdownElements = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-      // console.log(`📋 找到 ${dropdownElements.length} 個下拉選單`);
-      
-      if (dropdownElements.length === 0) {
-        // console.log('❌ 未找到任何下拉選單元素');
-        return;
-      }
-      
-      // 為每個下拉選單設置事件
-      dropdownElements.forEach((element, index) => {
-        const text = element.textContent.trim();
-        // console.log(`🎯 設置下拉選單 ${index + 1}: "${text}"`);
-        
-        // 如果 Bootstrap 可用，優先使用 Bootstrap
-        if (bootstrapLoaded && bootstrap.Dropdown) {
-          try {
-            const dropdown = new bootstrap.Dropdown(element);
-            // console.log(`🎯 Bootstrap 初始化成功: "${text}"`);
-            
-            // 添加 Bootstrap 事件監聽器來記錄狀態
-            element.addEventListener('show.bs.dropdown', function() {
-              // console.log(`✅ Bootstrap 顯示下拉選單: "${text}"`);
-            });
-            
-            element.addEventListener('hide.bs.dropdown', function() {
-              // console.log(`➖ Bootstrap 隱藏下拉選單: "${text}"`);
-            });
-            
-            element.addEventListener('click', function() {
-              // console.log(`🖱️ 點擊下拉選單: "${text}"`);
-            });
-            
-            return; // 如果 Bootstrap 成功，就不需要手動處理
-          } catch (error) {
-            console.warn(`⚠️ Bootstrap 初始化失敗: "${text}"`, error);
-          }
-        }
-        
-        // 如果 Bootstrap 不可用或初始化失敗，使用手動處理
-        // console.log(`🔧 使用手動模式處理: "${text}"`);
-        element.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // console.log(`🖱️ 手動點擊下拉選單: "${text}"`);
-          
-          // 找到對應的選單
-          const menu = this.nextElementSibling;
-          if (!menu || !menu.classList.contains('dropdown-menu')) {
-            console.error(`❌ 找不到 ${text} 的下拉選單`);
-            return;
-          }
-          
-          // 先檢查當前狀態
-          const isCurrentlyShown = menu.classList.contains('show');
-          console.log(`📊 當前狀態: ${isCurrentlyShown ? '顯示' : '隱藏'}`);
-          
-          // 關閉所有其他下拉選單
-          document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
-            if (openMenu !== menu) {
-              openMenu.classList.remove('show');
-              // console.log('🔄 關閉其他下拉選單');
+      // 關閉所有下拉選單的功能
+      function closeAllDropdowns() {
+        // 使用 Bootstrap API 關閉所有下拉選單
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+          const toggle = menu.previousElementSibling;
+          if (toggle && window.bootstrap && bootstrap.Dropdown) {
+            const dropdown = bootstrap.Dropdown.getInstance(toggle);
+            if (dropdown) {
+              dropdown.hide();
             }
-          });
-          
-          document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(openToggle => {
-            if (openToggle !== this) {
-              openToggle.setAttribute('aria-expanded', 'false');
+          }
+          menu.classList.remove('show');
+        });
+        document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(toggle => {
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      // 監聽 Bootstrap 下拉選單顯示事件，實現互相關閉
+      document.addEventListener('show.bs.dropdown', function(e) {
+        // 當一個下拉選單要顯示時，先關閉其他所有下拉選單
+        const currentTarget = e.target;
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+          const toggle = menu.previousElementSibling;
+          if (toggle !== currentTarget) {
+            if (window.bootstrap && bootstrap.Dropdown) {
+              const dropdown = bootstrap.Dropdown.getInstance(toggle);
+              if (dropdown) {
+                dropdown.hide();
+              }
             }
-          });
-          
-          // 切換當前下拉選單
-          if (isCurrentlyShown) {
             menu.classList.remove('show');
-            this.setAttribute('aria-expanded', 'false');
-            // console.log(`➖ 手動隱藏下拉選單: "${text}"`);
-          } else {
-            menu.classList.add('show');
-            this.setAttribute('aria-expanded', 'true');
-            // console.log(`✅ 手動顯示下拉選單: "${text}"`);
+            toggle.setAttribute('aria-expanded', 'false');
           }
         });
       });
-      
-      // 點擊外部時關閉所有下拉選單
-      document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-          let closedCount = 0;
-          document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-            menu.classList.remove('show');
-            closedCount++;
-          });
-          document.querySelectorAll('[data-bs-toggle="dropdown"][aria-expanded="true"]').forEach(toggle => {
-            toggle.setAttribute('aria-expanded', 'false');
-          });
-          
-          if (closedCount > 0) {
-            // console.log(`🔄 點擊外部，關閉了 ${closedCount} 個下拉選單`);
-          }
+
+      // 初始化所有 Bootstrap 下拉選單
+      document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(element => {
+        if (window.bootstrap && bootstrap.Dropdown) {
+          new bootstrap.Dropdown(element);
         }
+
+        // 防止下拉選單觸發器點擊時關閉漢堡選單
+        element.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
       });
-      
-      // 添加 CSS 來確保下拉選單正確顯示
+
+      // 統一處理所有點擊事件
+      document.addEventListener('click', function(e) {
+        // 防止下拉選單相關元素點擊時關閉漢堡選單
+        if (e.target.closest('.dropdown-item') || e.target.closest('[data-bs-toggle="dropdown"]')) {
+          e.stopPropagation();
+          return;
+        }
+
+        // 點擊外部時關閉所有下拉選單
+        if (!e.target.closest('.dropdown')) {
+          closeAllDropdowns();
+        }
+      }, true);
+
+      // 添加必要的 CSS 樣式
       const style = document.createElement('style');
       style.textContent = `
-        .dropdown-menu.show {
-          display: block !important;
-        }
+        .dropdown-menu.show { display: block !important; }
         .dropdown-toggle::after {
           display: inline-block !important;
           margin-left: 0.255em !important;
@@ -1372,48 +1318,36 @@
           z-index: 1000 !important;
           min-width: 160px !important;
           padding: 0.5rem 0 !important;
-          margin: 0 !important;
-          font-size: 1rem !important;
-          color: var(--bs-dropdown-color, #212529) !important;
-          text-align: left !important;
-          background-color: var(--bs-dropdown-bg, #fff) !important;
-          background-clip: padding-box !important;
-          border: 1px solid var(--bs-dropdown-border-color, rgba(0, 0, 0, 0.175)) !important;
+          background-color: #fff !important;
+          border: 1px solid rgba(0,0,0,.175) !important;
           border-radius: 0.375rem !important;
-          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+          box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15) !important;
         }
         .dropdown-item {
           display: block !important;
           width: 100% !important;
           padding: 0.25rem 1rem !important;
-          clear: both !important;
-          font-weight: 400 !important;
-          color: var(--bs-dropdown-link-color, #212529) !important;
-          text-align: inherit !important;
+          color: #212529 !important;
           text-decoration: none !important;
-          white-space: nowrap !important;
           background-color: transparent !important;
           border: 0 !important;
         }
-        .dropdown-item:hover,
-        .dropdown-item:focus {
-          color: var(--bs-dropdown-link-hover-color, #1e2125) !important;
-          background-color: var(--bs-dropdown-link-hover-bg, #e9ecef) !important;
+        .dropdown-item:hover {
+          background-color: #e9ecef !important;
+        }
+        @media (max-width: 991.98px) {
+          .navbar-collapse .dropdown-menu {
+            position: static !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
         }
       `;
       document.head.appendChild(style);
-      
-      // console.log('✅ 下拉選單修復初始化完成');
-    });
-  </script>
-  
-  <!-- CSRF Token for AJAX -->
-  <script>
-    // 為 AJAX 請求提供 CSRF Token
-    document.addEventListener('DOMContentLoaded', function() {
+
+      // CSRF Token 設定
       const csrfToken = '{{ csrf_token }}';
-      
-      // 設定全局 AJAX 預設值
       if (window.fetch) {
         const originalFetch = window.fetch;
         window.fetch = function(url, options = {}) {

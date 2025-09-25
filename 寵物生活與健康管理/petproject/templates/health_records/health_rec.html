@@ -26,6 +26,26 @@
                 </div>
                 
                 <div class="health-nav-buttons">
+                    {% if all_pets.count > 1 %}
+                    <div class="pet-filter-container">
+                        <div class="pet-filter-icon">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                        <select id="pet-filter" class="pet-filter-select" onchange="filterByPet(this.value)">
+                            <option value="">全部毛孩</option>
+                            {% for pet in all_pets %}
+                                <option value="{{ pet.id }}"
+                                        {% if selected_pet_id and pet.id|stringformat:"s" == selected_pet_id %}selected{% endif %}>
+                                    🐾 {{ pet.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="pet-filter-arrow">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <a href="{% url 'pet_list' %}" class="health-nav-btn">
                         <i class="fas fa-arrow-left"></i>
                         <span>回到毛孩列表</span>
@@ -811,6 +831,22 @@ function toggleHealthDetails(recordId) {
         iconElement.className = 'fas fa-chevron-down';
         detailsDiv.style.opacity = '0';
     }
+}
+// 寵物篩選功能
+function filterByPet(petId) {
+    const currentUrl = new URL(window.location.href);
+
+    if (petId) {
+        currentUrl.searchParams.set('pet', petId);
+    } else {
+        currentUrl.searchParams.delete('pet');
+    }
+
+    // 保持當前的tab參數
+    const currentTab = currentUrl.searchParams.get('tab') || 'medical';
+    currentUrl.searchParams.set('tab', currentTab);
+
+    window.location.href = currentUrl.toString();
 }
 </script>
 {% endblock %}

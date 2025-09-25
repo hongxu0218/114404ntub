@@ -317,8 +317,9 @@
   .contact-item {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.75rem 0;
+    padding: 1rem 0;
     border-bottom: 1px solid rgba(0,0,0,0.1);
   }
 
@@ -327,10 +328,47 @@
   }
 
   .contact-item i {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: var(--success-color);
-    width: 20px;
+    width: 24px;
     text-align: center;
+  }
+
+  /* 內嵌聯絡按鈕樣式 */
+  .contact-info-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+  }
+
+  .contact-action-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .contact-action-btn.phone {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+  }
+
+  .contact-action-btn.line {
+    background: linear-gradient(135deg, #00c300 0%, #00a000 100%);
+    color: white;
+  }
+
+  .contact-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    color: white;
+    text-decoration: none;
   }
 
   /* 狀態標籤 */
@@ -446,15 +484,22 @@
     box-shadow: var(--shadow-sm);
   }
 
-  /* 浮動聯絡按鈕 */
+  /* 已移除浮動聯絡按鈕，改用內嵌於聯絡資訊卡片中的清潔設計 */
+  /*
   .floating-contact {
     position: fixed;
     bottom: 2rem;
-    right: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
     z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    border-radius: 50px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 
   .contact-btn {
@@ -483,6 +528,7 @@
   .contact-btn.line {
     background: linear-gradient(135deg, #00c300 0%, #00a000 100%);
   }
+  */
 
   /* 響應式設計 */
   @media (max-width: 968px) {
@@ -531,7 +577,10 @@
 
     .floating-contact {
       bottom: 1rem;
-      right: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.75rem;
+      gap: 0.75rem;
     }
 
     .contact-btn {
@@ -812,14 +861,24 @@
         {% if adoption.phone or adoption.line_id %}
           {% if adoption.phone %}
             <div class="contact-item">
-              <i class="bi bi-telephone-fill"></i>
-              <span>{{ adoption.phone }}</span>
+              <div class="contact-info-left">
+                <i class="bi bi-telephone-fill"></i>
+                <span>{{ adoption.phone }}</span>
+              </div>
+              <a href="tel:{{ adoption.phone }}" class="contact-action-btn phone">
+                <i class="bi bi-telephone"></i> 撥打
+              </a>
             </div>
           {% endif %}
           {% if adoption.line_id %}
             <div class="contact-item">
-              <i class="bi bi-line"></i>
-              <span>Line ID: {{ adoption.line_id }}</span>
+              <div class="contact-info-left">
+                <i class="bi bi-line"></i>
+                <span>Line ID: {{ adoption.line_id }}</span>
+              </div>
+              <a href="https://line.me/ti/p/{{ adoption.line_id }}" class="contact-action-btn line" target="_blank">
+                <i class="bi bi-line"></i> 聯絡
+              </a>
             </div>
           {% endif %}
         {% else %}
@@ -962,22 +1021,7 @@
 </div>
 {% endif %}
 
-<!-- 浮動聯絡按鈕 -->
-{% if adoption.phone or adoption.line_id %}
-<div class="floating-contact">
-  {% if adoption.phone %}
-    <a href="tel:{{ adoption.phone }}" class="contact-btn phone" title="撥打電話">
-      <i class="bi bi-telephone-fill"></i>
-    </a>
-  {% endif %}
-
-  {% if adoption.line_id %}
-    <a href="https://line.me/ti/p/{{ adoption.line_id }}" class="contact-btn line" title="聯絡 LINE" target="_blank">
-      <i class="bi bi-line"></i>
-    </a>
-  {% endif %}
-</div>
-{% endif %}
+<!-- 浮動聯絡按鈕已移除，聯絡資訊統一顯示在頁面的聯絡方式卡片中 -->
 {% endblock %}
 
 {% block extra_js %}

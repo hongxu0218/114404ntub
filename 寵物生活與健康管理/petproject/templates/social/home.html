@@ -762,19 +762,19 @@
                     {% endif %}
                     <div class="post-actions">
                         <button class="action-btn like-btn {% if post.user_liked %}active{% endif %}"
-                                onclick="toggleLike({{ post.id }})">
+                                onclick="toggleLike('{{ post.id }}')">
                             <i class="bi bi-heart{% if post.user_liked %}-fill{% endif %}"></i>
                             <span class="like-count">{{ post.likes_count }}</span>
                         </button>
-                        <button class="action-btn comment-btn" onclick="toggleComments({{ post.id }})">
+                        <button class="action-btn comment-btn" onclick="toggleComments('{{ post.id }}')">
                             <i class="bi bi-chat"></i>
                             <span>{{ post.comments_count }}</span>
                         </button>
-                        <button class="action-btn repost-btn" onclick="repostPost({{ post.id }}, '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
+                        <button class="action-btn repost-btn" onclick="repostPost('{{ post.id }}', '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
                             <i class="bi bi-arrow-repeat"></i>
                             <span>{{ post.shares_count }}</span>
                         </button>
-                        <button class="action-btn share-btn" onclick="sharePost({{ post.id }}, '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
+                        <button class="action-btn share-btn" onclick="sharePost('{{ post.id }}')">
                             <i class="bi bi-share"></i>
                             <span>分享</span>
                         </button>
@@ -794,7 +794,7 @@
                             <div class="comment-input-container">
                                 <textarea class="comment-input" id="comment-input-{{ post.id }}"
                                          placeholder="寫下你的留言..." rows="1"></textarea>
-                                <button class="comment-submit-btn" onclick="submitComment({{ post.id }})">
+                                <button class="comment-submit-btn" onclick="submitComment('{{ post.id }}')">
                                     <i class="bi bi-send"></i>
                                 </button>
                             </div>
@@ -874,10 +874,26 @@
 
 {% block extra_js %}
 <script>
+// 獲取 CSRF Token 的函數
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
 // 啟用發文按鈕
 document.getElementById('postContent').addEventListener('input', function() {
     const submitBtn = document.getElementById('submitPost');
     submitBtn.disabled = this.value.trim() === '';
+});
+
+// 添加 Enter 鍵發佈功能
+document.getElementById('postContent').addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + Enter 發佈貼文
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitPost');
+        if (!submitBtn.disabled) {
+            handlePostSubmission();
+        }
+    }
 });
 
 // 媒體按鈕功能
@@ -1172,7 +1188,7 @@ function selectPostToRepost(postId, username, content) {
         fetch(`/social/post/${postId}/repost/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
+                'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json'
             }
         })
@@ -1204,7 +1220,7 @@ function repostPost(postId, username, content) {
         fetch(`/social/post/${postId}/repost/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
+                'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json'
             }
         })
@@ -1636,7 +1652,7 @@ function handlePostSubmission() {
             const response = await fetch('{% url "social:create_post" %}', {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': getCSRFToken()
                 },
                 body: data
             });
@@ -1695,18 +1711,36 @@ function toggleLike(postId) {
         return;
     {% endif %}
 
+    console.log('Toggling like for post:', postId);
+
     const btn = document.querySelector(`[data-post-id="${postId}"] .like-btn`);
+    if (!btn) {
+        console.error('Like button not found for post:', postId);
+        return;
+    }
+
     const icon = btn.querySelector('i');
     const countEl = btn.querySelector('.like-count');
+
+    if (!icon || !countEl) {
+        console.error('Icon or count element not found');
+        return;
+    }
 
     fetch(`/social/post/${postId}/like/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': getCSRFToken()
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Like response:', data);
         if (data.success) {
             if (data.liked) {
                 btn.classList.add('active');
@@ -1718,9 +1752,15 @@ function toggleLike(postId) {
                 icon.classList.add('bi-heart');
             }
             countEl.textContent = data.likes_count;
+        } else {
+            console.error('Like failed:', data.error);
+            alert('按讚失敗：' + (data.error || '未知錯誤'));
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Like error:', error);
+        alert('按讚失敗，請檢查網路連接');
+    });
 }
 
 // 分享功能
@@ -1800,12 +1840,12 @@ function loadComments(postId) {
                                     <div class="comment-time">${comment.created_at}</div>
                                     <div class="comment-actions">
                                         <button class="comment-action-btn ${comment.user_liked ? 'active' : ''}"
-                                                onclick="toggleCommentLike(${comment.id})">
+                                                onclick="toggleCommentLike('${comment.id}')">
                                             <i class="bi bi-heart${comment.user_liked ? '-fill' : ''}"></i>
                                             ${comment.likes_count || 0}
                                         </button>
                                         ${comment.is_own_comment ? `
-                                            <button class="comment-action-btn" onclick="deleteComment(${comment.id}, ${postId})">
+                                            <button class="comment-action-btn" onclick="deleteComment('${comment.id}', '${postId}')">
                                                 <i class="bi bi-trash"></i> 刪除
                                             </button>
                                         ` : ''}
@@ -1855,7 +1895,7 @@ function submitComment(postId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': getCSRFToken()
         },
         body: JSON.stringify({
             content: content
@@ -1903,7 +1943,7 @@ function toggleCommentLike(commentId) {
     fetch(`/social/comment/${commentId}/like/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': getCSRFToken()
         }
     })
     .then(response => response.json())
@@ -1976,13 +2016,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// 留言輸入框自動調整高度
+// 留言輸入框自動調整高度和Enter鍵提交
 document.addEventListener('DOMContentLoaded', function() {
+    // 自動調整高度
     document.addEventListener('input', function(e) {
         if (e.target.classList.contains('comment-input')) {
             const textarea = e.target;
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+        }
+    });
+
+    // Enter鍵提交留言
+    document.addEventListener('keydown', function(e) {
+        if (e.target.classList.contains('comment-input')) {
+            // Ctrl/Cmd + Enter 提交留言
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                const postId = e.target.id.split('-')[2]; // 從 comment-input-{postId} 獲取 postId
+                if (postId) {
+                    submitComment(postId);
+                }
+            }
         }
     });
 });

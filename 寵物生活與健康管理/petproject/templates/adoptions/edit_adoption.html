@@ -31,7 +31,7 @@
   }
 
   .container {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1rem;
   }
@@ -998,7 +998,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="id_health_certificate">健康證明 (PDF)</label>
+            <label for="id_health_certificate">健康證明 (PDF、JPG、PNG)</label>
             <div class="current-image">
               {% if adoption.health_certificate %}
                 <span class="filename">{{ adoption.health_certificate.name|cut:"pet_certificate/health_certificates/" }}</span>
@@ -1008,14 +1008,14 @@
                 <span class="filename">目前無檔案</span>
               {% endif %}
             </div>
-            <input type="file" name="health_certificate" accept="application/pdf" id="id_health_certificate">
+            <input type="file" name="health_certificate" accept="application/pdf,image/jpeg,image/jpg,image/png" id="id_health_certificate">
             {% if adoption_form.health_certificate.errors %}
               <div class="text-danger">{{ adoption_form.health_certificate.errors }}</div>
             {% endif %}
           </div>
 
           <div class="form-group">
-            <label for="id_vaccine_certificate">疫苗接種證明 (PDF)</label>
+            <label for="id_vaccine_certificate">疫苗接種證明 (PDF、JPG、PNG)</label>
             <div class="current-image">
               {% if adoption.vaccine_certificate %}
                 <span class="filename">{{ adoption.vaccine_certificate.name|cut:"pet_certificate/vaccine_certificates/" }}</span>
@@ -1025,7 +1025,7 @@
                 <span class="filename">目前無檔案</span>
               {% endif %}
             </div>
-            <input type="file" name="vaccine_certificate" accept="application/pdf" id="id_vaccine_certificate">
+            <input type="file" name="vaccine_certificate" accept="application/pdf,image/jpeg,image/jpg,image/png" id="id_vaccine_certificate">
             {% if adoption_form.vaccine_certificate.errors %}
               <div class="text-danger">{{ adoption_form.vaccine_certificate.errors }}</div>
             {% endif %}
