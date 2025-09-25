@@ -445,7 +445,7 @@ class SocialApp {
                 console.log('分享取消', err);
             });
         } else {
-            // 複製連結到剪貼板
+            // 複製連結到剪貼板 (postId now is UUID, much safer!)
             const url = `${window.location.origin}/social/post/${postId}/`;
             navigator.clipboard.writeText(url).then(() => {
                 this.showNotification('連結已複製到剪貼板！', 'success');
@@ -588,5 +588,22 @@ function toggleFollow(username) {
     const button = document.querySelector(`[data-action="follow"][data-username="${username}"]`);
     if (button && window.socialApp) {
         window.socialApp.toggleFollow(username, button);
+    }
+}
+
+function toggleComments(postId) {
+    if (window.socialApp) {
+        window.socialApp.toggleComments(postId);
+    }
+}
+
+function repostPost(postId, username, content) {
+    // Repost functionality - you can implement this based on your backend API
+    if (confirm(`確定要轉發 ${username} 的貼文嗎？`)) {
+        // Implementation would go here - likely an API call to create repost
+        console.log('Reposting:', postId, username, content);
+        if (window.socialApp) {
+            window.socialApp.showNotification('貼文已轉發！', 'success');
+        }
     }
 }

@@ -77,7 +77,7 @@ main {
 /* ===== Header 樣式 ===== */
 .custom-header {
   background-color: var(--warm-bg);
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-sm) 0;
   box-shadow: 0 2px 4px var(--shadow-light);
   position: sticky;
   top: 0;
@@ -106,47 +106,74 @@ main {
   line-height: 1.2;
 }
 
-/* 導航連結樣式 */
+/* 導航連結樣式 - 現代化設計 */
 .nav-link {
   color: var(--text-dark) !important;
   font-weight: 500;
-  border: 1px solid #ccc;
-  border-radius: var(--border-radius-lg);
-  padding: 8px 16px !important;
-  margin: 0 4px;
-  transition: all var(--transition-normal) ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 10px 16px !important;
+  margin: 0 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   white-space: nowrap;
   position: relative;
-  background-color: #ffffff !important;
-  min-width: 100px !important;
-  max-width: 150px !important;
-  width: auto !important;
-  text-align: center !important;
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
 }
 
 .nav-link:hover {
-  background-color: var(--primary-orange-light);
+  background: linear-gradient(135deg, var(--primary-orange-light) 0%, #fff5e6 100%);
   color: var(--text-dark) !important;
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 16px rgba(255, 170, 0, 0.2);
+  border-color: var(--primary-orange);
 }
 
 .nav-link:focus {
   outline: 2px solid var(--primary-orange);
   outline-offset: 2px;
+  background: linear-gradient(135deg, var(--primary-orange-light) 0%, #fff5e6 100%);
 }
 
-/* 下拉選單樣式統一 */
+/* 活躍狀態導航連結 */
+.nav-link.active {
+  background: linear-gradient(135deg, var(--primary-orange) 0%, #e67300 100%);
+  color: white !important;
+  border-color: var(--primary-orange);
+  box-shadow: 0 4px 16px rgba(255, 170, 0, 0.3);
+}
+
+/* 下拉選單樣式統一 - 現代化設計 */
 .dropdown-menu {
-  background: #ffffff !important;
-  border: 1px solid #e0e0e0 !important;
-  border-radius: var(--border-radius-lg) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-  padding: 8px !important;
-  margin-top: 8px !important;
-  min-width: 180px !important;
-  max-width: 180px !important;
-  width: 180px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  padding: 12px !important;
+  margin-top: 12px !important;
+  min-width: 220px !important;
+  max-width: 280px !important;
+  width: auto !important;
+  animation: dropdownSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 
@@ -154,23 +181,26 @@ main {
   color: var(--text-dark) !important;
   font-weight: 500 !important;
   border: 1px solid transparent !important;
-  border-radius: var(--border-radius-md) !important;
-  padding: 10px 16px !important;
-  margin: 2px 0 !important;
-  transition: all var(--transition-normal) ease !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  margin: 3px 0 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   text-decoration: none !important;
   display: flex !important;
   align-items: center !important;
   font-size: 14px !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-  background-color: var(--primary-orange-light) !important;
+  background: linear-gradient(135deg, var(--primary-orange-light) 0%, #fff5e6 100%) !important;
   color: var(--text-dark) !important;
-  border-color: #ccc !important;
-  transform: translateX(4px) !important;
+  border-color: var(--primary-orange) !important;
+  transform: translateX(6px) scale(1.02) !important;
+  box-shadow: 0 2px 8px rgba(255, 170, 0, 0.15) !important;
 }
 
 .dropdown-item:active {
@@ -190,34 +220,35 @@ main {
 
 /* 分隔線樣式 */
 .dropdown-divider {
-  margin: 6px 0 !important;
-  border-top: 1px solid #e9ecef !important;
+  margin: 8px 0 !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  opacity: 0.6 !important;
+}
+
+/* 下拉選單標題樣式 */
+.dropdown-header {
+  padding: 8px 16px 6px 16px !important;
+  margin: 4px 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: var(--text-muted) !important;
+  background: none !important;
+  border: none !important;
 }
 .nav-link.dropdown-toggle {
-  color: var(--text-dark) !important;
-  font-weight: 500 !important;
-  border: 1px solid #ccc !important;
-  border-radius: var(--border-radius-lg) !important;
-  padding: 8px 16px !important;
-  margin: 0 4px !important;
-  transition: all var(--transition-normal) ease !important;
-  text-decoration: none !important;
-  white-space: nowrap !important;
-  position: relative !important;
-  background-color: #ffffff !important;
-  min-width: 100px !important;
-  max-width: 150px !important;
-  width: auto !important;
-  text-align: center !important;
+  /* 繼承普通nav-link的所有樣式 */
 }
 
 .nav-link.dropdown-toggle:hover,
 .nav-link.dropdown-toggle:focus,
 .nav-link.dropdown-toggle[aria-expanded="true"] {
-  background-color: var(--primary-orange-light) !important;
+  background: linear-gradient(135deg, var(--primary-orange-light) 0%, #fff5e6 100%);
   color: var(--text-dark) !important;
-  transform: translateY(-2px) !important;
+  transform: translateY(-2px) scale(1.02) !important;
   border-color: var(--primary-orange) !important;
+  box-shadow: 0 4px 16px rgba(255, 170, 0, 0.2) !important;
 }
 
 .dropdown-toggle::after {
@@ -250,6 +281,203 @@ main {
   right: -5px;
   min-width: 20px;
   text-align: center;
+}
+
+/* ===== 通知下拉選單樣式 ===== */
+.notification-dropdown {
+  min-width: 350px;
+  max-width: 400px;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  margin-top: 8px;
+}
+
+.notification-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 1px solid #e9ecef;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.notification-header h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: var(--primary-orange);
+  border-radius: 3px;
+}
+
+.notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f3f4;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+  background-color: #fff3e0;
+  border-left: 3px solid var(--primary-orange);
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background-color: var(--primary-orange);
+  border-radius: 50%;
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+}
+
+.notification-icon.appointment {
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+}
+
+.notification-icon.reminder {
+  background: linear-gradient(135deg, #FF9800, #E65100);
+}
+
+.notification-icon.system {
+  background: linear-gradient(135deg, #2196F3, #0D47A1);
+}
+
+.notification-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.notification-action {
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius-sm);
+  background: white;
+  color: var(--text-dark);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-action:hover {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+}
+
+.notification-action.primary {
+  background-color: var(--primary-orange);
+  border-color: var(--primary-orange);
+  color: white;
+}
+
+.notification-action.primary:hover {
+  background-color: var(--primary-orange-hover);
+  border-color: var(--primary-orange-hover);
+}
+
+.notification-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  padding: 8px 16px;
+  text-align: center;
+}
+
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.notification-empty i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* Mark all read button styling */
+#mark-all-read {
+  font-size: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+#mark-all-read:hover {
+  color: var(--primary-orange-hover) !important;
+  text-decoration: underline;
 }
 
 /* ===== 導航條切換按鈕 ===== */
@@ -506,27 +734,56 @@ main {
   75% { transform: rotate(-10deg); }
 }
 
-/* ===== 響應式設計 ===== */
-@media (max-width: 768px) {
+/* ===== 響應式設計 - 導覽列優化 ===== */
+@media (max-width: 992px) {
+  /* 平板和以下設備的導覽優化 */
+  .navbar-collapse {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    margin-top: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-link {
+    margin: 6px 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
 
   .dropdown-menu {
-    min-width: 180px !important;
-    max-width: 180px !important;
-    width: 180px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    position: static !important;
+    float: none !important;
+    width: 100% !important;
+    min-width: auto !important;
+    max-width: none !important;
+    margin-top: 8px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px !important;
+    background: rgba(248, 249, 250, 0.95) !important;
   }
-  
+}
+
+@media (max-width: 768px) {
+  .custom-header {
+    padding: 12px 0;
+  }
+
+  .logo img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .logo span {
+    font-size: 14px;
+  }
+
   .dropdown-item {
-    padding: 12px 16px !important;
-    font-size: 16px !important;
-  }
-  
-  .nav-link.dropdown-toggle {
-    margin: 2px 0 !important;
-    text-align: center !important;
-    min-width: 120px !important;
-    max-width: 180px !important;
-    width: auto !important;
+    padding: 14px 16px !important;
+    font-size: 15px !important;
   }
 
   .hero-text h1 {
@@ -594,19 +851,73 @@ main {
   }
 }
 
+/* ===== 無障礙功能增強 ===== */
+
+/* 鍵盤導航增強 */
+.nav-link:focus-visible {
+  outline: 3px solid var(--primary-orange);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 170, 0, 0.3);
+}
+
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--primary-orange);
+  outline-offset: 1px;
+}
+
+/* 螢幕閱讀器增強 */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 跳過連結 */
+.skip-link:focus {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  padding: 12px 16px;
+  background: var(--primary-orange);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
 /* ===== 高對比度模式支援 ===== */
 @media (prefers-contrast: high) {
   :root {
-    --shadow-light: rgba(0,0,0,0.3);
-    --shadow-medium: rgba(0,0,0,0.4);
+    --shadow-light: rgba(0,0,0,0.4);
+    --shadow-medium: rgba(0,0,0,0.6);
   }
-  
+
   .nav-link {
     border-width: 2px;
+    border-color: #333;
   }
-  
-  .btn-primary-custom {
-    border: 2px solid var(--primary-orange-hover);
+
+  .dropdown-menu {
+    border-width: 2px !important;
+    border-color: #333 !important;
+  }
+
+  .dropdown-item {
+    border-color: transparent !important;
+  }
+
+  .dropdown-item:hover,
+  .dropdown-item:focus {
+    border-color: #333 !important;
+    background-color: #ffaa00 !important;
   }
 }
 
