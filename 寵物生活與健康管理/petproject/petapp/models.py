@@ -1802,6 +1802,21 @@ def validate_pdf(value):
     if not value.name.endswith('.pdf'):
         raise ValidationError("只允許上傳 PDF 檔案")
 
+def validate_certificate_file(value):
+    """驗證證明文件格式 - 允許PDF、JPG、PNG"""
+    if not value:
+        return
+
+    allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+    file_extension = value.name.lower().split('.')[-1]
+    if f'.{file_extension}' not in allowed_extensions:
+        raise ValidationError("只允許上傳 PDF、JPG、PNG 格式的檔案")
+
+    # 檔案大小限制 (5MB)
+    max_size = 5 * 1024 * 1024  # 5MB
+    if value.size > max_size:
+        raise ValidationError("檔案大小不能超過 5MB")
+
 class AdoptionPet(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='adoptions', verbose_name='飼主')
     species = models.CharField(max_length=50, verbose_name='種類')
@@ -1830,15 +1845,15 @@ class AdoptionPet(models.Model):
 
     health_certificate = models.FileField(
         upload_to='pet_certificate/health_certificates/',
-        validators=[validate_pdf],
+        validators=[validate_certificate_file],
         blank=True, null=True,
-        verbose_name="健康證明 (PDF)"
+        verbose_name="健康證明 (PDF、JPG、PNG)"
     )
     vaccine_certificate = models.FileField(
         upload_to='pet_certificate/vaccine_certificates/',
-        validators=[validate_pdf],
+        validators=[validate_certificate_file],
         blank=True, null=True,
-        verbose_name="疫苗接種證明 (PDF)"
+        verbose_name="疫苗接種證明 (PDF、JPG、PNG)"
     )
 
     def __str__(self):

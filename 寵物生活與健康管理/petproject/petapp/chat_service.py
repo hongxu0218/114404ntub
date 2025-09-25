@@ -13,8 +13,8 @@ SNIPPET_CHARS   = int(os.getenv("RAG_SNIPPET_CHARS", "800"))  # >0 時截斷每�
 
 # 模型與網路參數（優化性能）
 OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "30"))  # 減少超時時間
-OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "1024"))    # 減少上下文長度
-OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "200")) # 減少預測token數
+OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))    # 增加上下文長度以支持更完整對話
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "800")) # 增加預測token數以支持完整回答
 OLLAMA_TEMP        = float(os.getenv("OLLAMA_TEMP", "0.2"))      # 降低溫度提高一致性
 
 # 是否把 sources 顯示給使用者（預設關閉）
@@ -109,10 +109,14 @@ def _force_linebreaks(text: str) -> str:
     if not isinstance(text, str) or not text.strip():
         return text
     t = text
+    # 處理注意事項前的換行
     t = t.replace("注意事項：", "\n注意事項：")
-    t = _LINE_ITEM_RE.sub(r"\n\1", t)
-    t = re.sub(r'[ \t]+', ' ', t)
-    t = re.sub(r'\n{3,}', '\n\n', t)
+    # 處理數字項目換行，但只在需要時添加
+    t = re.sub(r'([^\n])(\d{1,2}\.)', r'\1\n\2', t)
+    # 清理多餘的空白和換行
+    t = re.sub(r'[ \t]+', ' ', t)  # 合併多餘空格
+    t = re.sub(r'\n{3,}', '\n\n', t)  # 最多保留一個空行
+    t = re.sub(r'^\s*\n+', '', t)  # 移除開頭的空行
     return t.strip()
 
 def _strip_source_section(text: str) -> str:

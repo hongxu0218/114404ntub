@@ -1885,6 +1885,8 @@ class AdoptionForm(forms.ModelForm):
             'adopt_place': forms.Select(attrs={'class': 'form-select', 'autocomplete': 'street-address'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '請填寫手機號碼或line_id', 'autocomplete': 'tel'}),
             'line_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '請填寫手機號碼或line_id', 'autocomplete': 'off'}),
+            'health_certificate': forms.FileInput(attrs={'accept': 'application/pdf,image/jpeg,image/jpg,image/png'}),
+            'vaccine_certificate': forms.FileInput(attrs={'accept': 'application/pdf,image/jpeg,image/jpg,image/png'}),
         }
         labels = {
             'species': '種類', 'breed': '品種', 'name': '名字',
@@ -2027,6 +2029,11 @@ class AdoptionForm(forms.ModelForm):
                 cleaned_data['vaccine'] = vaccine_other.strip()
 
         return cleaned_data
+
+    def clean_my_pet_id(self):
+        """驗證選擇的寵物是否可以用於領養"""
+        # 這個驗證會在視圖中處理，因為需要 request 對象
+        return self.data.get('my_pet_id')
 
 class TransferRequestForm(forms.ModelForm):
     """更改飼主請求表單"""

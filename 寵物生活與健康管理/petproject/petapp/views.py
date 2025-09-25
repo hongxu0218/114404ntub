@@ -973,9 +973,22 @@ def pet_profile(request, pet_id):
 def health_rec(request):
     """健康記錄總覽 - 僅限飼主"""
     pets = Pet.objects.filter(owner=request.user)
-    
+
     # 獲取當前標籤參數
     current_tab = request.GET.get('tab', 'medical')
+
+    # 獲取寵物篩選參數
+    selected_pet_id = request.GET.get('pet')
+    selected_pet = None
+
+    if selected_pet_id:
+        try:
+            selected_pet = pets.get(id=selected_pet_id)
+            # 只顯示選定寵物的記錄
+            pets = pets.filter(id=selected_pet_id)
+        except Pet.DoesNotExist:
+            # 如果寵物不存在或不屬於當前用戶，忽略篩選
+            selected_pet_id = None
     
     # 收集各類型記錄的數量
     medical_records = []
@@ -1006,8 +1019,14 @@ def health_rec(request):
     # 將生活記錄按照日期和建立時間倒序排列（最新的在前）
     daily_records.sort(key=lambda record: (record.date, record.created_at), reverse=True)
     
+    # 獲取所有寵物用於篩選器顯示
+    all_user_pets = Pet.objects.filter(owner=request.user)
+
     context = {
         'pets': pets,
+        'all_pets': all_user_pets,
+        'selected_pet': selected_pet,
+        'selected_pet_id': selected_pet_id,
         'current_tab': current_tab,
         'medical_records': medical_records,
         'vaccine_records': vaccine_records,
@@ -1023,23 +1042,30 @@ def health_rec(request):
 def add_daily_record(request, pet_id):
     """新增每日記錄"""
     pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
-    
+    # 獲取用戶的所有寵物，用於切換功能
+    user_pets = Pet.objects.filter(owner=request.user).order_by('name')
+
     if request.method == 'POST':
         form = DailyRecordForm(request.POST)
         if form.is_valid():
             record = form.save(commit=False)
             record.pet = pet
             record.save()
-            messages.success(request, '記錄新增成功！')
+            messages.success(request, f'成功為 {pet.name} 新增記錄！')
             return redirect('health_rec')
         else:
-            pass
+            # 添加錯誤信息
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = DailyRecordForm()
-    
+
     return render(request, 'health_records/add_daily_record.html', {
         'form': form,
-        'pet': pet
+        'pet': pet,
+        'user_pets': user_pets,
+        'current_pet_id': pet.id
     })
 
 @login_required
@@ -1195,26 +1221,53 @@ def update_daily_record(request, record_id):
     """更新每日記錄"""
     try:
         record = get_object_or_404(DailyRecord, id=record_id)
-        
+
         # 檢查權限
         if record.pet.owner != request.user:
             return JsonResponse({
                 'status': 'error',
                 'message': '無權限修改此記錄'
             })
-        
-        form = DailyRecordForm(request.POST, instance=record)
-        if form.is_valid():
-            form.save()
-            return JsonResponse({
-                'status': 'success',
-                'message': '記錄更新成功！'
-            })
+
+        # 處理JSON數據或表單數據
+        if request.content_type == 'application/json':
+            import json
+            data = json.loads(request.body)
+
+            # 僅更新content字段（簡化編輯）
+            if 'content' in data:
+                record.content = data['content'].strip()
+                if record.content:  # 確保內容不為空
+                    record.save()
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': '記錄更新成功！'
+                    })
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '記錄內容不能為空'
+                    })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '缺少記錄內容'
+                })
         else:
-            return JsonResponse({
-                'status': 'error',
-                'errors': form.errors
-            })
+            # 處理表單數據（完整編輯）
+            form = DailyRecordForm(request.POST, instance=record)
+            if form.is_valid():
+                form.save()
+                return JsonResponse({
+                    'status': 'success',
+                    'message': '記錄更新成功！'
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'errors': form.errors
+                })
+
     except Exception as e:
         return JsonResponse({
             'status': 'error',
@@ -4065,8 +4118,16 @@ def add_adoption(request):
         AdoptionPet.objects.filter(owner=request.user).values_list("name", flat=True)
     )
 
-    # 獲取用戶的寵物資料用於快速帶入
-    my_pets = Pet.objects.filter(owner=request.user).values(
+    # 獲取用戶的寵物資料用於快速帶入（排除已刊登且仍在發布的寵物）
+    published_pet_ids = AdoptionPet.objects.filter(
+        owner=request.user,
+        is_publish=True,
+        original_pet__isnull=False
+    ).values_list('original_pet_id', flat=True)
+
+    my_pets = Pet.objects.filter(owner=request.user).exclude(
+        id__in=published_pet_ids
+    ).values(
         'id', 'name', 'species', 'breed', 'gender', 'birth_date',
         'weight', 'sterilization_status', 'chip'
     )
@@ -4076,6 +4137,40 @@ def add_adoption(request):
         if form.is_valid():
             adoption = form.save(commit=False)
             adoption.owner = request.user
+
+            # 如果是從"我的寵物"帶入，設置original_pet關聯
+            my_pet_id = request.POST.get('my_pet_id')
+            if my_pet_id:
+                try:
+                    original_pet = Pet.objects.get(id=my_pet_id, owner=request.user)
+
+                    # 檢查這個寵物是否已經被刊登且仍在發布
+                    existing_adoption = AdoptionPet.objects.filter(
+                        owner=request.user,
+                        original_pet=original_pet,
+                        is_publish=True
+                    ).first()
+
+                    if existing_adoption:
+                        messages.error(request, f"寵物「{original_pet.name}」已經在領養列表中，不能重複刊登")
+                        form.add_error(None, f"寵物「{original_pet.name}」已經在領養列表中")
+                        return render(request, 'adoptions/add_adoption.html', {
+                            'adoption_form': form,
+                            'other_pet_names': other_pet_names,
+                            'my_pets': list(my_pets),
+                            'feature_choices': FEATURE_CHOICES,
+                            'physical_choices': PHYSICAL_CHOICES,
+                            'adoptcondition_choices': ADOPTCONDITION_CHOICES,
+                            'dog_choices': DOG_CHOICES,
+                            'cat_choices': CAT_CHOICES,
+                            'dogvaccine_choices': DOGVACCINE_CHOICES,
+                            'catvaccine_choices': CATVACCINE_CHOICES,
+                        })
+
+                    adoption.original_pet = original_pet
+                except Pet.DoesNotExist:
+                    pass  # 如果寵物不存在或不屬於用戶，忽略
+
             adoption.save()
             messages.success(request, "刊登成功")
             return redirect('adoption')
@@ -5746,10 +5841,19 @@ def edit_adoption(request, pk):
         physical_data = safe_json_loads(adoption.physical_condition)
         adoptcondition_data = safe_json_loads(adoption.adoption_condition)
 
-        # 獲取使用者的寵物資料用於「從我的寵物帶入」功能
+        # 獲取使用者的寵物資料用於「從我的寵物帶入」功能（排除已刊登且仍在發布的寵物）
         my_pets = []
         if request.user.is_authenticated:
-            pets = Pet.objects.filter(owner=request.user)
+            # 排除已刊登且仍在發布的寵物，但允許當前正在編輯的寵物
+            published_pet_ids = AdoptionPet.objects.filter(
+                owner=request.user,
+                is_publish=True,
+                original_pet__isnull=False
+            ).exclude(id=adoption.id).values_list('original_pet_id', flat=True)
+
+            pets = Pet.objects.filter(owner=request.user).exclude(
+                id__in=published_pet_ids
+            )
             for pet in pets:
                 pet_data = {
                     'id': pet.id,
@@ -6652,7 +6756,15 @@ def adoption_transfer_confirm(request, transfer_id):
 
             # 同時轉移對應的寵物記錄
             try:
-                # 嘗試找到對應的寵物記錄（通過名字、品種、原飼主匹配）
+                # 建立物種對應表（處理中英文物種名稱不一致問題）
+                species_mapping = {
+                    'dog': '狗',
+                    'cat': '貓',
+                    '狗': 'dog',
+                    '貓': 'cat'
+                }
+
+                # 首先嘗試精確匹配
                 corresponding_pet = Pet.objects.filter(
                     name=adoption.name,
                     species=adoption.species,
@@ -6660,14 +6772,43 @@ def adoption_transfer_confirm(request, transfer_id):
                     owner=transfer.from_owner
                 ).first()
 
+                # 如果精確匹配失敗，嘗試物種名稱轉換後匹配
+                if not corresponding_pet:
+                    mapped_species = species_mapping.get(adoption.species)
+                    if mapped_species:
+                        corresponding_pet = Pet.objects.filter(
+                            name=adoption.name,
+                            species=mapped_species,
+                            breed=adoption.breed,
+                            owner=transfer.from_owner
+                        ).first()
+
+                # 如果還是找不到，嘗試只用名字和飼主匹配（最後手段）
+                if not corresponding_pet:
+                    potential_pets = Pet.objects.filter(
+                        name=adoption.name,
+                        owner=transfer.from_owner
+                    )
+                    if potential_pets.count() == 1:
+                        corresponding_pet = potential_pets.first()
+                        print(f"警告：使用名字和飼主進行寵物匹配: {corresponding_pet.name}")
+
                 if corresponding_pet:
                     corresponding_pet.owner = request.user
                     corresponding_pet.save()
                     print(f"已轉移寵物記錄: {corresponding_pet.name} (ID: {corresponding_pet.id}) 到 {request.user.username}")
                 else:
-                    print(f"未找到對應的寵物記錄: {adoption.name}")
+                    print(f"未找到對應的寵物記錄: {adoption.name} (物種: {adoption.species}, 品種: {adoption.breed})")
+                    # 列出原飼主的所有寵物以便除錯
+                    owner_pets = Pet.objects.filter(owner=transfer.from_owner)
+                    print("原飼主的所有寵物:")
+                    for pet in owner_pets:
+                        print(f"  - {pet.name} (物種: {pet.species}, 品種: {pet.breed})")
+
             except Exception as e:
                 print(f"轉移寵物記錄時發生錯誤: {e}")
+                import traceback
+                print(traceback.format_exc())
 
             # 通知原飼主轉交已被接受
             Notification.objects.create(
