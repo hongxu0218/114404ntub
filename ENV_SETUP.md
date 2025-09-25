@@ -16,7 +16,7 @@ ALLOWED_HOSTS=127.0.0.1,localhost,127.0.0.1:8000
 CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
 
 #=================
-ALLOWED_HOSTS=127.0.0.1,localhost,pawday114404.duckdns.org,pawday114484.duckdns.org
+ALLOWED_HOSTS=127.0.0.1,localhost,pawday114404.duckdns.org
 
 CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000,https://pawday114404.duckdns.org
 #==============
