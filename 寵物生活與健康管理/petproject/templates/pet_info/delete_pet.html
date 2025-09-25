@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}刪除寵物資料{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --primary-orange: #ffaa00;
+    --primary-orange-hover: #ff8800;
+    --warm-bg: #fff8f0;
+    --warm-card: #fef6ec;
+    --text-dark: #333;
+    --border-light: #ffe0b3;
+    --shadow-light: rgba(0,0,0,0.1);
+    --danger-red: #dc3545;
+    --danger-red-hover: #c82333;
+  }
+
+  /* 主容器 */
+  .delete-container {
+    min-height: 80vh;
+    background: linear-gradient(135deg, var(--warm-bg) 0%, #fff5e6 100%);
+    padding: 3rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 刪除確認卡片 */
+  .delete-confirmation-card {
+    background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    border: 2px solid var(--border-light);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .delete-confirmation-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(220, 53, 69, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  /* 警告圖標 */
+  .warning-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--danger-red) 0%, var(--danger-red-hover) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem auto;
+    color: white;
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+    position: relative;
+    z-index: 2;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 20px rgba(220, 53, 69, 0);
+    }
+  }
+
+  /* 標題 */
+  .delete-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* 確認訊息 */
+  .delete-message {
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    position: relative;
+    z-index: 2;
+  }
+
+  .pet-name {
+    color: var(--danger-red);
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  /* 警告提示 */
+  .warning-text {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffeaa7;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    color: #856404;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .warning-text i {
+    color: #ff9800;
+    font-size: 1.1rem;
+  }
+
+  /* 按鈕容器 */
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* 刪除按鈕 */
+  .delete-btn {
+    background: linear-gradient(135deg, var(--danger-red) 0%, var(--danger-red-hover) 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 8px 24px rgba(220, 53, 69, 0.3);
+    position: relative;
+    overflow: hidden;
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  .delete-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
+  }
+
+  .delete-btn:hover::before {
+    opacity: 1;
+  }
+
+  .delete-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(220, 53, 69, 0.4);
+    background: linear-gradient(135deg, var(--danger-red-hover) 0%, #bd2130 100%);
+  }
+
+  .delete-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(220, 53, 69, 0.35);
+  }
+
+  /* 取消按鈕 */
+  .cancel-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 8px 24px rgba(108, 117, 125, 0.3);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  .cancel-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: inherit;
+  }
+
+  .cancel-btn:hover::before {
+    opacity: 1;
+  }
+
+  .cancel-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(108, 117, 125, 0.4);
+    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    color: white;
+    text-decoration: none;
+  }
+
+  .cancel-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(108, 117, 125, 0.35);
+  }
+
+  /* 載入動畫 */
+  .fade-in {
+    animation: fadeInUp 0.8s ease;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 響應式設計 */
+  @media (max-width: 768px) {
+    .delete-container {
+      padding: 2rem 1rem;
+    }
+
+    .delete-confirmation-card {
+      padding: 2rem;
+      margin: 1rem;
+    }
+
+    .delete-title {
+      font-size: 1.5rem;
+    }
+
+    .button-group {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .delete-btn,
+    .cancel-btn {
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .warning-icon {
+      width: 60px;
+      height: 60px;
+      font-size: 2rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .delete-confirmation-card {
+      padding: 1.5rem;
+    }
+
+    .delete-title {
+      font-size: 1.3rem;
+    }
+
+    .delete-message {
+      font-size: 1rem;
+    }
+  }
+
+  /* 按鈕焦點狀態 */
+  .delete-btn:focus,
+  .cancel-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+  }
+
+  .cancel-btn:focus {
+    box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-container">
+  <div class="delete-confirmation-card fade-in">
+    <!-- 警告圖標 -->
+    <div class="warning-icon">
+      <i class="bi bi-exclamation-triangle"></i>
+    </div>
+
+    <!-- 標題 -->
+    <h1 class="delete-title">確認刪除</h1>
+
+    <!-- 確認訊息 -->
+    <div class="delete-message">
+      <p>您確定要刪除 <span class="pet-name">{{ pet.name }}</span> 的資料嗎？</p>
+    </div>
+
+    <!-- 警告提示 -->
+    <div class="warning-text">
+      <i class="bi bi-info-circle"></i>
+      <span>此操作無法復原，將會永久刪除所有相關的健康紀錄、預約資訊等資料。</span>
+    </div>
+
+    <!-- 按鈕組 -->
+    <div class="button-group">
+      <form method="POST" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="delete-btn">
+          <i class="bi bi-trash"></i>
+          <span>確定</span>
+        </button>
+      </form>
+
+      <a href="{% url 'pet_list' %}" class="cancel-btn">
+        <i class="bi bi-arrow-left"></i>
+        <span>取消</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 刪除確認對話框
+  const deleteBtn = document.querySelector('.delete-btn');
+  const petName = "{{ pet.name }}";
+  
+  deleteBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // 自定義確認對話框
+    if (confirm(`最後確認：真的要刪除「${petName}」的所有資料嗎？\n\n此操作無法復原！`)) {
+      // 添加載入狀態
+      this.innerHTML = '<i class="bi bi-hourglass-split"></i><span>刪除中...</span>';
+      this.style.pointerEvents = 'none';
+      this.style.opacity = '0.7';
+      
+      // 提交表單
+      this.closest('form').submit();
+    }
+  });
+
+  // 鍵盤快捷鍵
+  document.addEventListener('keydown', function(e) {
+    // ESC 鍵返回
+    if (e.key === 'Escape') {
+      window.location.href = "{% url 'pet_list' %}";
+    }
+  });
+
+  // 添加進入動畫
+  const card = document.querySelector('.delete-confirmation-card');
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(30px)';
+  
+  setTimeout(() => {
+    card.style.transition = 'all 0.8s ease';
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
+{% endblock %}

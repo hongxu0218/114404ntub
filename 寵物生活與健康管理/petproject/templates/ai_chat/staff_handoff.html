@@ -1,0 +1,1047 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Handoff Console | 毛日好{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --primary: #ff6b6b;
+    --primary-light: #ff8e8e;
+    --primary-dark: #ee5a52;
+    --success: #10b981;
+    --success-light: #6ee7b7;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --secondary: #6b7280;
+    --dark: #1f2937;
+    --light: #f8fafc;
+    --border: #e5e7eb;
+    --border-light: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --border-radius: 16px;
+    --border-radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    background: #f8fafc;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1400px; }
+
+  /* 頁面標題優化 */
+  .page-header {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .page-header h3 {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.75rem;
+  }
+
+  .page-header .subtitle {
+    color: var(--text-secondary);
+    margin: 8px 0 0 0;
+    font-size: 0.95rem;
+  }
+
+  /* 主要版面優化 */
+  .handoff-wrap {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 24px;
+    min-height: 80vh;
+  }
+
+  /* 左側工單列表優化 */
+  .tickets-panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    height: fit-content;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tickets-header {
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    margin-bottom: 20px;
+  }
+
+  .tickets-header h5 {
+    margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  /* 分頁切換優化 */
+  .seg {
+    display: flex;
+    background: var(--light);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-light);
+  }
+
+  .seg-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+
+  .seg-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+  }
+
+  .seg-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+  }
+
+  .seg .badge {
+    font-weight: 700;
+    font-size: 0.8rem;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 工單列表優化 */
+  .tickets-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-right: -8px;
+  }
+
+  .tickets-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .tickets-list::-webkit-scrollbar-track {
+    background: var(--border-light);
+    border-radius: 3px;
+  }
+
+  .tickets-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  .tickets-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* 工單卡片優化 */
+  .ticket {
+    background: white;
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ticket::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .ticket:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border);
+  }
+
+  .ticket.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  }
+
+  .ticket.active::before {
+    background: var(--primary);
+  }
+
+  .ticket.unclaimed {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.02), rgba(239, 68, 68, 0.05));
+  }
+
+  .ticket.unclaimed::before {
+    background: var(--danger);
+  }
+
+  .ticket.open {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.02), rgba(16, 185, 129, 0.05));
+  }
+
+  .ticket.open::before {
+    background: var(--success);
+  }
+
+  .ticket.closed {
+    border-color: var(--border);
+    background: var(--light);
+    opacity: 0.8;
+  }
+
+  .ticket-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .ticket-id {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1rem;
+  }
+
+  .ticket-status {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ticket-status.unclaimed {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+  }
+
+  .ticket-status.open {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+  }
+
+  .ticket-status.closed {
+    background: var(--border-light);
+    color: var(--text-muted);
+  }
+
+  .ticket-session {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-family: monospace;
+  }
+
+  .ticket-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 聊天室優化 */
+  .chat-panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    padding: 0;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    padding: 24px;
+    border-bottom: 2px solid var(--border-light);
+    background: var(--light);
+  }
+
+  .chat-title-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .chat-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .chat-title h5 {
+    margin: 0;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  .status-pill {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .status-open {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  .status-closed {
+    background: var(--border-light);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .chat-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .chat-actions .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-dark), #d63031);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border) !important;
+  }
+
+  .btn-outline-secondary:hover {
+    background: var(--light);
+    color: var(--text-primary);
+  }
+
+  /* 聊天記錄優化 */
+  #chatlog {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: #fafbfc;
+  }
+
+  #chatlog::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #chatlog::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #chatlog::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  .msg {
+    margin-bottom: 16px;
+    max-width: 85%;
+  }
+
+  .msg[data-sender="user"] {
+    margin-left: auto;
+  }
+
+  .msg[data-sender="agent"] {
+    margin-right: auto;
+  }
+
+  .msg[data-sender="system"] {
+    margin: 20px auto;
+    max-width: 70%;
+  }
+
+  .msg-bubble {
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid transparent;
+  }
+
+  .msg[data-sender="user"] .msg-bubble {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    border-radius: 16px 16px 4px 16px;
+  }
+
+  .msg[data-sender="agent"] .msg-bubble {
+    background: white;
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 16px 16px 16px 4px;
+  }
+
+  .msg[data-sender="system"] .msg-bubble {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(156, 163, 175, 0.1));
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    text-align: center;
+    font-style: italic;
+  }
+
+  .msg .who {
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .msg[data-sender="user"] .who {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .msg[data-sender="agent"] .who {
+    color: var(--primary);
+  }
+
+  .msg[data-sender="system"] .who {
+    color: var(--text-muted);
+  }
+
+  .msg-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  .msg[data-sender="user"] .msg-meta {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* 回復區域優化 */
+  .chat-footer {
+    padding: 24px;
+    border-top: 2px solid var(--border-light);
+    background: var(--light);
+  }
+
+  .reply-form {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+  }
+
+  #reply {
+    flex: 1;
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    resize: vertical;
+    min-height: 80px;
+    max-height: 120px;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  #reply:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  }
+
+  #send {
+    background: linear-gradient(135deg, var(--success), #059669);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  #send:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-muted);
+    gap: 16px;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    opacity: 0.5;
+  }
+
+  .empty-state h5 {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  /* 響應式設計 */
+  @media (max-width: 1200px) {
+    .handoff-wrap {
+      grid-template-columns: 380px 1fr;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .handoff-wrap {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .tickets-panel {
+      max-height: 50vh;
+    }
+
+    .chat-panel {
+      max-height: 70vh;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 12px;
+    }
+
+    .page-header {
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .tickets-panel,
+    .chat-panel {
+      padding: 16px;
+    }
+
+    .chat-header {
+      padding: 16px;
+    }
+
+    .chat-footer {
+      padding: 16px;
+    }
+
+    .reply-form {
+      flex-direction: column;
+    }
+
+    #send {
+      align-self: stretch;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- 頁面標題 -->
+  <div class="page-header">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-headset me-3" style="font-size: 2rem; color: var(--primary);" aria-hidden="true"></i>
+      <div>
+        <h3 class="mb-0">🎧 人工客服控台</h3>
+        <p class="subtitle mb-0">管理客戶工單，提供即時客服支援</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="handoff-wrap">
+    <!-- 左側：工單列表 -->
+    <div class="tickets-panel" id="tickets-pane" data-current-id="{{ current.id|default:'' }}">
+      <div class="tickets-header">
+        <h5>📋 工單列表</h5>
+      </div>
+
+      <div class="seg" role="tablist" aria-label="工單分類">
+        <button type="button" class="seg-btn active" data-filter="unclaimed" role="tab" aria-selected="true">
+          🚨 尚未接手 <span id="count-unclaimed" class="badge bg-danger">0</span>
+        </button>
+        <button type="button" class="seg-btn" data-filter="open" role="tab" aria-selected="false">
+          💬 進行中 <span id="count-open" class="badge bg-success">0</span>
+        </button>
+        <button type="button" class="seg-btn" data-filter="closed" role="tab" aria-selected="false">
+          ✅已結案 <span id="count-closed" class="badge bg-secondary">0</span>
+        </button>
+      </div>
+
+      <div id="tickets-list" class="tickets-list" aria-live="polite"></div>
+    </div>
+
+    <!-- 右側：聊天室 -->
+    <div class="chat-panel">
+      {% if current %}
+        <!-- 聊天室標題 -->
+        <div class="chat-header">
+          <div class="chat-title-section">
+            <div class="chat-title">
+              <h5>💬 工單 #{{ current.id }}</h5>
+              {% if current.is_open %}
+                <span class="status-pill status-open">🟢 開啟中</span>
+              {% else %}
+                <span class="status-pill status-closed">🔴 已結案</span>
+              {% endif %}
+            </div>
+            <div class="chat-actions">
+              {% if current.is_open %}
+                <form method="post" action="{% url 'handoff_agent_accept' current.id %}" style="display: inline;">
+                  {% csrf_token %}
+                  <button class="btn btn-primary" type="submit">🤝 接手工單</button>
+                </form>
+                <form method="post" action="{% url 'handoff_agent_close' current.id %}" style="display: inline;">
+                  {% csrf_token %}
+                  <button class="btn btn-outline-secondary" type="submit">🔒 結案</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+          <div class="d-flex align-items-center text-muted" style="font-size: 0.85rem;">
+            <i class="bi bi-person me-1"></i>
+            <span class="me-3">會話ID: {{ current.session_key }}</span>
+            <i class="bi bi-clock me-1"></i>
+            <span>建立時間: {{ current.created_at|date:"Y-m-d H:i" }}</span>
+          </div>
+        </div>
+
+        <!-- 聊天記錄 -->
+        <div id="chatlog">
+          {% for m in current.messages.all %}
+            <div class="msg" data-id="{{ m.id }}" data-sender="{{ m.sender }}">
+              <div class="msg-bubble">
+                <span class="who">
+                  {% if m.sender == 'user' %}
+                    👤 {{ current.name|default:"用戶" }}
+                  {% elif m.sender == 'agent' %}
+                    🎧 客服
+                  {% else %}
+                    🤖 系統
+                  {% endif %}
+                </span>
+                {{ m.text }}
+                <div class="msg-meta">{{ m.created_at|date:"m/d H:i" }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- 回復區域 -->
+        {% if current.is_open %}
+        <div class="chat-footer">
+          <div class="reply-form">
+            <textarea id="reply" placeholder="💬 輸入回覆內容..."></textarea>
+            <button id="send">📤 送出</button>
+          </div>
+        </div>
+        {% endif %}
+      {% else %}
+        <!-- 空狀態 -->
+        <div class="empty-state">
+          <i class="bi bi-chat-dots"></i>
+          <h5>請選擇一個工單</h5>
+          <p>從左側工單列表中選擇要處理的客服工單</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ====== 左側：分頁切換 + 輪詢（事件委派） ====== */
+(function(){
+  const pane = document.getElementById('tickets-pane');
+  if (!pane) return;
+
+  const currentId = parseInt(pane.dataset.currentId || '0', 10);
+  const url = "{% url 'handoff_staff_tickets_poll' %}";
+
+  const listEl     = document.getElementById('tickets-list');
+  const seg        = document.querySelector('.seg');        // 事件委派容器
+  const cUnclaimed = document.getElementById('count-unclaimed');
+  const cOpen      = document.getElementById('count-open');
+  const cClosed    = document.getElementById('count-closed');
+
+  let currentFilter = localStorage.getItem('handoff_filter') || 'unclaimed';
+  let lastData = { unclaimed:[], open:[], closed:[] };
+  const digests = { unclaimed:'', open:'', closed:'' };
+
+  function applyTabUI() {
+    seg.querySelectorAll('.seg-btn').forEach(b=>{
+      const active = b.dataset.filter === currentFilter;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+
+  function digest(list){ return JSON.stringify((list||[]).map(x=>[x.id,x.last_msg_id])); }
+
+  function itemHTML(t, status){
+    const href = "{% url 'handoff_console_ticket' 0 %}".replace(/0\/$/, t.id + "/");
+    const active = (t.id === currentId) ? ' active' : '';
+
+    const statusConfig = {
+      'unclaimed': { icon: '🚨', label: '未接手', class: 'unclaimed' },
+      'open': { icon: '💬', label: '進行中', class: 'open' },
+      'closed': { icon: '✅', label: '已結案', class: 'closed' }
+    };
+
+    const config = statusConfig[status] || statusConfig['unclaimed'];
+    const timeStr = new Date(t.created_at).toLocaleString('zh-TW', {
+      month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    return `
+      <div class="ticket ${status}${active}" onclick="location.href='${href}'">
+        <div class="ticket-header">
+          <div class="ticket-id">#${t.id}</div>
+          <div class="ticket-status ${config.class}">${config.icon} ${config.label}</div>
+        </div>
+        <div class="ticket-session">會話: ${t.session_key}</div>
+        <div class="ticket-meta">
+          <i class="bi bi-clock"></i>
+          <span>${timeStr}</span>
+        </div>
+      </div>`;
+  }
+
+  function renderActiveList(data, force=false){
+    // 更新徽章數
+    cUnclaimed.textContent = (data.unclaimed||[]).length;
+    cOpen.textContent      = (data.open||[]).length;
+    cClosed.textContent    = (data.closed||[]).length;
+
+    const group = data[currentFilter] || [];
+    const snap  = digest(group);
+    if (!force && snap === digests[currentFilter]) return; // 沒變就不重繪
+    digests[currentFilter] = snap;
+
+    listEl.innerHTML = group.length
+      ? group.map(t => itemHTML(t, currentFilter)).join('')
+      : `<div class="text-muted small py-2">此分類目前沒有工單</div>`;
+  }
+
+  // 事件委派：點到任何 .seg-btn 都會切換
+  seg.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    e.preventDefault();                                    // 防止 submit
+    currentFilter = btn.dataset.filter;
+    localStorage.setItem('handoff_filter', currentFilter);
+    applyTabUI();
+    renderActiveList(lastData, true);                      // 立刻強制重繪
+  });
+
+  async function poll(){
+    try{
+      const res = await fetch(url, { headers:{'X-Requested-With':'XMLHttpRequest'}, cache:'no-store' });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) return;
+      const data = await res.json();
+      if (!data || data.ok !== true) return;
+
+      lastData = {
+        unclaimed: data.unclaimed || [],
+        open:      data.open      || [],
+        closed:    data.closed    || []
+      };
+      renderActiveList(lastData);                          // 只更新當前分頁
+    }catch(e){ console.warn('tickets poll failed', e); }
+  }
+
+  // 初始化
+  applyTabUI();
+  renderActiveList(lastData, true);                        // 先畫空狀態
+  poll();
+  setInterval(poll, 3000);
+})();
+</script>
+
+{% if current %}
+<script>
+/* ====== 右側訊息：暫存泡泡 → 輪詢升級（避免重複） ====== */
+(function () {
+  const log      = document.getElementById('chatlog');
+  const sendBtn  = document.getElementById('send');
+  const textarea = document.getElementById('reply');
+  if (!log || !sendBtn || !textarea) return;
+
+  const replyUrl = "{% url 'handoff_agent_reply' current.id %}";
+  const pollUrl  = "{% url 'handoff_staff_poll' current.id %}";
+  const POLL_MS  = 3000;
+
+  let lastId = (function(){
+    const last = log.querySelector('.msg:last-of-type');
+    return last ? parseInt(last.dataset.id || '0', 10) : 0;
+  })();
+
+  const displayedIds = new Set(
+    Array.from(log.querySelectorAll('.msg[data-id]'))
+      .map(el => parseInt(el.dataset.id,10))
+      .filter(Boolean)
+  );
+  const pendingAgentBySig = new Map(); // key = sender|text, val = DOM
+
+  function sig(sender, text){ return (sender||'') + '|' + (text||'').trim(); }
+  function escapeHTML(s){ return (s||'').replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function nearBottom(){ return (log.scrollTop + log.clientHeight) >= (log.scrollHeight - 120); }
+  function stickBottom(){ log.scrollTop = log.scrollHeight; }
+  function getCookie(name){ const m = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)'); return m ? decodeURIComponent(m.pop()) : null; }
+
+  async function apiPost(url, payload){
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type":"application/json",
+        "X-Requested-With":"XMLHttpRequest",
+        "X-CSRFToken": getCookie('csrftoken') || ''
+      },
+      body: JSON.stringify(payload || {})
+    });
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('not-json');
+    const data = await res.json().catch(()=>({}));
+    if (!res.ok || data.ok === false) throw new Error(data.error || 'failed');
+    return data;
+  }
+
+  function renderMsg({id=null, sender='', text='', ts=null, temp=false, upgradeTarget=null}){
+    if (upgradeTarget){
+      upgradeTarget.removeAttribute('data-temp');
+      if (id != null){ upgradeTarget.dataset.id = String(id); displayedIds.add(id); }
+      if (ts){
+        const meta = upgradeTarget.querySelector('.msg-meta');
+        const t = new Date(ts).toLocaleString();
+        if (meta) meta.textContent = t;
+        else upgradeTarget.querySelector('.msg-bubble')
+             .insertAdjacentHTML('beforeend', `<div class="msg-meta">${t}</div>`);
+      }
+      return upgradeTarget;
+    }
+    if (id != null && displayedIds.has(id)) return null;
+
+    const el = document.createElement('div');
+    el.className = 'msg';
+    el.dataset.sender = sender || '';
+    if (id != null){ el.dataset.id = String(id); displayedIds.add(id); }
+    if (temp) el.dataset.temp = '1';
+
+    // 根據發送者顯示不同的身份標識
+    let whoLabel = '';
+    if (sender === 'user') {
+      whoLabel = '👤 {{ current.name|default:"用戶" }}';
+    } else if (sender === 'agent') {
+      whoLabel = '🎧 客服';
+    } else if (sender === 'system') {
+      whoLabel = '🤖 系統';
+    } else {
+      whoLabel = `[${(sender||'').toUpperCase()}]`;
+    }
+
+    el.innerHTML = `
+      <div class="msg-bubble">
+        <span class="who">${whoLabel}</span>${escapeHTML(text||'')}
+        ${ts ? `<div class="msg-meta">${new Date(ts).toLocaleString()}</div>` : ''}
+      </div>`;
+    log.appendChild(el);
+    return el;
+  }
+
+  async function handleSend(){
+    const text = (textarea.value || '').trim();
+    if (!text) return;
+
+    const signature = sig('agent', text);
+    const tempNode = renderMsg({ sender:'agent', text, temp:true });
+    pendingAgentBySig.set(signature, tempNode);
+    textarea.value = '';
+
+    try{ await apiPost(replyUrl, { message: text }); }
+    catch(e){
+      if (tempNode && tempNode.parentNode) tempNode.parentNode.removeChild(tempNode);
+      pendingAgentBySig.delete(signature);
+      renderMsg({ sender:'system', text:'⚠️ 傳送失敗，請稍後再試。' });
+    }
+    if (nearBottom()) stickBottom();
+  }
+
+  async function poll(){
+    try{
+      const res = await fetch(pollUrl + '?since=' + (lastId || 0), {
+        headers: { "X-Requested-With":"XMLHttpRequest" }, cache:'no-store'
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) return;
+
+      const data = await res.json();
+      if (!data || !data.ok || !Array.isArray(data.messages)) return;
+
+      const stick = nearBottom();
+      for (const m of data.messages){
+        if (m.id != null && displayedIds.has(m.id)) { lastId = Math.max(lastId, m.id); continue; }
+
+        const signature = sig(m.sender, m.text);
+        const maybeTemp = pendingAgentBySig.get(signature);
+
+        if (m.sender === 'agent' && maybeTemp && maybeTemp.dataset.temp === '1'){
+          renderMsg({ sender:'agent', text:m.text, id:m.id, ts:m.ts, upgradeTarget: maybeTemp });
+          pendingAgentBySig.delete(signature);
+        } else {
+          renderMsg({ sender:m.sender, text:m.text, id:m.id, ts:m.ts });
+        }
+        if (m.id != null) lastId = Math.max(lastId, m.id);
+      }
+      if (stick) stickBottom();
+    }catch(e){ console.warn('handoff poll failed', e); }
+  }
+
+  sendBtn.addEventListener('click', handleSend);
+  textarea.addEventListener('keydown', (ev)=>{
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); handleSend(); }
+  });
+
+  setInterval(poll, POLL_MS);
+
+  // 接單功能
+  window.acceptTicket = function(ticketId) {
+    if (!confirm('確定要接手此工單嗎？')) return;
+
+    fetch(`/staff/handoff/${ticketId}/accept/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    .then(() => {
+      location.reload();
+    })
+    .catch(error => {
+      console.error('接單失敗:', error);
+      alert('接單失敗，請稍後再試');
+    });
+  };
+
+  // 結案功能
+  window.closeTicket = function(ticketId) {
+    if (!confirm('確定要結案此工單嗎？')) return;
+
+    fetch(`/staff/handoff/${ticketId}/close/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    .then(() => {
+      location.reload();
+    })
+    .catch(error => {
+      console.error('結案失敗:', error);
+      alert('結案失敗，請稍後再試');
+    });
+  };
+
+  // 獲取CSRF Token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

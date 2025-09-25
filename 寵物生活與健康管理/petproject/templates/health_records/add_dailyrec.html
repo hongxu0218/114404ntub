@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}新增生活記錄{% endblock %}
+
+{% block extra_css %}
+<style>
+main {
+    padding: 40px 20px;
+    background-color: #fff8f0;
+    min-height: 80vh;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+    margin: auto;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+button[type="submit"] {
+    background-color: #ffaa00;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    align-self: flex-end;
+}
+
+button[type="submit"]:hover {
+    background-color: #ff8800;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ pet.name }} 的生活記錄</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">儲存</button>
+    </form>
+</div>
+{% endblock %}

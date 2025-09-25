@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load form_tags %}
+
+{% block title %}編輯寵物資料{% endblock %}
+
+{% block extra_css %}
+<style>
+    body.edit-pet-page {
+        padding: 20px;
+        background-color: #f7f7f7;
+    }
+    form {
+        background: white;
+        padding: 2em;
+        border-radius: 10px;
+        max-width: 600px;
+        margin: auto;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+        display: block;
+        margin-top: 1em;
+        font-weight: bold;
+        margin-bottom: 0.5em;
+    }
+    input, select, textarea {
+        width: 100%;
+        padding: 0.5em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin-bottom: 1em;
+    }
+    .text-danger p {
+        color: red;
+        margin: 0.2em 0 0;
+    }
+    .current-image {
+        margin-top: 1em;
+        text-align: center;
+    }
+    .current-image img {
+        max-width: 100%;
+        max-height: 200px;
+        object-fit: contain;
+    }
+    .button-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2em;
+    }
+    .button-row button,
+    .button-row a button {
+        padding: 0.6em 1.5em;
+        border: none;
+        border-radius: 6px;
+        font-size: 1em;
+        cursor: pointer;
+    }
+    .button-row button[type="submit"] {
+        background-color: #3498db;
+        color: #fff;
+    }
+    .button-row a button {
+        background-color: #95a5a6;
+        color: #fff;
+    }
+    .button-row button:hover {
+        opacity: 0.9;
+    }
+    /* 隱藏 Django 預設清除 checkbox 和文字 */
+    input[type="checkbox"][name$="-clear"],
+    label[for$="-clear"],
+    a[href$="-clear"] {
+        display: none !important;
+    }
+
+    /* 隱藏圖片路徑文字（如有） */
+    .current-image + a {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center;">編輯寵物資料</h2>
+
+<form method="post" enctype="multipart/form-data" id="edit-form">
+    {% csrf_token %}
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <label for="id_species">種類</label>
+    {{ form.species }}
+
+    <label for="id_breed">品種</label>
+    {{ form.breed }}
+    {% if form.breed.errors %}
+        <div class="text-danger">{% for error in form.breed.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+    
+    <!-- 當品種選擇"其他"時顯示的文字輸入框 -->
+    <div id="breed-other-field" style="display: none;">
+        <label for="id_breed_other">請輸入品種</label>
+        {{ form.breed_other }}
+        {% if form.breed_other.errors %}
+            <div class="text-danger">
+                {% for error in form.breed_other.errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <label for="id_name">名字</label>
+    {{ form.name }}
+    {% if form.name.errors %}
+        <div class="text-danger">{% for error in form.name.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+
+    <label for="id_sterilization_status">絕育狀態</label>
+    {{ form.sterilization_status }}
+
+    <label for="id_chip">晶片號碼</label>
+    {{ form.chip }}
+
+    <label for="id_birth_date">出生日期</label>
+    {{ form.birth_date }}
+    {% if form.birth_date.errors %}
+        <div class="text-danger">{% for error in form.birth_date.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+
+    <label for="id_gender">性別</label>
+    {{ form.gender }}
+
+    <label for="id_weight">體重（公斤）</label>
+    {{ form.weight }}
+    {% if form.weight.errors %}
+        <div class="text-danger">{% for error in form.weight.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+
+    <label for="id_feature">特徵</label>
+    {{ form.feature }}
+
+    <label for="id_picture">圖片</label>
+
+    {% if pet.picture %}
+        <div class="current-image">
+            <img src="{{ pet.picture.url }}" alt="目前圖片" id="current-preview">
+        </div>
+    {% else %}
+        <div class="current-image">
+            <p>尚未上傳圖片。</p>
+            <img id="current-preview" style="display:none;" />
+        </div>
+    {% endif %}
+
+<!-- 僅顯示檔案選擇按鈕，隱藏檔案路徑與清除文字 -->
+<input type="file" name="picture" accept="image/*" id="id_picture">
+
+    {% if form.picture.errors %}
+        <div class="text-danger">{% for error in form.picture.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+
+    <div class="button-row">
+        <a href="{% url 'pet_list' %}"><button type="button">返回</button></a>
+        <button type="submit">保存更改</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 圖片預覽功能
+    const input = document.getElementById('id_picture');
+    const preview = document.getElementById('current-preview');
+
+    if (input && preview) {
+        input.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // 動態品種選項功能
+    const speciesSelect = document.getElementById('id_species');
+    const breedSelect = document.getElementById('id_breed');
+    
+    if (speciesSelect && breedSelect) {
+        // 保存當前選中的品種值
+        const currentBreed = breedSelect.value;
+        
+        // 種類改變時更新品種選項
+        speciesSelect.addEventListener('change', function() {
+            const selectedSpecies = this.value;
+            updateBreedOptions(selectedSpecies, currentBreed);
+        });
+        
+        // 品種改變時檢查是否選擇"其他"
+        breedSelect.addEventListener('change', function() {
+            toggleBreedOtherField(this.value);
+        });
+        
+        // 頁面載入時初始化品種選項（編輯模式）
+        updateBreedOptions(speciesSelect.value, currentBreed);
+    }
+});
+
+function updateBreedOptions(species, selectedBreed = '') {
+    const breedSelect = document.getElementById('id_breed');
+    
+    // 顯示載入中
+    breedSelect.innerHTML = '<option value="">載入中...</option>';
+    breedSelect.disabled = true;
+    
+    // 發送AJAX請求獲取品種選項
+    fetch(`/api/breed-choices/?species=${species}`)
+        .then(response => response.json())
+        .then(data => {
+            // 清空選項
+            breedSelect.innerHTML = '';
+            
+            // 添加預設空選項（如果沒有選中的品種）
+            if (!selectedBreed) {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = '請選擇品種';
+                breedSelect.appendChild(defaultOption);
+            }
+            
+            // 添加品種選項
+            data.breeds.forEach(breed => {
+                const option = document.createElement('option');
+                option.value = breed.value;
+                option.textContent = breed.text;
+                // 如果是之前選中的品種，則保持選中狀態
+                if (breed.value === selectedBreed) {
+                    option.selected = true;
+                }
+                breedSelect.appendChild(option);
+            });
+            
+            // 啟用選擇框
+            breedSelect.disabled = false;
+            
+            // 檢查是否選擇了"其他"
+            toggleBreedOtherField(breedSelect.value);
+        })
+        .catch(error => {
+            console.error('Error fetching breed options:', error);
+            breedSelect.innerHTML = '<option value="">載入失敗</option>';
+            breedSelect.disabled = false;
+        });
+}
+
+function toggleBreedOtherField(selectedBreed) {
+    const breedOtherField = document.getElementById('breed-other-field');
+    const breedOtherInput = document.getElementById('id_breed_other');
+    
+    console.log('toggleBreedOtherField called with:', selectedBreed);
+    console.log('breedOtherField found:', breedOtherField);
+    console.log('breedOtherInput found:', breedOtherInput);
+    
+    if (selectedBreed === '其他') {
+        console.log('Showing breed_other field');
+        if (breedOtherField) {
+            breedOtherField.style.display = 'block';
+        }
+        if (breedOtherInput) {
+            breedOtherInput.required = true;
+            breedOtherInput.focus(); // 自動聚焦到輸入框
+        }
+    } else {
+        console.log('Hiding breed_other field');
+        if (breedOtherField) {
+            breedOtherField.style.display = 'none';
+        }
+        if (breedOtherInput) {
+            breedOtherInput.required = false;
+            // 編輯模式下如果不是"其他"，不清空值，因為可能是自訂品種
+        }
+    }
+}
+</script>
+{% endblock %}

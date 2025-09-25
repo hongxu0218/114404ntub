@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}請求錯誤 - 毛日好{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-lg-6 col-md-8 text-center">
+      <div class="error-card p-5">
+        <!-- 錯誤圖示 -->
+        <div class="error-icon mb-4">
+          <i class="bi bi-exclamation-triangle" style="font-size: 5rem; color: var(--warning-color);"></i>
+        </div>
+        
+        <!-- 錯誤代碼 -->
+        <h1 class="error-code mb-3" style="font-size: 4rem; font-weight: 700; color: var(--primary-orange);">400</h1>
+        
+        <!-- 錯誤標題 -->
+        <h2 class="error-title mb-3" style="color: var(--text-dark);">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          請求錯誤
+        </h2>
+        
+        <!-- 錯誤描述 -->
+        <div class="error-description mb-4">
+          <p class="lead text-muted">抱歉，您的請求格式有問題 🐾</p>
+          <p class="text-muted">請檢查您的操作並重試</p>
+        </div>
+        
+        <!-- 操作按鈕 -->
+        <div class="error-actions">
+          <a href="{% url 'home' %}" class="btn btn-primary-custom btn-lg me-3">
+            <i class="bi bi-house-door me-2"></i>
+            回到首頁
+          </a>
+          
+          <button onclick="history.back()" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            上一頁
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.error-card {
+  background: linear-gradient(135deg, #ffffff 0%, var(--warm-card) 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px var(--shadow-light);
+  border: 1px solid var(--border-light);
+}
+
+.min-vh-100 {
+  min-height: calc(100vh - 200px);
+}
+</style>
+{% endblock %}
