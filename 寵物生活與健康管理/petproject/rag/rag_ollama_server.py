@@ -5,9 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import chromadb
 import ollama
+from sentence_transformers import SentenceTransformer
 
 # 建議先用 3B，體感快且較不會超時；要再提升再切 7B
 DEFAULT_MODEL = "qwen2.5:3b-instruct"
+
+# 初始化嵌入模型（與建庫時保持一致）
+_embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")
 
 SYS_PROMPT = (
     "你是『毛日好 Paw&Day』網站的 AI 客服助理，請一律使用『繁體中文』回覆。"
@@ -55,7 +59,9 @@ def ollama_health():
 def retrieve(persist_dir: str, collection: str, q: str, top_k: int = 4):
     client = chromadb.PersistentClient(path=persist_dir)
     coll = client.get_or_create_collection(collection)
-    res = coll.query(query_texts=[q], n_results=top_k)
+    # 使用嵌入模型產生查詢向量
+    query_embedding = _embedder.encode([q]).tolist()
+    res = coll.query(query_embeddings=query_embedding, n_results=top_k)
     return res.get("documents", [[]])[0], res.get("metadatas", [[]])[0]
 
 def build_messages(q: str, docs: List[str], metas: List[Dict]) -> List[Dict]:
