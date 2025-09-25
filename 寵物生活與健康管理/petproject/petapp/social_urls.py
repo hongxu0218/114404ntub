@@ -14,14 +14,14 @@ urlpatterns = [
 
     # 貼文相關
     path('post/create/', social_views.create_post, name='create_post'),
-    path('post/<int:post_id>/like/', social_views.toggle_like, name='toggle_like'),
-    path('post/<int:post_id>/repost/', social_views.repost, name='repost'),
-    path('post/<int:post_id>/delete/', social_views.delete_post, name='delete_post'),
+    path('post/<uuid:post_id>/like/', social_views.toggle_like, name='toggle_like'),
+    path('post/<uuid:post_id>/repost/', social_views.repost, name='repost'),
+    path('post/<uuid:post_id>/delete/', social_views.delete_post, name='delete_post'),
 
     # 留言相關
-    path('post/<int:post_id>/comments/', social_views.get_comments, name='get_comments'),
-    path('post/<int:post_id>/comment/', social_views.add_comment, name='add_comment'),
-    path('comment/<int:comment_id>/like/', social_views.toggle_comment_like, name='toggle_comment_like'),
+    path('post/<uuid:post_id>/comments/', social_views.get_comments, name='get_comments'),
+    path('post/<uuid:post_id>/comment/', social_views.add_comment, name='add_comment'),
+    path('comment/<uuid:comment_id>/like/', social_views.toggle_comment_like, name='toggle_comment_like'),
 
     # 追蹤相關
     path('follow/<str:username>/', social_views.toggle_follow, name='toggle_follow'),

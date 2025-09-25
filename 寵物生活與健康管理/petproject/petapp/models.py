@@ -5,6 +5,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
+import uuid
 import requests
 from datetime import datetime, timedelta, date
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -768,7 +769,7 @@ class AppointmentSlot(models.Model):
 
 class VetAppointment(models.Model):
     """預約記錄模型"""
-    
+
     STATUS_CHOICES = [
         ('pending', '待確認'),
         ('confirmed', '已確認'),
@@ -776,7 +777,7 @@ class VetAppointment(models.Model):
         ('cancelled', '已取消'),
         ('no_show', '未到診'),
     ]
-    
+
     # 關聯
     pet = models.ForeignKey('Pet', on_delete=models.CASCADE, verbose_name="預約寵物")
     owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="飼主")
@@ -2470,6 +2471,7 @@ class Post(models.Model):
         ('mixed', '混合媒體'),
     ]
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts', verbose_name='發布者')
     content = models.TextField(max_length=2000, verbose_name='內容')
     post_type = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default='text', verbose_name='貼文類型')
@@ -2512,6 +2514,7 @@ class PostMedia(models.Model):
         ('video', '影片'),
     ]
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='media_files', verbose_name='關聯貼文')
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, verbose_name='媒體類型')
     file = models.FileField(upload_to='posts/', verbose_name='檔案')
@@ -2545,6 +2548,7 @@ class Like(models.Model):
 
 class Comment(models.Model):
     """留言"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='留言者')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_comments', verbose_name='貼文')
     content = models.TextField(max_length=1000, verbose_name='留言內容')
@@ -2612,3 +2616,51 @@ class HandoffMessage(models.Model):
 
     def __str__(self):
         return f'[{self.created_at:%Y-%m-%d %H:%M:%S}] {self.sender}: {self.text[:30]}'
+
+
+# ===== 通知系統 =====
+class Notification(models.Model):
+    """用戶通知"""
+    NOTIFICATION_TYPES = [
+        ('follow', '新的追蹤者'),
+        ('like', '貼文被按讚'),
+        ('comment', '貼文被留言'),
+        ('comment_like', '留言被按讚'),
+        ('appointment_created', '預約建立成功'),
+        ('appointment_confirmed', '預約確認'),
+        ('appointment_cancelled', '預約取消'),
+        ('appointment_completed', '預約完成'),
+        ('pet_health_reminder', '寵物健康提醒'),
+        ('handoff_request', '人工客服請求'),
+        ('handoff_message', '人工客服訊息'),
+        ('handoff_closed', '客服工單已結束'),
+        ('adoption_transfer_request', '領養轉交請求'),
+        ('adoption_transfer_accepted', '領養轉交已接受'),
+        ('adoption_transfer_rejected', '領養轉交已拒絕'),
+        ('system', '系統通知'),
+    ]
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name='接收者')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='sent_notifications', verbose_name='發送者')
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES, verbose_name='通知類型')
+    title = models.CharField(max_length=100, verbose_name='標題')
+    message = models.TextField(verbose_name='內容')
+    is_read = models.BooleanField(default=False, verbose_name='已讀')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='建立時間')
+
+    # 相關物件參考（可選）
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, verbose_name='相關貼文')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True, verbose_name='相關留言')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = '通知'
+        verbose_name_plural = '通知'
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.get_notification_type_display()}: {self.title}"
+
+    def mark_as_read(self):
+        """標記為已讀"""
+        self.is_read = True
+        self.save()

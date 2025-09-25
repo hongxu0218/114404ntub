@@ -29,7 +29,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.timezone import localtime
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
@@ -61,7 +61,9 @@ from .models import (
     PetType, DailyRecord, PetLocation, ClinicBusinessHoursRecord, ServiceType, VetAvailableTime,
     VetScheduleException, WEEKDAYS, TIME_SLOTS, AdoptionPet, TransferRequest, AdoptionTransferRequest, REGION_CHOICES,
     # 進階排班管理模型
-    ScheduleTemplate, EnhancedVetSchedule, ScheduleChangeRequest, ClinicScheduleRule
+    ScheduleTemplate, EnhancedVetSchedule, ScheduleChangeRequest, ClinicScheduleRule,
+    # 通知系統
+    Notification
 )
 from .forms import (
     VetClinicRegistrationForm, VetDoctorForm, VetProfileEditForm, AppointmentBookingForm,
@@ -631,9 +633,25 @@ def social_signup_extra(request):
     
     # 檢查是否需要補充資料
     if not request.session.get('google_needs_profile'):
-        logger.info("No google_needs_profile flag, redirecting to home")
-        messages.info(request, '您已完成註冊流程')
-        return redirect('home')
+        # 檢查是否是社交帳號用戶但沒有Profile
+        from allauth.socialaccount.models import SocialAccount
+        social_accounts = SocialAccount.objects.filter(user=request.user)
+
+        if social_accounts.exists():
+            try:
+                profile = request.user.profile
+                # 如果有Profile就完成了，導向首頁
+                logger.info("Social account user has profile, redirecting to home")
+                messages.info(request, '您已完成註冊流程')
+                return redirect('home')
+            except:
+                # 沒有Profile，重新設置標記繼續處理
+                logger.info("Social account user missing profile, setting flag and continuing")
+                request.session['google_needs_profile'] = True
+        else:
+            logger.info("No google_needs_profile flag, redirecting to home")
+            messages.info(request, '您已完成註冊流程')
+            return redirect('home')
     
     if request.method == 'POST':
         form = SocialSignupExtraForm(request.POST, current_user=request.user)
@@ -5908,24 +5926,33 @@ def get_clinic_business_status(request):
 # ============ 診所業務管理 API ============
 
 @login_required
+@ensure_csrf_cookie
 def get_notification_count(request):
     """獲取未讀通知數量"""
     try:
-        # 實際實作時應該從資料庫計算未讀通知數量
-        # 這裡先返回示例數據
         count = 0
-        
+
+        # 首先計算資料庫中的未讀通知
+        try:
+            db_unread_count = Notification.objects.filter(
+                recipient=request.user,
+                is_read=False
+            ).count()
+            count += db_unread_count
+        except Exception as e:
+            print(f"資料庫通知計數錯誤: {e}")
+
         # 檢查是否有今日預約（獸醫師）
         if hasattr(request.user, 'vet_profile'):
             vet_profile = request.user.vet_profile
             today = timezone.now().date()
-            
+
             count += VetAppointment.objects.filter(
                 slot__doctor=vet_profile,
                 slot__date=today,
                 status='pending'
             ).count()
-        
+
         # 檢查健康提醒（飼主）
         if hasattr(request.user, 'profile'):
             pets = Pet.objects.filter(owner=request.user)
@@ -5933,16 +5960,212 @@ def get_notification_count(request):
                 latest_vaccine = VaccineRecord.objects.filter(
                     pet=pet
                 ).order_by('-date').first()
-                
+
                 if latest_vaccine:
                     days_since_vaccine = (timezone.now().date() - latest_vaccine.date).days
                     if days_since_vaccine > 365:
                         count += 1
-        
+
         return JsonResponse({'count': count})
         
     except Exception as e:
         return JsonResponse({'count': 0, 'error': str(e)})
+
+@login_required
+def get_notifications_api(request):
+    """獲取通知列表API"""
+    try:
+        user = request.user
+        notifications = []
+
+        # 首先獲取資料庫中的通知
+        try:
+            db_notifications = Notification.objects.filter(recipient=user).select_related(
+                'sender', 'post', 'comment'
+            ).order_by('-created_at')[:15]
+
+            for notification in db_notifications:
+                # 格式化時間
+                time_diff = timezone.now() - notification.created_at
+                if time_diff.days > 0:
+                    time_str = f'{time_diff.days}天前'
+                elif time_diff.seconds > 3600:
+                    time_str = f'{time_diff.seconds // 3600}小時前'
+                elif time_diff.seconds > 60:
+                    time_str = f'{time_diff.seconds // 60}分鐘前'
+                else:
+                    time_str = '剛剛'
+
+                notifications.append({
+                    'id': notification.id,
+                    'type': notification.notification_type,
+                    'title': notification.title,
+                    'message': notification.message,
+                    'time': time_str,
+                    'is_read': notification.is_read,
+                    'sender': notification.sender.username if notification.sender else '系統',
+                    'created_at': notification.created_at.isoformat(),
+                    'url': '#'
+                })
+        except Exception as e:
+            print(f"通知模型查詢錯誤: {e}")
+
+        # 為獸醫師添加預約通知（作為補充）
+        if hasattr(user, 'vet_profile'):
+            try:
+                vet_profile = user.vet_profile
+                today = timezone.now().date()
+
+                # 今日待處理預約
+                pending_appointments = VetAppointment.objects.filter(
+                    slot__doctor=vet_profile,
+                    slot__date=today,
+                    status='pending'
+                ).select_related('pet', 'owner')
+
+                for appointment in pending_appointments:
+                    notifications.append({
+                        'id': f'appointment_{appointment.id}',
+                        'type': 'appointment',
+                        'title': f'今日預約 - {appointment.pet.name}',
+                        'message': f'飼主：{appointment.owner.get_full_name() or appointment.owner.username}',
+                        'created_at': appointment.created_at.isoformat() if appointment.created_at else timezone.now().isoformat(),
+                        'time': '今天',
+                        'is_read': False,
+                        'sender': '系統',
+                        'url': f'/vet/appointments/'
+                    })
+            except Exception as e:
+                print(f"獸醫預約查詢錯誤: {e}")
+
+        # 為飼主添加健康提醒
+        if hasattr(user, 'profile'):
+            try:
+                pets = Pet.objects.filter(owner=user)
+                for pet in pets:
+                    # 檢查疫苗提醒
+                    try:
+                        latest_vaccine = VaccineRecord.objects.filter(
+                            pet=pet
+                        ).order_by('-date').first()
+
+                        if latest_vaccine:
+                            next_due = latest_vaccine.date + timedelta(days=365)
+                            days_until_due = (next_due - timezone.now().date()).days
+
+                            if 0 <= days_until_due <= 30:
+                                notifications.append({
+                                    'id': f'vaccine_{pet.id}',
+                                    'type': 'pet_health_reminder',
+                                    'title': f'{pet.name} 疫苗提醒',
+                                    'message': f'下次疫苗接種將於 {days_until_due} 天後到期',
+                                    'created_at': timezone.now().isoformat(),
+                                    'time': f'{days_until_due}天後',
+                                    'is_read': False,
+                                    'sender': '系統',
+                                    'url': f'/pet_info/pet_list/'
+                                })
+                    except Exception:
+                        pass
+
+                    # 檢查驅蟲提醒
+                    try:
+                        latest_deworm = DewormRecord.objects.filter(
+                            pet=pet
+                        ).order_by('-date').first()
+
+                        if latest_deworm:
+                            next_due = latest_deworm.date + timedelta(days=90)
+                            days_until_due = (next_due - timezone.now().date()).days
+
+                            if 0 <= days_until_due <= 14:
+                                notifications.append({
+                                    'id': f'deworm_{pet.id}',
+                                    'type': 'pet_health_reminder',
+                                    'title': f'{pet.name} 驅蟲提醒',
+                                    'message': f'下次驅蟲將於 {days_until_due} 天後到期',
+                                    'created_at': timezone.now().isoformat(),
+                                    'time': f'{days_until_due}天後',
+                                    'is_read': False,
+                                    'sender': '系統',
+                                    'url': f'/pet_info/pet_list/'
+                                })
+                    except Exception:
+                        pass
+            except Exception as e:
+                print(f"寵物健康查詢錯誤: {e}")
+
+        # 按時間排序，最新的在前
+        try:
+            notifications.sort(key=lambda x: x['created_at'], reverse=True)
+        except:
+            # 如果排序失敗，保持原順序
+            pass
+
+        return JsonResponse({
+            'success': True,
+            'notifications': notifications[:20]  # 限制返回20條
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def mark_notification_read(request, notification_id):
+    """標記單個通知為已讀"""
+    if request.method == 'POST':
+        try:
+            # 查找並標記通知為已讀
+            notification = Notification.objects.get(
+                id=notification_id,
+                recipient=request.user
+            )
+            notification.is_read = True
+            notification.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': '通知已標記為已讀'
+            })
+        except Notification.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': '通知不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+    return JsonResponse({'success': False, 'error': '方法不允許'}, status=405)
+
+@login_required
+@require_http_methods(["POST"])
+def mark_all_notifications_read(request):
+    """標記所有通知為已讀"""
+    try:
+        # 標記用戶所有未讀通知為已讀
+        updated_count = Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).update(is_read=True)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'已標記 {updated_count} 個通知為已讀',
+            'updated_count': updated_count
+        })
+    except Exception as e:
+        # 如果通知模型還不存在，返回成功（向後相容）
+        print(f"通知模型更新錯誤: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @login_required
 @require_owner
@@ -6378,6 +6601,16 @@ def adoption_transfer_request(request, pk):
             transfer_note=transfer_note
         )
 
+        # 如果找到目標用戶，發送通知
+        if to_user:
+            Notification.objects.create(
+                recipient=to_user,
+                sender=request.user,
+                title="收到領養轉交請求",
+                message=f"{request.user.username} 想將 {adoption.name} 轉交給您",
+                notification_type="adoption_transfer_request"
+            )
+
         messages.success(request, f'轉交請求已發送到 {to_email}')
         return redirect('adoption_petDetail', adoption_id=pk)
 
@@ -6436,12 +6669,31 @@ def adoption_transfer_confirm(request, transfer_id):
             except Exception as e:
                 print(f"轉移寵物記錄時發生錯誤: {e}")
 
+            # 通知原飼主轉交已被接受
+            Notification.objects.create(
+                recipient=transfer.from_owner,
+                sender=request.user,
+                title="領養轉交已被接受",
+                message=f"{request.user.username} 已接受您的 {adoption.name} 轉交請求",
+                notification_type="adoption_transfer_accepted"
+            )
+
             messages.success(request, f"您已成功接受 {adoption.name} 的領養轉交！")
             return redirect('my_adoption_transfers')
 
         elif action == 'reject':
             transfer.status = 'rejected'
             transfer.save()
+
+            # 通知原飼主轉交已被拒絕
+            Notification.objects.create(
+                recipient=transfer.from_owner,
+                sender=request.user,
+                title="領養轉交已被拒絕",
+                message=f"{request.user.username} 拒絕了您的 {transfer.adoption.name} 轉交請求",
+                notification_type="adoption_transfer_rejected"
+            )
+
             messages.info(request, "您已拒絕此轉交請求。")
             return redirect('my_adoption_transfers')
 
@@ -7919,46 +8171,77 @@ def login_redirect(request):
         return redirect('account_login')
 
     try:
-        # 檢查用戶是否有 Profile
-        if hasattr(request.user, 'profile'):
-            profile = request.user.profile
+        user = request.user
+
+        # 檢查是否為後台管理員（超級用戶）
+        if user.is_superuser or user.is_staff:
+            return redirect('/')  # 後台管理員到首頁 http://127.0.0.1:8000/
+
+        # 檢查是否有 VetDoctor 資料
+        if hasattr(user, 'vet_profile') and user.vet_profile:
+            vet_doctor = user.vet_profile
+
+            # 診所管理員 -> 診所管理
+            if vet_doctor.is_clinic_admin:
+                return redirect('clinic_dashboard')
+
+            # 獸醫師 -> 獸醫工作台
+            elif vet_doctor.is_veterinarian:
+                return redirect('vet_home')
+
+            # 有獸醫資料但角色不明確，根據驗證狀態決定
+            elif vet_doctor.license_verified_with_moa:
+                return redirect('vet_home')
+            else:
+                return redirect('clinic_dashboard')
+
+        # 檢查是否有一般用戶 Profile
+        elif hasattr(user, 'profile') and user.profile:
+            profile = user.profile
             account_type = profile.account_type
 
-            # 根據帳號類型導向不同頁面
+            # 飼主 -> 我的毛孩
             if account_type == 'owner':
                 return redirect('pet_list')
+
+            # 診所管理員 -> 診所管理
             elif account_type == 'clinic_admin':
-                # 診所管理員導向診所儀表板
-                if hasattr(request.user, 'vet_profile'):
-                    return redirect('clinic_dashboard')
-                else:
-                    # 沒有診所資料，導向診所註冊
-                    return redirect('clinic_registration')
+                return redirect('clinic_dashboard')
+
+            # 獸醫師 -> 獸醫工作台
             elif account_type == 'veterinarian':
-                # 普通獸醫師導向獸醫師首頁
-                if hasattr(request.user, 'vet_profile'):
-                    return redirect('vet_home')
-                else:
-                    # 沒有診所資料，導向診所註冊
-                    return redirect('clinic_registration')
+                return redirect('vet_home')
+
+            # 其他帳號類型 -> 首頁
             else:
-                # 未知帳號類型，導向首頁
-                return redirect('home')
+                return redirect('/')
 
-        # 檢查是否為獸醫師
-        elif hasattr(request.user, 'vet_profile'):
-            return redirect('clinic_dashboard')
-
-        # 如果沒有 Profile，嘗試根據 User 模型推斷
+        # 沒有任何Profile，引導完善資料
         else:
-            # 預設導向首頁，但顯示完善資料提示
-            messages.info(request, '請完善您的個人資料')
-            return redirect('edit_profile')
+            # 檢查是否是來自Google社群註冊的新用戶
+            if request.session.get('google_needs_profile'):
+                # 保持session標記，讓 social_signup_extra 可以正確處理
+                # session標記會在 social_signup_extra POST 處理後才清除
+                return redirect('/accounts/social/signup/extra/')
+            else:
+                # 檢查是否是社交帳號登入但沒有完成Profile的用戶
+                from allauth.socialaccount.models import SocialAccount
+                social_accounts = SocialAccount.objects.filter(user=user)
+
+                if social_accounts.exists():
+                    # 這是社交帳號用戶但沒有Profile，重新設置標記並導向補充資料頁面
+                    logger.info(f"Social account user {user.username} missing profile, redirecting to extra signup")
+                    request.session['google_needs_profile'] = True
+                    return redirect('/accounts/social/signup/extra/')
+                else:
+                    # 一般註冊用戶沒有Profile，導向一般編輯頁面
+                    messages.info(request, '請完善您的個人資料')
+                    return redirect('edit_profile')
 
     except Exception as e:
         # 發生錯誤時導向首頁
         messages.error(request, '登入過程發生錯誤，請重新登入')
-        return redirect('home')
+        return redirect('/')
 
 # ============ 帳號刪除功能 ============
 @login_required
@@ -8015,73 +8298,7 @@ def delete_account(request):
 
 # ==================== AI 客服功能 ====================
 
-@csrf_exempt
-@require_http_methods(["GET", "POST"])
-def ai_chat(request):
-    """AI客服聊天頁面"""
-    if request.method == 'GET':
-        return render(request, 'ai_chat/chat.html')
 
-    elif request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            question = data.get('question', '').strip()
-
-            if not question:
-                return JsonResponse({
-                    'success': False,
-                    'message': '請輸入您的問題'
-                })
-
-            # 調用RAG API獲取回答
-            answer = get_ai_answer(question)
-
-            return JsonResponse({
-                'success': True,
-                'answer': answer
-            })
-
-        except Exception as e:
-            logging.error(f"AI Chat error: {str(e)}")
-            return JsonResponse({
-                'success': False,
-                'message': f'系統錯誤：{str(e)}'
-            })
-
-
-def get_ai_answer(question):
-    """調用RAG API獲取AI回答"""
-    try:
-        # RAG API設定
-        rag_api_url = "http://127.0.0.1:8001/ask"
-
-        payload = {
-            "q": question,
-            "top_k": 3,
-            "model": "qwen2.5:3b-instruct",
-            "persist_dir": "rag/chroma_db",
-            "collection": "faq_collection"
-        }
-
-        response = requests.post(
-            rag_api_url,
-            json=payload,
-            timeout=30
-        )
-
-        if response.status_code == 200:
-            result = response.json()
-            return result.get('answer', '抱歉，無法獲取回答。')
-        else:
-            return f"API錯誤：狀態碼 {response.status_code}"
-
-    except requests.exceptions.Timeout:
-        return "回應超時，請稍後再試。"
-    except requests.exceptions.ConnectionError:
-        return "無法連接到AI服務，請確認RAG服務已啟動。\n\n請先啟動RAG服務：\n1. 開啟命令列\n2. 進入rag目錄\n3. 執行：uvicorn rag_ollama_server:app --host 127.0.0.1 --port 8001 --reload"
-    except Exception as e:
-        logging.error(f"RAG API call error: {str(e)}")
-        return f"系統錯誤：{str(e)}"
 
 
 @require_GET

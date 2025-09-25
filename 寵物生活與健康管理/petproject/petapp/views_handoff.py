@@ -10,7 +10,8 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max
 
-from .models import HandoffTicket, HandoffMessage
+from .models import HandoffTicket, HandoffMessage, Notification
+from django.contrib.auth.models import User
 
 
 # ----------------------------
@@ -103,6 +104,15 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
             sender="system",
             text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
         )
+
+        # 通知用戶有客服接手了工單（如果工單有關聯的用戶）
+        if hasattr(t, 'user') and t.user:
+            Notification.objects.create(
+                user=t.user,
+                title="客服已接手您的工單",
+                message=f"客服 {agent_name} 已接手您的工單 #{t.id}，稍候將與您聯繫",
+                notification_type="handoff_message"
+            )
     # ------------------------------------------------------------
 
     HandoffMessage.objects.create(
@@ -110,6 +120,16 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
         sender="agent",  # 你的 model 定義使用小寫字串
         text=msg_text,
     )
+
+    # 通知用戶有新的客服回覆（如果工單有關聯的用戶）
+    if hasattr(t, 'user') and t.user:
+        Notification.objects.create(
+            user=t.user,
+            title="客服已回覆",
+            message=f"您的客服工單 #{t.id} 有新回覆",
+            notification_type="handoff_message"
+        )
+
     return JsonResponse({"ok": True})
 
 
@@ -132,6 +152,16 @@ def handoff_agent_close(request: HttpRequest, ticket_id: int):
         sender="system",
         text="🔒 工單已結案，感謝您的諮詢！如有其他問題，請重新發起人工客服。",
     )
+
+    # 通知用戶工單已結案（如果工單有關聯的用戶）
+    if hasattr(t, 'user') and t.user:
+        Notification.objects.create(
+            user=t.user,
+            title="客服工單已結束",
+            message=f"您的客服工單 #{t.id} 已由客服結案",
+            notification_type="handoff_closed"
+        )
+
     return redirect("handoff_console_ticket", ticket_id=t.id)
 
 
@@ -174,6 +204,15 @@ def handoff_agent_accept(request: HttpRequest, ticket_id: int):
             sender="system",
             text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
         )
+
+        # 通知用戶有客服接手了工單（如果工單有關聯的用戶）
+        if hasattr(t, 'user') and t.user:
+            Notification.objects.create(
+                user=t.user,
+                title="客服已接手您的工單",
+                message=f"客服 {agent_name} 已接手您的工單 #{t.id}，稍候將與您聯繫",
+                notification_type="handoff_message"
+            )
 
     return redirect("handoff_console_ticket", ticket_id=t.id)
 
@@ -308,6 +347,16 @@ def api_handoff_request(request: HttpRequest):
         HandoffMessage.objects.create(ticket=t, sender="user", text=last_question)
     HandoffMessage.objects.create(ticket=t, sender="system", text="已建立人工客服工單，請稍候")
 
+    # 創建新工單通知給所有員工
+    staff_users = User.objects.filter(is_staff=True)
+    for staff_user in staff_users:
+        Notification.objects.create(
+            user=staff_user,
+            title="新的人工客服請求",
+            message=f"用戶 {name} 發起了新的客服工單 (#{t.id})",
+            notification_type="handoff_request"
+        )
+
     return JsonResponse({"ok": True, "ticket_id": t.id, "reused": False})
 
 
@@ -348,6 +397,16 @@ def api_handoff_user_end(request: HttpRequest):
         text="🔚 用戶主動結束對話",
     )
 
+    # 通知所有員工用戶主動結束了工單
+    staff_users = User.objects.filter(is_staff=True)
+    for staff_user in staff_users:
+        Notification.objects.create(
+            user=staff_user,
+            title="客服工單已結束",
+            message=f"用戶主動結束了工單 #{t.id}",
+            notification_type="handoff_closed"
+        )
+
     return JsonResponse({"ok": True})
 
 
@@ -380,6 +439,17 @@ def api_handoff_user_send(request: HttpRequest):
         return _json_error("ticket closed", status=409)
 
     HandoffMessage.objects.create(ticket=t, sender="user", text=text)
+
+    # 通知所有員工有新的用戶訊息
+    staff_users = User.objects.filter(is_staff=True)
+    for staff_user in staff_users:
+        Notification.objects.create(
+            user=staff_user,
+            title="客服工單有新訊息",
+            message=f"工單 #{t.id} 收到用戶新訊息",
+            notification_type="handoff_message"
+        )
+
     return JsonResponse({"ok": True})
 
 
