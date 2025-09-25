@@ -3,7 +3,7 @@
 
 {% block title %}毛日好社群{% endblock %}
 
-{% block extra_css %}
+{% block social_extra_css %}
 <style>
     .social-hero {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -622,7 +622,7 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block social_content %}
 
 <div class="main-content">
     {% if user.is_authenticated %}
@@ -770,9 +770,13 @@
                             <i class="bi bi-chat"></i>
                             <span>{{ post.comments_count }}</span>
                         </button>
-                        <button class="action-btn share-btn" onclick="repostPost({{ post.id }}, '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
+                        <button class="action-btn repost-btn" onclick="repostPost({{ post.id }}, '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
                             <i class="bi bi-arrow-repeat"></i>
                             <span>{{ post.shares_count }}</span>
+                        </button>
+                        <button class="action-btn share-btn" onclick="sharePost({{ post.id }}, '{{ post.user.username }}', '{{ post.content|truncatewords:10|escapejs }}')">
+                            <i class="bi bi-share"></i>
+                            <span>分享</span>
                         </button>
                     </div>
 

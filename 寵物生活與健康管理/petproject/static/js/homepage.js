@@ -90,6 +90,10 @@ window.PawDayHomepage = {
  * 設定聊天機器人功能（/api/chat 串流 + 轉人工 handoff + 去重）
  */
 setupChatbot: function() {
+  // 🔥 禁用 homepage.js 客服功能，統一使用 base.html 的客服泡泡
+  console.log('🚫 homepage.js 客服功能已禁用，使用 base.html 統一客服系統');
+  return;
+
   const $ = (id) => document.getElementById(id);
   const btn   = $('chatbot-button');
   const box   = $('chatbot-box');

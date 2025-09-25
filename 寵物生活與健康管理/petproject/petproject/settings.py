@@ -38,6 +38,7 @@ if not DEBUG:
     # SESSION 設定
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_HTTPONLY = False  # 允許 JavaScript 訪問 CSRF cookie
     
 
 

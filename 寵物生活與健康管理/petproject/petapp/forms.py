@@ -482,6 +482,13 @@ class VetDoctorForm(forms.ModelForm):
         phone = self.cleaned_data.get('phone_number')
         if phone and not re.match(r'^09\d{8}$', phone):
             raise forms.ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
+
+        # 檢查電話號碼是否已被其他用戶使用
+        if phone:
+            existing_profile = Profile.objects.filter(phone_number=phone).first()
+            if existing_profile:
+                raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
+
         return phone
     
     def clean_years_of_experience(self):
@@ -683,6 +690,13 @@ class EditDoctorForm(forms.ModelForm):
         phone = self.cleaned_data.get('phone_number')
         if phone and not re.match(r'^09\d{8}$', phone):
             raise forms.ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
+
+        # 檢查電話號碼是否已被其他用戶使用（排除當前用戶）
+        if phone and self.instance and self.instance.user:
+            existing_profile = Profile.objects.filter(phone_number=phone).exclude(user=self.instance.user).first()
+            if existing_profile:
+                raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
+
         return phone
     
     def clean_years_of_experience(self):
@@ -1054,6 +1068,12 @@ class CustomSignupForm(SignupForm):
         phone = self.cleaned_data.get('phone_number')
         if not re.match(r'^09\d{8}$', phone):
             raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
+
+        # 檢查電話號碼是否已被其他用戶使用
+        existing_profile = Profile.objects.filter(phone_number=phone).first()
+        if existing_profile:
+            raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
+
         return phone
 
     def save(self, request):
@@ -1140,6 +1160,13 @@ class SocialSignupExtraForm(forms.Form):
         phone = self.cleaned_data.get('phone_number')
         if not re.match(r'^09\d{8}$', phone):
             raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
+
+        # 檢查電話號碼是否已被其他用戶使用（排除當前用戶）
+        if self.current_user:
+            existing_profile = Profile.objects.filter(phone_number=phone).exclude(user=self.current_user).first()
+            if existing_profile:
+                raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
+
         return phone
 
     def __init__(self, *args, **kwargs):

@@ -1,186 +1,102 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="utf-8" />
-    <title>毛日好 - {% block title %}社群平台{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+{% block page_title %}毛日好 - {% block title %}社群平台{% endblock %}{% endblock %}
 
+{% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/social/post.css' %}" />
+    <!-- 社群專區特殊樣式 -->
     <style>
-        .social-navbar {
-            background: linear-gradient(135deg, #FFB6C1 0%, #FFE4E1 50%, #FFF8DC 100%);
-            box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
-            padding: 1rem 0;
-            border-bottom: 3px solid #FFB6C1;
+        /* 社群頁面自訂導航列區域尺寸 */
+        .custom-header {
+            height: 120px !important; /* 固定整個導航列區域高度 */
+            max-height: 120px !important;
+            overflow: visible !important; /* 改為 visible 讓下拉選單可以顯示 */
+            padding: 8px 0 !important;
+            position: relative !important; /* 確保下拉選單定位正確 */
         }
 
-        .social-navbar .navbar-brand {
-            font-weight: 700;
-            color: #8B4513 !important;
-            font-size: 1.6rem;
-            transition: all 0.2s ease;
+        /* 社群頁面導航列使用與 base.html 相同的顏色 */
+        .custom-header {
+            background-color: var(--warm-bg) !important;
+            box-shadow: 0 2px 4px var(--shadow-light) !important;
         }
 
-        .social-navbar .navbar-brand:hover {
-            color: #A0522D !important;
-            transform: scale(1.02);
+        .navbar {
+            background-color: transparent !important;
+            height: 104px !important; /* 固定 navbar 高度 */
+            max-height: 104px !important;
+            overflow: visible !important;
         }
 
-        .social-navbar .navbar-brand::before {
-            content: '🐾';
-            font-size: 1.1rem;
-            margin-right: 0.5rem;
-            display: inline-block;
+        .navbar .container-fluid {
+            max-width: 1200px !important; /* 稍微縮小寬度讓視覺更集中 */
+            margin: 0 auto !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
         }
 
-        .social-navbar .nav-link {
-            color: #8B4513 !important;
-            font-weight: 500;
-            margin: 0 0.2rem;
-            border-radius: 15px;
-            padding: 0.6rem 1rem !important;
-            transition: all 0.3s ease;
+        /* 確保文字顏色與其他頁面一致 */
+        .navbar-brand,
+        .navbar .nav-link {
+            color: var(--text-dark) !important;
         }
 
-        .social-navbar .nav-link:hover,
-        .social-navbar .nav-link.active {
-            background: rgba(255, 255, 255, 0.7);
-            color: #654321 !important;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(255, 182, 193, 0.4);
+        .navbar .nav-link:hover {
+            color: var(--primary-orange) !important;
         }
 
-        .nav-link i {
-            margin-right: 0.4rem;
-            transition: all 0.2s ease;
-        }
-
-        .nav-link:hover i {
-            transform: scale(1.1);
-        }
-
-        .social-search {
-            max-width: 350px;
-            border-radius: 20px;
-            border: 2px solid #FFB6C1;
-            padding: 0.7rem 1.2rem;
-            background: rgba(255, 255, 255, 0.9);
-            font-weight: 400;
-            transition: all 0.3s ease;
-        }
-
-        .social-search:focus {
-            box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.3);
-            outline: none;
-            border-color: #FF69B4;
-        }
-
-        .social-search::placeholder {
-            color: #999;
-        }
-
-        .social-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #FFB6C1;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(255, 182, 193, 0.3);
-        }
-
-        .social-avatar:hover {
-            transform: scale(1.05);
-            border-color: #FF69B4;
-            box-shadow: 0 3px 10px rgba(255, 105, 180, 0.4);
-        }
-
-        .btn-social {
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid #FFB6C1;
-            color: #8B4513;
-            border-radius: 18px;
-            padding: 0.5rem 1.2rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-social:hover {
-            background: rgba(255, 255, 255, 1);
-            color: #654321;
-            transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(255, 182, 193, 0.4);
-            border-color: #FF69B4;
-        }
-
+        /* 確保下拉選單正常顯示 */
         .dropdown-menu {
-            border: 2px solid #FFB6C1;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
-            background: rgba(255, 255, 255, 0.95);
-            margin-top: 0.3rem;
+            position: absolute !important;
+            top: 100% !important;
+            left: 0 !important;
+            z-index: 1000 !important;
+            display: none !important;
+            min-width: 160px !important;
+            background-color: white !important;
+            border: 1px solid rgba(0,0,0,.15) !important;
+            border-radius: 0.25rem !important;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175) !important;
+        }
+
+        .dropdown-menu.show {
+            display: block !important;
         }
 
         .dropdown-item {
-            border-radius: 10px;
-            margin: 0.2rem 0.5rem;
-            transition: all 0.2s ease;
-            font-weight: 400;
+            color: var(--text-dark) !important;
         }
 
         .dropdown-item:hover {
-            background: #FFE4E1;
-            color: #8B4513;
+            background-color: var(--warm-light) !important;
+            color: var(--text-dark) !important;
         }
 
-        @media (max-width: 768px) {
-            .social-navbar {
-                padding: 0.8rem 0;
-            }
-
-            .social-navbar .navbar-brand {
-                font-size: 1.4rem;
-            }
-
-            .social-search {
-                max-width: 100%;
-                margin-top: 0.8rem;
-            }
-
-            .social-navbar .nav-link {
-                margin: 0.2rem 0;
-                padding: 0.6rem 0.8rem !important;
-            }
-
-            .navbar-nav .nav-link span {
-                display: none !important;
-            }
-
-            .navbar-nav .nav-link {
-                padding: 0.5rem !important;
-                margin: 0.2rem;
-            }
-        }
-
-        /* 友善的整體頁面樣式 */
+        /* 主內容區域樣式 - 使用與其他頁面相同的背景 */
         body {
-            background: linear-gradient(135deg, #FFF8DC 0%, #FFE4E1 50%, #F0F8FF 100%);
+            background-color: var(--warm-bg) !important;
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .layout {
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -2px 10px rgba(255, 182, 193, 0.2);
-            min-height: calc(100vh - 120px);
-            margin-top: 1rem;
-            padding: 2rem 0;
+        /* 移除內容區域的特殊樣式，使用標準樣式 */
+        .container-fluid {
+            background: transparent !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            min-height: auto !important;
+            margin-top: 0 !important;
+            padding: 1rem 0 !important;
+        }
+
+        /* 社群內容區域樣式 - 移除透明度和特殊效果 */
+        .social-content {
+            background: white !important;
+            border-radius: 8px !important;
+            padding: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
         }
 
         /* 友善的按鈕樣式 */
@@ -251,142 +167,117 @@
         .text-muted {
             color: #A0522D !important;
         }
+
+        /* 通知系統在社群頁面的樣式調整 */
+        .notification-dropdown {
+            border: 2px solid #FFB6C1;
+            border-radius: 15px;
+        }
+
+        /* AI 客服泡泡的位置調整（確保不被內容遮擋） */
+        #chatbot-button {
+            z-index: 1050;
+        }
+
+        #chatbot-box {
+            z-index: 1049;
+        }
+
+        /* 響應式調整 - 與基本樣式保持一致 */
+        @media (max-width: 768px) {
+            .container-fluid {
+                margin-top: 0.5rem;
+                padding: 1rem 0;
+            }
+
+            .social-content {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* 讓社群頁面有自己的個性同時保持與主站的連貫性 */
+        .social-brand {
+            background: linear-gradient(45deg, #FFB6C1, #FF69B4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+
+        /* 小動畫效果讓頁面更活潑 */
+        @keyframes socialFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .social-content {
+            animation: socialFadeIn 0.6s ease-out;
+        }
     </style>
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <!-- 活潑的社群導覽列 -->
-    <nav class="navbar navbar-expand-lg social-navbar" id="socialNavbar">
-        <div class="container">
-            <!-- 品牌Logo -->
-            <a class="navbar-brand d-flex align-items-center" href="{% url 'social:home' %}" title="回到毛日好社群首頁">
-                <span>毛日好社群</span>
-            </a>
+    {% block social_extra_css %}{% endblock %}
+{% endblock %}
 
-            <!-- 手機版選單按鈕 -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#socialNavbarContent"
-                    style="border: none; background: rgba(255,255,255,0.2); border-radius: 15px;">
-                <span style="color: white; font-size: 1.5rem;">🐱</span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="socialNavbarContent">
-                <!-- 中間搜尋欄 -->
-                <div class="mx-auto d-none d-lg-block">
-                    <input type="text" class="form-control social-search"
-                           placeholder="🔍 搜尋毛友、貼文、話題..." autocomplete="off">
-                </div>
-
-                <!-- 右側選單 -->
-                <ul class="navbar-nav ms-auto align-items-center">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'social:home' %}" title="回到首頁">
-                                <i class="bi bi-house-heart"></i><span class="d-lg-inline">首頁</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'social:search_posts' %}" title="探索新內容">
-                                <i class="bi bi-compass"></i><span class="d-lg-inline">探索</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'social:profile' user.username %}" title="我的個人檔案">
-                                <i class="bi bi-person-heart"></i><span class="d-lg-inline">我的檔案</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'home' %}" title="回到寵物管理主站">
-                                <i class="bi bi-arrow-left-circle"></i><span class="d-lg-inline">主站</span>
-                            </a>
-                        </li>
-
-
-                        <!-- 用戶頭像下拉選單 -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle p-1" href="#" role="button" data-bs-toggle="dropdown"
-                               title="用戶選單">
-                                <img src="{% if user.social_profile and user.social_profile.avatar %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
-                                     alt="{{ user.username }}" class="social-avatar">
-                                <span class="ms-2 d-none d-xl-inline fw-bold" style="color: #8B4513;">{{ user.username }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li class="dropdown-header">
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% if user.social_profile and user.social_profile.avatar %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
-                                             alt="{{ user.username }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                                        <div class="ms-2">
-                                            <div class="fw-bold">{{ user.username }}</div>
-                                            <small class="text-muted">毛孩愛好者</small>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'social:edit_profile' %}">
-                                    <i class="bi bi-pencil-square me-2"></i>編輯檔案
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{% url 'account_logout' %}">
-                                    <i class="bi bi-box-arrow-right me-2"></i>登出
-                                </a></li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'social:home' %}" title="瀏覽社群內容">
-                                <i class="bi bi-house-heart"></i><span class="d-lg-inline">首頁</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'home' %}" title="回到主站">
-                                <i class="bi bi-arrow-left-circle"></i><span class="d-lg-inline">主站</span>
-                            </a>
-                        </li>
-                        <li class="nav-item me-2">
-                            <a href="{% url 'account_login' %}" class="btn btn-social" title="登入帳號">
-                                <i class="bi bi-box-arrow-in-right me-1"></i>登入
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'account_signup' %}" class="btn btn-social" title="註冊新帳號">
-                                <i class="bi bi-person-plus me-1"></i>註冊
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+{% block content %}
+    <div class="container-fluid">
+        <!-- 社群內容區域 -->
+        <div class="social-content">
+            {% block social_content %}{% endblock %}
         </div>
-    </nav>
-
-
-    <!-- 主內容區 -->
-    <main class="layout">
-        {% block content %}{% endblock %}
-    </main>
+    </div>
 
     <!-- 分享彈窗 -->
     <div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="share-modal">
-            <button class="share-close" id="shareClose" aria-label="close">✕</button>
+            <button class="share-close" id="shareClose" aria-label="關閉">✕</button>
             <h3>分享貼文</h3>
             <div class="share-preview"><img id="sharePreviewImg" src="" alt="share preview" /></div>
             <div class="share-channels" id="shareChannels"></div>
         </div>
     </div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}
+    <!-- 社群功能 JavaScript -->
     <script src="{% static 'js/social/social.js' %}"></script>
-
     <script>
-        // 簡單的導覽列固定效果
+        // 社群頁面專用的增強功能
         document.addEventListener('DOMContentLoaded', function() {
-            const navbar = document.getElementById('socialNavbar');
-            if (navbar) {
-                navbar.style.transition = 'all 0.3s ease';
+            // 突顯目前在社群區域 - 尋找包含聊天心形圖標的導航項目
+            const socialNavItems = document.querySelectorAll('.nav-item.dropdown .nav-link i.bi-chat-heart');
+            socialNavItems.forEach(icon => {
+                const navLink = icon.closest('.nav-link');
+                if (navLink && navLink.classList.contains('dropdown-toggle')) {
+                    navLink.style.background = 'rgba(255, 255, 255, 0.3)';
+                    navLink.style.borderRadius = '15px';
+                }
+            });
+
+            // 為社群內容添加滑入動畫
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'socialFadeIn 0.6s ease-out';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.card, .social-content > *').forEach(el => {
+                observer.observe(el);
+            });
+
+            // 讓頁面標題更有社群感
+            const pageTitle = document.querySelector('h1, .page-header h1, .page-header h2');
+            if (pageTitle && !pageTitle.querySelector('.social-brand')) {
+                pageTitle.innerHTML = `<span class="social-brand">${pageTitle.textContent}</span>`;
             }
         });
     </script>
-
-    {% block extra_js %}{% endblock %}
-</body>
-</html>
+    {% block social_extra_js %}{% endblock %}
+{% endblock %}

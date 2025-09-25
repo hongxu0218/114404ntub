@@ -144,8 +144,10 @@ urlpatterns = [
     path('api/search-clinics/', views.search_clinics, name='search_clinics'),
     path('api/load-doctors/', views.load_doctors, name='load_doctors'),
     
-    # ============ 通知系統 ============
-    path('notifications/', views.notification_page, name='notification_page'),
+    # ============ 通知系統 API ============
+    path('api/notifications/', views.get_notifications_api, name='get_notifications_api'),
+    path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     
     # ============ 註冊與帳號管理 ============
     path('select-account-type/', views.select_account_type, name='select_account_type'),
@@ -205,11 +207,11 @@ urlpatterns = [
     path('transfer/change_owner/<int:pet_id>/', views.change_owner, name='change_owner'),
     path('transfer/confirm/<int:transfer_id>/', views.transfer_confirm, name='transfer_confirm'),
 
-    # ============ 地圖功能 ============
-    path('map/', views.map_home, name='map'),
-    path('api/locations/', views.api_locations, name='api_locations'),
-    path('emergency_map/', views.emergency_map_home, name='emergency_map'),
-    path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),
+    # ============ 地圖功能 (已移除) ============
+    # path('map/', views.map_home, name='map'),
+    # path('api/locations/', views.api_locations, name='api_locations'),
+    # path('emergency_map/', views.emergency_map_home, name='emergency_map'),
+    # path('api/emergency-locations/', views.api_emergency_locations, name='api_emergency_locations'),
 
     # ============ 醫療記錄 API ============
     path('api/medical-records/<int:record_id>/', views.api_medical_record_detail, name='api_medical_record_detail'),
@@ -222,7 +224,6 @@ urlpatterns = [
     path('account/delete/', views.delete_account, name='delete_account'),
 
     # ============ AI 客服功能 ============
-    path('ai-chat/', views.ai_chat, name='ai_chat'),
     path('ai-health/', views.ai_health_check, name='ai_health_check'),
 
     # ============ 進階AI客服API ============
@@ -230,6 +231,7 @@ urlpatterns = [
         path('', chat_service.api_chat, name='api_chat'),
         path('stream/', chat_service.api_chat_stream, name='api_chat_stream'),
         path('kb_status/', chat_service.api_kb_status, name='api_kb_status'),
+        path('clear_cache/', chat_service.api_clear_cache, name='api_clear_cache'),
     ])),
 
     # ============ 人工客服轉接 ============

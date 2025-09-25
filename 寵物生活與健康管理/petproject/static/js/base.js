@@ -44,6 +44,7 @@ window.PawDayApp = {
     this.setupUser();
     // this.setupTheme(); // 暫時停用自動主題切換
     this.setupNavigation();
+    this.enhanceKeyboardNavigation();
     this.setupMessages();
     this.setupForms();
     this.setupNotifications();
@@ -180,13 +181,123 @@ window.PawDayApp = {
   highlightCurrentNav: function() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.nav-link');
-    
+
     navLinks.forEach(link => {
       const href = link.getAttribute('href');
       if (href && (currentPath === href || currentPath.startsWith(href + '/'))) {
         link.classList.add('active');
-        link.style.backgroundColor = 'var(--primary-orange-light)';
+        link.setAttribute('aria-current', 'page');
+        // 添加視覺化說明給螢幕閱讀器
+        const srText = document.createElement('span');
+        srText.className = 'sr-only';
+        srText.textContent = ' (目前頁面)';
+        link.appendChild(srText);
       }
+    });
+  },
+
+  /**
+   * 增強鍵盤導航
+   */
+  enhanceKeyboardNavigation: function() {
+    const navItems = document.querySelectorAll('.navbar-nav .nav-item');
+
+    navItems.forEach((item, index) => {
+      const link = item.querySelector('.nav-link');
+      if (!link) return;
+
+      // 添加鍵盤事件
+      link.addEventListener('keydown', (e) => {
+        switch(e.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+            e.preventDefault();
+            const nextItem = navItems[index + 1];
+            if (nextItem) {
+              const nextLink = nextItem.querySelector('.nav-link');
+              if (nextLink) nextLink.focus();
+            }
+            break;
+
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            e.preventDefault();
+            const prevItem = navItems[index - 1];
+            if (prevItem) {
+              const prevLink = prevItem.querySelector('.nav-link');
+              if (prevLink) prevLink.focus();
+            }
+            break;
+
+          case 'Home':
+            e.preventDefault();
+            const firstLink = navItems[0]?.querySelector('.nav-link');
+            if (firstLink) firstLink.focus();
+            break;
+
+          case 'End':
+            e.preventDefault();
+            const lastLink = navItems[navItems.length - 1]?.querySelector('.nav-link');
+            if (lastLink) lastLink.focus();
+            break;
+        }
+      });
+
+      // 增強下拉選單鍵盤導航
+      if (link.classList.contains('dropdown-toggle')) {
+        link.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            link.click();
+            // 焦點移到第一個選項
+            setTimeout(() => {
+              const firstDropdownItem = item.querySelector('.dropdown-item');
+              if (firstDropdownItem) firstDropdownItem.focus();
+            }, 100);
+          }
+        });
+      }
+    });
+
+    // 下拉選單項目鍵盤導航
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+      const items = menu.querySelectorAll('.dropdown-item');
+      items.forEach((item, index) => {
+        item.addEventListener('keydown', (e) => {
+          switch(e.key) {
+            case 'ArrowDown':
+              e.preventDefault();
+              const nextItem = items[index + 1];
+              if (nextItem) nextItem.focus();
+              break;
+
+            case 'ArrowUp':
+              e.preventDefault();
+              const prevItem = items[index - 1];
+              if (prevItem) prevItem.focus();
+              break;
+
+            case 'Escape':
+              e.preventDefault();
+              const toggle = menu.previousElementSibling;
+              if (toggle) {
+                toggle.click();
+                toggle.focus();
+              }
+              break;
+
+            case 'Home':
+              e.preventDefault();
+              if (items[0]) items[0].focus();
+              break;
+
+            case 'End':
+              e.preventDefault();
+              if (items[items.length - 1]) items[items.length - 1].focus();
+              break;
+          }
+        });
+      });
     });
   },
 
@@ -371,6 +482,9 @@ window.PawDayApp = {
     // 初始載入通知數量
     this.updateNotificationCount();
 
+    // 設定通知下拉選單
+    this.setupNotificationDropdown();
+
     // 定期更新通知數量
     this.state.notificationTimer = setInterval(() => {
       this.updateNotificationCount();
@@ -384,6 +498,322 @@ window.PawDayApp = {
         this.startNotificationUpdates();
       }
     });
+  },
+
+  /**
+   * 設定通知下拉選單功能
+   */
+  setupNotificationDropdown: function() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const markAllReadBtn = document.getElementById('mark-all-read');
+
+    if (!dropdown) return;
+
+    // 當下拉選單打開時載入通知
+    dropdown.addEventListener('show.bs.dropdown', () => {
+      this.loadNotifications();
+    });
+
+    // 標記全部已讀按鈕
+    if (markAllReadBtn) {
+      markAllReadBtn.addEventListener('click', () => {
+        this.markAllNotificationsRead();
+      });
+    }
+  },
+
+  /**
+   * 載入通知列表
+   */
+  loadNotifications: async function() {
+    const notificationList = document.getElementById('notification-list');
+    const loadingElement = document.getElementById('loading-notifications');
+
+    if (!notificationList) return;
+
+    try {
+      // 顯示載入動畫
+      if (loadingElement) {
+        loadingElement.style.display = 'block';
+      }
+
+      const response = await fetch('/api/notifications/', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'  // 包含 cookies
+      });
+
+      // 處理重定向（未登入）
+      if (response.status === 302 || response.redirected) {
+        this.renderAuthenticationError();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // 確保 data 是有效的 JSON 並包含 notifications
+      if (data && data.notifications) {
+        this.renderNotifications(data.notifications);
+      } else {
+        this.renderNotifications([]);
+      }
+
+    } catch (error) {
+      PD.debug.error('載入通知失敗:', error);
+      this.renderNotificationError();
+    } finally {
+      // 隱藏載入動畫
+      if (loadingElement) {
+        loadingElement.style.display = 'none';
+      }
+    }
+  },
+
+  /**
+   * 渲染通知列表
+   */
+  renderNotifications: function(notifications) {
+    const notificationList = document.getElementById('notification-list');
+    if (!notificationList) return;
+
+    // 清空載入中的內容
+    notificationList.innerHTML = '';
+
+    if (notifications.length === 0) {
+      notificationList.innerHTML = `
+        <div class="notification-empty">
+          <i class="bi bi-bell-slash"></i>
+          <div>目前沒有通知</div>
+        </div>
+      `;
+      return;
+    }
+
+    // 渲染每個通知
+    notifications.forEach(notification => {
+      const notificationElement = this.createNotificationElement(notification);
+      notificationList.appendChild(notificationElement);
+    });
+  },
+
+  /**
+   * 創建通知元素
+   */
+  createNotificationElement: function(notification) {
+    const element = document.createElement('div');
+    element.className = `notification-item ${notification.is_read ? '' : 'unread'}`;
+    element.setAttribute('data-notification-id', notification.id);
+
+    // 通知圖標類型
+    let iconClass = 'system';
+    if (notification.type === 'appointment') iconClass = 'appointment';
+    else if (notification.type === 'reminder') iconClass = 'reminder';
+
+    // 通知圖標
+    let icon = 'bi-info-circle';
+    if (notification.type === 'appointment') icon = 'bi-calendar-check';
+    else if (notification.type === 'reminder') icon = 'bi-clock';
+
+    // 格式化時間
+    const timeAgo = this.formatTimeAgo(notification.created_at);
+
+    element.innerHTML = `
+      <div class="notification-content">
+        <div class="notification-icon ${iconClass}">
+          <i class="bi ${icon}"></i>
+        </div>
+        <div class="notification-text">
+          <div class="notification-title">${this.escapeHtml(notification.title)}</div>
+          <div class="notification-message">${this.escapeHtml(notification.message)}</div>
+          <div class="notification-time">${timeAgo}</div>
+        </div>
+      </div>
+    `;
+
+    // 點擊事件
+    element.addEventListener('click', () => {
+      this.handleNotificationClick(notification);
+    });
+
+    return element;
+  },
+
+  /**
+   * 處理通知點擊
+   */
+  handleNotificationClick: async function(notification) {
+    try {
+      // 標記為已讀
+      if (!notification.is_read) {
+        await this.markNotificationRead(notification.id);
+      }
+
+      // 執行動作（如果有URL）
+      if (notification.url) {
+        window.location.href = notification.url;
+      }
+    } catch (error) {
+      PD.debug.error('處理通知點擊失敗:', error);
+    }
+  },
+
+  /**
+   * 標記單個通知為已讀
+   */
+  markNotificationRead: async function(notificationId) {
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.getCSRFToken()
+        }
+      });
+
+      if (response.ok) {
+        // 更新UI
+        const element = document.querySelector(`[data-notification-id="${notificationId}"]`);
+        if (element) {
+          element.classList.remove('unread');
+        }
+        // 更新通知數量
+        this.updateNotificationCount();
+      }
+    } catch (error) {
+      PD.debug.error('標記通知已讀失敗:', error);
+    }
+  },
+
+  /**
+   * 標記所有通知為已讀
+   */
+  markAllNotificationsRead: async function() {
+    try {
+      const response = await fetch('/api/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.getCSRFToken()
+        }
+      });
+
+      if (response.ok) {
+        // 更新UI - 移除所有未讀樣式
+        document.querySelectorAll('.notification-item.unread').forEach(item => {
+          item.classList.remove('unread');
+        });
+
+        // 更新通知數量
+        this.updateNotificationCount();
+
+        PD.message.show('已標記所有通知為已讀', 'success');
+      }
+    } catch (error) {
+      PD.debug.error('標記所有通知已讀失敗:', error);
+      PD.message.show('操作失敗，請稍後再試', 'error');
+    }
+  },
+
+  /**
+   * 渲染通知載入錯誤
+   */
+  renderNotificationError: function() {
+    const notificationList = document.getElementById('notification-list');
+    if (!notificationList) return;
+
+    notificationList.innerHTML = `
+      <div class="notification-empty">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>載入通知失敗</div>
+        <small class="text-muted">請重新整理頁面</small>
+      </div>
+    `;
+  },
+
+  /**
+   * 渲染認證錯誤（用戶未登入）
+   */
+  renderAuthenticationError: function() {
+    const notificationList = document.getElementById('notification-list');
+    if (!notificationList) return;
+
+    notificationList.innerHTML = `
+      <div class="notification-empty">
+        <i class="bi bi-person-x"></i>
+        <div>請先登入</div>
+        <small class="text-muted">登入後即可查看通知</small>
+      </div>
+    `;
+  },
+
+  /**
+   * 格式化時間差
+   */
+  formatTimeAgo: function(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) {
+      return '剛剛';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} 分鐘前`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} 小時前`;
+    } else if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} 天前`;
+    } else {
+      return date.toLocaleDateString('zh-TW');
+    }
+  },
+
+  /**
+   * 取得CSRF Token
+   */
+  getCSRFToken: function() {
+    // 優先從表單元素獲取
+    const formToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (formToken) {
+      return formToken.value;
+    }
+
+    // 從 cookie 獲取
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'csrftoken') {
+        return decodeURIComponent(value);
+      }
+    }
+
+    // 從 meta 標籤獲取
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+      return metaToken.getAttribute('content');
+    }
+
+    return '';
+  },
+
+  /**
+   * HTML轉義
+   */
+  escapeHtml: function(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   },
 
   /**

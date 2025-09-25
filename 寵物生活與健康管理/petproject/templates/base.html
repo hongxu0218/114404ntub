@@ -6,6 +6,7 @@
   <title>{% block title %}毛孩幸福生活{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{% block meta_description %}毛日好 Paw&Day - 為毛小孩與飼主打造的健康管理平台{% endblock %}">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
@@ -28,7 +29,7 @@
   <!-- 子模板可以插入額外的 CSS -->
   {% endblock %}
 
-  <!-- AI 客服泡泡樣式 -->
+  <!-- AI 客服泡泡樣式 v3.0 - 最終版本：清潔代碼，修復頭像和背景 -->
   <style>
   #chatbot-button{
     position: fixed;
@@ -49,31 +50,68 @@
     position: fixed;
     right: 20px;
     bottom: 160px;
-    width: 420px; max-width: 95vw;
-    height: 600px; max-height: 80vh;
-    min-width: 380px;
-    min-height: 450px;
-    background: #ffffff;
-    color: #333333;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-    display: none; flex-direction: column;
+    width: 440px; max-width: 95vw;
+    height: 640px; max-height: 85vh;
+    min-width: 320px;
+    min-height: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    /* 高效能設計 */
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    /* 簡化陰影 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    display: none;
+    flex-direction: column;
     z-index: 10000;
-    border: 1px solid #e5e7eb;
     resize: both;
     overflow: hidden;
+    /* GPU 加速優化 */
+    will-change: transform;
+    backface-visibility: hidden;
+    /* 簡化動畫 */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  #chatbot-box.show {
+    transform: translateY(0);
+    opacity: 1;
   }
 
   #chatbot-header{
-    padding: 16px 20px;
-    font-weight: 600;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px;
+    font-weight: 700;
+    font-size: 16px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     cursor: move;
     user-select: none;
-    border-radius: 12px 12px 0 0;
-    color: #374151;
+    border-radius: 24px 24px 0 0;
+    color: #1e293b;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #chatbot-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  #chatbot-header:hover::before {
+    transform: translateX(100%);
   }
   .header-buttons {
     display: flex;
@@ -83,126 +121,169 @@
 
   #handoff-header-btn {
     cursor: pointer;
-    opacity: 0.7;
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    color: #6b7280;
+    padding: 8px 12px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #1e293b;
     font-size: 14px;
     border: none;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
   }
 
   #handoff-header-btn:hover {
-    opacity: 1;
-    background: #e5e7eb;
-    color: #374151;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   }
 
   #chatbot-close{
     cursor: pointer;
-    opacity: 0.6;
-    padding: 6px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    color: #6b7280;
-    font-size: 16px;
+    padding: 8px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #64748b;
+    font-size: 18px;
     font-weight: 400;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    position: relative;
+    z-index: 1;
   }
+
   #chatbot-close:hover{
-    opacity: 1;
-    background: #f3f4f6;
-    color: #374151;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
   }
 
   #chatbot-messages{
     flex: 1;
-    padding: 20px;
+    padding: 24px;
     overflow-y: auto;
-    background: #ffffff;
-    color: #374151;
+    background: transparent;
+    color: #1e293b;
     scrollbar-width: thin;
     min-height: 200px;
+    position: relative;
+  }
+
+  /* 美化滾動條 */
+  #chatbot-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #chatbot-messages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  #chatbot-messages::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+  }
+
+  #chatbot-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.8);
   }
 
 
-  /* 快速問題按鈕 */
-  .quick-questions {
-    padding: 16px;
-    background: rgba(255,255,255,0.95);
-    border-top: 1px solid rgba(0,0,0,0.1);
-  }
-  .quick-questions h4 {
-    font-size: 14px;
-    margin-bottom: 12px;
-    color: #666;
-    font-weight: 600;
-  }
-  .quick-question-btn {
-    display: inline-block;
-    margin: 4px 6px 4px 0;
-    padding: 8px 12px;
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    border-radius: 16px;
-    color: #666;
-    text-decoration: none;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  .quick-question-btn:hover {
-    background: #007bff;
-    color: white;
-    text-decoration: none;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-  }
 
   #chatbot-input{
-    padding: 16px;
-    background: #f8fafc;
-    border-top: 1px solid #e5e7eb;
+    padding: 20px 24px;
+    background: rgba(248, 250, 252, 0.7);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
     display: flex;
     gap: 12px;
     align-items: center;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 24px 24px;
   }
+
   #chatbot-text{
     flex: 1;
-    padding: 10px 14px;
-    background: #ffffff;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 16px;
     outline: none;
     font-size: 14px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-weight: 400;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
+
   #chatbot-text:focus{
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: rgba(255, 255, 255, 1);
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.15),
+      0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
   }
   #chatbot-send{
-    padding: 10px;
-    background: #3b82f6;
+    padding: 12px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 16px;
     cursor: pointer;
     font-weight: 600;
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow:
+      0 4px 12px rgba(59, 130, 246, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    position: relative;
+    overflow: hidden;
   }
-  #chatbot-send:hover{
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+
+  #chatbot-send::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+    transition: transform 0.3s ease;
+    transform: translateX(-100%) translateY(-100%);
+  }
+
+  #chatbot-send:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+      0 8px 20px rgba(59, 130, 246, 0.4),
+      0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  #chatbot-send:hover::before {
+    transform: translateX(100%) translateY(100%);
+  }
+
+  #chatbot-send:active {
+    transform: translateY(0) scale(0.98);
+    transition: all 0.1s ease;
   }
 
   /* 轉人工客服按鈕樣式 */
@@ -219,6 +300,13 @@
     display: inline-block !important;
     transition: all 0.3s ease !important;
     box-shadow: 0 2px 4px rgba(238, 90, 82, 0.3) !important;
+  }
+
+  /* 修復轉人工客服按鈕的顏色覆蓋問題 */
+  #chatbot-messages .message.ai .message-content .handoff-btn-inline,
+  #chatbot-messages .message.ai .message-content .handoff-btn-full {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+    color: white !important;
   }
 
   .handoff-btn-inline:hover {
@@ -249,11 +337,23 @@
     box-shadow: 0 6px 16px rgba(238, 90, 82, 0.4) !important;
   }
 
-  /* 訊息樣式 */
+  /* 現代化訊息樣式 */
   .message {
-    margin-bottom: 12px;
+    margin-bottom: 18px;
     display: flex;
     align-items: flex-start;
+    animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .message.user {
@@ -262,92 +362,208 @@
 
   .message.ai {
     justify-content: flex-start;
-    flex-direction: row;
   }
 
   .message-content {
     max-width: 75%;
-    padding: 10px 14px;
-    border-radius: 16px;
+    padding: 16px 20px;
+    border-radius: 20px;
     position: relative;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     word-wrap: break-word;
+    line-height: 1.5;
+  }
+
+  .message-content:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
 
   .message.user .message-content {
-    background: #007bff;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
-    border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 8px;
+    margin-left: 8px !important;
+    margin-right: 0 !important;
+    order: 1 !important;
   }
 
   .message.ai .message-content {
-    background: #f1f5f9;
-    color: #374151;
-    border: 1px solid #e2e8f0;
-    border-bottom-left-radius: 5px;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e5e7eb !important;
+    border-bottom-left-radius: 8px;
+    margin-right: 8px !important;
+    margin-left: 0 !important;
+    order: 1 !important;
   }
 
   .message-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 8px;
-    font-size: 16px;
+    font-size: 18px;
     flex-shrink: 0;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
   }
 
-  .message.user {
-    flex-direction: row-reverse;
+  .message-avatar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  .message:hover .message-avatar::before {
+    transform: translateX(100%);
   }
 
   .message.user .message-avatar {
-    background: #007bff;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
+    order: 2 !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    margin-left: 8px !important;
+    margin-right: 0 !important;
   }
 
   .message.ai .message-avatar {
-    background: #e2e8f0;
-    color: #64748b;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    order: -1 !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    margin-right: 8px !important;
+    margin-left: 0 !important;
   }
 
-  /* 打字指示器 */
+  /* 強化頭像顯示 - 避免任何隱藏問題 */
+  #chatbot-messages .message .message-avatar {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 18px !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 10 !important;
+  }
+
+  /* 確保用戶頭像也正確顯示 */
+  #chatbot-messages .message.user .message-avatar {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+  }
+
+  /* 確保AI頭像也正確顯示 */
+  #chatbot-messages .message.ai .message-avatar {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    color: white !important;
+  }
+
+  /* 強制修復緩存問題 - 最高優先級 */
+  div#chatbot-messages div.message.ai div.message-content {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  div#chatbot-messages div.message div.message-avatar {
+    display: flex !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 18px !important;
+    flex-shrink: 0 !important;
+  }
+
+  div#chatbot-messages div.message.user div.message-avatar {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: white !important;
+  }
+
+  div#chatbot-messages div.message.ai div.message-avatar {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    color: white !important;
+  }
+
+  /* 最終修復：強制AI訊息背景為白色 */
+  #chatbot-box #chatbot-messages .message.ai .message-content,
+  #chatbot-box div#chatbot-messages div.message.ai div.message-content,
+  .message.ai .message-content,
+  div.message.ai div.message-content {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+
+
+
+
+
+  /* 現代化打字指示器 */
   .typing-indicator {
     display: none;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
+    animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .typing-dots {
     display: inline-block;
-    padding: 10px 14px;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    border-bottom-left-radius: 5px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    border-bottom-left-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    margin-right: 8px;
   }
 
   .typing-dots span {
-    height: 6px;
-    width: 6px;
+    height: 8px;
+    width: 8px;
     float: left;
-    margin: 0 1px;
-    background-color: #94a3b8;
+    margin: 0 2px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     display: block;
     border-radius: 50%;
-    opacity: 0.6;
-    animation: loadingFade 1s infinite;
+    animation: typingBounce 1.4s infinite ease-in-out;
   }
 
   .typing-dots span:nth-child(1) { animation-delay: 0s; }
-  .typing-dots span:nth-child(2) { animation-delay: 0.1s; }
-  .typing-dots span:nth-child(3) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
-  @keyframes loadingFade {
-    0% { opacity: 0.3; }
-    50% { opacity: 0.8; }
-    100% { opacity: 0.3; }
+  @keyframes typingBounce {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
   }
 
   /* 快速問題區域 */
@@ -411,6 +627,83 @@
     box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25) !important;
   }
 
+  /* 調整大小手柄 */
+  .resize-handle {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(-45deg, transparent 30%, #9ca3af 30%, #9ca3af 35%, transparent 35%, transparent 65%, #9ca3af 65%, #9ca3af 70%, transparent 70%);
+    cursor: se-resize;
+    z-index: 1000;
+    opacity: 0.6;
+    border-radius: 0 0 20px 0;
+  }
+
+  .resize-handle:hover {
+    opacity: 1;
+    background: linear-gradient(-45deg, transparent 30%, #3b82f6 30%, #3b82f6 35%, transparent 35%, transparent 65%, #3b82f6 65%, #3b82f6 70%, transparent 70%);
+  }
+
+  /* 常見問題動態卡片樣式 */
+  .question-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 4px;
+    display: inline-block;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+    font-size: 13px;
+    color: #374151;
+    /* GPU 加速 */
+    will-change: transform;
+  }
+
+  .question-card:hover {
+    transform: translateY(-1px);
+    border-color: #3b82f6;
+    color: #1e40af;
+  }
+
+  .question-category {
+    font-size: 11px;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+
+  .questions-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+    transition: opacity 0.3s ease;
+  }
+
+  .questions-grid.updating {
+    opacity: 0.5;
+  }
+
+  /* 新問題卡片滑入動畫 */
+  .question-card {
+    animation: slideInCard 0.4s ease-out;
+  }
+
+  @keyframes slideInCard {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   @media (max-width: 768px) {
     #chatbot-button{ bottom: 96px; right: 14px; }
     #chatbot-box{
@@ -421,6 +714,62 @@
       min-width: 320px;
       min-height: 400px;
     }
+  }
+
+  /* 🔥 強制修復 AI 訊息樣式 - 最高權重 */
+  #chatbot-messages .message.ai .message-content,
+  #chatbot-container .message.ai .message-content,
+  .chatbot-wrapper .message.ai .message-content {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #1e293b !important;
+    border: 1px solid #e5e7eb !important;
+    white-space: pre-line !important;
+    line-height: 1.5 !important;
+  }
+
+  /* 🔥 強制確保訊息使用 flexbox 布局 */
+  #chatbot-messages .message,
+  #chatbot-container .message,
+  .chatbot-wrapper .message {
+    display: flex !important;
+    align-items: flex-start !important;
+    margin-bottom: 18px !important;
+  }
+
+  /* 🔥 強制確保頭像顯示 - 最高權重 */
+  #chatbot-messages .message .message-avatar,
+  #chatbot-container .message .message-avatar,
+  .chatbot-wrapper .message .message-avatar {
+    display: flex !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 18px !important;
+    flex-shrink: 0 !important;
+    color: white !important;
+  }
+
+  /* 🔥 強制 AI 頭像在左側 */
+  #chatbot-messages .message.ai .message-avatar,
+  #chatbot-container .message.ai .message-avatar,
+  .chatbot-wrapper .message.ai .message-avatar {
+    order: -1 !important;
+    margin-right: 8px !important;
+    margin-left: 0 !important;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  }
+
+  /* 🔥 強制用戶頭像樣式 */
+  #chatbot-messages .message.user .message-avatar,
+  #chatbot-container .message.user .message-avatar,
+  .chatbot-wrapper .message.user .message-avatar {
+    margin-left: 8px !important;
+    margin-right: 0 !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
   }
   </style>
   
@@ -524,7 +873,7 @@
                 <i class="bi bi-headset me-2"></i>客服控台
               </a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'notification_page' %}">
+              <li><a class="dropdown-item" href="#" onclick="document.getElementById('notificationDropdown').click();">
                 <i class="bi bi-bell me-2"></i>系統通知
               </a></li>
             </ul>
@@ -617,19 +966,18 @@
 
         <!-- 飼主菜單 -->
         {% elif user.profile.account_type == 'owner' %}
-          <!-- 我的毛孩 -->
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'pet_list' %}" aria-label="管理我的寵物">
-              <i class="bi bi-heart-fill me-1" aria-hidden="true"></i>我的毛孩
-            </a>
-          </li>
-          
-          <!-- 預約管理下拉選單 -->
+          <!-- 🐾 寵物管理 (合併我的毛孩 + 預約管理) -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>預約管理
+              <i class="bi bi-heart-fill me-1" aria-hidden="true"></i>寵物管理
             </a>
             <ul class="dropdown-menu">
+              <li><h6 class="dropdown-header">🐾 我的毛孩</h6></li>
+              <li><a class="dropdown-item" href="{% url 'pet_list' %}">
+                <i class="bi bi-heart-fill me-2"></i>毛孩總覽
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><h6 class="dropdown-header">📅 預約管理</h6></li>
               <li><a class="dropdown-item" href="{% url 'my_appointments' %}">
                 <i class="bi bi-calendar-heart me-2"></i>我的預約
               </a></li>
@@ -639,10 +987,10 @@
             </ul>
           </li>
           
-          <!-- 醫療紀錄下拉選單 -->
+          <!-- 📋 健康紀錄 -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-heart-pulse me-1" aria-hidden="true"></i>醫療紀錄
+              <i class="bi bi-heart-pulse me-1" aria-hidden="true"></i>健康紀錄
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{% url 'health_rec' %}">
@@ -670,30 +1018,31 @@
             </ul>
           </li>
           
-          <!-- 社群專區下拉選單 -->
+          <!-- 👥 社群專區 -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-chat-heart me-1" aria-hidden="true"></i>社群專區
             </a>
             <ul class="dropdown-menu">
+              <li><h6 class="dropdown-header">🏠 社群首頁</h6></li>
               <li><a class="dropdown-item" href="{% url 'social:home' %}">
-                <i class="bi bi-house me-2"></i>社群首頁
+                <i class="bi bi-house-heart me-2"></i>社群動態
               </a></li>
-              <li><a class="dropdown-item" href="{% url 'social:profile' user.username %}">
-                <i class="bi bi-person me-2"></i>我的檔案
+              <li><a class="dropdown-item" href="{% url 'social:search_posts' %}">
+                <i class="bi bi-compass me-2"></i>探索內容
               </a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><h6 class="dropdown-header">互動功能</h6></li>
-              <li><a class="dropdown-item" href="{% url 'social:search_posts' %}">
-                <i class="bi bi-search me-2"></i>搜尋貼文
+              <li><h6 class="dropdown-header">👤 個人專區</h6></li>
+              <li><a class="dropdown-item" href="{% url 'social:profile' user.username %}">
+                <i class="bi bi-person-heart me-2"></i>我的檔案
               </a></li>
-              <li><a class="dropdown-item" href="{% url 'ai_chat' %}">
-                <i class="bi bi-robot me-2"></i>AI 客服
+              <li><a class="dropdown-item" href="{% url 'social:edit_profile' %}">
+                <i class="bi bi-pencil-square me-2"></i>編輯檔案
               </a></li>
             </ul>
           </li>
 
-          <!-- 領養專區下拉選單 -->
+          <!-- 💝 領養專區 -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-heart me-1" aria-hidden="true"></i>領養專區
@@ -712,28 +1061,52 @@
           </li>
         {% endif %}
 
-        <!-- 共用菜單項目 -->
-        {% if not user.is_staff %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'edit_profile' %}" aria-label="修改個人資料">
-              <i class="bi bi-person-gear me-1" aria-hidden="true"></i>修改帳號資料
-            </a>
-          </li>
-        {% endif %}
-        
-        <!-- 通知 -->
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'notification_page' %}" id="notification-link" aria-label="查看通知">
+        <!-- 🔔 通知鈴鐺 -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false" aria-label="通知中心">
             <i class="bi bi-bell me-1" aria-hidden="true"></i>通知
-            <span id="notification-count" class="notification-badge d-none" aria-label="未讀通知數量"></span>
+            <span id="notification-count" class="notification-badge d-none position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              <span class="visually-hidden">未讀通知數量</span>
+            </span>
           </a>
+          <div class="dropdown-menu dropdown-menu-end" style="min-width: 320px;" aria-labelledby="notificationDropdown">
+            <!-- 通知區塊 -->
+            <div class="notification-section">
+              <div class="notification-header d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                <h6 class="mb-0 fw-bold">
+                  <i class="bi bi-bell me-1"></i>通知中心
+                </h6>
+                <button class="btn btn-sm btn-link p-0 text-primary" id="mark-all-read" aria-label="標記所有通知為已讀">
+                  全部已讀
+                </button>
+              </div>
+              <div class="notification-list" id="notification-list" style="max-height: 300px; overflow-y: auto;">
+                <div class="d-flex justify-content-center align-items-center p-4 text-muted" id="loading-notifications">
+                  <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                  載入中...
+                </div>
+              </div>
+            </div>
+          </div>
         </li>
-        
-        <!-- 登出 -->
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'account_logout' %}" aria-label="登出系統">
-            <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>登出
+
+        <!-- 👤 帳號管理 -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1" aria-hidden="true"></i>帳號管理
           </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% if not user.is_staff %}
+              <li><a class="dropdown-item" href="{% url 'edit_profile' %}">
+                <i class="bi bi-person-gear me-2"></i>帳號設定
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+            {% endif %}
+            <li><a class="dropdown-item" href="{% url 'account_logout' %}">
+              <i class="bi bi-box-arrow-right me-2"></i>登出系統
+            </a></li>
+          </ul>
         </li>
 
       {% else %}
@@ -769,6 +1142,9 @@
       {% endif %}
     </ul>
   </div>
+        </div>
+      </nav>
+    </div>
   </header>
 
   <!-- 主內容區塊 -->
@@ -792,12 +1168,7 @@
           
           <!-- 快速連結 -->
           <div class="mt-3">
-            <a href="{% url 'map' %}" class="btn btn-outline-secondary btn-sm me-2">
-              <i class="bi bi-geo-alt me-1"></i>尋找醫院
-            </a>
-            <a href="{% url 'emergency_map' %}" class="btn btn-outline-danger btn-sm">
-              <i class="bi bi-exclamation-triangle me-1"></i>急診
-            </a>
+            <!-- 地圖功能已移除 -->
           </div>
         </div>
         
@@ -1077,6 +1448,7 @@
           </div>
       </div>
       <div id="chatbot-messages">
+
           <!-- 打字指示器 -->
           <div class="typing-indicator" id="typing-indicator">
               <div class="message ai">
@@ -1092,18 +1464,19 @@
 
       <!-- 快速問題區域 -->
       <div class="quick-questions" id="quick-questions">
-          <h3>💬 常見問題：</h3>
-          <a href="#" class="quick-question-btn" data-question="如何幫寵物洗澡？">如何幫寵物洗澡？</a>
-          <a href="#" class="quick-question-btn" data-question="寵物疫苗接種時間？">寵物疫苗接種時間？</a>
-          <a href="#" class="quick-question-btn" data-question="寵物飲食注意事項？">寵物飲食注意事項？</a>
-          <a href="#" class="quick-question-btn" data-question="如何訓練寵物？">如何訓練寵物？</a>
-          <a href="#" class="quick-question-btn" data-question="寵物生病的症狀？">寵物生病的症狀？</a>
+          <h3>💡 智能問題推薦</h3>
+          <div class="questions-grid" id="questions-grid">
+              <!-- 動態生成的問題卡片將插入這裡 -->
+          </div>
       </div>
 
       <div id="chatbot-input">
           <input type="text" id="chatbot-text" placeholder="請輸入訊息..." />
-          <button id="chatbot-send">✈️</button>
+          <button id="chatbot-send"><i class="bi bi-cursor-fill"></i></button>
       </div>
+
+      <!-- 調整大小手柄 -->
+      <div class="resize-handle" title="拖拽調整大小"></div>
   </div>
 
   <!-- AI 客服浮動泡泡 JavaScript (增強版：持久化 + 拖曳 + 縮放) -->
@@ -1115,8 +1488,6 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
-        // 調試：輸出用戶資訊
-        console.log('USER_INFO:', USER_INFO);
 
         const chatbotButton = document.getElementById('chatbot-button');
         const chatbotBox = document.getElementById('chatbot-box');
@@ -1125,6 +1496,7 @@
         const chatbotText = document.getElementById('chatbot-text');
         const chatbotMessages = document.getElementById('chatbot-messages');
         const chatbotHeader = document.getElementById('chatbot-header');
+
 
         // 初始化會話Key和存儲Key
         let sessionKey = getStoredSessionKey();
@@ -1141,6 +1513,13 @@
         let dragStartY = 0;
         let boxStartX = 0;
         let boxStartY = 0;
+        let animationFrameId = null;
+
+        // 清理舊的CSS緩存問題 - 強制清除聊天記錄
+        clearAllChatHistory();
+
+        // 清空聊天區域，確保沒有舊訊息
+        chatbotMessages.innerHTML = '';
 
         // 初始化聊天機器人
         initializeChatbot();
@@ -1167,51 +1546,86 @@
         function drag(e) {
             if (!isDragging) return;
 
-            const deltaX = e.clientX - dragStartX;
-            const deltaY = e.clientY - dragStartY;
+            // 取消前一個動畫幀
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
 
-            let newX = boxStartX + deltaX;
-            let newY = boxStartY + deltaY;
+            // 使用 requestAnimationFrame 優化性能
+            animationFrameId = requestAnimationFrame(() => {
+                const deltaX = e.clientX - dragStartX;
+                const deltaY = e.clientY - dragStartY;
 
-            // 邊界檢查
-            const maxX = window.innerWidth - chatbotBox.offsetWidth;
-            const maxY = window.innerHeight - chatbotBox.offsetHeight;
+                let newX = boxStartX + deltaX;
+                let newY = boxStartY + deltaY;
 
-            newX = Math.max(0, Math.min(maxX, newX));
-            newY = Math.max(0, Math.min(maxY, newY));
+                // 邊界檢查
+                const maxX = window.innerWidth - chatbotBox.offsetWidth;
+                const maxY = window.innerHeight - chatbotBox.offsetHeight;
 
-            chatbotBox.style.left = newX + 'px';
-            chatbotBox.style.top = newY + 'px';
-            chatbotBox.style.right = 'auto';
-            chatbotBox.style.bottom = 'auto';
+                newX = Math.max(0, Math.min(maxX, newX));
+                newY = Math.max(0, Math.min(maxY, newY));
 
-            // 保存位置
-            saveChatbotPosition(newX, newY);
+                // 使用更高效的定位方式
+                chatbotBox.style.left = newX + 'px';
+                chatbotBox.style.top = newY + 'px';
+                chatbotBox.style.right = 'auto';
+                chatbotBox.style.bottom = 'auto';
+            });
         }
 
         function endDrag() {
             if (isDragging) {
                 isDragging = false;
-                chatbotBox.style.transition = '';
+
+                // 取消任何等待中的動畫幀
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+
+                // 恢復transition以支援其他動畫
+                chatbotBox.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+
+                // 保存最終位置
+                const rect = chatbotBox.getBoundingClientRect();
+                saveChatbotPosition(rect.left, rect.top);
             }
         }
 
-        // 打開聊天窗口
+        // 打開聊天窗口 - 加上現代化動畫
         chatbotButton.addEventListener('click', function() {
             chatbotBox.style.display = 'flex';
             chatbotButton.style.display = 'none';
+            // 觸發動畫
+            requestAnimationFrame(() => {
+                chatbotBox.classList.add('show');
+            });
 
             // 恢復位置
             restoreChatbotPosition();
 
-            // 恢復對話記錄
-            loadConversationHistory();
+            // 確保聊天區域是乾淨的
+            chatbotMessages.innerHTML = '';
+
+
+
+            // 顯示歡迎訊息
+            setTimeout(() => {
+                addMessage('bot', '您好！我是AI客服助手，很高興為您服務。請問有什麼可以幫助您的嗎？');
+            }, 100);
+
+            // 由於已經清除了所有歷史記錄，不需要載入舊對話
+            // loadConversationHistory(); // 已註解掉，避免載入錯誤分類的舊訊息
         });
 
-        // 關閉聊天窗口
+        // 關閉聊天窗口 - 加上優雅的關閉動畫
         chatbotClose.addEventListener('click', function() {
-            chatbotBox.style.display = 'none';
-            chatbotButton.style.display = 'flex';
+            chatbotBox.classList.remove('show');
+            setTimeout(() => {
+                chatbotBox.style.display = 'none';
+                chatbotButton.style.display = 'flex';
+            }, 400);
 
             // 保存對話記錄
             saveConversationHistory();
@@ -1225,16 +1639,141 @@
             }
         });
 
-        // 快速問題按鈕事件
-        document.querySelectorAll('.quick-question-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const question = this.getAttribute('data-question');
-                if (question) {
-                    chatbotText.value = question;
-                    sendMessage();
-                }
+        // 動態常見問題數據
+        const questionCategories = [
+            {
+                category: "📱 平台操作",
+                questions: [
+                    "如何註冊毛日好帳號？",
+                    "如何新增寵物資料？",
+                    "忘記密碼怎麼辦？",
+                    "如何預約獸醫門診？",
+                    "如何發佈動態貼文？",
+                    "如何上傳寵物照片？",
+                    "如何記錄寵物體重？"
+                ]
+            },
+            {
+                category: "🏥 健康護理",
+                questions: [
+                    "如何幫寵物洗澡？",
+                    "寵物疫苗接種時間？",
+                    "寵物生病的症狀？",
+                    "如何護理寵物毛髮？",
+                    "寵物口腔護理方法？"
+                ]
+            },
+            {
+                category: "🍽️ 飲食營養",
+                questions: [
+                    "寵物飲食注意事項？",
+                    "幼寵餵食頻率？",
+                    "寵物不能吃的食物？",
+                    "如何選擇寵物飼料？",
+                    "寵物營養補充品推薦？"
+                ]
+            },
+            {
+                category: "🎓 訓練行為",
+                questions: [
+                    "如何訓練寵物？",
+                    "寵物亂咬東西怎麼辦？",
+                    "如何訓練寵物上廁所？",
+                    "寵物分離焦慮症處理？",
+                    "新寵物適應環境技巧？"
+                ]
+            },
+            {
+                category: "🏠 日常照護",
+                questions: [
+                    "寵物適合的運動量？",
+                    "如何建立寵物作息？",
+                    "寵物玩具選擇指南？",
+                    "寵物住環境布置？",
+                    "寵物季節性照護？"
+                ]
+            },
+            {
+                category: "❤️ 社群功能",
+                questions: [
+                    "如何關注其他用戶？",
+                    "如何按讚和留言？",
+                    "如何瀏覽領養資訊？",
+                    "如何發佈送養資訊？",
+                    "領養流程是什麼？"
+                ]
+            }
+        ];
+
+        // 生成動態問題卡片
+        function generateQuestionCards() {
+            const grid = document.getElementById('questions-grid');
+            if (!grid) return;
+
+            // 添加更新中樣式
+            grid.classList.add('updating');
+
+            setTimeout(() => {
+                grid.innerHTML = '';
+
+            // 從各類別隨機選擇問題
+            const selectedQuestions = [];
+            questionCategories.forEach(category => {
+                const randomQuestion = category.questions[Math.floor(Math.random() * category.questions.length)];
+                selectedQuestions.push({
+                    category: category.category,
+                    question: randomQuestion
+                });
             });
+
+            // 額外隨機選擇2-3個問題
+            const allQuestions = questionCategories.flatMap(cat =>
+                cat.questions.map(q => ({ category: cat.category, question: q }))
+            );
+
+            while (selectedQuestions.length < 7) {
+                const randomQ = allQuestions[Math.floor(Math.random() * allQuestions.length)];
+                if (!selectedQuestions.find(sq => sq.question === randomQ.question)) {
+                    selectedQuestions.push(randomQ);
+                }
+            }
+
+            // 創建卡片
+            selectedQuestions.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.innerHTML = `
+                    <span class="question-category">${item.category}</span>
+                    ${item.question}
+                `;
+                card.addEventListener('click', () => {
+                    chatbotText.value = item.question;
+                    sendMessage();
+
+                    // 點擊後延遲更新問題推薦，在AI回答完成後更新
+                    setTimeout(() => {
+                        generateQuestionCards();
+                    }, 2500); // 2.5秒後更新推薦，確保用戶看到回答
+                });
+                grid.appendChild(card);
+            });
+
+                // 移除更新中樣式，觸發動畫
+                grid.classList.remove('updating');
+            }, 200); // 200ms後開始重新生成
+        }
+
+        // 初始化問題卡片
+        generateQuestionCards();
+
+        // 每次開啟對話框時刷新問題
+        chatbotButton.addEventListener('click', () => {
+            if (!chatbotBox.classList.contains('show')) {
+                // 延遲生成新問題，創造動態感
+                setTimeout(() => {
+                    generateQuestionCards();
+                }, 300);
+            }
         });
 
         // 標題列人工客服按鈕事件
@@ -1296,7 +1835,9 @@
             if (typingIndicator) typingIndicator.style.display = 'none';
 
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender === 'bot' ? 'ai' : 'user'}`;
+            // 客服相關訊息(bot, agent, system)放左側，用戶訊息(user)放右側
+            const isServiceMessage = ['bot', 'agent', 'system'].includes(sender);
+            messageDiv.className = `message ${isServiceMessage ? 'ai' : 'user'}`;
             if (isTemporary) messageDiv.className += ' temporary';
 
             // 添加時間戳記
@@ -1304,14 +1845,64 @@
             messageDiv.dataset.sender = sender;
             messageDiv.dataset.isHtml = isHTML;
 
-            // 創建頭像
+            // 創建頭像 - 根據不同sender類型使用不同圖示
             const avatar = document.createElement('div');
             avatar.className = 'message-avatar';
-            avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+
+            // 強制設定頭像樣式來確保顯示
+            avatar.style.display = 'flex';
+            avatar.style.width = '40px';
+            avatar.style.height = '40px';
+            avatar.style.borderRadius = '50%';
+            avatar.style.alignItems = 'center';
+            avatar.style.justifyContent = 'center';
+            avatar.style.fontSize = '18px';
+            avatar.style.flexShrink = '0';
+            avatar.style.color = 'white';
+
+            if (sender === 'bot') {
+                avatar.textContent = '🤖';
+                avatar.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+            } else if (sender === 'agent') {
+                avatar.textContent = '👨‍💼';
+                avatar.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+            } else if (sender === 'system') {
+                avatar.textContent = '📢';
+                avatar.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+            } else {
+                avatar.textContent = '👤';
+                avatar.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+            }
 
             // 創建訊息內容
             const content = document.createElement('div');
             content.className = 'message-content';
+
+            // 強制設定訊息內容樣式 - 最高權重
+            if (isServiceMessage) {
+                // 清除所有可能的背景設定
+                content.style.background = '';
+                content.style.backgroundColor = '';
+                content.style.backgroundImage = '';
+                content.style.backgroundAttachment = '';
+                content.style.backgroundClip = '';
+                content.style.backgroundOrigin = '';
+                content.style.backgroundPosition = '';
+                content.style.backgroundRepeat = '';
+                content.style.backgroundSize = '';
+
+                // 強制設定白色背景
+                content.style.background = '#ffffff !important';
+                content.style.backgroundColor = '#ffffff !important';
+                content.style.color = '#1e293b !important';
+                content.style.border = '1px solid #e5e7eb !important';
+                content.style.setProperty('background', '#ffffff', 'important');
+                content.style.setProperty('background-color', '#ffffff', 'important');
+                content.style.setProperty('background-image', 'none', 'important');
+                content.style.setProperty('color', '#1e293b', 'important');
+                content.style.setProperty('border', '1px solid #e5e7eb', 'important');
+
+            }
 
             // 檢查是否為bot訊息且包含轉人工客服的提示
             if (sender === 'bot' && message.includes('轉人工客服')) {
@@ -1329,14 +1920,34 @@
                 content.innerHTML = message;
                 messageDiv.dataset.originalMessage = message;
             } else {
+                // 格式化數字列表以改善可讀性
+                let formattedMessage = message;
+                if (isServiceMessage) {
+                    // 將 "1. " "2. " "3. " 等數字列表轉換為帶換行的格式
+                    formattedMessage = message.replace(/(\d+\.\s+)/g, '\n$1');
+                    // 移除開頭可能多出的換行
+                    formattedMessage = formattedMessage.replace(/^\n/, '');
+                }
+
                 // 使用純文字內容
-                content.textContent = message;
+                content.textContent = formattedMessage;
                 messageDiv.dataset.originalMessage = message;
             }
 
-            // 組裝訊息結構
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(content);
+            // 使用簡潔的CSS類別，讓CSS正確處理樣式
+
+            // 組裝訊息結構 - 用戶訊息頭像在右邊
+            if (isServiceMessage) {
+                // AI訊息：[頭像][內容]
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(content);
+            } else {
+                // 用戶訊息：[內容][頭像]
+                messageDiv.appendChild(content);
+                messageDiv.appendChild(avatar);
+            }
+
+
 
             // 插入訊息（在打字指示器之前）
             if (typingIndicator && typingIndicator.parentNode) {
@@ -1347,6 +1958,24 @@
 
             // 滾動到底部
             chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+            // 延遲檢查和修復樣式（防止CSS被覆蓋）
+            if (isServiceMessage) {
+                setTimeout(() => {
+                    const contentElement = messageDiv.querySelector('.message-content');
+                    if (contentElement) {
+                        const computedStyle = window.getComputedStyle(contentElement);
+                        // 如果背景不是白色，強制修復
+                        if (computedStyle.backgroundColor !== 'rgb(255, 255, 255)' &&
+                            computedStyle.backgroundColor !== '#ffffff' &&
+                            computedStyle.backgroundColor !== 'white') {
+                            contentElement.style.setProperty('background-color', '#ffffff', 'important');
+                            contentElement.style.setProperty('background', '#ffffff', 'important');
+                            contentElement.style.setProperty('color', '#1e293b', 'important');
+                        }
+                    }
+                }, 100);
+            }
 
             return messageDiv;
         }
@@ -1443,15 +2072,7 @@
 
         // 初始化聊天機器人
         function initializeChatbot() {
-            // 如果是第一次訪問，顯示歡迎訊息
-            const hasWelcome = localStorage.getItem('chatbot_welcomed_' + sessionKey);
-            if (!hasWelcome) {
-                setTimeout(() => {
-                    addMessage('bot', '您好！我是AI客服助手，很高興為您服務。請問有什麼可以幫助您的嗎？');
-                    localStorage.setItem('chatbot_welcomed_' + sessionKey, 'true');
-                    saveConversationHistory();
-                }, 100);
-            }
+            // 初始化完成
         }
 
         // 獲取或創建會話Key
@@ -1493,16 +2114,26 @@
 
                 messages.forEach(msg => {
                     const messageDiv = document.createElement('div');
-                    messageDiv.className = `message ${msg.sender === 'bot' ? 'ai' : 'user'}`;
+                    // 客服相關訊息(bot, agent, system)放左側，用戶訊息(user)放右側
+                    const isServiceMessage = ['bot', 'agent', 'system'].includes(msg.sender);
+                    messageDiv.className = `message ${isServiceMessage ? 'ai' : 'user'}`;
                     messageDiv.dataset.timestamp = msg.timestamp;
                     messageDiv.dataset.sender = msg.sender;
                     messageDiv.dataset.isHtml = msg.isHTML;
                     messageDiv.dataset.originalMessage = msg.message;
 
-                    // 創建頭像
+                    // 創建頭像 - 根據不同sender類型使用不同圖示
                     const avatar = document.createElement('div');
                     avatar.className = 'message-avatar';
-                    avatar.textContent = msg.sender === 'bot' ? '🤖' : '👤';
+                    if (msg.sender === 'bot') {
+                        avatar.textContent = '🤖';
+                    } else if (msg.sender === 'agent') {
+                        avatar.textContent = '👨‍💼';
+                    } else if (msg.sender === 'system') {
+                        avatar.textContent = '📢';
+                    } else {
+                        avatar.textContent = '👤';
+                    }
 
                     // 創建訊息內容
                     const content = document.createElement('div');
@@ -1583,6 +2214,20 @@
             }
         }
 
+        // 強制清除所有聊天歷史記錄 - 修復CSS問題
+        function clearAllChatHistory() {
+            const keys = Object.keys(localStorage).filter(key =>
+                key.startsWith('chatbot_conversation_') ||
+                key.startsWith('chatbot_welcomed_') ||
+                key.startsWith('handoff_ticket_id_') ||
+                key.startsWith('handoff_last_msg_id_')
+            );
+            keys.forEach(key => {
+                localStorage.removeItem(key);
+            });
+            console.log('清除了舊的聊天記錄，解決CSS緩存問題');
+        }
+
         // 人工客服輪詢功能
         function startHandoffPolling() {
             if (handoffPolling) {
@@ -1603,7 +2248,7 @@
                     if (data.ok && data.messages) {
                         data.messages.forEach(msg => {
                             if (msg.sender === 'agent') {
-                                addMessage('agent', `👨‍💼 人工客服：${msg.text}`);
+                                addMessage('agent', msg.text);
                             } else if (msg.sender === 'system') {
                                 addMessage('system', `📢 系統：${msg.text}`);
                             }
@@ -1803,6 +2448,19 @@
                 addEndSessionButton();
             }, 100);
         }
+
+        // 強制修復所有AI訊息背景的腳本
+        setInterval(() => {
+            const aiContents = document.querySelectorAll('#chatbot-messages .message.ai .message-content');
+            aiContents.forEach(content => {
+                const currentBg = window.getComputedStyle(content).backgroundColor;
+                if (currentBg !== 'rgb(255, 255, 255)') {
+                    content.style.backgroundColor = '#ffffff';
+                    content.style.background = '#ffffff';
+                    content.style.color = '#1e293b';
+                }
+            });
+        }, 500);
     });
   </script>
   {% endif %}

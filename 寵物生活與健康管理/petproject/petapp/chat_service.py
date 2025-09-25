@@ -11,11 +11,11 @@ OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "qwen2.5:3b-instruct")  # 建議�
 TOP_K           = int(os.getenv("RAG_TOP_K", "4"))
 SNIPPET_CHARS   = int(os.getenv("RAG_SNIPPET_CHARS", "800"))  # >0 時截斷每段脈絡長度
 
-# 模型與網路參數（可環境變數化）
-OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "120"))
-OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))
-OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "256"))
-OLLAMA_TEMP        = float(os.getenv("OLLAMA_TEMP", "0.3"))
+# 模型與網路參數（優化性能）
+OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "30"))  # 減少超時時間
+OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "1024"))    # 減少上下文長度
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "200")) # 減少預測token數
+OLLAMA_TEMP        = float(os.getenv("OLLAMA_TEMP", "0.2"))      # 降低溫度提高一致性
 
 # 是否把 sources 顯示給使用者（預設關閉）
 _SHOW_SOURCES_ENV = os.getenv("SHOW_SOURCES_TO_USER", "0").lower()
@@ -33,12 +33,18 @@ try:
 except Exception:
     chromadb, Settings = None, None
 
-# 512 維中文嵌入（與你建庫相同）
+# 匹配向量庫的嵌入模型維度
 try:
     from sentence_transformers import SentenceTransformer
-    _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")
+    # 嘗試使用512維的模型以匹配向量庫
+    _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")  # 512維，與ChromaDB一致
+    # 如果需要512維，可能需要檢查原始建庫時使用的模型
 except Exception:
-    _embedder = None
+    try:
+        # 備用選項：原始模型
+        _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")  # 384維
+    except Exception:
+        _embedder = None
 
 # ====== 回覆風格與格式 ======
 FORMAT_INSTRUCTIONS = (
@@ -267,6 +273,65 @@ NEGATIVE_EXIT_WORDS = {"不要", "不用了", "算了", "先這樣", "不需要"
 def is_negative_exit(text: str) -> bool:
     return (text or "").strip() in NEGATIVE_EXIT_WORDS
 
+# ====== 基本回應生成（當檢索失敗時） ======
+def generate_fallback_response(user_msg: str) -> str:
+    """當知識庫檢索失敗時，生成基本的寵物護理回應"""
+    msg = (user_msg or "").lower()
+
+    # 洗澡相關
+    if any(word in msg for word in ["洗澡", "清潔", "沐浴"]):
+        return normalize_zh_tw(
+            "（一般建議）關於寵物洗澡的基本建議：\n\n"
+            "1. 狗狗一般每1-2個月洗澡一次，貓咪通常不需要經常洗澡。\n"
+            "2. 使用寵物專用洗毛精，水溫保持溫暖（約38-40°C）。\n"
+            "3. 洗澡前先梳理毛髮，洗後徹底吹乾避免感冒。\n"
+            "4. 耳朵進水可能引發感染，建議使用棉球保護。\n\n"
+            "注意事項：\n"
+            "• 幼齡或生病的寵物應避免洗澡。\n"
+            "• 如有皮膚問題，請先諮詢獸醫師。"
+        )
+
+    # 疫苗相關
+    if any(word in msg for word in ["疫苗", "預防針", "接種"]):
+        return normalize_zh_tw(
+            "（一般建議）關於寵物疫苗接種：\n\n"
+            "1. 幼犬：8-10週齡開始首次疫苗，之後每3-4週補強。\n"
+            "2. 幼貓：9-12週齡開始首次疫苗，之後每3-4週補強。\n"
+            "3. 成年寵物每年需要補強疫苗。\n"
+            "4. 狂犬病疫苗為法定必須接種項目。\n\n"
+            "注意事項：\n"
+            "• 疫苗前確保寵物身體健康。\n"
+            "• 建議諮詢當地獸醫師制定個人化疫苗計畫。"
+        )
+
+    # 飲食相關
+    if any(word in msg for word in ["飼料", "食物", "飲食", "餵食", "營養"]):
+        return normalize_zh_tw(
+            "（一般建議）關於寵物飲食：\n\n"
+            "1. 選擇符合年齡段的高品質寵物飼料。\n"
+            "2. 定時定量餵食，避免暴飲暴食。\n"
+            "3. 確保充足的乾淨飲水。\n"
+            "4. 避免餵食人類食物，特別是巧克力、洋蔥等有毒食物。\n\n"
+            "注意事項：\n"
+            "• 幼齡寵物需要較高頻率的餵食。\n"
+            "• 如有特殊健康狀況，請諮詢獸醫師。"
+        )
+
+    # 訓練相關
+    if any(word in msg for word in ["訓練", "教育", "行為", "服從"]):
+        return normalize_zh_tw(
+            "（一般建議）關於寵物訓練：\n\n"
+            "1. 使用正向強化方式，獎勵良好行為。\n"
+            "2. 保持訓練的一致性和耐心。\n"
+            "3. 從基本指令開始：坐下、等待、過來。\n"
+            "4. 社會化訓練同樣重要，讓寵物適應不同環境。\n\n"
+            "注意事項：\n"
+            "• 避免體罰，可能造成心理創傷。\n"
+            "• 每次訓練時間不宜過長（10-15分鐘）。"
+        )
+
+    return ""  # 如果都不匹配，返回空字串
+
 # ====== 意圖分流：每日互動清單 ======
 _INTENT_PATTERNS = {
     "activity_plan": [
@@ -372,79 +437,104 @@ def generate_activity_plan(
     )
 
 # ====== 向量檢索（回 context_text 與 sources） ======
+# 快取客戶端和嵌入模型來避免重複初始化
+_client_cache = None
+_collection_cache = None
+
+def clear_cache():
+    """清除快取的客戶端和集合"""
+    global _client_cache, _collection_cache
+    _client_cache = None
+    _collection_cache = None
+    print("[api_chat] 已清除快取")
+
+def _get_cached_client():
+    """獲取快取的客戶端和集合"""
+    global _client_cache, _collection_cache
+
+    if _client_cache is None or _collection_cache is None:
+        if not chromadb or not Settings:
+            return None, None
+        try:
+            _client_cache = chromadb.PersistentClient(
+                path=DB_DIR,
+                settings=Settings(anonymized_telemetry=False)
+            )
+            _collection_cache = _client_cache.get_or_create_collection(COLLECTION_NAME)
+        except Exception as e:
+            print(f"[api_chat] 初始化客戶端失敗: {e}")
+            return None, None
+
+    return _client_cache, _collection_cache
+
 def safe_retrieve(query: str, top_k: int = TOP_K):
     """
     回傳：(context_text, sources: List[Dict])。
-    自動降門檻：先 0.60；無命中則降 0.50；仍無則視為未命中 → ("", [])。
+    優化版本：使用快取和降低的相似度門檻。
     """
-    if not chromadb or not Settings:
-        print("[api_chat] chromadb 未安裝或無法匯入，略過檢索。")
-        return "", []
-
     if _embedder is None:
-        print("[api_chat] _embedder 缺失，無法檢索（請安裝 sentence-transformers 並下載 BAAI/bge-small-zh-v1.5）。")
+        print("[api_chat] _embedder 缺失，無法檢索")
+        return "", []
+
+    client, col = _get_cached_client()
+    if not client or not col:
+        print("[api_chat] 無法獲取檢索客戶端")
         return "", []
 
     try:
-        client = chromadb.PersistentClient(path=DB_DIR, settings=Settings(anonymized_telemetry=False))
-        try:
-            col = client.get_or_create_collection(COLLECTION_NAME)
-        except Exception:
-            col = client.get_or_create_collection(COLLECTION_NAME)
-    except Exception as e:
-        print(f"[api_chat] 取得 collection 失敗（COLLECTION_NAME={COLLECTION_NAME} / DB_DIR={DB_DIR}）:", e)
-        return "", []
-
-    try:
+        # 快速嵌入
         q_emb = _embedder.encode([query], normalize_embeddings=True).tolist()
+
+        # 減少檢索數量以提高速度
+        search_k = min(top_k, 3)  # 最多檢索3個結果
+
         res = col.query(
             query_embeddings=q_emb,
-            n_results=top_k,
-            include=["documents", "metadatas", "distances"]  # 不含 ids（避免版本相容問題）
+            n_results=search_k,
+            include=["documents", "metadatas", "distances"]
         )
 
-        docs  = (res or {}).get("documents", [[]])[0] or []
+        docs = (res or {}).get("documents", [[]])[0] or []
         metas = (res or {}).get("metadatas", [[]])[0] or []
         dists = (res or {}).get("distances", [[]])[0] or []
 
         if not docs:
-            print("[api_chat] 檢索 0 筆，可能 collection 為空或 DB_DIR 指錯。")
             return "", []
 
-        thresholds = [0.60, 0.50, 0.40, 0.30]
-        for th in thresholds:
-            pairs = []
-            for d, m, dist in zip(docs, metas, dists):
-                try:
-                    sim = 1.0 - float(dist)
-                except Exception:
-                    sim = 0.0
-                if sim >= th:
+        # 使用更寬鬆的門檻以更快找到結果
+        threshold = 0.4  # 固定使用較低門檻
+        pairs = []
+
+        for d, m, dist in zip(docs, metas, dists):
+            try:
+                sim = 1.0 - float(dist)
+                if sim >= threshold:
                     pairs.append((d, m or {}, sim))
-            if pairs:
-                pairs.sort(key=lambda x: x[2], reverse=True)
+            except Exception:
+                continue
 
-                blocks, sources = [], []
-                for i, (d, m, sim) in enumerate(pairs, start=1):
-                    snippet = _truncate(d, SNIPPET_CHARS) if SNIPPET_CHARS > 0 else d
-                    blocks.append(snippet.strip())
-                    sources.append({
-                        "id": (m.get("id") or f"rank-{i}"),
-                        "title": (m.get("title") or m.get("source") or "片段"),
-                        "score": round(sim, 4),
-                    })
+        if not pairs:
+            return "", []
 
-                print(f"[api_chat] 命中 {len(pairs)} 筆；採用相似度門檻 {th}")
-                return "\n\n---\n\n".join(blocks), sources
-            else:
-                print(f"[api_chat] 門檻 {th} 無命中，嘗試較低門檻...")
+        pairs.sort(key=lambda x: x[2], reverse=True)
 
-        print("[api_chat] 仍無命中（<=0.50），視為未命中。")
-        return "", []
+        blocks, sources = [], []
+        for i, (d, m, sim) in enumerate(pairs[:2], start=1):  # 最多使用2個片段
+            # 縮短片段長度以減少處理時間
+            snippet_len = min(SNIPPET_CHARS, 400) if SNIPPET_CHARS > 0 else 400
+            snippet = _truncate(d, snippet_len)
+            blocks.append(snippet.strip())
+            sources.append({
+                "id": (m.get("id") or f"rank-{i}"),
+                "title": (m.get("title") or m.get("source") or "片段"),
+                "score": round(sim, 4),
+            })
+
+        print(f"[api_chat] 快速檢索命中 {len(pairs)} 筆")
+        return "\n\n---\n\n".join(blocks), sources
 
     except Exception as e:
-        print("[api_chat] 檢索錯誤：", e)
-        traceback.print_exc()
+        print(f"[api_chat] 檢索錯誤：{e}")
         return "", []
 
 # ====== 與 Ollama 對話（一次回傳版） ======
@@ -457,7 +547,7 @@ def chat_with_ollama(messages):
             "temperature": OLLAMA_TEMP,
             "num_ctx": OLLAMA_NUM_CTX,
             "num_predict": OLLAMA_NUM_PREDICT,
-            "keep_alive": "5m",
+            "keep_alive": "10m",  # 增加模型快取時間
         }
     }
     try:
@@ -487,7 +577,7 @@ def chat_with_ollama_stream(messages):
             "temperature": OLLAMA_TEMP,
             "num_ctx": OLLAMA_NUM_CTX,
             "num_predict": OLLAMA_NUM_PREDICT,
-            "keep_alive": "5m",
+            "keep_alive": "10m",  # 增加模型快取時間
         }
     }
     r = None
@@ -538,12 +628,15 @@ def chat_with_ollama_stream(messages):
 @require_POST
 def api_chat(request):
     try:
-        data = json.loads(request.body.decode("utf-8"))
+        body = request.body
+        if isinstance(body, bytes):
+            body = body.decode('utf-8', errors='ignore')
+        data = json.loads(body)
     except Exception:
-        return JsonResponse({"reply": "（一般建議）請以 JSON 格式傳送：{ message: '...'}"})
+        return JsonResponse({"reply": "（一般建議）請檢查JSON格式是否正確"})
 
     user_msg = (data.get("message") or "").strip()
-    history  = data.get("history") or []
+    history = data.get("history") or []
     if not user_msg:
         return JsonResponse({"reply": "（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})
 
@@ -576,14 +669,28 @@ def api_chat(request):
             "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False
         }})
 
-    # RAG 檢索
-    context, sources = safe_retrieve(user_msg)
+    # RAG 檢索 - 添加快速失敗機制
+    try:
+        context, sources = safe_retrieve(user_msg)
+    except Exception as e:
+        print(f"[api_chat] 檢索系統錯誤，使用預設回應: {e}")
+        context, sources = "", []
+
     if not context:
-        return JsonResponse({
-            "reply": "目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。",
-            "sources": [],
-            "handoff": _update_handoff_state(request, failed=True)[1],  # 記一次失敗
-        })
+        # 提供基本的寵物護理回應
+        fallback_response = generate_fallback_response(user_msg)
+        if fallback_response:
+            return JsonResponse({
+                "reply": fallback_response,
+                "sources": [],
+                "handoff": _update_handoff_state(request, failed=False)[1],
+            })
+        else:
+            return JsonResponse({
+                "reply": "目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。",
+                "sources": [],
+                "handoff": _update_handoff_state(request, failed=True)[1],  # 記一次失敗
+            })
 
     opening = "根據提供的知識片段，"
     user_block = (
@@ -621,10 +728,13 @@ def api_chat(request):
 @require_POST
 def api_chat_stream(request):
     try:
-        data = json.loads(request.body.decode("utf-8"))
+        body = request.body
+        if isinstance(body, bytes):
+            body = body.decode('utf-8', errors='ignore')
+        data = json.loads(body)
     except Exception:
         return StreamingHttpResponse(
-            _guard_stream(iter([json.dumps({"type":"error","message":"（一般建議）請以 JSON 傳送：{ message: '...'}"})+"\n",
+            _guard_stream(iter([json.dumps({"type":"error","message":"（一般建議）請檢查JSON格式是否正確"})+"\n",
                                 json.dumps({"type":"done"})+"\n"])),
             content_type="application/x-ndjson; charset=utf-8"
         )
@@ -682,16 +792,30 @@ def api_chat_stream(request):
         resp["X-Accel-Buffering"] = "no"
         return resp
 
-    # RAG 檢索
-    context, sources = safe_retrieve(user_msg)
+    # RAG 檢索 - 添加快速失敗機制
+    try:
+        context, sources = safe_retrieve(user_msg)
+    except Exception as e:
+        print(f"[api_chat_stream] 檢索系統錯誤，使用預設回應: {e}")
+        context, sources = "", []
+
     if not context:
+        # 嘗試使用fallback回應
+        fallback_response = generate_fallback_response(user_msg)
+
         def _nohit_gen():
             yield json.dumps({"type":"meta","sources": []}) + "\n"
-            yield json.dumps({"type":"delta","text":"目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。"}) + "\n"
-            # 記一次失敗
-            _, handoff_meta = _update_handoff_state(request, failed=True)
+            if fallback_response:
+                yield json.dumps({"type":"delta","text": fallback_response}) + "\n"
+                # 不記失敗，因為有提供實用回應
+                _, handoff_meta = _update_handoff_state(request, failed=False)
+            else:
+                yield json.dumps({"type":"delta","text":"目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。"}) + "\n"
+                # 記一次失敗
+                _, handoff_meta = _update_handoff_state(request, failed=True)
             yield json.dumps({"type":"handoff","payload": handoff_meta}) + "\n"
             yield json.dumps({"type":"done"}) + "\n"
+
         resp = StreamingHttpResponse(_guard_stream(_nohit_gen()), content_type="application/x-ndjson; charset=utf-8")
         resp["Cache-Control"] = "no-cache, no-transform"
         resp["X-Accel-Buffering"] = "no"
@@ -799,3 +923,9 @@ def api_kb_status(request):
         info["error"] = str(e)
 
     return JsonResponse(info)
+
+# ====== 清除快取端點：/api/chat/clear_cache ======
+@csrf_exempt
+def api_clear_cache(request):
+    clear_cache()
+    return JsonResponse({"status": "cache cleared"})

@@ -40,11 +40,14 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     
     def get_login_redirect_url(self, request, sociallogin):
         """決定登入後的重定向 URL"""
-        logger.info(f"get_login_redirect_url called - needs_profile: {request.session.get('google_needs_profile')}")
+        needs_profile = request.session.get('google_needs_profile', False)
+        logger.info(f"get_login_redirect_url called - needs_profile: {needs_profile}")
+        logger.info(f"sociallogin.is_existing: {sociallogin.is_existing}")
+        logger.info(f"Session contents: {dict(request.session)}")
 
         # 如果需要補充個人資料，重定向到補充資料頁
-        if request.session.get('google_needs_profile'):
-            logger.info("Redirecting to extra signup page")
+        if needs_profile:
+            logger.info("Redirecting to extra signup page from get_login_redirect_url")
             return '/accounts/social/signup/extra/'
 
         # 使用智能重導向邏輯
@@ -57,7 +60,10 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         user = super().save_user(request, sociallogin, form)
 
         # 如果需要補充資料，暫時不創建 Profile（在補充資料頁面處理）
-        if not request.session.get('google_needs_profile'):
+        needs_profile = request.session.get('google_needs_profile', False)
+        logger.info(f"save_user - google_needs_profile: {needs_profile}")
+
+        if not needs_profile:
             logger.info("Creating basic profile for existing user login")
             # 一般的社交登入，創建基本 Profile
             from .models import Profile
@@ -70,19 +76,26 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             )
             if created:
                 logger.info(f"Created basic profile for user: {user.email}")
+        else:
+            # 保持session標記，讓後續重定向邏輯能正確處理
+            logger.info(f"Keeping google_needs_profile session for user: {user.email}")
 
         return user
     
     def get_signup_redirect_url(self, request, user):
         """註冊完成後的重定向 URL"""
+        needs_profile = request.session.get('google_needs_profile', False)
         logger.info(f"get_signup_redirect_url called for {user.email}")
+        logger.info(f"google_needs_profile: {needs_profile}")
+        logger.info(f"Session contents: {dict(request.session)}")
 
         # 如果需要補充個人資料，重定向到補充資料頁
-        if request.session.get('google_needs_profile'):
+        if needs_profile:
             logger.info("Redirecting to extra signup page via get_signup_redirect_url")
             return '/accounts/social/signup/extra/'
 
         # 使用預設重定向
+        logger.info("Using default signup redirect")
         return super().get_signup_redirect_url(request, user)
     
     def populate_user(self, request, sociallogin, data):
