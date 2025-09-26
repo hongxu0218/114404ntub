@@ -1358,11 +1358,8 @@ class PetForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data.get('name')
         if name:
-            qs = Pet.objects.filter(name=name, owner=self.owner)
-            if self.instance.pk:
-                qs = qs.exclude(pk=self.instance.pk)  # 編輯時排除自己
-            if qs.exists():
-                raise forms.ValidationError("已有這個寵物的資料")
+            # 移除重複名字檢查，允許用戶新增多隻寵物，即使名字相同
+            pass
         if len(name) > 20:
             raise forms.ValidationError("名字最多只能輸入 50 個字元。")
         return name

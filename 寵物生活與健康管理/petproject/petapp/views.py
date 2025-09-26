@@ -1230,9 +1230,15 @@ def update_daily_record(request, record_id):
             })
 
         # 處理JSON數據或表單數據
-        if request.content_type == 'application/json':
+        if request.content_type == 'application/json' or 'application/json' in request.META.get('CONTENT_TYPE', ''):
             import json
-            data = json.loads(request.body)
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'JSON 格式錯誤'
+                })
 
             # 僅更新content字段（簡化編輯）
             if 'content' in data:
