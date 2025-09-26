@@ -172,6 +172,9 @@ urlpatterns = [
     path('daily_record/<int:record_id>/update/', views.update_daily_record, name='update_daily_record'),
     path('api/chart-data/', views.daily_record_chart_data, name='daily_record_chart_data'),
 
+    # CSRF Token
+    path('api/csrf-token/', views.get_csrf_token, name='get_csrf_token'),
+
 
     # ============ 疫苗管理 ============
     path('vaccine/add/<int:pet_id>/', views.add_vaccine, name='add_vaccine'),

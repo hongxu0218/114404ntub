@@ -24,6 +24,7 @@ from django.db import transaction
 from django.db.models import Min, Max, Count, Sum, Avg, Q, F
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -1219,22 +1220,33 @@ def delete_daily_record(request, pet_id):
 @login_required
 def update_daily_record(request, record_id):
     """更新每日記錄"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
+        logger.info(f"嘗試更新生活記錄 ID: {record_id}, 用戶: {request.user}")
+
         record = get_object_or_404(DailyRecord, id=record_id)
 
         # 檢查權限
         if record.pet.owner != request.user:
+            logger.warning(f"用戶 {request.user} 嘗試編輯非自己的生活記錄 {record_id}")
             return JsonResponse({
                 'status': 'error',
                 'message': '無權限修改此記錄'
             })
+
+        logger.info(f"請求方法: {request.method}, Content-Type: {request.content_type}")
+        logger.info(f"REQUEST BODY: {request.body.decode('utf-8') if request.body else 'Empty'}")
 
         # 處理JSON數據或表單數據
         if request.content_type == 'application/json' or 'application/json' in request.META.get('CONTENT_TYPE', ''):
             import json
             try:
                 data = json.loads(request.body)
-            except json.JSONDecodeError:
+                logger.info(f"解析的JSON數據: {data}")
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON解析錯誤: {e}")
                 return JsonResponse({
                     'status': 'error',
                     'message': 'JSON 格式錯誤'
@@ -1242,43 +1254,65 @@ def update_daily_record(request, record_id):
 
             # 僅更新content字段（簡化編輯）
             if 'content' in data:
-                record.content = data['content'].strip()
-                if record.content:  # 確保內容不為空
+                new_content = data['content'].strip()
+                logger.info(f"準備更新內容: '{new_content}'")
+
+                if new_content:  # 確保內容不為空
+                    old_content = record.content
+                    record.content = new_content
                     record.save()
+                    logger.info(f"成功更新生活記錄 {record_id}: '{old_content}' -> '{new_content}'")
+
                     return JsonResponse({
                         'status': 'success',
                         'message': '記錄更新成功！'
                     })
                 else:
+                    logger.warning("嘗試設置空內容")
                     return JsonResponse({
                         'status': 'error',
                         'message': '記錄內容不能為空'
                     })
             else:
+                logger.error("JSON數據中缺少content字段")
                 return JsonResponse({
                     'status': 'error',
                     'message': '缺少記錄內容'
                 })
         else:
+            logger.info("使用表單數據更新")
             # 處理表單數據（完整編輯）
             form = DailyRecordForm(request.POST, instance=record)
             if form.is_valid():
                 form.save()
+                logger.info(f"通過表單成功更新生活記錄 {record_id}")
                 return JsonResponse({
                     'status': 'success',
                     'message': '記錄更新成功！'
                 })
             else:
+                logger.error(f"表單驗證錯誤: {form.errors}")
                 return JsonResponse({
                     'status': 'error',
                     'errors': form.errors
                 })
 
     except Exception as e:
+        logger.error(f"更新生活記錄時發生異常: {e}", exc_info=True)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
         })
+
+
+# ============ CSRF Token 獲取 ============
+@ensure_csrf_cookie
+def get_csrf_token(request):
+    """專門用於獲取CSRF token的視圖 - 適用於AJAX請求"""
+    from django.middleware.csrf import get_token
+    return JsonResponse({
+        'csrfToken': get_token(request)
+    })
 
 
 # ============ 疫苗記錄管理 ============
