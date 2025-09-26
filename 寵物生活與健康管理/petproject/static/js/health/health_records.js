@@ -518,23 +518,45 @@ class HealthRecordsController {
             return;
         }
 
+        // 嘗試獲取CSRF token，如果失敗則使用備用方法
+        let csrfToken = this.getCSRFToken();
+        if (!csrfToken) {
+            console.log('嘗試異步獲取CSRF token...');
+            csrfToken = await this.getCSRFTokenAsync();
+        }
+
+        console.log('準備保存生活記錄:', { recordId, newContent, csrfToken: csrfToken ? '已獲取' : '未獲取' });
+
+        if (!csrfToken) {
+            this.showNotification('無法獲取安全令牌，請重新整理頁面', 'error');
+            return;
+        }
+
         try {
             const response = await fetch(`/daily_record/${recordId}/update/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCSRFToken(),
+                    'X-CSRFToken': csrfToken,
                 },
                 body: JSON.stringify({ content: newContent })
             });
 
+            console.log('伺服器回應狀態:', response.status);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
-            
+            console.log('伺服器回應資料:', data);
+
             if (data.status === 'success') {
                 this.exitEditMode(card, newContent);
                 this.showNotification('生活記錄已更新', 'success');
             } else {
                 this.showNotification('更新失敗：' + (data.message || '未知錯誤'), 'error');
+                console.error('更新失敗詳情:', data);
             }
         } catch (error) {
             console.error('更新生活記錄時出錯:', error);
@@ -644,14 +666,43 @@ class HealthRecordsController {
     }
 
     getCSRFToken() {
+        // 首先嘗試從meta標籤獲取
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        if (metaToken) {
+            const token = metaToken.getAttribute('content');
+            if (token) return token;
+        }
+
+        // 然後嘗試從cookies獲取
         const cookies = document.cookie.split(';');
         for (let cookie of cookies) {
             const [name, value] = cookie.trim().split('=');
             if (name === 'csrftoken') {
-                return decodeURIComponent(value);
+                const token = decodeURIComponent(value);
+                if (token) return token;
             }
         }
+
+        // 最後嘗試從表單中的hidden input獲取
+        const csrfInput = document.querySelector('[name="csrfmiddlewaretoken"]');
+        if (csrfInput && csrfInput.value) {
+            return csrfInput.value;
+        }
+
+        console.error('無法獲取CSRF Token');
         return '';
+    }
+
+    // 備用的異步CSRF token獲取方法
+    async getCSRFTokenAsync() {
+        try {
+            const response = await fetch('/api/csrf-token/');
+            const data = await response.json();
+            return data.csrfToken;
+        } catch (error) {
+            console.error('無法從API獲取CSRF Token:', error);
+            return this.getCSRFToken(); // 降級到同步方法
+        }
     }
 }
 
