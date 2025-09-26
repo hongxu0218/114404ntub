@@ -174,6 +174,284 @@
     padding: 8px 12px;
 }
 
+/* ===== 增強型寵物篩選器 ===== */
+.filter-toolbar {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+}
+
+.filter-toolbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.filter-section-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+}
+
+.filter-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--health-primary), var(--health-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.filter-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.filter-subtitle {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.filter-section-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pet-filter-enhanced {
+    position: relative;
+    min-width: 240px;
+}
+
+.pet-filter-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.pet-filter-button:hover {
+    border-color: var(--health-primary);
+    background: rgba(76, 175, 80, 0.05);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.selected-pet {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.selected-pet-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--health-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.selected-pet-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.selected-pet-avatar i {
+    color: white;
+    font-size: 0.9rem;
+}
+
+.selected-pet-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.selected-pet-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selected-pet-breed {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.filter-dropdown-arrow {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.pet-filter-enhanced.open .filter-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.pet-filter-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    max-height: 320px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.pet-filter-enhanced.open .pet-filter-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.pet-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+.pet-filter-option:last-child {
+    border-bottom: none;
+}
+
+.pet-filter-option:hover {
+    background: rgba(76, 175, 80, 0.08);
+}
+
+.pet-filter-option.active {
+    background: rgba(76, 175, 80, 0.15);
+    border-left: 4px solid var(--health-primary);
+}
+
+.pet-option-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--health-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pet-option-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pet-option-avatar i {
+    color: white;
+    font-size: 1.1rem;
+}
+
+.pet-option-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pet-option-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+}
+
+.pet-option-details {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.pet-option-badge {
+    background: var(--health-primary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.filter-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: var(--radius);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.filter-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.filter-stat-number {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--health-primary);
+    margin: 0;
+}
+
+.filter-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    white-space: nowrap;
+}
+
 .health-nav-btn {
     display: flex;
     align-items: center;
@@ -480,33 +758,75 @@
     .health-records-container {
         padding: 0 0.5rem;
     }
-    
+
     .health-header-content {
         flex-direction: column;
         align-items: stretch;
         gap: 1.5rem;
     }
-    
+
     .health-tabs {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem;
     }
-    
+
     .health-tab {
         padding: 1rem 0.75rem;
     }
-    
+
     .health-title h1 {
         font-size: 1.8rem;
     }
-    
+
     .health-content {
         padding: 1.5rem;
     }
-    
+
     .health-content-header {
         flex-direction: column;
         align-items: stretch;
+        gap: 1rem;
+    }
+
+    /* 增強型篩選器響應式 */
+    .filter-toolbar {
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-toolbar-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+
+    .filter-section-left {
+        gap: 1rem;
+    }
+
+    .filter-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+
+    .filter-info h3 {
+        font-size: 1.1rem;
+    }
+
+    .filter-section-right {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .pet-filter-enhanced {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .filter-stats {
+        justify-content: space-around;
         gap: 1rem;
     }
 }
@@ -515,14 +835,84 @@
     .health-tabs {
         grid-template-columns: 1fr;
     }
-    
+
     .health-nav-buttons {
         justify-content: center;
     }
-    
+
     .health-record-meta {
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    /* 增強型篩選器小屏幕 */
+    .filter-toolbar {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-section-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .filter-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .filter-info h3 {
+        font-size: 1rem;
+    }
+
+    .filter-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .pet-filter-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .selected-pet-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .selected-pet-name {
+        font-size: 0.9rem;
+    }
+
+    .selected-pet-breed {
+        font-size: 0.75rem;
+    }
+
+    .pet-option-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .pet-option-name {
+        font-size: 0.9rem;
+    }
+
+    .pet-option-details {
+        font-size: 0.8rem;
+    }
+
+    .filter-stats {
+        padding: 0.5rem 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .filter-stat-number {
+        font-size: 1rem;
+    }
+
+    .filter-stat-label {
+        font-size: 0.75rem;
     }
 }
 
