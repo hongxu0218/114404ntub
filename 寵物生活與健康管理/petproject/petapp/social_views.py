@@ -447,14 +447,31 @@ def repost(request, post_id):
     if existing_repost:
         return JsonResponse({'success': False, 'error': '已經轉發過此貼文'})
 
+    # 獲取轉發評論（如果有的話）
+    try:
+        data = json.loads(request.body) if request.body else {}
+        repost_comment = data.get('comment', '').strip()
+    except:
+        repost_comment = ''
+
     # 創建轉發貼文
+    content = repost_comment if repost_comment else original_post.content
     repost = Post.objects.create(
         user=request.user,
-        content=original_post.content,
+        content=content,
         post_type=original_post.post_type,
         original_post=original_post,
         is_repost=True
     )
+
+    # 複製原貼文的媒體檔案
+    for media in original_post.media_files.all():
+        PostMedia.objects.create(
+            post=repost,
+            media_type=media.media_type,
+            file=media.file,  # 共享同一個檔案
+            order=media.order
+        )
 
     # 更新原貼文的分享數
     original_post.shares_count += 1
@@ -492,7 +509,7 @@ def get_comments(request, post_id):
             'content': comment.content,
             'username': comment.user.username,
             'avatar_url': comment.user.social_profile.avatar.url if hasattr(comment.user, 'social_profile') and comment.user.social_profile.avatar else None,
-            'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M'),
+            'created_at': timezone.localtime(comment.created_at).strftime('%Y-%m-%d %H:%M'),
             'likes_count': comment.likes_count,
             'user_liked': comment.user_liked,
             'is_own_comment': comment.user == request.user
