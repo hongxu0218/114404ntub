@@ -230,8 +230,8 @@ urlpatterns = [
     path('api/chat/', include([
         path('', chat_service.api_chat, name='api_chat'),
         path('stream/', chat_service.api_chat_stream, name='api_chat_stream'),
-        path('kb_status/', chat_service.api_kb_status, name='api_kb_status'),
-        path('clear_cache/', chat_service.api_clear_cache, name='api_clear_cache'),
+        path('kb_status/', chat_service.kb_status, name='api_kb_status'),
+        path('clear_cache/', chat_service.clear_cache, name='api_clear_cache'),
     ])),
 
     # ============ 人工客服轉接 ============
