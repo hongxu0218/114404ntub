@@ -896,43 +896,47 @@
             管理選項
           </h3>
           <div class="action-buttons">
-            <!-- 送養狀態按鈕 -->
-            <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline;">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="adopted">
-              {% if adoption.is_adopted %}
-                <button type="submit" class="btn btn-secondary"
-                        onclick="return confirm('確定要將此寵物改為「待領養」嗎？');">
-                  <i class="bi bi-arrow-counterclockwise"></i>
-                  恢復為待領養
-                </button>
-              {% else %}
-                <button type="submit" class="btn btn-success"
-                        onclick="return confirm('確定將此寵物標記為已送養？');">
-                  <i class="bi bi-check-circle"></i>
-                  標記為已送養
-                </button>
-              {% endif %}
-            </form>
+            <!-- 送養狀態按鈕 (只在刊登中顯示) -->
+            {% if adoption.is_publish %}
+              <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="adopted">
+                {% if adoption.is_adopted %}
+                  <button type="submit" class="btn btn-secondary"
+                          onclick="return confirm('確定要將此寵物改為「待領養」嗎？');">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    恢復為待領養
+                  </button>
+                {% else %}
+                  <button type="submit" class="btn btn-success"
+                          onclick="return confirm('確定將此寵物標記為已送養？');">
+                    <i class="bi bi-check-circle"></i>
+                    標記為已送養
+                  </button>
+                {% endif %}
+              </form>
+            {% endif %}
 
-            <!-- 刊登狀態按鈕 -->
-            <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline; margin-left: 10px;">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="publish">
-              {% if adoption.is_publish %}
-                <button type="submit" class="btn btn-secondary"
-                        onclick="return confirm('確定將此寵物設為暫不刊登嗎？');">
-                  <i class="bi bi-eye-slash"></i>
-                  暫不刊登
-                </button>
-              {% else %}
-                <button type="submit" class="btn btn-success"
-                        onclick="return confirm('確定將此寵物重新上架刊登嗎？');">
-                  <i class="bi bi-eye"></i>
-                  重新上架
-                </button>
-              {% endif %}
-            </form>
+            <!-- 刊登狀態按鈕 (已送養時隱藏) -->
+            {% if not adoption.is_adopted %}
+              <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline; margin-left: 10px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="publish">
+                {% if adoption.is_publish %}
+                  <button type="submit" class="btn btn-secondary"
+                          onclick="return confirm('確定將此寵物設為暫不刊登嗎？');">
+                    <i class="bi bi-eye-slash"></i>
+                    暫不刊登
+                  </button>
+                {% else %}
+                  <button type="submit" class="btn btn-success"
+                          onclick="return confirm('確定將此寵物重新上架刊登嗎？');">
+                    <i class="bi bi-eye"></i>
+                    重新上架
+                  </button>
+                {% endif %}
+              </form>
+            {% endif %}
 
             <a href="{% url 'edit_adoption' adoption.pk %}" class="btn btn-warning">
               <i class="bi bi-pencil-square"></i>
