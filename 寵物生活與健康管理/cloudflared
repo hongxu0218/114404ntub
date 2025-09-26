@@ -9,37 +9,23 @@ pawday114404.duckdns.org {
 "@ | Out-File -FilePath "Caddyfile" -Encoding UTF8 -NoNewline
 
 or 自行建立
-pawday114404.duckdns.org {
-    # 1. 靜態檔案（collectstatic 之後）
-    handle_path /static/* {
-        root * "你的檔案路徑\staticfiles"
-        file_server
-    }
+ pawday114404.duckdns.org {
+      handle_path /static/* {
+          root * "你的實際路徑/staticfiles"
+          file_server
+      }
 
-    # 2. 媒體檔案（使用者上傳）
-    handle_path /media/* {
-        root * "你的檔案路徑\media"
-        file_server
-    }
-    # 提供 rag/chroma_db 資料
-    handle_path /chroma/* {
-        root * "你的檔案路徑\chroma_db"
-        file_server
-    }
+      handle_path /media/* {
+          root * "你的實際路徑/media"
+          file_server
+      }
 
-    # 提供 rag/data 資料 (含 Excel 檔案)
-    handle_path /data/* {
-        root * "你的檔案路徑\data"
-        file_server
-    }
-    # 3. 其他請求交給 Django
-    handle {
-        reverse_proxy 127.0.0.1:8000 {
-            header_up Host {host}
-            header_up X-Forwarded-Proto {scheme}
-        }
-    }
-}
+      reverse_proxy 127.0.0.1:8000 {
+          header_up Host {host}
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Real-IP {remote_host}
+      }
+  }
 
 
 
