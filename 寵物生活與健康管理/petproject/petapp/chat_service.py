@@ -36,12 +36,11 @@ except Exception:
 # 匹配向量庫的嵌入模型維度
 try:
     from sentence_transformers import SentenceTransformer
-    # 嘗試使用512維的模型以匹配向量庫
-    _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")  # 512維，與ChromaDB一致
-    # 如果需要512維，可能需要檢查原始建庫時使用的模型
+    # 使用512維的模型以匹配向量庫
+    _embedder = SentenceTransformer("BAAI/bge-base-zh-v1.5")  # 512維，與ChromaDB一致
 except Exception:
     try:
-        # 備用選項：原始模型
+        # 備用選項：384維模型
         _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")  # 384維
     except Exception:
         _embedder = None

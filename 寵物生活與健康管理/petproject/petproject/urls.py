@@ -43,3 +43,4 @@ handler500 = 'petapp.views.custom_500'
 # 開發環境下允許媒體檔案顯示（例如上傳的寵物照片）
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

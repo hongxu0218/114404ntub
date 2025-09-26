@@ -23,22 +23,28 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.s
 CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='http://127.0.0.1:8000,http://localhost:8000')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
 
-# 🚨 DEBUG=False 時的安全設定
+# 🚨 HTTPS 生產環境安全設定
 if not DEBUG:
     # 確保 ALLOWED_HOSTS 不為空
     if not ALLOWED_HOSTS:
-        ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-    
-    # 關閉一些安全檢查（僅開發環境）
-    SECURE_SSL_REDIRECT = False
-    SECURE_HSTS_SECONDS = 0
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
-    
-    # SESSION 設定
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    CSRF_COOKIE_HTTPONLY = False  # 允許 JavaScript 訪問 CSRF cookie
+        ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pawday114404.duckdns.org']
+
+    # HTTPS 安全設定（Caddy 自動處理 SSL）
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Caddy 代理設定
+    SECURE_SSL_REDIRECT = True   # 強制 HTTPS 重定向
+    SECURE_HSTS_SECONDS = 31536000  # HSTS 一年
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # SESSION 與 CSRF Cookie 安全設定
+    SESSION_COOKIE_SECURE = True   # 僅 HTTPS 傳送
+    CSRF_COOKIE_SECURE = True      # 僅 HTTPS 傳送
+    CSRF_COOKIE_HTTPONLY = True    # 防止 XSS 攻擊
+
+    # 其他安全標頭
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
     
 
 
@@ -187,7 +193,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 
 # 顯示信件主旨與寄件網址設定
 ACCOUNT_EMAIL_SUBJECT_TEMPLATE = "password_reset_subject.txt"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # 若你部署沒 SSL 就改為 "http"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  # HTTPS 部署
 
 # 註冊成功後立即導向登入頁（GET 請求立即登入）
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -198,7 +204,7 @@ SOCIALACCOUNT_ADAPTER = 'petapp.adapter.MySocialAccountAdapter'
 
 # 禁用 allauth 的重複登入訊息
 SOCIALACCOUNT_STORE_TOKENS = False
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # 已存在，但確保設定
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  # HTTPS 部署設定
 SOCIALACCOUNT_LOGIN_ON_GET = True  # 已存在，但確保設定
 
 # 禁用 allauth 的預設登入成功訊息
@@ -229,7 +235,7 @@ ADMIN_EMAIL = config('ADMIN_EMAIL')
 
 # ===== 靜態與媒體檔案設定 =====
 # 靜態檔案設定（CSS、JS）
-STATIC_URL = 'static/'  # 靜態檔案 URL 路徑前綴
+STATIC_URL = '/static/'  # 靜態檔案 URL 路徑前綴
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # 產品環境的靜態檔案收集路徑
 STATICFILES_DIRS = [
     BASE_DIR / 'static' # 加入 static 路徑
