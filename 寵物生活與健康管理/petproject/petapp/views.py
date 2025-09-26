@@ -5613,17 +5613,25 @@ def change_owner(request, pet_id):
             to_email = form.cleaned_data['to_email']
             to_phone = form.cleaned_data['to_phone']
             
+            # 檢查不能轉讓給自己
+            if to_email == request.user.email:
+                messages.error(request, "不能將寵物轉讓給自己")
+                return render(request, 'adoptions/change_owner.html', {'form': form, 'pet': pet})
+
             # 查找目標用戶
             try:
                 to_user = User.objects.get(email=to_email)
                 to_profile = Profile.objects.get(user=to_user)
-                
+
                 if to_profile.phone_number != to_phone:
                     messages.error(request, "郵箱與手機號碼不匹配。")
                     return render(request, 'adoptions/change_owner.html', {'form': form, 'pet': pet})
-                    
+
             except User.DoesNotExist:
-                messages.error(request, "沒有找到這個飼主，請重新輸入郵箱或手機號碼。")
+                messages.error(request, f"Email地址 {to_email} 不存在於系統中，請確認對方已註冊帳號。")
+                return render(request, 'adoptions/change_owner.html', {'form': form, 'pet': pet})
+            except Profile.DoesNotExist:
+                messages.error(request, "該用戶尚未完善個人資料，無法進行轉讓。")
                 return render(request, 'adoptions/change_owner.html', {'form': form, 'pet': pet})
 
             # 檢查是否已有相同目標的新請求
@@ -6689,11 +6697,17 @@ def adoption_transfer_request(request, pk):
             messages.error(request, '此寵物已有待處理的轉交請求')
             return redirect('adoption_petDetail', adoption_id=pk)
 
-        # 嘗試尋找目標用戶
+        # 驗證目標用戶是否存在於系統中
         try:
             to_user = User.objects.get(email=to_email)
         except User.DoesNotExist:
-            to_user = None
+            messages.error(request, f'Email地址 {to_email} 不存在於系統中，請確認對方已註冊帳號')
+            return redirect('adoption_petDetail', adoption_id=pk)
+
+        # 檢查不能轉交給自己
+        if to_user == request.user:
+            messages.error(request, '不能將寵物轉交給自己')
+            return redirect('adoption_petDetail', adoption_id=pk)
 
         # 創建轉交請求
         transfer_request = AdoptionTransferRequest.objects.create(
@@ -6705,15 +6719,14 @@ def adoption_transfer_request(request, pk):
             transfer_note=transfer_note
         )
 
-        # 如果找到目標用戶，發送通知
-        if to_user:
-            Notification.objects.create(
-                recipient=to_user,
-                sender=request.user,
-                title="收到領養轉交請求",
-                message=f"{request.user.username} 想將 {adoption.name} 轉交給您",
-                notification_type="adoption_transfer_request"
-            )
+        # 發送通知給目標用戶
+        Notification.objects.create(
+            recipient=to_user,
+            sender=request.user,
+            title="收到領養轉交請求",
+            message=f"{request.user.username} 想將 {adoption.name} 轉交給您",
+            notification_type="adoption_transfer_request"
+        )
 
         messages.success(request, f'轉交請求已發送到 {to_email}')
         return redirect('adoption_petDetail', adoption_id=pk)
