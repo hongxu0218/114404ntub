@@ -658,8 +658,41 @@
             vertical-align: middle;
         }
 
+        /* ===== 手機版觸控優化 ===== */
+        .pet-actions a, .pet-actions button, .actions-menu a {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .more-btn {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
+            /* 增加手機版按鈕大小 */
+            .more-btn {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .action-btn {
+                min-height: 44px;
+                padding: 12px 16px;
+            }
+
+            .menu-item {
+                min-height: 48px;
+                padding: 14px 20px;
+                font-size: 16px;
+            }
             .container {
                 padding: 0 var(--space-lg);
             }
@@ -803,7 +836,7 @@
                 {% if page_obj %}
                     {% for item in page_obj %}
                         {% with pet=item.pet health_insights=item.health_insights %}
-                        <div class="pet-card">
+                        <div class="pet-card" data-pet-id="{{ pet.id }}">
                             <div class="pet-image-container">
                                 {% if pet.picture %}
                                     <img src="{{ pet.picture.url }}" class="pet-image" alt="{{ pet.name }}">
@@ -919,7 +952,9 @@
         // 更多操作選單
         document.querySelectorAll('.more-btn').forEach(button => {
             button.addEventListener('click', function(e) {
+                e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 const menu = this.nextElementSibling;
 
                 // 關閉其他選單
@@ -985,13 +1020,54 @@
             }
         });
 
+        // 防止手機版誤觸事件處理
+        document.querySelectorAll('.pet-actions a, .pet-actions button, .actions-menu a').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+            });
+
+            // 手機版觸控事件處理
+            element.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+            });
+
+            element.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+            });
+        });
+
+        // 寵物卡片點擊處理（非操作區域）
+        document.querySelectorAll('.pet-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // 如果點擊的是操作按鈕區域，不執行卡片點擊
+                if (e.target.closest('.pet-actions') || e.target.closest('.more-actions')) {
+                    return;
+                }
+
+                // 可以在這裡添加卡片整體點擊的功能
+                // 例如：跳轉到寵物詳情頁
+                const petId = this.dataset.petId;
+                // window.location.href = `/pets/${petId}/detail/`;
+            });
+        });
+
         // 寵物刪除確認函數
         window.deletePet = function(petId, petName) {
-            if (confirm(`確定要刪除寵物「${petName}」嗎？\n此操作無法復原。`)) {
+            // 添加額外確認步驟防止誤觸
+            const userAgent = navigator.userAgent;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || window.innerWidth <= 768;
+
+            let confirmMessage = `確定要刪除寵物「${petName}」嗎？\n此操作無法復原。`;
+            if (isMobile) {
+                confirmMessage += `\n\n⚠️ 請確認您確實要執行此操作`;
+            }
+
+            if (confirm(confirmMessage)) {
                 // 創建表單並提交刪除請求
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `/pet/delete/${petId}/`;
+                form.action = `/pets/delete/${petId}/`;
 
                 // 添加 CSRF token
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
