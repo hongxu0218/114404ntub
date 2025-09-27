@@ -347,6 +347,7 @@
         <!-- JSON 數據 -->
         {{ dog_choices|json_script:"dogBreedsData" }}
         {{ cat_choices|json_script:"catBreedsData" }}
+        {{ other_choices|json_script:"otherBreedsData" }}
         {{ dogvaccine_choices|json_script:"dogVaccinesData" }}
         {{ catvaccine_choices|json_script:"catVaccinesData" }}
         {{ other_pet_names|default:"[]"|json_script:"otherPetNamesData" }}
@@ -816,6 +817,7 @@ function debugDataElements() {
     const dataElements = [
         'dogBreedsData',
         'catBreedsData',
+        'otherBreedsData',
         'dogVaccinesData',
         'catVaccinesData',
         'myPetsData'
@@ -905,6 +907,9 @@ function mapSpeciesToChinese(species) {
 function importPetData(pet) {
     console.log('正在帶入寵物資料:', pet);
 
+    // 設置數據帶入標誌，防止在更新過程中清空其他輸入框
+    window.isImportingPetData = true;
+
     // 基本資料
     if (pet.name) {
         const nameInput = document.getElementById('id_name');
@@ -930,6 +935,15 @@ function importPetData(pet) {
                 console.log('設置隱藏種類欄位:', pet.species);
             }
 
+            // 如果種類是"其他"，需要設置其他種類輸入框
+            if (chineseSpecies === '其他') {
+                const speciesOtherInput = document.getElementById('id_species_other');
+                if (speciesOtherInput) {
+                    speciesOtherInput.value = pet.species;
+                    console.log('設置其他種類輸入框:', pet.species);
+                }
+            }
+
             // 觸發change事件讓外部JS更新品種列表
             speciesSelect.dispatchEvent(new Event('change'));
         }
@@ -948,8 +962,30 @@ function importPetData(pet) {
             });
 
             if (breedSelect) {
-                breedSelect.value = pet.breed;
-                console.log('設置前端品種選擇器:', pet.breed);
+                // 檢查品種是否在下拉選項中
+                const breedOptions = Array.from(breedSelect.options).map(opt => opt.value);
+                const isBreedInOptions = breedOptions.includes(pet.breed);
+
+                console.log('品種選項檢查:', {
+                    breedOptions: breedOptions,
+                    petBreed: pet.breed,
+                    isInOptions: isBreedInOptions
+                });
+
+                if (isBreedInOptions) {
+                    // 品種在選項中，直接設置
+                    breedSelect.value = pet.breed;
+                    console.log('設置前端品種選擇器為標準選項:', pet.breed);
+                } else {
+                    // 品種不在標準選項中，設為"其他"並填寫其他品種欄位
+                    breedSelect.value = '其他';
+                    const breedOtherInput = document.getElementById('id_breed_other');
+                    if (breedOtherInput) {
+                        breedOtherInput.value = pet.breed;
+                        console.log('設置其他品種輸入框:', pet.breed);
+                    }
+                    console.log('品種不在標準選項中，設為其他:', pet.breed);
+                }
 
                 // 直接設置隱藏欄位
                 if (hiddenBreed) {
@@ -959,12 +995,12 @@ function importPetData(pet) {
                     console.error('找不到隱藏品種欄位 id_breed');
                 }
 
-                // 觸發change事件
+                // 觸發change事件以顯示/隱藏其他品種輸入框
                 breedSelect.dispatchEvent(new Event('change'));
             } else {
                 console.error('找不到品種選擇器 breed_select');
             }
-        }, 300); // 增加延遲時間確保種類更新完成
+        }, 500); // 增加延遲時間確保種類更新完成
     }
 
     if (pet.gender) {
@@ -1025,6 +1061,12 @@ function importPetData(pet) {
         // 最終確認
         console.log('最終隱藏欄位值 - 種類:', hiddenSpecies?.value, '品種:', hiddenBreed?.value);
     }, 500);
+
+    // 清除數據帶入標誌
+    setTimeout(() => {
+        window.isImportingPetData = false;
+        console.log('數據帶入完成，清除標誌');
+    }, 1000);
 
     // 提示用戶數據已帶入
     alert(`已成功帶入「${pet.name}」的基本資料！請檢查並完善其他必要資訊。`);
