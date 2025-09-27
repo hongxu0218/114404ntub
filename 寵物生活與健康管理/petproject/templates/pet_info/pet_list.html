@@ -470,7 +470,7 @@
         /* ===== 更多操作選單 ===== */
         .more-actions {
             position: relative;
-            z-index: 9999;
+            z-index: 99999;
         }
 
         .more-btn {
@@ -502,7 +502,7 @@
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-lg);
             min-width: 200px;
-            z-index: 1000;
+            z-index: 99999;
             opacity: 0;
             transform: translateY(10px);
             pointer-events: none;
@@ -693,6 +693,42 @@
             .action-btn {
                 font-size: 0.85rem;
                 padding: var(--space-sm) var(--space-md);
+            }
+
+            /* 手機版下拉選單特殊處理 */
+            .actions-menu {
+                position: fixed !important;
+                top: auto !important;
+                bottom: 20px !important;
+                left: 20px !important;
+                right: 20px !important;
+                width: auto !important;
+                min-width: auto !important;
+                max-width: none !important;
+                z-index: 999999 !important;
+                margin-top: 0 !important;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+                border-radius: var(--radius-lg) !important;
+            }
+
+            .actions-menu.active {
+                transform: translateY(0) !important;
+            }
+
+            .menu-item {
+                padding: var(--space-lg) var(--space-xl);
+                font-size: 1rem;
+                text-align: center;
+            }
+
+            .menu-item:first-child {
+                border-top-left-radius: var(--radius-lg);
+                border-top-right-radius: var(--radius-lg);
+            }
+
+            .menu-item:last-child {
+                border-bottom-left-radius: var(--radius-lg);
+                border-bottom-right-radius: var(--radius-lg);
             }
         }
 </style>
@@ -888,6 +924,34 @@
                 });
 
                 menu.classList.toggle('active');
+
+                // 手機版處理：添加背景遮罩效果
+                if (window.innerWidth <= 768) {
+                    if (menu.classList.contains('active')) {
+                        // 創建背景遮罩
+                        const overlay = document.createElement('div');
+                        overlay.className = 'mobile-menu-overlay';
+                        overlay.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: rgba(0,0,0,0.3);
+                            z-index: 99998;
+                            backdrop-filter: blur(2px);
+                        `;
+                        document.body.appendChild(overlay);
+                        document.body.style.overflow = 'hidden';
+
+                        // 點擊遮罩關閉選單
+                        overlay.addEventListener('click', function() {
+                            menu.classList.remove('active');
+                            document.body.removeChild(overlay);
+                            document.body.style.overflow = '';
+                        });
+                    }
+                }
             });
         });
 
@@ -896,6 +960,24 @@
                 document.querySelectorAll('.actions-menu.active').forEach(m => {
                     m.classList.remove('active');
                 });
+
+                // 移除手機版遮罩
+                const overlay = document.querySelector('.mobile-menu-overlay');
+                if (overlay) {
+                    document.body.removeChild(overlay);
+                    document.body.style.overflow = '';
+                }
+            }
+        });
+
+        // 監聽視窗大小變化，移除手機版特效
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                const overlay = document.querySelector('.mobile-menu-overlay');
+                if (overlay) {
+                    document.body.removeChild(overlay);
+                    document.body.style.overflow = '';
+                }
             }
         });
     });

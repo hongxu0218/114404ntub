@@ -247,6 +247,56 @@
         }
     }
 
+    /* 轉發樣式 */
+    .repost-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .repost-header i {
+        color: #28a745;
+        font-size: 1rem;
+    }
+
+    .repost-comment {
+        margin-bottom: 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #333;
+    }
+
+    .original-post {
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 1rem;
+        background: #f8f9fa;
+        margin-top: 0.5rem;
+    }
+
+    .original-post .post-header {
+        margin-bottom: 0.75rem;
+    }
+
+    .original-post .post-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .original-post .post-user-info h4 {
+        font-size: 0.95rem;
+    }
+
+    .original-post .post-content {
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
     @keyframes modalSlideOut {
         from {
             opacity: 1;
@@ -866,10 +916,38 @@
         }
         .action-btn {
             font-size: 0.8rem;
-            padding: 0.6rem 0.3rem;
+            padding: 0.5rem 0.4rem;
+            flex-direction: column;
+            min-width: 50px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .action-btn i {
+            font-size: 1.1rem;
+            margin-bottom: 0.1rem;
+        }
+        /* 確保所有數字都能顯示 */
         .action-btn span {
-            display: none; /* 隱藏文字，只顯示圖標和數字 */
+            display: block !important;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* 特別處理分享按鈕 - 只隱藏包含中文的span */
+        .share-btn span:not(:empty):not([class]) {
+            display: none !important;
+        }
+
+        /* 確保數字的可見性 */
+        .like-count,
+        .comment-btn span,
+        .repost-btn span {
+            display: block !important;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: inherit;
         }
         .comment-form {
             gap: 0.8rem;
@@ -979,48 +1057,104 @@
             {% if posts %}
                 {% for post in posts %}
                 <div class="post-item" data-post-id="{{ post.id }}">
-                    <div class="post-header">
-                        <a href="{% url 'social:profile' post.user.username %}" class="post-avatar-link">
-                            <img src="{% if post.user.social_profile.avatar and post.user.social_profile.avatar.name %}{{ post.user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
-                                 alt="{{ post.user.username }}" class="post-avatar">
-                        </a>
-                        <div class="post-user-info">
-                            <a href="{% url 'social:profile' post.user.username %}" class="post-username-link">
-                                <h4>{{ post.user.username }}</h4>
-                            </a>
-                            <div class="post-time">{{ post.created_at|localtime|timesince }}前</div>
+                    {% if post.is_repost and post.original_post %}
+                        <!-- 轉發標示 -->
+                        <div class="repost-header">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>{{ post.user.username }} 轉發了</span>
                         </div>
-                        {% if user.is_authenticated and post.user != user %}
-                            <button class="mini-follow-btn" onclick="quickFollow('{{ post.user.username }}', this)"
-                                    title="快速追蹤">
-                                <i class="bi bi-person-plus"></i>
-                            </button>
-                        {% endif %}
-                    </div>
-                    <div class="post-content">{{ post.content }}</div>
 
-                    <!-- 顯示位置信息 -->
-                    {% if post.location %}
-                        <div class="post-location">
-                            <i class="bi bi-geo-alt-fill"></i>
-                            <span>{{ post.location }}</span>
+                        <!-- 轉發者的評論 -->
+                        {% if post.content %}
+                            <div class="repost-comment">{{ post.content }}</div>
+                        {% endif %}
+
+                        <!-- 原始貼文 -->
+                        <div class="original-post">
+                            <div class="post-header">
+                                <a href="{% url 'social:profile' post.original_post.user.username %}" class="post-avatar-link">
+                                    <img src="{% if post.original_post.user.social_profile.avatar and post.original_post.user.social_profile.avatar.name %}{{ post.original_post.user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                                         alt="{{ post.original_post.user.username }}" class="post-avatar">
+                                </a>
+                                <div class="post-user-info">
+                                    <a href="{% url 'social:profile' post.original_post.user.username %}" class="post-username-link">
+                                        <h4>{{ post.original_post.user.username }}</h4>
+                                    </a>
+                                    <div class="post-time">{{ post.original_post.created_at|localtime|timesince }}前</div>
+                                </div>
+                            </div>
+                            <div class="post-content">{{ post.original_post.content }}</div>
+                    {% else %}
+                        <!-- 普通貼文 -->
+                        <div class="post-header">
+                            <a href="{% url 'social:profile' post.user.username %}" class="post-avatar-link">
+                                <img src="{% if post.user.social_profile.avatar and post.user.social_profile.avatar.name %}{{ post.user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                                     alt="{{ post.user.username }}" class="post-avatar">
+                            </a>
+                            <div class="post-user-info">
+                                <a href="{% url 'social:profile' post.user.username %}" class="post-username-link">
+                                    <h4>{{ post.user.username }}</h4>
+                                </a>
+                                <div class="post-time">{{ post.created_at|localtime|timesince }}前</div>
+                            </div>
+                            {% if user.is_authenticated and post.user != user %}
+                                <button class="mini-follow-btn" onclick="quickFollow('{{ post.user.username }}', this)"
+                                        title="快速追蹤">
+                                    <i class="bi bi-person-plus"></i>
+                                </button>
+                            {% endif %}
                         </div>
+                        <div class="post-content">{{ post.content }}</div>
                     {% endif %}
 
-                    <!-- 顯示媒體內容 -->
-                    {% if post.media_files.all %}
-                        <div class="post-media{% if post.media_files.all|length > 1 %} multiple{% endif %}">
-                            {% for media in post.media_files.all %}
-                                {% if media.media_type == 'image' %}
-                                    <img src="{{ media.file.url }}" alt="貼文圖片" class="post-image">
-                                {% elif media.media_type == 'video' %}
-                                    <video controls class="post-video">
-                                        <source src="{{ media.file.url }}" type="video/mp4">
-                                        您的瀏覽器不支援影片播放。
-                                    </video>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
+                    {% if post.is_repost and post.original_post %}
+                        <!-- 轉發貼文的位置和媒體來自原始貼文 -->
+                        {% if post.original_post.location %}
+                            <div class="post-location">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                <span>{{ post.original_post.location }}</span>
+                            </div>
+                        {% endif %}
+
+                        {% if post.original_post.media_files.all %}
+                            <div class="post-media{% if post.original_post.media_files.all|length > 1 %} multiple{% endif %}">
+                                {% for media in post.original_post.media_files.all %}
+                                    {% if media.media_type == 'image' %}
+                                        <img src="{{ media.file.url }}" alt="貼文圖片" class="post-image">
+                                    {% elif media.media_type == 'video' %}
+                                        <video controls class="post-video">
+                                            <source src="{{ media.file.url }}" type="video/mp4">
+                                            您的瀏覽器不支援影片播放。
+                                        </video>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        </div> <!-- 結束 original-post div -->
+                    {% else %}
+                        <!-- 普通貼文的位置信息 -->
+                        {% if post.location %}
+                            <div class="post-location">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                <span>{{ post.location }}</span>
+                            </div>
+                        {% endif %}
+
+                        <!-- 普通貼文的媒體內容 -->
+                        {% if post.media_files.all %}
+                            <div class="post-media{% if post.media_files.all|length > 1 %} multiple{% endif %}">
+                                {% for media in post.media_files.all %}
+                                    {% if media.media_type == 'image' %}
+                                        <img src="{{ media.file.url }}" alt="貼文圖片" class="post-image">
+                                    {% elif media.media_type == 'video' %}
+                                        <video controls class="post-video">
+                                            <source src="{{ media.file.url }}" type="video/mp4">
+                                            您的瀏覽器不支援影片播放。
+                                        </video>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     {% endif %}
                     <div class="post-actions">
                         <button class="action-btn like-btn {% if post.user_liked %}active{% endif %}"
@@ -1032,10 +1166,17 @@
                             <i class="bi bi-chat"></i>
                             <span>{{ post.comments_count }}</span>
                         </button>
-                        <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.id }}', '{{ post.user.username }}', {{ post.shares_count }})">
-                            <i class="bi bi-arrow-repeat"></i>
-                            <span>{{ post.shares_count }}</span>
-                        </button>
+                        {% if post.is_repost and post.original_post %}
+                            <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.original_post.id }}', '{{ post.original_post.user.username }}', {{ post.original_post.shares_count }})">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>{{ post.original_post.shares_count }}</span>
+                            </button>
+                        {% else %}
+                            <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.id }}', '{{ post.user.username }}', {{ post.shares_count }})">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>{{ post.shares_count }}</span>
+                            </button>
+                        {% endif %}
                         <button class="action-btn share-btn" onclick="sharePost('{{ post.id }}')">
                             <i class="bi bi-share"></i>
                             <span>分享</span>
