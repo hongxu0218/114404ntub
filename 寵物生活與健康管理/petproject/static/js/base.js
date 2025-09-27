@@ -602,8 +602,8 @@ window.PawDayApp = {
     if (notification.type === 'appointment') icon = 'bi-calendar-check';
     else if (notification.type === 'reminder') icon = 'bi-clock';
 
-    // 格式化時間
-    const timeAgo = this.formatTimeAgo(notification.created_at);
+    // 使用後端已處理的時間或格式化時間
+    const timeAgo = notification.time || this.formatTimeAgo(notification.created_at);
 
     element.innerHTML = `
       <div class="notification-content">
