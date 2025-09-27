@@ -537,26 +537,7 @@ window.PawDayApp = {
         loadingElement.style.display = 'block';
       }
 
-      const response = await fetch('/api/notifications/', {
-        method: 'GET',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Content-Type': 'application/json'
-        },
-        credentials: 'same-origin'  // 包含 cookies
-      });
-
-      // 處理重定向（未登入）
-      if (response.status === 302 || response.redirected) {
-        this.renderAuthenticationError();
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await PD.api.get('/api/notifications/');
 
       // 確保 data 是有效的 JSON 並包含 notifications
       if (data && data.notifications) {
@@ -656,7 +637,7 @@ window.PawDayApp = {
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
           'Content-Type': 'application/json',
-          'X-CSRFToken': this.getCsrfToken()
+          'X-CSRFToken': this.getCSRFToken()
         },
         credentials: 'same-origin'
       });
@@ -852,33 +833,6 @@ window.PawDayApp = {
     return div.innerHTML;
   },
 
-  /**
-   * 獲取 CSRF Token
-   */
-  getCsrfToken: function() {
-    // 從 cookie 獲取
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'csrftoken') {
-        return decodeURIComponent(value);
-      }
-    }
-
-    // 從 meta 標籤獲取
-    const metaToken = document.querySelector('meta[name="csrf-token"]');
-    if (metaToken) {
-      return metaToken.getAttribute('content');
-    }
-
-    // 從隱藏的輸入欄位獲取
-    const inputToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    if (inputToken) {
-      return inputToken.value;
-    }
-
-    return '';
-  },
 
   /**
    * 更新通知數量

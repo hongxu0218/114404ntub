@@ -730,16 +730,20 @@ class HealthRecordsController {
     }
 
     getPetIdFromCard(card) {
-        // 嘗試從多個地方獲取寵物ID
+        // 1. 優先從卡片的 data-pet-id 屬性獲取
+        const petIdFromCard = card.getAttribute('data-pet-id');
+        if (petIdFromCard) {
+            return petIdFromCard;
+        }
 
-        // 1. 從URL參數獲取（如果有篩選特定寵物）
+        // 2. 從URL參數獲取（如果有篩選特定寵物）
         const urlParams = new URLSearchParams(window.location.search);
         const petIdFromUrl = urlParams.get('pet');
         if (petIdFromUrl) {
             return petIdFromUrl;
         }
 
-        // 2. 從頁面上的寵物列表獲取第一個寵物ID
+        // 3. 從頁面上的寵物列表獲取第一個寵物ID
         const firstPetOption = document.querySelector('.pet-filter-option[onclick*="filterByPet"]');
         if (firstPetOption) {
             const onclick = firstPetOption.getAttribute('onclick');
