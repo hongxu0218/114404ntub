@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 # ====== 配置參數 ======
 OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:3b-instruct")
-OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "120"))  # 預設2分鐘，虛擬機環境建議更長
+OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "30"))  # 預設2分鐘，虛擬機環境建議更長
 
 # ====== 專案路徑 ======
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
