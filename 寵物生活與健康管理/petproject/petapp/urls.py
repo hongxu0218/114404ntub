@@ -196,6 +196,7 @@ urlpatterns = [
     path('adoption/add/', views.add_adoption, name='add_adoption'),
     path('adoption/add_adoptpet/', views.add_adoptpet, name='add_adoptpet'),
     path('adoption/my/', views.my_adoption, name='my_adoption'),
+    path('adoptions/my_adoption/', views.my_adoption, name='my_adoption_alt'),
     path('adoption/<int:adoption_id>/', views.adoption_petDetail, name='adoption_petDetail'),
     path('adoption/edit/<int:pk>/', views.edit_adoption, name='edit_adoption'),
     path('adoption/delete/<int:pk>/', views.delete_adoption, name='delete_adoption'),

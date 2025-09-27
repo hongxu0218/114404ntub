@@ -14,6 +14,7 @@ urlpatterns = [
 
     # 貼文相關
     path('post/create/', social_views.create_post, name='create_post'),
+    path('post/<uuid:post_id>/', social_views.post_detail, name='post_detail'),
     path('post/<uuid:post_id>/like/', social_views.toggle_like, name='toggle_like'),
     path('post/<uuid:post_id>/repost/', social_views.repost, name='repost'),
     path('post/<uuid:post_id>/delete/', social_views.delete_post, name='delete_post'),

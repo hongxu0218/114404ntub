@@ -147,6 +147,35 @@ def social_home(request):
     return render(request, 'social/home.html', context)
 
 
+def post_detail(request, post_id):
+    """單一貼文詳細頁面"""
+    post = get_object_or_404(Post, id=post_id)
+
+    # 檢查用戶是否已點讚
+    user_liked = False
+    if request.user.is_authenticated:
+        user_liked = Like.objects.filter(post=post, user=request.user).exists()
+
+    # 獲取留言
+    comments = Comment.objects.filter(post=post, parent__isnull=True).select_related('user').prefetch_related(
+        'replies__user', 'comment_likes'
+    ).order_by('-created_at')
+
+    # 檢查用戶對每個留言的點讚狀態
+    if request.user.is_authenticated:
+        for comment in comments:
+            comment.user_liked = CommentLike.objects.filter(comment=comment, user=request.user).exists()
+            for reply in comment.replies.all():
+                reply.user_liked = CommentLike.objects.filter(comment=reply, user=request.user).exists()
+
+    context = {
+        'post': post,
+        'user_liked': user_liked,
+        'comments': comments,
+    }
+    return render(request, 'social/post_detail.html', context)
+
+
 @login_required
 def user_profile(request, username):
     """用戶個人頁面"""
