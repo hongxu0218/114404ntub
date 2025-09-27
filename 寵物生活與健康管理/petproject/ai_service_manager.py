@@ -52,8 +52,8 @@ def check_dependencies():
     return True
 
 def load_excel_data():
-    """載入 Excel 資料"""
-    print_status("載入 Excel 資料...", "WORKING")
+    """載入 Excel 和 CSV 資料"""
+    print_status("載入資料檔案...", "WORKING")
 
     data_dir = Path("rag/data")
     if not data_dir.exists():
@@ -61,23 +61,47 @@ def load_excel_data():
         return []
 
     faq_data = []
-    excel_files = list(data_dir.glob("*.xlsx"))
 
-    if not excel_files:
-        print_status("未找到 Excel 檔案", "WARNING")
+    # 檢查 Excel 和 CSV 檔案
+    excel_files = list(data_dir.glob("*.xlsx"))
+    csv_files = list(data_dir.glob("*.csv"))
+
+    all_files = excel_files + csv_files
+
+    if not all_files:
+        print_status("未找到資料檔案", "WARNING")
         return get_default_faq_data()
 
-    for excel_file in excel_files:
+    for data_file in all_files:
         try:
-            print_status(f"讀取 {excel_file.name}...", "INFO")
-            df = pd.read_excel(excel_file)
+            print_status(f"讀取 {data_file.name}...", "INFO")
+
+            # 根據檔案類型選擇讀取方式
+            if data_file.suffix.lower() == '.csv':
+                # 嘗試多種編碼方式
+                encodings = ['utf-8', 'utf-8-sig', 'big5', 'gbk', 'cp950']
+                df = None
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(data_file, encoding=encoding)
+                        print_status(f"成功使用 {encoding} 編碼讀取 {data_file.name}", "SUCCESS")
+                        break
+                    except:
+                        continue
+
+                if df is None:
+                    print_status(f"無法讀取 {data_file.name}", "ERROR")
+                    continue
+            else:
+                df = pd.read_excel(data_file)
 
             # 檢查欄位名稱
             print_status(f"欄位: {list(df.columns)}", "INFO")
 
-            # 尋找問題和回答欄位
+            # 尋找問題、回答和ID欄位
             question_col = None
             answer_col = None
+            id_col = None
 
             for col in df.columns:
                 col_lower = str(col).lower()
@@ -85,26 +109,43 @@ def load_excel_data():
                     question_col = col
                 elif any(word in col_lower for word in ['回答', 'answer', '答案', '內容']):
                     answer_col = col
+                elif any(word in col_lower for word in ['編號', 'id', 'number', '序號']):
+                    id_col = col
+
+            # 如果沒找到ID欄位，使用第一列作為ID
+            if not id_col and len(df.columns) > 0:
+                id_col = df.columns[0]
 
             if question_col and answer_col:
                 for idx, row in df.iterrows():
                     if pd.notna(row[question_col]) and pd.notna(row[answer_col]):
+                        # 使用CSV中的實際ID，加上文件前綴確保唯一性
+                        if id_col and pd.notna(row[id_col]):
+                            base_id = str(row[id_col]).strip()
+                            # 為不同文件添加前綴避免重複
+                            if data_file.name == '寵物照護QA _fixed.csv':
+                                record_id = base_id  # PC42 等保持原樣
+                            else:
+                                record_id = f"{data_file.stem}_{base_id}"
+                        else:
+                            record_id = f'{data_file.stem}_Q{len(faq_data)+1}'
+
                         faq_data.append({
-                            'id': f'Q{len(faq_data)+1}',
+                            'id': record_id,
                             'question': str(row[question_col]).strip(),
                             'answer': str(row[answer_col]).strip(),
-                            'source': excel_file.stem
+                            'source': data_file.stem
                         })
 
-                print_status(f"從 {excel_file.name} 載入 {len([r for r in df.iterrows()])} 筆資料", "SUCCESS")
+                print_status(f"從 {data_file.name} 載入 {len([r for r in df.iterrows()])} 筆資料", "SUCCESS")
             else:
-                print_status(f"{excel_file.name} 缺少問題或回答欄位", "WARNING")
+                print_status(f"{data_file.name} 缺少問題或回答欄位", "WARNING")
 
         except Exception as e:
-            print_status(f"讀取 {excel_file.name} 失敗: {e}", "ERROR")
+            print_status(f"讀取 {data_file.name} 失敗: {e}", "ERROR")
 
     if not faq_data:
-        print_status("Excel 檔案無有效資料，使用預設資料", "WARNING")
+        print_status("資料檔案無有效資料，使用預設資料", "WARNING")
         return get_default_faq_data()
 
     print_status(f"總共載入 {len(faq_data)} 筆 FAQ 資料", "SUCCESS")
