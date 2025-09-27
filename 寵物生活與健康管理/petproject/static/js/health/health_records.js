@@ -427,20 +427,91 @@ class HealthRecordsController {
     handleEditDaily(button) {
         const recordId = button.dataset.recordId;
         const card = button.closest('.daily-record-card');
-        
+
         if (!card) return;
 
-        // 獲取當前內容
-        const contentP = card.querySelector('.daily-record-content p');
-        const currentContent = contentP.textContent.trim();
+        // 獲取記錄類型
+        const category = card.dataset.category;
 
-        // 創建編輯表單
-        this.showEditForm(card, recordId, currentContent);
-        
+        // 根據不同類型創建不同的編輯表單
+        if (['temperature', 'weight', 'exercise'].includes(category)) {
+            this.showDataEditForm(card, recordId, category);
+        } else {
+            // 文字內容記錄
+            const contentP = card.querySelector('.daily-record-content p, .record-text');
+            const currentContent = contentP ? contentP.textContent.trim() : '';
+            this.showContentEditForm(card, recordId, currentContent);
+        }
+
         this.showNotification('編輯模式已啟動', 'info');
     }
 
-    showEditForm(card, recordId, currentContent) {
+    showDataEditForm(card, recordId, category) {
+        const contentDiv = card.querySelector('.daily-record-content');
+        const actionsDiv = card.querySelector('.daily-record-actions');
+
+        // 獲取當前數值
+        const valueSpan = card.querySelector('.record-value .value');
+        let currentValue = '';
+        if (valueSpan) {
+            const text = valueSpan.textContent;
+            if (category === 'temperature') {
+                currentValue = text.replace('°C', '').trim();
+            } else if (category === 'weight') {
+                currentValue = text.replace('kg', '').trim();
+            } else if (category === 'exercise') {
+                currentValue = text.replace('分鐘', '').trim();
+            }
+        }
+
+        // 保存原始內容
+        card.dataset.originalValue = currentValue;
+
+        const config = this.getDataEditConfig(category);
+
+        // 創建數值編輯表單
+        contentDiv.innerHTML = `
+            <div class="data-edit-form">
+                <label class="data-edit-label">${config.label}</label>
+                <div class="data-input-group">
+                    <input type="number"
+                           class="data-edit-input"
+                           value="${currentValue}"
+                           placeholder="${config.placeholder}"
+                           min="${config.min}"
+                           max="${config.max}"
+                           step="${config.step}">
+                    <span class="data-unit">${config.unit}</span>
+                </div>
+                <div class="data-hint">${config.hint}</div>
+            </div>
+        `;
+
+        // 更新操作按鈕
+        actionsDiv.innerHTML = `
+            <button class="daily-action-btn save-data-btn" data-record-id="${recordId}" data-category="${category}">
+                <i class="fas fa-save"></i>
+                <span>保存</span>
+            </button>
+            <button class="daily-action-btn cancel-daily-btn">
+                <i class="fas fa-times"></i>
+                <span>取消</span>
+            </button>
+        `;
+
+        // 添加編輯狀態樣式
+        card.classList.add('editing');
+
+        // 聚焦到輸入框
+        const input = contentDiv.querySelector('.data-edit-input');
+        input.focus();
+        input.select();
+
+        // 綁定保存和取消事件
+        this.setupDataEditEvents(card, recordId, category);
+    }
+
+    showContentEditForm(card, recordId, currentContent) {
         const contentDiv = card.querySelector('.daily-record-content');
         const actionsDiv = card.querySelector('.daily-record-actions');
         
@@ -648,11 +719,38 @@ class HealthRecordsController {
     }
 
     getPetIdFromCard(card) {
-        // 從卡片中提取寵物ID，可能需要根據實際HTML結構調整
-        const petName = card.querySelector('.daily-pet-info h4')?.textContent;
-        // 這裡可能需要更智能的方式來獲取寵物ID
-        // 暫時返回1，實際使用時需要改進
-        return 1;
+        // 嘗試從多個地方獲取寵物ID
+
+        // 1. 從URL參數獲取（如果有篩選特定寵物）
+        const urlParams = new URLSearchParams(window.location.search);
+        const petIdFromUrl = urlParams.get('pet');
+        if (petIdFromUrl) {
+            return petIdFromUrl;
+        }
+
+        // 2. 從頁面上的寵物列表獲取第一個寵物ID
+        const firstPetOption = document.querySelector('.pet-filter-option[onclick*="filterByPet"]');
+        if (firstPetOption) {
+            const onclick = firstPetOption.getAttribute('onclick');
+            const matches = onclick.match(/filterByPet\('(\d+)'\)/);
+            if (matches && matches[1]) {
+                return matches[1];
+            }
+        }
+
+        // 3. 從卡片中的隱藏數據獲取（如果有的話）
+        const petId = card.dataset.petId;
+        if (petId) {
+            return petId;
+        }
+
+        // 4. 最後手段：使用全局變量或從其他地方獲取
+        if (window.currentPetId) {
+            return window.currentPetId;
+        }
+
+        console.warn('無法獲取寵物ID，使用預設值');
+        return 1; // 預設值
     }
 
     checkEmptyState() {
@@ -693,6 +791,189 @@ class HealthRecordsController {
         return '';
     }
 
+    getDataEditConfig(category) {
+        const configs = {
+            'temperature': {
+                label: '寵物體溫',
+                unit: '°C',
+                min: 35,
+                max: 42,
+                step: 0.1,
+                placeholder: '請輸入體溫值',
+                hint: '正常體溫範圍: 37.5°C - 39.2°C'
+            },
+            'weight': {
+                label: '寵物體重',
+                unit: 'kg',
+                min: 0.1,
+                max: 100,
+                step: 0.1,
+                placeholder: '請輸入體重值',
+                hint: '請輸入準確的體重數值，用於健康追蹤'
+            },
+            'exercise': {
+                label: '運動時長',
+                unit: '分鐘',
+                min: 1,
+                max: 480,
+                step: 1,
+                placeholder: '請輸入運動時間',
+                hint: '記錄寵物的運動或活動時間'
+            }
+        };
+        return configs[category] || configs['temperature'];
+    }
+
+    setupDataEditEvents(card, recordId, category) {
+        const saveBtn = card.querySelector('.save-data-btn');
+        const cancelBtn = card.querySelector('.cancel-daily-btn');
+        const input = card.querySelector('.data-edit-input');
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const value = parseFloat(input.value);
+                if (!isNaN(value) && value > 0) {
+                    this.saveDataRecord(card, recordId, category, value);
+                } else {
+                    this.showNotification('請輸入有效的數值', 'warning');
+                }
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.cancelDataEdit(card, category);
+            });
+        }
+
+        // 按鍵處理
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.cancelDataEdit(card, category);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const value = parseFloat(input.value);
+                    if (!isNaN(value) && value > 0) {
+                        this.saveDataRecord(card, recordId, category, value);
+                    } else {
+                        this.showNotification('請輸入有效的數值', 'warning');
+                    }
+                }
+            });
+        }
+    }
+
+    async saveDataRecord(card, recordId, category, value) {
+        // 嘗試獲取CSRF token
+        let csrfToken = this.getCSRFToken();
+        if (!csrfToken) {
+            csrfToken = await this.getCSRFTokenAsync();
+        }
+
+        if (!csrfToken) {
+            this.showNotification('無法獲取安全令牌，請重新整理頁面', 'error');
+            return;
+        }
+
+        try {
+            const dataToSend = {};
+            dataToSend[category] = value;
+
+            const response = await fetch(`/daily_record/${recordId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                this.exitDataEditMode(card, category, value);
+                this.showNotification('數據已更新', 'success');
+            } else {
+                this.showNotification('更新失敗：' + (data.message || '未知錯誤'), 'error');
+            }
+        } catch (error) {
+            console.error('更新數據時出錯:', error);
+            this.showNotification('更新失敗，請稍後再試', 'error');
+        }
+    }
+
+    cancelDataEdit(card, category) {
+        const originalValue = card.dataset.originalValue;
+        this.exitDataEditMode(card, category, originalValue);
+        this.showNotification('已取消編輯', 'info');
+    }
+
+    exitDataEditMode(card, category, value) {
+        const contentDiv = card.querySelector('.daily-record-content');
+        const actionsDiv = card.querySelector('.daily-record-actions');
+        const recordId = card.querySelector('[data-record-id]').dataset.recordId;
+
+        const config = this.getDataEditConfig(category);
+
+        // 恢復數據顯示
+        contentDiv.innerHTML = `
+            <div class="record-value ${category}-value data-only">
+                <i class="fas fa-${this.getCategoryIcon(category)}"></i>
+                <span class="value">${value}${config.unit}</span>
+                ${this.getValueStatus(category, value)}
+            </div>
+        `;
+
+        // 恢復操作按鈕
+        actionsDiv.innerHTML = `
+            <button class="daily-action-btn edit-daily-btn" data-record-id="${recordId}">
+                <i class="fas fa-edit"></i>
+                <span>編輯</span>
+            </button>
+            <button class="daily-action-btn delete-daily-btn" data-record-id="${recordId}">
+                <i class="fas fa-trash"></i>
+                <span>刪除</span>
+            </button>
+        `;
+
+        // 移除編輯狀態
+        card.classList.remove('editing');
+        delete card.dataset.originalValue;
+    }
+
+    getCategoryIcon(category) {
+        const icons = {
+            'temperature': 'thermometer-half',
+            'weight': 'weight',
+            'exercise': 'running'
+        };
+        return icons[category] || 'chart-bar';
+    }
+
+    getValueStatus(category, value) {
+        if (category === 'temperature') {
+            if (value <= 37.4) {
+                return '<span class="status low">偏低</span>';
+            } else if (value >= 39.3) {
+                return '<span class="status high">偏高</span>';
+            } else {
+                return '<span class="status normal">正常</span>';
+            }
+        } else if (category === 'weight') {
+            return '<span class="data-hint">用於成長追蹤</span>';
+        } else if (category === 'exercise') {
+            return '<span class="data-hint">用於習慣分析</span>';
+        }
+        return '';
+    }
+
     // 備用的異步CSRF token獲取方法
     async getCSRFTokenAsync() {
         try {
@@ -722,16 +1003,183 @@ dailyEditStyles.textContent = `
         background: #fff;
         transition: all 0.3s ease;
     }
-    
+
     .daily-edit-textarea:focus {
         outline: none;
         border-color: var(--health-secondary, #81c784);
         box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
     }
-    
+
     .daily-record-card.editing {
         border-color: var(--health-primary, #4caf50);
         box-shadow: 0 8px 25px rgba(76, 175, 80, 0.15);
+    }
+
+    /* 數值編輯表單樣式 */
+    .data-edit-form {
+        padding: 1rem;
+        background: #f8fffe;
+        border-radius: 8px;
+        border: 2px dashed var(--health-primary, #4caf50);
+    }
+
+    .data-edit-label {
+        display: block;
+        font-weight: 600;
+        color: var(--health-primary, #4caf50);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .data-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .data-edit-input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-align: center;
+        background: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .data-edit-input:focus {
+        outline: none;
+        border-color: var(--health-primary, #4caf50);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+    .data-unit {
+        font-weight: 600;
+        color: var(--health-primary, #4caf50);
+        font-size: 1rem;
+        min-width: 2rem;
+    }
+
+    .data-hint {
+        font-size: 0.8rem;
+        color: #666;
+        font-style: italic;
+        margin-top: 0.25rem;
+    }
+
+    /* 手機響應式優化 */
+    @media (max-width: 768px) {
+        .health-notification {
+            position: fixed !important;
+            top: auto !important;
+            bottom: 80px !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            width: 90% !important;
+            max-width: 350px !important;
+            z-index: 999999 !important;
+            border-radius: 12px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .health-notification.health-success {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%) !important;
+        }
+
+        .health-notification.health-error {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+        }
+
+        .health-notification.health-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+        }
+
+        .health-notification.health-info {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+        }
+
+        .daily-edit-textarea {
+            font-size: 1rem;
+            padding: 1rem;
+            min-height: 100px;
+        }
+
+        .data-edit-form {
+            padding: 1.25rem;
+        }
+
+        .data-edit-input {
+            padding: 1rem;
+            font-size: 1.1rem;
+            min-height: 48px;
+        }
+
+        .data-edit-label {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .data-unit {
+            font-size: 1.1rem;
+            min-width: 2.5rem;
+        }
+
+        .data-hint {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .daily-action-btn {
+            min-height: 48px;
+            font-size: 0.95rem;
+            padding: 0.75rem 1.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .data-edit-input {
+            min-height: 52px;
+            font-size: 1.2rem;
+            padding: 1.25rem;
+        }
+
+        .daily-action-btn {
+            min-height: 52px;
+            font-size: 1rem;
+            padding: 1rem 2rem;
+        }
+
+        .health-notification {
+            bottom: 100px !important;
+            font-size: 1rem !important;
+            padding: 1.25rem 1.5rem !important;
+        }
+    }
+
+    /* 觸控設備優化 */
+    @media (hover: none) and (pointer: coarse) {
+        .data-edit-input:hover {
+            border-color: #e0e0e0;
+        }
+
+        .data-edit-input:focus {
+            border-color: var(--health-primary, #4caf50);
+            transform: scale(1.02);
+        }
+
+        .daily-action-btn:hover {
+            transform: none;
+        }
+
+        .daily-action-btn:active {
+            transform: scale(0.96);
+            transition: transform 0.1s ease;
+        }
     }
 `;
 document.head.appendChild(dailyEditStyles);
