@@ -77,8 +77,8 @@ from .forms import (
     ClinicSearchForm
 )
 from .choices import (
-    FEATURE_CHOICES, PHYSICAL_CHOICES, ADOPTCONDITION_CHOICES, 
-    DOG_CHOICES, CAT_CHOICES, DOGVACCINE_CHOICES, CATVACCINE_CHOICES
+    FEATURE_CHOICES, PHYSICAL_CHOICES, ADOPTCONDITION_CHOICES,
+    DOG_CHOICES, CAT_CHOICES, OTHER_CHOICES, DOGVACCINE_CHOICES, CATVACCINE_CHOICES
 )
 
 from .utils import (
@@ -4331,6 +4331,7 @@ def add_adoption(request):
         'adoptcondition_choices': ADOPTCONDITION_CHOICES,
         'dog_choices': DOG_CHOICES,
         'cat_choices': CAT_CHOICES,
+        'other_choices': OTHER_CHOICES,
         'dogvaccine_choices': DOGVACCINE_CHOICES,
         'catvaccine_choices': CATVACCINE_CHOICES,
     })
