@@ -874,7 +874,7 @@
                                                 <span>健康記錄</span>
                                             </a>
                                             <div class="menu-divider"></div>
-                                            <a href="{% url 'delete_pet' pet.id %}" class="menu-item danger" onclick="return confirm('確定要刪除{{ pet.name }}的資料嗎？')">
+                                            <a href="#" class="menu-item danger" onclick="deletePet('{{ pet.id }}', '{{ pet.name }}'); return false;">
                                                 <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                                 <span>刪除寵物</span>
                                             </a>
@@ -984,6 +984,29 @@
                 }
             }
         });
+
+        // 寵物刪除確認函數
+        window.deletePet = function(petId, petName) {
+            if (confirm(`確定要刪除寵物「${petName}」嗎？\n此操作無法復原。`)) {
+                // 創建表單並提交刪除請求
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/pet/delete/${petId}/`;
+
+                // 添加 CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken.value;
+                    form.appendChild(csrfInput);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        };
     });
 </script>
 {% endblock %}

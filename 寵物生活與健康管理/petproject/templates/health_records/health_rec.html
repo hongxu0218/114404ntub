@@ -757,7 +757,7 @@
                 <!-- 生活記錄卡片 -->
                 <div class="daily-records-container">
                     {% for record in daily_records %}
-                    <div class="daily-record-card" data-category="{{ record.category }}" data-record-id="{{ record.id }}">
+                    <div class="daily-record-card" data-category="{{ record.category }}" data-record-id="{{ record.id }}" data-pet-id="{{ record.pet.id }}">
                         <div class="daily-record-header">
                             <div class="daily-record-pet">
                                 <div class="daily-pet-avatar">
