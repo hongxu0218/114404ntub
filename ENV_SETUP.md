@@ -37,6 +37,14 @@ EMAIL_HOST_USER=your-email@example.com  # SMTP 登入帳號，例如 Gmail。發
 EMAIL_HOST_PASSWORD=your-email-password  # SMTP 密碼（如應用程式密碼）。發信方
 DEFAULT_FROM_EMAIL=your-default-from@example.com  # 發信人 email。系統管理員
 ADMIN_EMAIL=admin-notification@example.com  # 系統管理員通知用途。系統管理員
+
+# ======== AI 客服系統設定 ========
+# AI 服務模式：auto(自動選擇) / ollama(強制使用AI) / fallback(僅關鍵字匹配) / hybrid(混合模式)
+AI_SERVICE_MODE=hybrid  # 混合模式：優先關鍵字匹配，必要時使用向量檢索
+OLLAMA_MODEL=qwen2.5:1.5b-instruct  # 輕量化模型，適合虛擬機
+OLLAMA_TIMEOUT_SEC=120  # 虛擬機環境增加超時時間
+OLLAMA_CHAT_URL=http://127.0.0.1:11434/api/chat  # Ollama 服務地址
+
 ```
 ### ✅ 步驟二：從 Google Cloud Console 取得 ID 和 金鑰
 
