@@ -1,0 +1,255 @@
+{% extends 'social/base.html' %}
+{% load static %}
+{% load tz %}
+
+{% csrf_token %}
+
+{% block title %}貼文詳情 - 毛日好社群{% endblock %}
+
+{% block social_extra_css %}
+<style>
+    .main-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    .post-detail-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+    .post-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #FFB6C1;
+    }
+    .post-content {
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #333;
+    }
+    .post-media {
+        display: grid;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+    .post-media img {
+        width: 100%;
+        border-radius: 10px;
+        max-height: 400px;
+        object-fit: cover;
+    }
+    .post-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #eee;
+        background: #fafafa;
+    }
+    .action-btn {
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.2rem;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.95rem;
+        color: #666;
+    }
+    .action-btn:hover {
+        background: rgba(255, 182, 193, 0.1);
+        color: #FF69B4;
+    }
+    .action-btn.liked {
+        color: #e91e63;
+        background: rgba(233, 30, 99, 0.1);
+    }
+    .comments-section {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+    }
+    .comment {
+        border-bottom: 1px solid #eee;
+        padding: 1rem 0;
+    }
+    .comment:last-child {
+        border-bottom: none;
+    }
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #FFB6C1;
+    }
+    .comment-content {
+        margin-left: 3rem;
+        color: #333;
+        line-height: 1.5;
+    }
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.5rem;
+        background: #FFB6C1;
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .back-btn:hover {
+        background: #FF91A4;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block social_content %}
+<div class="main-content">
+    <a href="{% url 'social:home' %}" class="back-btn">
+        <i class="bi bi-arrow-left"></i>
+        回到社群首頁
+    </a>
+
+    <div class="post-detail-container">
+        <div class="post-header">
+            {% if post.user.social_profile.avatar %}
+                <img src="{{ post.user.social_profile.avatar.url }}" alt="{{ post.user.username }}" class="post-avatar">
+            {% else %}
+                <img src="{% static 'images/default_avatar.png' %}" alt="{{ post.user.username }}" class="post-avatar">
+            {% endif %}
+            <div>
+                <h5 class="mb-1">{{ post.user.social_profile.display_name|default:post.user.username }}</h5>
+                <small class="text-muted">{{ post.created_at|date:"Y年m月d日 H:i" }}</small>
+            </div>
+        </div>
+
+        <div class="post-content">
+            {{ post.content|linebreaks }}
+
+            {% if post.media_files.all %}
+                <div class="post-media">
+                    {% for media in post.media_files.all %}
+                        {% if media.file_type == 'image' %}
+                            <img src="{{ media.file.url }}" alt="貼文圖片">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="post-actions">
+            <div class="d-flex gap-3">
+                <button class="action-btn like-btn {% if user_liked %}liked{% endif %}"
+                        data-post-id="{{ post.id }}" onclick="toggleLike(this)">
+                    <i class="bi bi-heart{% if user_liked %}-fill{% endif %}"></i>
+                    <span class="likes-count">{{ post.likes_count }}</span>
+                </button>
+                <button class="action-btn">
+                    <i class="bi bi-chat"></i>
+                    {{ post.comments_count }} 留言
+                </button>
+                <button class="action-btn">
+                    <i class="bi bi-share"></i>
+                    {{ post.shares_count }} 分享
+                </button>
+            </div>
+            <small class="text-muted">{{ post.created_at|timesince }}前</small>
+        </div>
+    </div>
+
+    <div class="comments-section">
+        <h5 class="mb-3">
+            <i class="bi bi-chat-dots"></i>
+            留言 ({{ comments.count }})
+        </h5>
+
+        {% for comment in comments %}
+            <div class="comment">
+                <div class="comment-header">
+                    {% if comment.user.social_profile.avatar %}
+                        <img src="{{ comment.user.social_profile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+                    {% else %}
+                        <img src="{% static 'images/default_avatar.png' %}" alt="{{ comment.user.username }}" class="comment-avatar">
+                    {% endif %}
+                    <div>
+                        <strong>{{ comment.user.social_profile.display_name|default:comment.user.username }}</strong>
+                        <small class="text-muted ms-2">{{ comment.created_at|timesince }}前</small>
+                    </div>
+                </div>
+                <div class="comment-content">
+                    {{ comment.content|linebreaks }}
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center py-4">
+                <i class="bi bi-chat"></i>
+                還沒有留言，快來成為第一個留言的人吧！
+            </p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function toggleLike(btn) {
+    const postId = btn.dataset.postId;
+
+    fetch(`/social/post/${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const icon = btn.querySelector('i');
+            const count = btn.querySelector('.likes-count');
+
+            if (data.liked) {
+                btn.classList.add('liked');
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+            } else {
+                btn.classList.remove('liked');
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+            }
+
+            count.textContent = data.likes_count;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}
