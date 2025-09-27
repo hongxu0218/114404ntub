@@ -1252,7 +1252,10 @@ def update_daily_record(request, record_id):
                     'message': 'JSON 格式錯誤'
                 })
 
-            # 僅更新content字段（簡化編輯）
+            # 更新不同類型的數據
+            updated_fields = []
+
+            # 更新文字內容
             if 'content' in data:
                 new_content = data['content'].strip()
                 logger.info(f"準備更新內容: '{new_content}'")
@@ -1260,24 +1263,86 @@ def update_daily_record(request, record_id):
                 if new_content:  # 確保內容不為空
                     old_content = record.content
                     record.content = new_content
-                    record.save()
-                    logger.info(f"成功更新生活記錄 {record_id}: '{old_content}' -> '{new_content}'")
-
-                    return JsonResponse({
-                        'status': 'success',
-                        'message': '記錄更新成功！'
-                    })
+                    updated_fields.append(f"內容: '{old_content}' -> '{new_content}'")
                 else:
                     logger.warning("嘗試設置空內容")
                     return JsonResponse({
                         'status': 'error',
                         'message': '記錄內容不能為空'
                     })
+
+            # 更新體溫
+            if 'temperature' in data:
+                try:
+                    temperature = float(data['temperature'])
+                    if 35.0 <= temperature <= 42.0:  # 合理的體溫範圍
+                        old_temp = record.temperature
+                        record.temperature = temperature
+                        updated_fields.append(f"體溫: {old_temp}°C -> {temperature}°C")
+                        logger.info(f"更新體溫: {old_temp} -> {temperature}")
+                    else:
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': '體溫值超出正常範圍 (35.0-42.0°C)'
+                        })
+                except (ValueError, TypeError):
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '體溫值格式錯誤'
+                    })
+
+            # 更新體重
+            if 'weight' in data:
+                try:
+                    weight = float(data['weight'])
+                    if 0.1 <= weight <= 100.0:  # 合理的體重範圍
+                        old_weight = record.weight
+                        record.weight = weight
+                        updated_fields.append(f"體重: {old_weight}kg -> {weight}kg")
+                        logger.info(f"更新體重: {old_weight} -> {weight}")
+                    else:
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': '體重值超出正常範圍 (0.1-100.0kg)'
+                        })
+                except (ValueError, TypeError):
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '體重值格式錯誤'
+                    })
+
+            # 更新運動時長
+            if 'exercise' in data:
+                try:
+                    exercise_duration = int(data['exercise'])
+                    if 1 <= exercise_duration <= 480:  # 合理的運動時長範圍（1分鐘-8小時）
+                        old_exercise = record.exercise_duration
+                        record.exercise_duration = exercise_duration
+                        updated_fields.append(f"運動時長: {old_exercise}分鐘 -> {exercise_duration}分鐘")
+                        logger.info(f"更新運動時長: {old_exercise} -> {exercise_duration}")
+                    else:
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': '運動時長超出正常範圍 (1-480分鐘)'
+                        })
+                except (ValueError, TypeError):
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '運動時長格式錯誤'
+                    })
+
+            if updated_fields:
+                record.save()
+                logger.info(f"成功更新生活記錄 {record_id}: {'; '.join(updated_fields)}")
+                return JsonResponse({
+                    'status': 'success',
+                    'message': '記錄更新成功！'
+                })
             else:
-                logger.error("JSON數據中缺少content字段")
+                logger.error("JSON數據中缺少可更新的字段")
                 return JsonResponse({
                     'status': 'error',
-                    'message': '缺少記錄內容'
+                    'message': '缺少要更新的內容'
                 })
         else:
             logger.info("使用表單數據更新")
