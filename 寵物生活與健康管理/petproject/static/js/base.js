@@ -650,12 +650,48 @@ window.PawDayApp = {
    */
   handleNotificationClick: async function(notification) {
     try {
-      // 標記為已讀
-      if (!notification.is_read) {
-        await this.markNotificationRead(notification.id);
+      // 調用新的通知點擊API，會自動標記為已讀並返回目標URL
+      const response = await fetch(`/api/notifications/${notification.id}/click/`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.getCsrfToken()
+        },
+        credentials: 'same-origin'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // 執行動作（如果有URL）
+      const data = await response.json();
+
+      if (data.success) {
+        // 標記UI為已讀
+        const notificationElement = document.querySelector(`[data-notification-id="${notification.id}"]`);
+        if (notificationElement) {
+          notificationElement.classList.remove('unread');
+        }
+
+        // 更新通知計數
+        this.updateNotificationCount();
+
+        // 關閉通知下拉菜單
+        const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('notificationDropdown'));
+        if (dropdown) {
+          dropdown.hide();
+        }
+
+        // 跳轉到目標頁面
+        if (data.target_url && data.target_url !== window.location.pathname) {
+          window.location.href = data.target_url;
+        }
+      } else {
+        console.error('通知點擊處理失敗:', data.error);
+      }
+
+      // 如果有舊的URL邏輯，保留作為備用
       if (notification.url) {
         window.location.href = notification.url;
       }
@@ -814,6 +850,34 @@ window.PawDayApp = {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  },
+
+  /**
+   * 獲取 CSRF Token
+   */
+  getCsrfToken: function() {
+    // 從 cookie 獲取
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'csrftoken') {
+        return decodeURIComponent(value);
+      }
+    }
+
+    // 從 meta 標籤獲取
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+      return metaToken.getAttribute('content');
+    }
+
+    // 從隱藏的輸入欄位獲取
+    const inputToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (inputToken) {
+      return inputToken.value;
+    }
+
+    return '';
   },
 
   /**

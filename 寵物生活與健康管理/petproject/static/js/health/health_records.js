@@ -669,8 +669,19 @@ class HealthRecordsController {
     handleDeleteDaily(button) {
         const recordId = button.dataset.recordId;
         const card = button.closest('.daily-record-card');
-        
-        if (!card) return;
+
+        console.log('刪除記錄 - recordId:', recordId, 'button:', button);
+
+        if (!card) {
+            console.error('找不到daily-record-card');
+            return;
+        }
+
+        if (!recordId) {
+            console.error('找不到recordId');
+            this.showNotification('找不到記錄ID，無法刪除', 'error');
+            return;
+        }
 
         // 確認刪除
         if (!confirm('確定要刪除這筆生活記錄嗎？此操作無法恢復。')) {
