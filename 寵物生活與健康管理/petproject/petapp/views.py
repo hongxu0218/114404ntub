@@ -4211,6 +4211,44 @@ def add_adoption(request):
                 except Pet.DoesNotExist:
                     pass  # 如果寵物不存在或不屬於用戶，忽略
 
+            # 如果沒有設置 original_pet，嘗試自動匹配現有寵物
+            if not adoption.original_pet:
+                try:
+                    # 優先使用晶片號碼匹配
+                    if adoption.chip:
+                        matching_pet = Pet.objects.filter(
+                            chip=adoption.chip,
+                            owner=request.user
+                        ).first()
+                        if matching_pet:
+                            adoption.original_pet = matching_pet
+                            print(f"通過晶片號碼自動匹配寵物: {matching_pet.name}")
+
+                    # 如果晶片匹配失敗，嘗試精確匹配
+                    if not adoption.original_pet:
+                        matching_pet = Pet.objects.filter(
+                            name=adoption.name,
+                            species=adoption.species,
+                            breed=adoption.breed,
+                            owner=request.user
+                        ).first()
+                        if matching_pet:
+                            adoption.original_pet = matching_pet
+                            print(f"通過名字+物種+品種自動匹配寵物: {matching_pet.name}")
+
+                    # 最後嘗試只用名字匹配（如果只有一個匹配結果）
+                    if not adoption.original_pet:
+                        potential_pets = Pet.objects.filter(
+                            name=adoption.name,
+                            owner=request.user
+                        )
+                        if potential_pets.count() == 1:
+                            adoption.original_pet = potential_pets.first()
+                            print(f"通過名字自動匹配寵物: {adoption.original_pet.name}")
+
+                except Exception as e:
+                    print(f"自動匹配寵物時發生錯誤: {e}")
+
             adoption.save()
             messages.success(request, "刊登成功")
             return redirect('adoption')
@@ -6809,34 +6847,52 @@ def adoption_transfer_confirm(request, transfer_id):
 
             # 同時轉移對應的寵物記錄
             try:
-                # 建立物種對應表（處理中英文物種名稱不一致問題）
-                species_mapping = {
-                    'dog': '狗',
-                    'cat': '貓',
-                    '狗': 'dog',
-                    '貓': 'cat'
-                }
+                corresponding_pet = None
 
-                # 首先嘗試精確匹配
-                corresponding_pet = Pet.objects.filter(
-                    name=adoption.name,
-                    species=adoption.species,
-                    breed=adoption.breed,
-                    owner=transfer.from_owner
-                ).first()
+                # 方法1：優先使用 original_pet 直接關聯（最可靠）
+                if adoption.original_pet and adoption.original_pet.owner == transfer.from_owner:
+                    corresponding_pet = adoption.original_pet
+                    print(f"使用直接關聯找到寵物記錄: {corresponding_pet.name} (ID: {corresponding_pet.id})")
 
-                # 如果精確匹配失敗，嘗試物種名稱轉換後匹配
+                # 方法2：如果沒有直接關聯，使用晶片號碼匹配（第二可靠）
+                if not corresponding_pet and adoption.chip:
+                    corresponding_pet = Pet.objects.filter(
+                        chip=adoption.chip,
+                        owner=transfer.from_owner
+                    ).first()
+                    if corresponding_pet:
+                        print(f"使用晶片號碼找到寵物記錄: {corresponding_pet.name} (晶片: {adoption.chip})")
+
+                # 方法3：如果前兩個方法都失敗，嘗試精確匹配
                 if not corresponding_pet:
-                    mapped_species = species_mapping.get(adoption.species)
-                    if mapped_species:
-                        corresponding_pet = Pet.objects.filter(
-                            name=adoption.name,
-                            species=mapped_species,
-                            breed=adoption.breed,
-                            owner=transfer.from_owner
-                        ).first()
+                    # 建立物種對應表（處理中英文物種名稱不一致問題）
+                    species_mapping = {
+                        'dog': '狗',
+                        'cat': '貓',
+                        '狗': 'dog',
+                        '貓': 'cat'
+                    }
 
-                # 如果還是找不到，嘗試只用名字和飼主匹配（最後手段）
+                    # 精確匹配
+                    corresponding_pet = Pet.objects.filter(
+                        name=adoption.name,
+                        species=adoption.species,
+                        breed=adoption.breed,
+                        owner=transfer.from_owner
+                    ).first()
+
+                    # 物種名稱轉換後匹配
+                    if not corresponding_pet:
+                        mapped_species = species_mapping.get(adoption.species)
+                        if mapped_species:
+                            corresponding_pet = Pet.objects.filter(
+                                name=adoption.name,
+                                species=mapped_species,
+                                breed=adoption.breed,
+                                owner=transfer.from_owner
+                            ).first()
+
+                # 方法4：最後手段 - 只用名字匹配（如果只有一個匹配結果）
                 if not corresponding_pet:
                     potential_pets = Pet.objects.filter(
                         name=adoption.name,
@@ -6844,22 +6900,30 @@ def adoption_transfer_confirm(request, transfer_id):
                     )
                     if potential_pets.count() == 1:
                         corresponding_pet = potential_pets.first()
-                        print(f"警告：使用名字和飼主進行寵物匹配: {corresponding_pet.name}")
+                        print(f"警告：使用名字進行寵物匹配: {corresponding_pet.name}")
 
+                # 執行轉移
                 if corresponding_pet:
                     corresponding_pet.owner = request.user
                     corresponding_pet.save()
-                    print(f"已轉移寵物記錄: {corresponding_pet.name} (ID: {corresponding_pet.id}) 到 {request.user.username}")
+                    print(f"✅ 成功轉移寵物記錄: {corresponding_pet.name} (ID: {corresponding_pet.id}) 到 {request.user.username}")
+
+                    # 更新 adoption 的 original_pet 關聯，確保一致性
+                    if adoption.original_pet != corresponding_pet:
+                        adoption.original_pet = corresponding_pet
+                        adoption.save()
+
                 else:
-                    print(f"未找到對應的寵物記錄: {adoption.name} (物種: {adoption.species}, 品種: {adoption.breed})")
+                    print(f"❌ 未找到對應的寵物記錄: {adoption.name}")
+                    print(f"   物種: {adoption.species}, 品種: {adoption.breed}, 晶片: {adoption.chip}")
                     # 列出原飼主的所有寵物以便除錯
                     owner_pets = Pet.objects.filter(owner=transfer.from_owner)
-                    print("原飼主的所有寵物:")
+                    print("   原飼主的所有寵物:")
                     for pet in owner_pets:
-                        print(f"  - {pet.name} (物種: {pet.species}, 品種: {pet.breed})")
+                        print(f"     - {pet.name} (物種: {pet.species}, 品種: {pet.breed}, 晶片: {pet.chip})")
 
             except Exception as e:
-                print(f"轉移寵物記錄時發生錯誤: {e}")
+                print(f"❌ 轉移寵物記錄時發生錯誤: {e}")
                 import traceback
                 print(traceback.format_exc())
 

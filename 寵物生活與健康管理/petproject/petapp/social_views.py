@@ -455,23 +455,16 @@ def repost(request, post_id):
         repost_comment = ''
 
     # 創建轉發貼文
-    content = repost_comment if repost_comment else original_post.content
+    # 轉發者的評論作為內容，原始內容通過 original_post 保存
     repost = Post.objects.create(
         user=request.user,
-        content=content,
-        post_type=original_post.post_type,
+        content=repost_comment,  # 只保存轉發者的評論
+        post_type='text',  # 轉發本身是文字類型
         original_post=original_post,
         is_repost=True
     )
 
-    # 複製原貼文的媒體檔案
-    for media in original_post.media_files.all():
-        PostMedia.objects.create(
-            post=repost,
-            media_type=media.media_type,
-            file=media.file,  # 共享同一個檔案
-            order=media.order
-        )
+    # 轉發不需要複製媒體檔案，媒體會通過原始貼文顯示
 
     # 更新原貼文的分享數
     original_post.shares_count += 1
