@@ -2667,6 +2667,9 @@ class Notification(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, verbose_name='相關貼文')
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True, verbose_name='相關留言')
 
+    # 目標URL - 點擊通知時跳轉的頁面
+    target_url = models.URLField(max_length=500, null=True, blank=True, verbose_name='目標URL')
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = '通知'
@@ -2679,3 +2682,30 @@ class Notification(models.Model):
         """標記為已讀"""
         self.is_read = True
         self.save()
+
+    def get_target_url(self):
+        """自動生成目標URL"""
+        if self.target_url:
+            return self.target_url
+
+        # 根據通知類型自動生成URL
+        if self.notification_type in ['like', 'comment'] and self.post:
+            return f"/social/post/{self.post.id}/"
+        elif self.notification_type == 'comment_like' and self.comment:
+            return f"/social/post/{self.comment.post.id}/"
+        elif self.notification_type == 'follow':
+            return f"/social/profile/{self.sender.id}/" if self.sender else "/social/"
+        elif self.notification_type.startswith('appointment'):
+            return "/clinic/my_appointments/"
+        elif self.notification_type.startswith('adoption_transfer'):
+            return "/adoptions/my_adoption/"
+        elif self.notification_type.startswith('handoff'):
+            return "/chat/"
+        else:
+            return "/notifications/"
+
+    def save(self, *args, **kwargs):
+        """保存時自動設置target_url"""
+        if not self.target_url:
+            self.target_url = self.get_target_url()
+        super().save(*args, **kwargs)

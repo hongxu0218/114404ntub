@@ -158,6 +158,54 @@ def mark_notifications_read_bulk_api(request):
 
 
 @login_required
+@require_http_methods(["POST"])
+def notification_click_redirect_api(request, notification_id):
+    """
+    通知點擊跳轉 API
+    點擊通知時標記為已讀並返回目標URL
+    """
+    try:
+        from .models import Notification
+
+        # 獲取通知
+        notification = Notification.objects.get(
+            id=notification_id,
+            recipient=request.user
+        )
+
+        # 標記為已讀
+        if not notification.is_read:
+            notification.mark_as_read()
+
+            # 清除相關緩存
+            cache.delete(f"notification_count_{request.user.id}")
+
+        # 獲取目標URL
+        target_url = notification.get_target_url()
+
+        return JsonResponse({
+            'success': True,
+            'target_url': target_url,
+            'notification_type': notification.notification_type,
+            'title': notification.title
+        })
+
+    except Notification.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': '通知不存在或無權限',
+            'target_url': '/notifications/'
+        })
+    except Exception as e:
+        logger.error(f"通知跳轉失敗: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'target_url': '/notifications/'
+        })
+
+
+@login_required
 def notification_statistics_api(request):
     """
     獲取用戶通知統計信息 API

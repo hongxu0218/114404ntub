@@ -1197,23 +1197,63 @@ def save_daily_record(request):
         })
 
 @require_POST
-@login_required 
+@login_required
 def delete_daily_record(request, pet_id):
     """刪除每日記錄"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
         record_id = request.POST.get('record_id')
-        pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
-        record = get_object_or_404(DailyRecord, id=record_id, pet=pet)
-        
+        logger.info(f"嘗試刪除生活記錄 - pet_id: {pet_id}, record_id: {record_id}, user: {request.user}")
+
+        if not record_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': '缺少記錄ID'
+            })
+
+        # 檢查寵物是否存在且屬於當前用戶
+        try:
+            pet = Pet.objects.get(id=pet_id, owner=request.user)
+        except Pet.DoesNotExist:
+            logger.error(f"寵物不存在或不屬於用戶 - pet_id: {pet_id}, user: {request.user}")
+            return JsonResponse({
+                'status': 'error',
+                'message': '寵物不存在或您沒有權限'
+            })
+
+        # 檢查記錄是否存在
+        try:
+            record = DailyRecord.objects.get(id=record_id, pet=pet)
+        except DailyRecord.DoesNotExist:
+            logger.error(f"生活記錄不存在 - record_id: {record_id}, pet_id: {pet_id}")
+            # 查看是否存在該記錄但不屬於該寵物
+            try:
+                wrong_record = DailyRecord.objects.get(id=record_id)
+                logger.error(f"記錄存在但屬於其他寵物 - record_id: {record_id}, actual_pet_id: {wrong_record.pet.id}")
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'記錄不屬於指定寵物 (記錄屬於寵物ID: {wrong_record.pet.id})'
+                })
+            except DailyRecord.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'生活記錄不存在 (ID: {record_id})'
+                })
+
         record.delete()
+        logger.info(f"成功刪除生活記錄 - record_id: {record_id}")
         return JsonResponse({
             'status': 'success',
             'message': '記錄刪除成功！'
         })
+
     except Exception as e:
+        logger.error(f"刪除生活記錄時發生錯誤: {str(e)}")
         return JsonResponse({
             'status': 'error',
-            'message': str(e)
+            'message': f'刪除失敗: {str(e)}'
         })
 
 @require_POST

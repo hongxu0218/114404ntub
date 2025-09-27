@@ -3,7 +3,7 @@
 from django.urls import path, include  # 匯入 path，用來定義每個 URL 與對應的 view 函數
 from . import views  # 匯入目前資料夾下的 views 模組
 from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
-from . import chat_service, views_handoff  # 匯入進階AI客服和人工客服模組
+from . import chat_service, views_handoff, notification_views  # 匯入進階AI客服、人工客服和通知模組
 from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 from django.contrib import admin
@@ -147,6 +147,7 @@ urlpatterns = [
     # ============ 通知系統 API ============
     path('api/notifications/', views.get_notifications_api, name='get_notifications_api'),
     path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('api/notifications/<int:notification_id>/click/', notification_views.notification_click_redirect_api, name='notification_click_redirect'),
     path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     
     # ============ 註冊與帳號管理 ============
