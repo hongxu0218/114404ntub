@@ -713,12 +713,16 @@
 
             .actions-menu.active {
                 transform: translateY(0) !important;
+                pointer-events: all !important;
+                opacity: 1 !important;
             }
 
             .menu-item {
                 padding: var(--space-lg) var(--space-xl);
                 font-size: 1rem;
                 text-align: center;
+                pointer-events: auto !important;
+                cursor: pointer !important;
             }
 
             .menu-item:first-child {

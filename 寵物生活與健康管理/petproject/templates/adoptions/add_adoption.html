@@ -935,12 +935,31 @@ function importPetData(pet) {
                 console.log('設置隱藏種類欄位:', pet.species);
             }
 
-            // 如果種類是"其他"，需要設置其他種類輸入框
+            // 如果種類是"其他"，需要檢查是否真的需要顯示其他種類輸入框
             if (chineseSpecies === '其他') {
                 const speciesOtherInput = document.getElementById('id_species_other');
-                if (speciesOtherInput) {
-                    speciesOtherInput.value = pet.species;
-                    console.log('設置其他種類輸入框:', pet.species);
+                const speciesOtherGroup = document.getElementById('species_other_group');
+
+                // 檢查原始種類是否為標準的"其他"選項，還是具體的其他種類名稱
+                const isActualOtherSpecies = pet.species === '其他' || pet.species === 'other';
+
+                if (isActualOtherSpecies && speciesOtherInput) {
+                    // 真的是"其他"，需要顯示輸入框
+                    speciesOtherInput.value = '';
+                    if (speciesOtherGroup) {
+                        speciesOtherGroup.style.display = 'block';
+                    }
+                    console.log('顯示其他種類輸入框，因為種類確實是"其他"');
+                } else {
+                    // 是具體的種類名稱（如"兔子"），隱藏輸入框，直接使用原始值
+                    if (speciesOtherGroup) {
+                        speciesOtherGroup.style.display = 'none';
+                    }
+                    // 直接設置隱藏欄位為具體種類
+                    if (hiddenSpecies) {
+                        hiddenSpecies.value = pet.species;
+                    }
+                    console.log('隱藏其他種類輸入框，直接使用具體種類:', pet.species);
                 }
             }
 

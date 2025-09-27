@@ -1095,14 +1095,14 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="adopted">
                 {% if adoption.is_adopted %}
-                  <button type="submit" class="btn btn-secondary"
-                          onclick="return confirm('確定要將此寵物改為「待領養」嗎？');">
+                  <button type="button" class="btn btn-secondary"
+                          onclick="handleStatusChange(this.form, '確定要將此寵物改為「待領養」嗎？');">
                     <i class="bi bi-arrow-counterclockwise"></i>
                     恢復為待領養
                   </button>
                 {% else %}
-                  <button type="submit" class="btn btn-success"
-                          onclick="return confirm('確定將此寵物標記為已送養？');">
+                  <button type="button" class="btn btn-success"
+                          onclick="handleStatusChange(this.form, '確定將此寵物標記為已送養？');">
                     <i class="bi bi-check-circle"></i>
                     標記為已送養
                   </button>
@@ -1116,14 +1116,14 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="publish">
                 {% if adoption.is_publish %}
-                  <button type="submit" class="btn btn-secondary"
-                          onclick="return confirm('確定將此寵物設為暫不刊登嗎？');">
+                  <button type="button" class="btn btn-secondary"
+                          onclick="handleStatusChange(this.form, '確定將此寵物設為暫不刊登嗎？');">
                     <i class="bi bi-eye-slash"></i>
                     暫不刊登
                   </button>
                 {% else %}
-                  <button type="submit" class="btn btn-success"
-                          onclick="return confirm('確定將此寵物重新上架刊登嗎？');">
+                  <button type="button" class="btn btn-success"
+                          onclick="handleStatusChange(this.form, '確定將此寵物重新上架刊登嗎？');">
                     <i class="bi bi-eye"></i>
                     重新上架
                   </button>
@@ -1144,10 +1144,9 @@
               </button>
             {% endif %}
 
-            <form method="post" action="{% url 'delete_adoption' adoption.pk %}" style="display:inline;"
-                  onsubmit="return confirm('你確定要刪除這筆資料嗎？此操作無法復原。');">
+            <form method="post" action="{% url 'delete_adoption' adoption.pk %}" style="display:inline;" id="deleteForm">
               {% csrf_token %}
-              <button type="submit" class="btn btn-danger">
+              <button type="button" class="btn btn-danger" onclick="handleDeleteClick()">
                 <i class="bi bi-trash"></i>
                 刪除資料
               </button>
@@ -1207,8 +1206,8 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-          <button type="submit" class="btn btn-primary"
-                  onclick="return confirm('確定要發送轉交請求嗎？一旦發送就無法取消。');">
+          <button type="button" class="btn btn-primary"
+                  onclick="handleTransferSubmit(this.form);">
             <i class="bi bi-send me-1"></i>發送轉交請求
           </button>
         </div>
@@ -1223,6 +1222,36 @@
 
 {% block extra_js %}
 <script>
+  // 處理刪除按鈕點擊
+  function handleDeleteClick() {
+    // 顯示確認對話框
+    if (confirm('你確定要刪除這筆資料嗎？此操作無法復原。')) {
+      // 用戶確認刪除，提交表單
+      document.getElementById('deleteForm').submit();
+    }
+    // 如果用戶取消，什麼都不做，函數自然結束
+  }
+
+  // 處理狀態變更按鈕點擊
+  function handleStatusChange(form, message) {
+    // 顯示確認對話框
+    if (confirm(message)) {
+      // 用戶確認，提交表單
+      form.submit();
+    }
+    // 如果用戶取消，什麼都不做，函數自然結束
+  }
+
+  // 處理轉交請求提交
+  function handleTransferSubmit(form) {
+    // 顯示確認對話框
+    if (confirm('確定要發送轉交請求嗎？一旦發送就無法取消。')) {
+      // 用戶確認，提交表單
+      form.submit();
+    }
+    // 如果用戶取消，什麼都不做，函數自然結束
+  }
+
   // 圖片輪播功能
   const images = [
     {% for url in image_urls %}"{{ url }}"{% if not forloop.last %},{% endif %}{% endfor %}
