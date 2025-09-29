@@ -1020,17 +1020,98 @@
             }
         });
 
-        // 防止手機版誤觸事件處理
-        document.querySelectorAll('.pet-actions a, .pet-actions button, .actions-menu a').forEach(element => {
+        // 防止手機版誤觸事件處理 - 分別處理不同類型的按鈕
+
+        // 處理主要操作按鈕（預約、健康）
+        document.querySelectorAll('.primary-actions .action-btn').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                // 確保主要按鈕的連結正常工作
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    // 手機版使用延遲跳轉，確保觸控反饋完成
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+                    if (isMobile) {
+                        e.preventDefault();
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 100);
+                    }
+                }
+            });
+
+            element.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+                // 為主要按鈕添加觸控反饋
+                this.style.opacity = '0.8';
+                this.style.transform = 'scale(0.98)';
+            });
+
+            element.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+                // 重置主要按鈕樣式
+                setTimeout(() => {
+                    this.style.opacity = '';
+                    this.style.transform = '';
+                }, 150);
+            });
+
+            // 防止長按事件觸發系統選單
+            element.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // 處理更多選單按鈕
+        document.querySelectorAll('.more-btn').forEach(element => {
             element.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
             });
 
-            // 手機版觸控事件處理
             element.addEventListener('touchstart', function(e) {
                 e.stopPropagation();
-                // 為刪除按鈕添加特殊的觸控反饋
+            });
+
+            element.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+            });
+
+            element.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // 處理選單項目（包括刪除按鈕）
+        document.querySelectorAll('.actions-menu .menu-item').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                // 區分刪除按鈕和其他選單項目
+                if (this.classList.contains('danger')) {
+                    // 刪除按鈕已經有onclick處理，這裡不需要額外操作
+                    return;
+                } else {
+                    // 非刪除按鈕，確保連結正常工作
+                    const href = this.getAttribute('href');
+                    if (href && href !== '#') {
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+                        if (isMobile) {
+                            e.preventDefault();
+                            setTimeout(() => {
+                                window.location.href = href;
+                            }, 100);
+                        }
+                    }
+                }
+            });
+
+            element.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+                // 只為刪除按鈕添加特殊的觸控反饋
                 if (this.classList.contains('danger')) {
                     this.style.backgroundColor = '#dc3545';
                     this.style.color = 'white';
@@ -1048,7 +1129,6 @@
                 }
             });
 
-            // 防止長按事件觸發系統選單
             element.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
             });
