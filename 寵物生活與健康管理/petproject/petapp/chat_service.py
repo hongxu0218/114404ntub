@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b-instruct")  # 改用更輕量的模型
 OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "120"))  # 虛擬機環境增加至120秒
-AI_SERVICE_MODE = os.getenv("AI_SERVICE_MODE", "fallback")  # 新增：auto/ollama/fallback/hybrid
+AI_SERVICE_MODE = os.getenv("AI_SERVICE_MODE", "ollama")  # 新增：auto/ollama/fallback/hybrid
 
 # ====== 專案路徑 ======
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -106,8 +106,23 @@ def direct_text_search(query):
             print(f"[AI客服] 沒有找到相似度足夠的文檔")
             return None
 
-        # 4. 使用Ollama生成智能回答
-        return generate_intelligent_response(query, relevant_docs)
+        # 4. 根據AI_SERVICE_MODE決定回答策略
+        if AI_SERVICE_MODE == "fallback":
+            # 僅使用向量檢索，不調用Ollama
+            print(f"[AI客服] 使用fallback模式，返回最佳匹配文檔")
+            return relevant_docs[0]['content']
+        elif AI_SERVICE_MODE == "ollama":
+            # 嘗試使用Ollama，失敗時降級
+            print(f"[AI客服] 使用ollama模式，嘗試智能生成")
+            ollama_result = generate_intelligent_response(query, relevant_docs)
+            if ollama_result:
+                return ollama_result
+            else:
+                print(f"[AI客服] Ollama失敗，降級到向量檢索")
+                return relevant_docs[0]['content']
+        else:
+            # auto或hybrid模式
+            return generate_intelligent_response(query, relevant_docs)
 
     except Exception as e:
         print(f"[AI客服] RAG搜索錯誤: {e}")
@@ -143,13 +158,13 @@ def generate_intelligent_response(query, relevant_docs):
 
         # 調用Ollama API
         ollama_response = requests.post(
-            'http://localhost:11434/api/generate',
+            OLLAMA_CHAT_URL.replace('/api/chat', '/api/generate'),
             json={
-                'model': 'qwen2.5:3b-instruct',
+                'model': OLLAMA_MODEL,
                 'prompt': prompt,
                 'stream': False
             },
-            timeout=30
+            timeout=OLLAMA_TIMEOUT_SEC
         )
 
         if ollama_response.status_code == 200:
@@ -168,11 +183,14 @@ def generate_intelligent_response(query, relevant_docs):
             # 備用：返回最相關的文檔
             return relevant_docs[0]['content']
 
+    except requests.exceptions.Timeout:
+        print(f"[AI客服] Ollama連接超時(>{OLLAMA_TIMEOUT_SEC}秒)，返回None讓上級函數處理")
+        return None
+    except requests.exceptions.ConnectionError:
+        print(f"[AI客服] 無法連接到Ollama服務 ({OLLAMA_CHAT_URL})，返回None讓上級函數處理")
+        return None
     except Exception as e:
-        print(f"[AI客服] Ollama生成錯誤: {e}")
-        # 備用：返回最相關的文檔
-        if relevant_docs:
-            return relevant_docs[0]['content']
+        print(f"[AI客服] Ollama生成錯誤: {e}，返回None讓上級函數處理")
         return None
 
 def simple_search(query, top_k=5):

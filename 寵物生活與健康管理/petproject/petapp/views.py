@@ -1989,13 +1989,38 @@ def create_appointment(request, pet_id):
     return render(request, 'appointments/create_appointment.html', context)
 
 def parse_slot_id(slot_id):
-    """解析時段ID為時間物件"""
+    """解析時段ID為時間物件 - 支援多種格式"""
+    import logging
+    from datetime import time
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"解析時段ID: '{slot_id}' (類型: {type(slot_id)})")
+
     try:
-        hour, minute = slot_id.split('-')
-        from datetime import time
-        return time(int(hour), int(minute))
-    except:
-        from datetime import time
+        # 確保slot_id是字符串
+        slot_id = str(slot_id).strip()
+
+        # 嘗試解析 "HH:MM" 格式
+        if ':' in slot_id:
+            hour, minute = slot_id.split(':')
+            result_time = time(int(hour), int(minute))
+            logger.info(f"成功解析 HH:MM 格式 -> {result_time}")
+            return result_time
+        # 嘗試解析 "HH-MM" 格式
+        elif '-' in slot_id:
+            hour, minute = slot_id.split('-')
+            result_time = time(int(hour), int(minute))
+            logger.info(f"成功解析 HH-MM 格式 -> {result_time}")
+            return result_time
+        else:
+            # 如果是純數字，假設是小時
+            hour = int(slot_id)
+            result_time = time(hour, 0)
+            logger.info(f"純數字格式解析 -> {result_time}")
+            return result_time
+    except (ValueError, AttributeError, TypeError) as e:
+        logger.error(f"無法解析時段ID '{slot_id}'，錯誤：{e}")
+        logger.warning(f"使用預設時間 09:00")
         return time(9, 0)  # 預設上午9點
 
 def find_best_doctor_for_slot(clinic, appointment_date, slot_time):
@@ -2433,22 +2458,77 @@ def my_appointments(request):
         'pet__medicalrecord_set__attending_vet__user'
     )
 
-    # 新的四項狀態篩選（進行中、已完成、已取消、全部）
+    # 進階篩選參數
     status_filter = request.GET.get('status', 'all')
-    today = timezone.now().date()
+    date_range_filter = request.GET.get('date_range', 'all')
+    search_query = request.GET.get('search', '').strip()
 
+    today = timezone.now().date()
+    now = timezone.now()
+
+    # 狀態篩選
     if status_filter == 'active':
         # 進行中的預約（待確認 + 已確認）
         appointments = appointments.filter(
             status__in=['pending', 'confirmed']
         )
-    elif status_filter == 'completed':
-        # 已完成的預約
-        appointments = appointments.filter(status='completed')
-    elif status_filter == 'cancelled':
-        # 已取消的預約
-        appointments = appointments.filter(status='cancelled')
+    elif status_filter in ['pending', 'confirmed', 'completed', 'cancelled']:
+        # 特定狀態篩選
+        appointments = appointments.filter(status=status_filter)
     # status_filter == 'all' 時不做篩選，顯示所有預約
+
+    # 日期範圍篩選
+    if date_range_filter != 'all':
+        if date_range_filter == 'today':
+            appointments = appointments.filter(slot__date=today)
+        elif date_range_filter == 'tomorrow':
+            tomorrow = today + timezone.timedelta(days=1)
+            appointments = appointments.filter(slot__date=tomorrow)
+        elif date_range_filter == 'past-week':
+            past_week = today - timezone.timedelta(days=7)
+            appointments = appointments.filter(slot__date__gte=past_week, slot__date__lt=today)
+        elif date_range_filter == 'current-week':
+            # 本週：從這週的星期一到星期日
+            start_week = today - timezone.timedelta(days=today.weekday())
+            end_week = start_week + timezone.timedelta(days=6)
+            appointments = appointments.filter(slot__date__gte=start_week, slot__date__lte=end_week)
+        elif date_range_filter == 'next-week':
+            # 下週：下週一到下週日
+            next_week_start = today + timezone.timedelta(days=(7 - today.weekday()))
+            next_week_end = next_week_start + timezone.timedelta(days=6)
+            appointments = appointments.filter(slot__date__gte=next_week_start, slot__date__lte=next_week_end)
+        elif date_range_filter == 'current-month':
+            # 本月
+            first_day = today.replace(day=1)
+            if today.month == 12:
+                last_day = today.replace(year=today.year + 1, month=1, day=1) - timezone.timedelta(days=1)
+            else:
+                last_day = today.replace(month=today.month + 1, day=1) - timezone.timedelta(days=1)
+            appointments = appointments.filter(slot__date__gte=first_day, slot__date__lte=last_day)
+        elif date_range_filter == 'next-month':
+            # 下月
+            if today.month == 12:
+                first_day = today.replace(year=today.year + 1, month=1, day=1)
+                last_day = today.replace(year=today.year + 1, month=2, day=1) - timezone.timedelta(days=1)
+            else:
+                first_day = today.replace(month=today.month + 1, day=1)
+                if today.month == 11:
+                    last_day = today.replace(year=today.year + 1, month=1, day=1) - timezone.timedelta(days=1)
+                else:
+                    last_day = today.replace(month=today.month + 2, day=1) - timezone.timedelta(days=1)
+            appointments = appointments.filter(slot__date__gte=first_day, slot__date__lte=last_day)
+
+
+    # 搜尋篩選
+    if search_query:
+        from django.db.models import Q
+        appointments = appointments.filter(
+            Q(pet__name__icontains=search_query) |
+            Q(slot__clinic__name__icontains=search_query) |
+            Q(slot__doctor__user__first_name__icontains=search_query) |
+            Q(slot__doctor__user__last_name__icontains=search_query) |
+            Q(reason__icontains=search_query)
+        )
 
     appointments = appointments.order_by('-created_at')
 
@@ -2488,13 +2568,25 @@ def my_appointments(request):
 def cancel_appointment(request, appointment_id):
     """取消預約"""
     appointment = get_object_or_404(VetAppointment, id=appointment_id, owner=request.user)
-    
+
     if request.method == 'POST':
+        cancel_reason = request.POST.get('cancel_reason', '')
         appointment.status = 'cancelled'
+        appointment.cancel_reason = cancel_reason
         appointment.save()
-        messages.success(request, '預約取消成功！')
+
+        # 在成功訊息中包含取消原因
+        if cancel_reason:
+            messages.success(request, f'預約取消成功！取消原因：{cancel_reason}')
+        else:
+            messages.success(request, '預約取消成功！')
+
+        # 如果是AJAX請求，返回JSON響應
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': '預約取消成功！'})
+
         return redirect('my_appointments')
-    
+
     return render(request, 'appointments/cancel_appointment.html', {
         'appointment': appointment
     })
@@ -2983,9 +3075,89 @@ def vet_home(request):
             print(f"計算工作時數時發生錯誤: {e}")
             working_hours_this_week = 0
         
+        # 獲取最近病患數據 (限制5個)
+        recent_patients_data = []
+        try:
+            if profile.account_type == 'clinic_admin':
+                # 診所管理員查看整個診所的病患
+                recent_patients = Pet.objects.filter(
+                    vetappointment__slot__doctor__clinic=vet_profile.clinic
+                ).distinct().select_related('owner')[:5]
+            else:
+                # 獸醫師只看自己的病患
+                recent_patients = Pet.objects.filter(
+                    vetappointment__slot__doctor=vet_profile
+                ).distinct().select_related('owner')[:5]
+
+            for pet in recent_patients:
+                # 獲取最後就診日期
+                last_appointment = VetAppointment.objects.filter(
+                    pet=pet,
+                    slot__doctor=vet_profile if profile.account_type != 'clinic_admin' else None,
+                    status='completed'
+                ).order_by('-slot__date').first()
+
+                # 檢查今日是否有預約
+                today_appointment = VetAppointment.objects.filter(
+                    pet=pet,
+                    slot__date=today,
+                    slot__doctor=vet_profile if profile.account_type != 'clinic_admin' else None
+                ).exists()
+
+                # 判斷是否需要追蹤
+                needs_followup = False
+                if last_appointment:
+                    days_since_visit = (today - last_appointment.slot.date).days
+                    # 獲取最後一次的醫療記錄
+                    last_record = None
+                    try:
+                        if profile.account_type == 'clinic_admin':
+                            last_record = MedicalRecord.objects.filter(
+                                pet=pet,
+                                attending_vet__clinic=vet_profile.clinic
+                            ).order_by('-visit_date').first()
+                        else:
+                            last_record = MedicalRecord.objects.filter(
+                                pet=pet,
+                                attending_vet=vet_profile
+                            ).order_by('-visit_date').first()
+                    except:
+                        pass
+
+                    # 需要追蹤的條件：
+                    # 1. 最後就診超過30天且有醫療記錄建議追蹤
+                    # 2. 有處方用藥且用藥期間已結束
+                    # 3. 有慢性疾病需要定期回診
+                    if days_since_visit > 30:
+                        needs_followup = True
+                    elif last_record:
+                        # 檢查是否有需要追蹤的診斷關鍵字
+                        followup_keywords = ['慢性', '定期', '追蹤', '複診', '監控', '持續', '回診']
+                        if last_record.diagnosis:
+                            for keyword in followup_keywords:
+                                if keyword in last_record.diagnosis:
+                                    needs_followup = True
+                                    break
+                        if last_record.treatment and not needs_followup:
+                            for keyword in followup_keywords:
+                                if keyword in last_record.treatment:
+                                    needs_followup = True
+                                    break
+
+                recent_patients_data.append({
+                    'pet': pet,
+                    'last_visit': last_appointment.slot.date if last_appointment else None,
+                    'today_appointment': today_appointment,
+                    'needs_followup': needs_followup,
+                    'days_since_visit': (today - last_appointment.slot.date).days if last_appointment else None
+                })
+        except Exception as e:
+            print(f"獲取病患數據錯誤: {e}")
+            recent_patients_data = []
+
         # 為JavaScript準備JSON安全的數據
         appointment_trends_json = json.dumps(appointment_trends)
-        
+
         return render(request, 'vet_pages/vet_home.html', {
             'vet_profile': vet_profile,
             'today_appointments': today_appointments,
@@ -3003,6 +3175,7 @@ def vet_home(request):
             'changes': changes,
             'appointment_trends': appointment_trends,
             'appointment_trends_json': appointment_trends_json,
+            'recent_patients_data': recent_patients_data,
         })
         
     except Exception as e:
@@ -3189,7 +3362,7 @@ def vet_appointments(request):
         appointments = VetAppointment.objects.filter(
             slot__doctor=vet_profile,
             slot__date__range=[start_date, end_date]
-        ).select_related('pet', 'owner', 'slot').order_by('-slot__date', '-slot__start_time')
+        ).select_related('pet', 'owner', 'slot').order_by('-slot__date', 'slot__start_time')
         
         # 過濾過期預約 (可選)
         show_expired = request.GET.get('show_expired', 'false') == 'true'
@@ -3265,7 +3438,6 @@ def vet_appointments(request):
 
 @login_required
 @require_verified_vet
-@require_POST
 def vet_cancel_appointment(request, appointment_id):
     """獸醫師取消預約"""
     try:
@@ -3275,18 +3447,57 @@ def vet_cancel_appointment(request, appointment_id):
             id=appointment_id,
             slot__doctor=vet_profile
         )
-        
-        cancel_reason = request.POST.get('cancel_reason', '')
-        appointment.status = 'cancelled'
-        if hasattr(appointment, 'cancel_reason'):
-            appointment.cancel_reason = cancel_reason
-        appointment.save()
-        
-        messages.success(request, f'預約已取消:{appointment.pet.name}')
-        return redirect('vet_appointments')
-        
+
+        # 預定義的取消原因選項
+        cancel_reasons = [
+            ('patient_no_show', '病患未到診'),
+            ('veterinarian_emergency', '獸醫師緊急事件'),
+            ('equipment_failure', '設備故障'),
+            ('schedule_conflict', '時程衝突'),
+            ('patient_health_improve', '病患健康狀況改善'),
+            ('weather_conditions', '天氣狀況不佳'),
+            ('clinic_closure', '診所臨時關閉'),
+            ('other', '其他原因'),
+        ]
+
+        if request.method == 'POST':
+            # 處理來自前端表單的取消原因（可能是自由文字或代碼）
+            cancel_reason_input = request.POST.get('cancel_reason', '')
+            custom_reason = request.POST.get('custom_reason', '')
+
+            # 確定最終取消原因
+            if custom_reason:
+                # 如果有自定義原因，使用自定義原因
+                final_reason = custom_reason
+            elif cancel_reason_input:
+                # 檢查是否是預定義的代碼
+                reason_dict = dict(cancel_reasons)
+                final_reason = reason_dict.get(cancel_reason_input, cancel_reason_input)
+            else:
+                final_reason = "未提供取消原因"
+
+            appointment.status = 'cancelled'
+            appointment.cancel_reason = final_reason
+            appointment.save()
+
+            messages.success(request, f'預約已取消：{appointment.pet.name} - {final_reason}')
+
+            # 如果是AJAX請求，返回JSON響應
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': '預約取消成功'})
+
+            return redirect('vet_appointments')
+
+        # GET請求顯示取消確認頁面
+        return render(request, 'vet_pages/cancel_appointment.html', {
+            'appointment': appointment,
+            'cancel_reasons': cancel_reasons
+        })
+
     except Exception as e:
         messages.error(request, f'取消預約失敗:{str(e)}')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': str(e)})
         return redirect('vet_appointments')
 
 @login_required
@@ -3330,12 +3541,12 @@ def vet_batch_appointment_operation(request):
                         appointment.save()
                         updated_count += 1
                         
-                elif action == 'complete':
-                    if appointment.status in ['pending', 'confirmed']:
-                        appointment.status = 'completed'
-                        appointment.save()
-                        updated_count += 1
-                        
+                # elif action == 'complete':  # REMOVED: Appointments auto-complete when medical records are created
+                #     if appointment.status in ['pending', 'confirmed']:
+                #         appointment.status = 'completed'
+                #         appointment.save()
+                #         updated_count += 1
+
                 elif action == 'cancel':
                     if appointment.status in ['pending', 'confirmed']:
                         appointment.status = 'cancelled'
@@ -3491,8 +3702,15 @@ def create_medical_record(request, pet_id=None):
         
         # 必須指定寵物ID - 不允許直接選擇寵物
         if not pet_id:
+            # 檢查請求來源，決定重定向位置
+            referer = request.META.get('HTTP_REFERER', '')
+            if 'patients' in referer:
+                redirect_url = 'my_patients'
+            else:
+                redirect_url = 'vet_appointments'
+
             messages.error(request, '請從今日預約清單中選擇要建立醫療記錄的寵物')
-            return redirect('vet_appointments')
+            return redirect(redirect_url)
             
         pet = get_object_or_404(Pet, id=pet_id)
         
@@ -3505,8 +3723,15 @@ def create_medical_record(request, pet_id=None):
         )
 
         if not today_appointments.exists():
+            # 檢查請求來源，決定重定向位置
+            referer = request.META.get('HTTP_REFERER', '')
+            if 'patients' in referer:
+                redirect_url = 'my_patients'
+            else:
+                redirect_url = 'vet_appointments'
+
             messages.error(request, f'只能為今日({today.strftime("%Y年%m月%d日")})已確認預約的寵物建立醫療記錄！無法為未來日期的預約建立病歷。')
-            return redirect('vet_appointments')
+            return redirect(redirect_url)
         
         if request.method == 'POST':
             print(f"=== 醫療記錄 POST 請求開始 ===")
@@ -3703,8 +3928,15 @@ def create_medical_record(request, pet_id=None):
                 print(f"錯誤類型: {type(e)}")
                 import traceback
                 print(f"錯誤堆疊: {traceback.format_exc()}")
+                # 檢查請求來源，決定重定向位置
+                referer = request.META.get('HTTP_REFERER', '')
+                if 'patients' in referer:
+                    redirect_url = 'my_patients'
+                else:
+                    redirect_url = 'vet_appointments'
+
                 messages.error(request, f'處理表單數據時發生錯誤: {str(e)}')
-                return redirect('vet_appointments')
+                return redirect(redirect_url)
 
             # 使用處理過的數據創建表單，確保生理數據被正確處理
             form = MedicalRecordForm(mapped_data)
@@ -3792,13 +4024,27 @@ def create_medical_record(request, pet_id=None):
 
                     if is_ajax:
                         from django.http import JsonResponse
+                        # 檢查請求來源，決定重定向位置
+                        referer = request.META.get('HTTP_REFERER', '')
+                        if 'patients' in referer:
+                            redirect_path = '/vet/patients/'
+                        else:
+                            redirect_path = '/vet/appointments/'
+
                         return JsonResponse({
                             'success': True,
                             'message': f'已為 {pet.name} 建立醫療記錄並完成就診！',
-                            'redirect': '/vet/appointments/'
+                            'redirect': redirect_path
                         })
 
-                    return redirect('vet_appointments')
+                    # 檢查請求來源，決定重定向位置
+                    referer = request.META.get('HTTP_REFERER', '')
+                    if 'patients' in referer:
+                        redirect_url = 'my_patients'
+                    else:
+                        redirect_url = 'vet_appointments'
+
+                    return redirect(redirect_url)
                 except Exception as e:
                     print(f"保存醫療記錄失敗: {str(e)}")
                     messages.error(request, f'保存醫療記錄時發生錯誤: {str(e)}')
@@ -4158,44 +4404,79 @@ def clinic_cancel_appointment(request, appointment_id):
             id=appointment_id,
             slot__doctor__clinic=vet_profile.clinic
         )
-        
+
+        # 預定義的取消原因選項（診所視角）
+        cancel_reasons = [
+            ('patient_no_show', '病患未到診'),
+            ('doctor_unavailable', '醫師臨時無法看診'),
+            ('equipment_failure', '設備故障'),
+            ('emergency_closure', '診所緊急關閉'),
+            ('schedule_conflict', '時程衝突'),
+            ('patient_cancellation', '病患主動取消'),
+            ('weather_emergency', '天氣緊急狀況'),
+            ('system_overbook', '系統重複預約'),
+            ('other', '其他原因'),
+        ]
+
         if request.method == 'POST':
-            cancel_reason = request.POST.get('cancel_reason', '')
+            cancel_reason_code = request.POST.get('cancel_reason', '')
+            custom_reason = request.POST.get('custom_reason', '')
+
+            # 如果選擇其他原因，使用自定義原因
+            if cancel_reason_code == 'other' and custom_reason:
+                final_reason = f"其他原因：{custom_reason}"
+            else:
+                # 根據代碼找到對應的中文說明
+                reason_dict = dict(cancel_reasons)
+                final_reason = reason_dict.get(cancel_reason_code, cancel_reason_code)
+
             appointment.status = 'cancelled'
-            appointment.cancel_reason = cancel_reason
+            appointment.cancel_reason = final_reason
             appointment.save()
-            
-            messages.success(request, f'預約 {appointment.id} 已取消')
-            
-        return redirect('clinic_appointments')
-        
+
+            messages.success(request, f'預約 {appointment.id} 已取消 - {final_reason}')
+
+            # 如果是AJAX請求，返回JSON響應
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': '預約取消成功'})
+
+            return redirect('clinic_appointments')
+
+        # GET請求顯示取消確認頁面
+        return render(request, 'clinic/cancel_appointment.html', {
+            'appointment': appointment,
+            'cancel_reasons': cancel_reasons
+        })
+
     except Exception as e:
         messages.error(request, f'取消預約失敗:{str(e)}')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': str(e)})
         return redirect('clinic_appointments')
 
-@login_required
-@require_clinic_management
-def complete_appointment(request, appointment_id):
-    """完成預約"""
-    try:
-        vet_profile = request.user.vet_profile
-        appointment = get_object_or_404(
-            VetAppointment,
-            id=appointment_id,
-            slot__doctor__clinic=vet_profile.clinic
-        )
-        
-        if request.method == 'POST':
-            appointment.status = 'completed'
-            appointment.save()
-            
-            messages.success(request, f'預約 {appointment.id} 已標記為完成')
-            
-        return redirect('clinic_appointments')
-        
-    except Exception as e:
-        messages.error(request, f'完成預約失敗:{str(e)}')
-        return redirect('clinic_appointments')
+# @login_required
+# @require_clinic_management
+# def complete_appointment(request, appointment_id):
+#     """完成預約 - REMOVED: Appointments are now auto-completed when medical records are created"""
+#     try:
+#         vet_profile = request.user.vet_profile
+#         appointment = get_object_or_404(
+#             VetAppointment,
+#             id=appointment_id,
+#             slot__doctor__clinic=vet_profile.clinic
+#         )
+#
+#         if request.method == 'POST':
+#             appointment.status = 'completed'
+#             appointment.save()
+#
+#             messages.success(request, f'預約 {appointment.id} 已標記為完成')
+#
+#         return redirect('clinic_appointments')
+#
+#     except Exception as e:
+#         messages.error(request, f'完成預約失敗:{str(e)}')
+#         return redirect('clinic_appointments')
 
 # ============ API 端點實作 ============
 
@@ -5645,77 +5926,103 @@ def api_vet_patients_overview(request):
     try:
         # 處理診所管理員或獸醫師
         profile = request.user.profile
-        
+        filter_type = request.GET.get('filter', 'all')
+
+        # 獲取獸醫師profile
         if profile.account_type == 'clinic_admin':
-            # 診所管理員:嘗試獲取 vet_profile 或使用診所資料
             try:
                 vet_profile = request.user.vet_profile
             except AttributeError:
                 # 沒有 vet_profile，返回診所的所有患者
                 clinic = request.user.clinic_profile.clinic
-                
-                # 獲取診所所有患者
                 patients_qs = Pet.objects.filter(
                     vetappointment__slot__doctor__clinic=clinic
-                ).distinct().select_related('owner')[:10]
-                
-                patients_data = []
-                for pet in patients_qs:
-                    # 獲取實際的最後就診日期
-                    last_visit_date = pet.last_visit_date or pet.medicalrecord_set.order_by('-visit_date').first()
-                    if last_visit_date and hasattr(last_visit_date, 'visit_date'):
-                        last_visit = last_visit_date.visit_date.strftime('%Y-%m-%d')
-                    elif last_visit_date:
-                        last_visit = last_visit_date.strftime('%Y-%m-%d')
-                    else:
-                        last_visit = '無記錄'
-                    
-                    patients_data.append({
-                        'id': pet.id,
-                        'petName': pet.name,
-                        'species': pet.species,
-                        'ownerName': pet.owner.get_full_name() or pet.owner.username,
-                        'ownerPhone': pet.owner.profile.phone if hasattr(pet.owner, 'profile') else '',
-                        'age': f'{pet.age}歲' if pet.age else '未知',
-                        'gender': pet.get_gender_display() if pet.gender else '未知',
-                        'lastVisit': last_visit,
-                        'category': 'all'
-                    })
-                
-                return JsonResponse({'success': True, 'patients': patients_data})
+                ).distinct().select_related('owner').prefetch_related(
+                    'vetappointment_set', 'medicalrecord_set'
+                )
         else:
             vet_profile = request.user.vet_profile
-        
-        # 獲取獸醫師的患者
-        patients_qs = Pet.objects.filter(
-            vetappointment__slot__doctor=vet_profile
-        ).distinct().select_related('owner')[:10]
-        
+            patients_qs = Pet.objects.filter(
+                vetappointment__slot__doctor=vet_profile
+            ).distinct().select_related('owner').prefetch_related(
+                'vetappointment_set', 'medicalrecord_set'
+            )
+
+        # 根據篩選類型過濾
+        today = timezone.now().date()
+        if filter_type == 'recent':
+            # 最近30天有就診的
+            recent_date = today - timezone.timedelta(days=30)
+            patients_qs = patients_qs.filter(
+                vetappointment__slot__date__gte=recent_date
+            ).distinct()
+        elif filter_type == 'followup':
+            # 需要追蹤的病患
+            patients_qs = patients_qs.filter(
+                Q(medicalrecord__diagnosis__icontains='慢性') |
+                Q(medicalrecord__diagnosis__icontains='定期') |
+                Q(medicalrecord__diagnosis__icontains='追蹤') |
+                Q(medicalrecord__diagnosis__icontains='複診') |
+                Q(medicalrecord__treatment__icontains='定期') |
+                Q(medicalrecord__treatment__icontains='追蹤')
+            ).distinct()
+        elif filter_type == 'new':
+            # 新病患 (第一次就診在30天內)
+            recent_date = today - timezone.timedelta(days=30)
+            patients_qs = patients_qs.annotate(
+                first_visit=Min('vetappointment__slot__date')
+            ).filter(first_visit__gte=recent_date)
+
+        # 限制數量
+        patients_qs = patients_qs[:20]
+
         patients_data = []
         for pet in patients_qs:
-            # 獲取實際的最後就診日期
-            last_visit_date = pet.last_visit_date or pet.medicalrecord_set.order_by('-visit_date').first()
-            if last_visit_date and hasattr(last_visit_date, 'visit_date'):
-                last_visit = last_visit_date.visit_date.strftime('%Y-%m-%d')
-            elif last_visit_date:
-                last_visit = last_visit_date.strftime('%Y-%m-%d')
+            # 計算是否需要追蹤
+            needs_followup = False
+            last_visit = None
+
+            # 獲取最後就診日期
+            last_appointment = pet.vetappointment_set.order_by('-slot__date').first()
+            if last_appointment:
+                last_visit = last_appointment.slot.date.strftime('%Y-%m-%d')
+                days_since_visit = (today - last_appointment.slot.date).days
+
+                # 檢查是否需要追蹤
+                if days_since_visit > 30:
+                    needs_followup = True
+
+                # 檢查醫療記錄是否有追蹤關鍵字
+                last_record = pet.medicalrecord_set.order_by('-visit_date').first()
+                if last_record:
+                    followup_keywords = ['慢性', '定期', '追蹤', '複診', '監控', '持續', '回診']
+                    if last_record.diagnosis:
+                        for keyword in followup_keywords:
+                            if keyword in last_record.diagnosis:
+                                needs_followup = True
+                                break
+                    if last_record.treatment and not needs_followup:
+                        for keyword in followup_keywords:
+                            if keyword in last_record.treatment:
+                                needs_followup = True
+                                break
             else:
                 last_visit = '無記錄'
-            
+
             patients_data.append({
                 'id': pet.id,
-                'petName': pet.name,
+                'name': pet.name,
                 'species': pet.species,
-                'ownerName': pet.owner.get_full_name() or pet.owner.username,
-                'ownerPhone': pet.owner.profile.phone if hasattr(pet.owner, 'profile') else '',
-                'age': f'{pet.age}歲' if pet.age else '未知',
-                'gender': pet.get_gender_display() if pet.gender else '未知',
-                'lastVisit': last_visit,
-                'category': 'all'
+                'breed': pet.breed or '未知',
+                'owner_name': pet.owner.get_full_name() or pet.owner.username,
+                'picture': pet.picture.url if pet.picture else None,
+                'last_visit': last_visit,
+                'needs_followup': needs_followup,
+                'category': filter_type
             })
-        
+
         return JsonResponse({'success': True, 'patients': patients_data})
-        
+
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 
@@ -7211,12 +7518,15 @@ def schedule_dashboard(request):
         week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
         
-        # 個人本週排班
+        # 個人本週排班 - 包含已核准和生效中的排班
+        # 修復：正確處理 end_date 為 None 的情況（無限期排班）
+        from django.db.models import Q
         personal_schedules = EnhancedVetSchedule.objects.filter(
             doctor=vet_doctor,
             start_date__lte=week_end,
-            end_date__gte=week_start,
-            status='active'
+            status__in=['approved', 'active']
+        ).filter(
+            Q(end_date__gte=week_start) | Q(end_date__isnull=True)
         ).order_by('start_date')
         
         context.update({
@@ -7231,11 +7541,13 @@ def schedule_dashboard(request):
         
         # 團隊模式額外資料
         if clinic.clinic_mode == 'multi' and vet_doctor.is_clinic_admin:
+            # 修復：正確處理 end_date 為 None 的情況（無限期排班）
             clinic_schedules = EnhancedVetSchedule.objects.filter(
                 clinic=clinic,
                 start_date__lte=week_end,
-                end_date__gte=week_start,
-                status='active'
+                status__in=['approved', 'active']
+            ).filter(
+                Q(end_date__gte=week_start) | Q(end_date__isnull=True)
             ).select_related('doctor').order_by('start_date')
             
             pending_requests = ScheduleChangeRequest.objects.filter(
@@ -8110,7 +8422,7 @@ def api_dashboard_schedules(request):
             clinic=clinic,
             start_date__lte=week_end,
             end_date__gte=week_start,
-            status='active'
+            status__in=['approved', 'active']
         ).select_related('doctor__user')
         
         # 如果不是管理員，只顯示自己的排班

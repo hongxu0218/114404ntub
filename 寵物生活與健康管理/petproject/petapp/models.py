@@ -787,6 +787,7 @@ class VetAppointment(models.Model):
     reason = models.TextField(verbose_name="預約原因", blank=True)
     notes = models.TextField(verbose_name="備註", blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
+    cancel_reason = models.TextField(verbose_name="取消原因", blank=True)
     
     # 聯絡資訊
     contact_phone = models.CharField(max_length=20, blank=True, verbose_name="聯絡電話")
@@ -2442,6 +2443,7 @@ class AnimalDrug(models.Model):
 class UserProfile(models.Model):
     """用戶檔案擴展"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='social_profile')
+    display_name = models.CharField(max_length=50, blank=True, verbose_name='顯示名稱')
     bio = models.TextField(max_length=500, blank=True, verbose_name='個人簡介')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='頭像')
     banner = models.ImageField(upload_to='banners/', blank=True, null=True, verbose_name='橫幅圖片')
@@ -2521,6 +2523,44 @@ class Post(models.Model):
         """獲取顯示的內容（轉發時顯示原內容）"""
         return self.original_post.content if self.is_repost and self.original_post else self.content
 
+    def get_repost_chain(self):
+        """獲取轉發鏈，用於顯示轉發層級"""
+        if not self.is_repost or not self.original_post:
+            return []
+
+        chain = [self.original_post]
+        current = self.original_post
+        while current.is_repost and current.original_post:
+            chain.append(current.original_post)
+            current = current.original_post
+        return chain
+
+    def get_direct_original(self):
+        """獲取直接轉發的貼文（不是最原始的，而是直接被轉發的那個）"""
+        return self.original_post if self.is_repost else self
+
+    def get_root_original(self):
+        """獲取最原始的貼文"""
+        if not self.is_repost or not self.original_post:
+            return self
+
+        current = self.original_post
+        while current.is_repost and current.original_post:
+            current = current.original_post
+        return current
+
+    def delete(self, *args, **kwargs):
+        """重寫刪除方法，確保轉發貼文被刪除時更新原貼文的分享數"""
+        # 如果是轉發貼文，減少原貼文的分享數
+        if self.is_repost and self.original_post:
+            original_post = self.original_post
+            if original_post.shares_count > 0:
+                original_post.shares_count -= 1
+                original_post.save()
+
+        # 調用父類的刪除方法
+        super().delete(*args, **kwargs)
+
 
 class PostMedia(models.Model):
     """貼文媒體文件"""
@@ -2567,10 +2607,6 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='留言者')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_comments', verbose_name='貼文')
     content = models.TextField(max_length=1000, verbose_name='留言內容')
-
-    # 回覆功能
-    parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
-                                     related_name='replies', verbose_name='父留言')
 
     likes_count = models.PositiveIntegerField(default=0, verbose_name='點讚數')
 
@@ -2694,11 +2730,24 @@ class Notification(models.Model):
         elif self.notification_type == 'comment_like' and self.comment:
             return f"/social/post/{self.comment.post.id}/"
         elif self.notification_type == 'follow':
-            return f"/social/profile/{self.sender.id}/" if self.sender else "/social/"
+            return f"/social/profile/{self.sender.username}/" if self.sender else "/social/"
         elif self.notification_type.startswith('appointment'):
-            return "/clinic/my_appointments/"
+            # 根據接收者身份決定跳轉頁面
+            try:
+                vet_profile = self.recipient.vet_profile
+                if vet_profile:
+                    # 如果是診所管理員，跳轉到診所預約管理頁面
+                    if vet_profile.is_clinic_admin:
+                        return "/clinic/appointments/"
+                    # 如果是獸醫師，跳轉到獸醫預約頁面
+                    else:
+                        return "/vet/appointments/"
+            except:
+                pass
+            # 飼主收到的預約通知跳轉到飼主預約頁面
+            return "/appointments/my/"
         elif self.notification_type.startswith('adoption_transfer'):
-            return "/adoptions/my_adoption/"
+            return "/adoption/transfers/my/"
         elif self.notification_type.startswith('handoff'):
             return "/chat/"
         else:

@@ -17,12 +17,15 @@ urlpatterns = [
     path('post/<uuid:post_id>/', social_views.post_detail, name='post_detail'),
     path('post/<uuid:post_id>/like/', social_views.toggle_like, name='toggle_like'),
     path('post/<uuid:post_id>/repost/', social_views.repost, name='repost'),
+    path('post/<uuid:post_id>/share/', social_views.share_post, name='share_post'),
     path('post/<uuid:post_id>/delete/', social_views.delete_post, name='delete_post'),
 
     # 留言相關
     path('post/<uuid:post_id>/comments/', social_views.get_comments, name='get_comments'),
     path('post/<uuid:post_id>/comment/', social_views.add_comment, name='add_comment'),
     path('comment/<uuid:comment_id>/like/', social_views.toggle_comment_like, name='toggle_comment_like'),
+    path('comment/<uuid:comment_id>/delete/', social_views.delete_comment, name='delete_comment'),
+    path('comment/<uuid:comment_id>/location/', social_views.get_comment_location, name='get_comment_location'),
 
     # 追蹤相關
     path('follow/<str:username>/', social_views.toggle_follow, name='toggle_follow'),

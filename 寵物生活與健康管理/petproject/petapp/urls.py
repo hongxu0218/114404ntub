@@ -84,7 +84,7 @@ urlpatterns = [
     path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),
     path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),
     path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),
-    path('clinic/appointments/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),
+    # path('clinic/appointments/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),  # Removed: appointments auto-complete when medical record is created
 
     # ============ 獸醫師工作台系統 ============
     path('vet/home/', views.vet_home, name='vet_home'),

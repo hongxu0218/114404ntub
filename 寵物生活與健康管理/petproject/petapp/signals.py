@@ -87,15 +87,8 @@ def create_comment_like_notification(sender, instance, created, **kwargs):
 def create_appointment_notification(sender, instance, created, **kwargs):
     """當預約狀態改變時發送通知"""
     if created:
-        # 新預約建立
+        # 新預約建立 - 只通知獸醫端，不通知飼主
         try:
-            Notification.objects.create(
-                recipient=instance.owner,
-                notification_type='appointment_created',
-                title='預約建立成功',
-                message=f'您的預約已建立：{instance.pet.name} - {instance.slot.date.strftime("%Y/%m/%d")} {instance.slot.start_time}'
-            )
-
             # 通知獸醫師
             if instance.slot and instance.slot.doctor:
                 Notification.objects.create(
@@ -105,6 +98,19 @@ def create_appointment_notification(sender, instance, created, **kwargs):
                     title='新預約',
                     message=f'{instance.owner.username} 預約了 {instance.pet.name} - {instance.slot.date.strftime("%Y/%m/%d")} {instance.slot.start_time}'
                 )
+
+            # 通知診所管理員（如果存在且不是同一人）
+            if instance.slot and instance.slot.doctor and instance.slot.doctor.clinic:
+                clinic = instance.slot.doctor.clinic
+                # 找到診所管理員
+                if clinic.clinic_admin and clinic.clinic_admin != instance.slot.doctor.user:
+                    Notification.objects.create(
+                        recipient=clinic.clinic_admin,
+                        sender=instance.owner,
+                        notification_type='appointment_created',
+                        title='新預約',
+                        message=f'{instance.owner.username} 預約了 {instance.pet.name} - {instance.slot.date.strftime("%Y/%m/%d")} {instance.slot.start_time}'
+                    )
         except Exception as e:
             print(f"預約通知創建錯誤: {e}")
     else:
