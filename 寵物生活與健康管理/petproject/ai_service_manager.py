@@ -29,6 +29,7 @@ def check_dependencies():
     print_status("檢查 Python 依賴套件...", "WORKING")
 
     required_packages = {
+        'ollama': 'Ollama Python 客戶端',
         'sentence-transformers': '嵌入模型',
         'chromadb': '向量資料庫',
         'pandas': '資料處理',
