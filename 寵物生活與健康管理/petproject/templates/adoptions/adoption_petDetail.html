@@ -548,6 +548,18 @@
     .info-grid {
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
+
+    /* 圖片導航按鈕優化 */
+    .nav-button {
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+    }
+
+    .thumbnail {
+      width: 70px;
+      height: 70px;
+    }
   }
 
   @media (max-width: 576px) {
@@ -559,34 +571,215 @@
       padding: 1.5rem 1rem;
     }
 
+    .page-header h1 {
+      font-size: 1.8rem;
+      line-height: 1.3;
+    }
+
+    .page-header .subtitle {
+      font-size: 1rem;
+    }
+
     .image-section,
     .info-section,
     .detail-card,
     .action-section {
       padding: 1rem;
+      border-radius: 12px;
     }
 
     .main-image-container {
-      height: 300px;
+      height: 250px;
     }
 
+    /* 導航按鈕更大更好點擊 */
+    .nav-button {
+      width: 52px;
+      height: 52px;
+      font-size: 24px;
+    }
+
+    .nav-button.left { left: 8px; }
+    .nav-button.right { right: 8px; }
+
+    /* 縮圖優化 */
+    .thumbnail {
+      width: 80px;
+      height: 80px;
+      border-width: 3px;
+    }
+
+    .image-thumbnails {
+      padding: 1rem 0.5rem;
+      gap: 0.75rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 資訊區域優化 */
+    .section-title {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .info-item {
+      padding: 1rem;
+      border-radius: 8px;
+      min-height: 60px;
+    }
+
+    .info-label {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+      font-size: 1.1rem;
+    }
+
+    /* 按鈕優化 */
     .action-buttons {
       flex-direction: column;
       align-items: stretch;
+      gap: 1rem;
     }
 
+    .action-btn {
+      min-height: 52px;
+      font-size: 1.1rem;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+    }
+
+    /* 聯絡浮動按鈕優化 */
     .floating-contact {
       bottom: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      padding: 0.75rem;
-      gap: 0.75rem;
+      padding: 1rem;
+      gap: 1rem;
+      border-radius: 25px;
     }
 
     .contact-btn {
-      width: 50px;
-      height: 50px;
+      width: 56px;
+      height: 56px;
+      font-size: 1.4rem;
+      border-radius: 28px;
+    }
+
+    /* 特徵標籤優化 */
+    .feature-tag {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 12px;
+      margin: 0.25rem;
+    }
+
+    /* 證書連結優化 */
+    .certificate-link {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  /* 極小螢幕優化 */
+  @media (max-width: 480px) {
+    .container {
+      padding: 0 0.25rem;
+    }
+
+    .page-header {
+      padding: 1rem 0.75rem;
+    }
+
+    .main-image-container {
+      height: 200px;
+    }
+
+    .thumbnail {
+      width: 60px;
+      height: 60px;
+    }
+
+    .nav-button {
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+    }
+
+    .contact-btn {
+      width: 48px;
+      height: 48px;
       font-size: 1.2rem;
+    }
+  }
+
+  /* 觸控設備優化 */
+  @media (hover: none) and (pointer: coarse) {
+    /* 移除懸停效果，改用點擊效果 */
+    .thumbnail:hover,
+    .nav-button:hover,
+    .action-btn:hover,
+    .contact-btn:hover,
+    .certificate-link:hover {
+      transform: none;
+    }
+
+    .thumbnail:active,
+    .nav-button:active,
+    .action-btn:active,
+    .contact-btn:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+
+    /* 確保最小點擊區域 */
+    .nav-button {
+      min-width: 48px;
+      min-height: 48px;
+    }
+
+    .thumbnail {
+      min-width: 60px;
+      min-height: 60px;
+    }
+
+    .contact-btn {
+      min-width: 48px;
+      min-height: 48px;
+    }
+
+    /* 防止長按選擇文字 */
+    .nav-button,
+    .action-btn,
+    .contact-btn,
+    .certificate-link {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* 改善觸控滾動 */
+    .image-thumbnails {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .image-thumbnails::-webkit-scrollbar {
+      display: none;
     }
   }
 
@@ -896,43 +1089,47 @@
             管理選項
           </h3>
           <div class="action-buttons">
-            <!-- 送養狀態按鈕 -->
-            <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline;">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="adopted">
-              {% if adoption.is_adopted %}
-                <button type="submit" class="btn btn-secondary"
-                        onclick="return confirm('確定要將此寵物改為「待領養」嗎？');">
-                  <i class="bi bi-arrow-counterclockwise"></i>
-                  恢復為待領養
-                </button>
-              {% else %}
-                <button type="submit" class="btn btn-success"
-                        onclick="return confirm('確定將此寵物標記為已送養？');">
-                  <i class="bi bi-check-circle"></i>
-                  標記為已送養
-                </button>
-              {% endif %}
-            </form>
+            <!-- 送養狀態按鈕 (只在刊登中顯示) -->
+            {% if adoption.is_publish %}
+              <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="adopted">
+                {% if adoption.is_adopted %}
+                  <button type="button" class="btn btn-secondary"
+                          onclick="handleStatusChange(this.form, '確定要將此寵物改為「待領養」嗎？');">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    恢復為待領養
+                  </button>
+                {% else %}
+                  <button type="button" class="btn btn-success"
+                          onclick="handleStatusChange(this.form, '確定將此寵物標記為已送養？');">
+                    <i class="bi bi-check-circle"></i>
+                    標記為已送養
+                  </button>
+                {% endif %}
+              </form>
+            {% endif %}
 
-            <!-- 刊登狀態按鈕 -->
-            <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline; margin-left: 10px;">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="publish">
-              {% if adoption.is_publish %}
-                <button type="submit" class="btn btn-secondary"
-                        onclick="return confirm('確定將此寵物設為暫不刊登嗎？');">
-                  <i class="bi bi-eye-slash"></i>
-                  暫不刊登
-                </button>
-              {% else %}
-                <button type="submit" class="btn btn-success"
-                        onclick="return confirm('確定將此寵物重新上架刊登嗎？');">
-                  <i class="bi bi-eye"></i>
-                  重新上架
-                </button>
-              {% endif %}
-            </form>
+            <!-- 刊登狀態按鈕 (已送養時隱藏) -->
+            {% if not adoption.is_adopted %}
+              <form method="post" action="{% url 'toggle_status' adoption.pk %}" style="display:inline; margin-left: 10px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="publish">
+                {% if adoption.is_publish %}
+                  <button type="button" class="btn btn-secondary"
+                          onclick="handleStatusChange(this.form, '確定將此寵物設為暫不刊登嗎？');">
+                    <i class="bi bi-eye-slash"></i>
+                    暫不刊登
+                  </button>
+                {% else %}
+                  <button type="button" class="btn btn-success"
+                          onclick="handleStatusChange(this.form, '確定將此寵物重新上架刊登嗎？');">
+                    <i class="bi bi-eye"></i>
+                    重新上架
+                  </button>
+                {% endif %}
+              </form>
+            {% endif %}
 
             <a href="{% url 'edit_adoption' adoption.pk %}" class="btn btn-warning">
               <i class="bi bi-pencil-square"></i>
@@ -947,10 +1144,9 @@
               </button>
             {% endif %}
 
-            <form method="post" action="{% url 'delete_adoption' adoption.pk %}" style="display:inline;"
-                  onsubmit="return confirm('你確定要刪除這筆資料嗎？此操作無法復原。');">
+            <form method="post" action="{% url 'delete_adoption' adoption.pk %}" style="display:inline;" id="deleteForm">
               {% csrf_token %}
-              <button type="submit" class="btn btn-danger">
+              <button type="button" class="btn btn-danger" onclick="handleDeleteClick()">
                 <i class="bi bi-trash"></i>
                 刪除資料
               </button>
@@ -1010,8 +1206,8 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-          <button type="submit" class="btn btn-primary"
-                  onclick="return confirm('確定要發送轉交請求嗎？一旦發送就無法取消。');">
+          <button type="button" class="btn btn-primary"
+                  onclick="handleTransferSubmit(this.form);">
             <i class="bi bi-send me-1"></i>發送轉交請求
           </button>
         </div>
@@ -1026,6 +1222,36 @@
 
 {% block extra_js %}
 <script>
+  // 處理刪除按鈕點擊
+  function handleDeleteClick() {
+    // 顯示確認對話框
+    if (confirm('你確定要刪除這筆資料嗎？此操作無法復原。')) {
+      // 用戶確認刪除，提交表單
+      document.getElementById('deleteForm').submit();
+    }
+    // 如果用戶取消，什麼都不做，函數自然結束
+  }
+
+  // 處理狀態變更按鈕點擊
+  function handleStatusChange(form, message) {
+    // 顯示確認對話框
+    if (confirm(message)) {
+      // 用戶確認，提交表單
+      form.submit();
+    }
+    // 如果用戶取消，什麼都不做，函數自然結束
+  }
+
+  // 處理轉交請求提交
+  function handleTransferSubmit(form) {
+    // 顯示確認對話框
+    if (confirm('確定要發送轉交請求嗎？一旦發送就無法取消。')) {
+      // 用戶確認，提交表單
+      form.submit();
+    }
+    // 如果用戶取消，什麼都不做，函數自然結束
+  }
+
   // 圖片輪播功能
   const images = [
     {% for url in image_urls %}"{{ url }}"{% if not forloop.last %},{% endif %}{% endfor %}

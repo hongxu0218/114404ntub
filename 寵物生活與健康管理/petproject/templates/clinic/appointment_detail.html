@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}預約詳情 - {{ appointment.pet.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
+<style>
+:root {
+    /* 更溫和的主色調 - 不那麼搶眼的藍色 */
+    --primary-color: #3b82f6;
+    --primary-light: #60a5fa;
+    --primary-dark: #2563eb;
+    --primary-bg: #eff6ff;
+
+    /* 溫和的輔助色彩 */
+    --success-color: #10b981;
+    --success-bg: #ecfdf5;
+    --warning-color: #f59e0b;
+    --warning-bg: #fffbeb;
+    --danger-color: #ef4444;
+    --danger-bg: #fef2f2;
+
+    /* 灰色系統 */
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+
+    /* 陰影與間距 */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --radius: 0.5rem;
+    --radius-lg: 0.75rem;
+}
+
+body {
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-bg) 100%);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.appointment-detail-container {
+    width: 100%;
+    margin: 0;
+    padding: 2rem;
+    max-width: none;
+}
+
+/* 優化的頁面標題 - 使用更溫和的漸變 */
+.page-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.page-title i {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+.back-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-decoration: none;
+    transform: translateX(-2px);
+}
+
+/* 預約資訊卡片 */
+.appointment-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--gray-200);
+}
+
+.appointment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.pet-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pet-avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.pet-details h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-800);
+    font-size: 1.5rem;
+}
+
+.pet-meta {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-pending {
+    background: var(--warning-bg);
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+}
+
+.status-confirmed {
+    background: var(--success-bg);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.status-completed {
+    background: var(--primary-bg);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.status-cancelled {
+    background: var(--danger-bg);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+/* 詳細資訊網格 */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.detail-item {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border-left: 4px solid var(--primary-color);
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--gray-700);
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.detail-value {
+    color: var(--gray-800);
+    font-size: 1rem;
+}
+
+/* 症狀與原因 */
+.reason-section {
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.reason-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.reason-content {
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+    color: var(--gray-800);
+    text-decoration: none;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .appointment-detail-container {
+        padding: 1rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .appointment-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="appointment-detail-container">
+    <!-- 頁面標題 -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-check"></i>
+                預約詳情
+            </h1>
+            <a href="{% url 'clinic_appointments' %}" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                返回預約管理
+            </a>
+        </div>
+    </div>
+
+    <!-- 預約資訊卡片 -->
+    <div class="appointment-card">
+        <div class="appointment-header">
+            <div class="pet-info">
+                <div class="pet-avatar">
+                    {% if appointment.pet.picture %}
+                        <img src="{{ appointment.pet.picture.url }}" alt="{{ appointment.pet.name }}"
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-lg);">
+                    {% else %}
+                        {{ appointment.pet.name|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="pet-details">
+                    <h2>{{ appointment.pet.name }}</h2>
+                    <div class="pet-meta">
+                        {{ appointment.pet.species }} • {{ appointment.pet.breed }}<br>
+                        飼主：{{ appointment.pet.owner.get_full_name|default:appointment.pet.owner.username }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-badge status-{{ appointment.status }}">
+                {% if appointment.status == 'confirmed' %}
+                    <i class="fas fa-check-circle"></i>
+                    已確認
+                {% elif appointment.status == 'pending' %}
+                    <i class="fas fa-clock"></i>
+                    待確認
+                {% elif appointment.status == 'cancelled' %}
+                    <i class="fas fa-times-circle"></i>
+                    已取消
+                {% elif appointment.status == 'completed' %}
+                    <i class="fas fa-check-double"></i>
+                    已完成
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 預約詳細資訊 -->
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">預約編號</span>
+                <span class="detail-value">#{{ appointment.id }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">預約日期</span>
+                <span class="detail-value">{{ appointment.slot.date|date:"Y年m月d日 (D)" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">預約時間</span>
+                <span class="detail-value">{{ appointment.slot.start_time|time:"H:i" }} - {{ appointment.slot.end_time|time:"H:i" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">指定醫師</span>
+                <span class="detail-value">{{ appointment.slot.doctor.user.get_full_name|default:"任何醫師" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">診所</span>
+                <span class="detail-value">{{ appointment.slot.clinic.clinic_name }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">聯絡電話</span>
+                <span class="detail-value">{{ appointment.contact_phone|default:"未提供" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">建立時間</span>
+                <span class="detail-value">{{ appointment.created_at|date:"Y年m月d日 H:i" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">更新時間</span>
+                <span class="detail-value">{{ appointment.updated_at|date:"Y年m月d日 H:i" }}</span>
+            </div>
+        </div>
+
+        <!-- 症狀描述 -->
+        {% if appointment.reason %}
+        <div class="reason-section">
+            <div class="reason-header">
+                <i class="fas fa-stethoscope"></i>
+                <span>症狀描述</span>
+            </div>
+            <div class="reason-content">
+                {{ appointment.reason|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 備註 -->
+        {% if appointment.notes %}
+        <div class="reason-section">
+            <div class="reason-header">
+                <i class="fas fa-sticky-note"></i>
+                <span>備註</span>
+            </div>
+            <div class="reason-content">
+                {{ appointment.notes|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 取消原因 -->
+        {% if appointment.status == 'cancelled' and appointment.cancel_reason %}
+        <div class="reason-section" style="background: var(--danger-bg); border-color: var(--danger-color);">
+            <div class="reason-header" style="color: var(--danger-color);">
+                <i class="fas fa-info-circle"></i>
+                <span>取消原因</span>
+            </div>
+            <div class="reason-content">
+                {{ appointment.cancel_reason|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 操作按鈕 -->
+        <div class="action-buttons">
+            <a href="{% url 'pet_detail' appointment.pet.id %}" class="btn btn-primary">
+                <i class="fas fa-paw"></i>
+                查看寵物資料
+            </a>
+
+            {% if appointment.status == 'pending' %}
+                <a href="{% url 'confirm_appointment' appointment.id %}" class="btn btn-success">
+                    <i class="fas fa-check"></i>
+                    確認預約
+                </a>
+            {% endif %}
+
+            {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}
+                <form method="post" action="{% url 'clinic_cancel_appointment' appointment.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('確定要取消這個預約嗎？')">
+                        <i class="fas fa-times"></i>
+                        取消預約
+                    </button>
+                </form>
+            {% endif %}
+
+
+            <a href="{% url 'clinic_appointments' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i>
+                返回預約列表
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -45,6 +45,8 @@
     min-height: 100vh;
     background: linear-gradient(135deg, var(--background) 0%, #e8f5e8 100%);
     padding: 2rem 0;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .health-records-container {
@@ -172,6 +174,284 @@
     background: var(--health-primary, #4caf50);
     color: white;
     padding: 8px 12px;
+}
+
+/* ===== 增強型寵物篩選器 ===== */
+.filter-toolbar {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+}
+
+.filter-toolbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.filter-section-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+}
+
+.filter-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--health-primary), var(--health-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.filter-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.filter-subtitle {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.filter-section-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pet-filter-enhanced {
+    position: relative;
+    min-width: 240px;
+}
+
+.pet-filter-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.pet-filter-button:hover {
+    border-color: var(--health-primary);
+    background: rgba(76, 175, 80, 0.05);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.selected-pet {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.selected-pet-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--health-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.selected-pet-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.selected-pet-avatar i {
+    color: white;
+    font-size: 0.9rem;
+}
+
+.selected-pet-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.selected-pet-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selected-pet-breed {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.filter-dropdown-arrow {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.pet-filter-enhanced.open .filter-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.pet-filter-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    max-height: 320px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.pet-filter-enhanced.open .pet-filter-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.pet-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+.pet-filter-option:last-child {
+    border-bottom: none;
+}
+
+.pet-filter-option:hover {
+    background: rgba(76, 175, 80, 0.08);
+}
+
+.pet-filter-option.active {
+    background: rgba(76, 175, 80, 0.15);
+    border-left: 4px solid var(--health-primary);
+}
+
+.pet-option-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--health-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pet-option-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pet-option-avatar i {
+    color: white;
+    font-size: 1.1rem;
+}
+
+.pet-option-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pet-option-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+}
+
+.pet-option-details {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.pet-option-badge {
+    background: var(--health-primary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.filter-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: var(--radius);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.filter-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.filter-stat-number {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--health-primary);
+    margin: 0;
+}
+
+.filter-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    white-space: nowrap;
 }
 
 .health-nav-btn {
@@ -480,33 +760,75 @@
     .health-records-container {
         padding: 0 0.5rem;
     }
-    
+
     .health-header-content {
         flex-direction: column;
         align-items: stretch;
         gap: 1.5rem;
     }
-    
+
     .health-tabs {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem;
     }
-    
+
     .health-tab {
         padding: 1rem 0.75rem;
     }
-    
+
     .health-title h1 {
         font-size: 1.8rem;
     }
-    
+
     .health-content {
         padding: 1.5rem;
     }
-    
+
     .health-content-header {
         flex-direction: column;
         align-items: stretch;
+        gap: 1rem;
+    }
+
+    /* 增強型篩選器響應式 */
+    .filter-toolbar {
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-toolbar-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+
+    .filter-section-left {
+        gap: 1rem;
+    }
+
+    .filter-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+
+    .filter-info h3 {
+        font-size: 1.1rem;
+    }
+
+    .filter-section-right {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .pet-filter-enhanced {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .filter-stats {
+        justify-content: space-around;
         gap: 1rem;
     }
 }
@@ -515,14 +837,84 @@
     .health-tabs {
         grid-template-columns: 1fr;
     }
-    
+
     .health-nav-buttons {
         justify-content: center;
     }
-    
+
     .health-record-meta {
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    /* 增強型篩選器小屏幕 */
+    .filter-toolbar {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-section-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .filter-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .filter-info h3 {
+        font-size: 1rem;
+    }
+
+    .filter-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .pet-filter-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .selected-pet-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .selected-pet-name {
+        font-size: 0.9rem;
+    }
+
+    .selected-pet-breed {
+        font-size: 0.75rem;
+    }
+
+    .pet-option-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .pet-option-name {
+        font-size: 0.9rem;
+    }
+
+    .pet-option-details {
+        font-size: 0.8rem;
+    }
+
+    .filter-stats {
+        padding: 0.5rem 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .filter-stat-number {
+        font-size: 1rem;
+    }
+
+    .filter-stat-label {
+        font-size: 0.75rem;
     }
 }
 
@@ -1705,4 +2097,352 @@
 
 .health-action-btn.btn-download:hover {
     background: var(--health-secondary);
+}
+
+/* ===== 手機響應式設計增強 ===== */
+
+/* 手機版提示詞和狀態優化 */
+@media (max-width: 768px) {
+    .data-hint {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-top: 0.5rem;
+    }
+
+    .status {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .value {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    /* 篩選按鈕手機優化 */
+    .daily-filter-btn {
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        border-radius: 12px;
+    }
+
+    .daily-filter-btn i {
+        font-size: 1.1rem;
+    }
+
+    /* 記錄卡片手機優化 */
+    .daily-record-card {
+        border-radius: 16px;
+        margin-bottom: 1rem;
+    }
+
+    .daily-record-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .daily-record-content {
+        padding: 1rem 1.25rem;
+    }
+
+    .daily-record-actions {
+        padding: 1rem 1.25rem;
+        gap: 0.75rem;
+    }
+
+    .daily-action-btn {
+        min-height: 48px;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
+        border-radius: 24px;
+    }
+
+    /* 圖表區域手機優化 */
+    .chart-section {
+        margin: 1.5rem 0;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .chart-controls {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .chart-controls select {
+        min-height: 48px;
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+
+    .chart-container {
+        height: 300px;
+        margin-top: 1rem;
+    }
+
+    /* 健康記錄卡片手機優化 */
+    .health-record-card {
+        margin-bottom: 1.5rem;
+        border-radius: 16px;
+    }
+
+    .health-record-header {
+        padding: 1.25rem;
+    }
+
+    .health-record-content {
+        padding: 1.25rem;
+    }
+
+    .health-record-actions {
+        padding: 1rem 1.25rem;
+        gap: 0.75rem;
+    }
+
+    .health-action-btn {
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+    }
+
+    /* 醫療區段手機優化 */
+    .medical-section {
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-card {
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .vital-card {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .vital-value {
+        font-size: 1.4rem;
+    }
+
+    .vital-label {
+        font-size: 0.9rem;
+    }
+
+    /* 處方卡片優化 */
+    .prescription-card {
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .drug-name {
+        font-size: 1.1rem;
+    }
+
+    .drug-detail {
+        padding: 0.75rem 0;
+    }
+
+    /* 下載按鈕優化 */
+    .btn-download,
+    .btn-download-full {
+        min-height: 48px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 24px;
+    }
+}
+
+@media (max-width: 576px) {
+    .health-records-wrapper {
+        padding: 1rem 0;
+    }
+
+    .health-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: var(--radius);
+    }
+
+    .health-title h1 {
+        font-size: 1.6rem;
+    }
+
+    .health-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    /* 極小螢幕優化 */
+    .daily-action-btn {
+        min-height: 52px;
+        font-size: 1rem;
+        padding: 1rem 2rem;
+    }
+
+    .health-action-btn {
+        min-height: 52px;
+        font-size: 1rem;
+        padding: 1rem 1.5rem;
+    }
+
+    .value {
+        font-size: 1.4rem;
+    }
+
+    .vital-value {
+        font-size: 1.6rem;
+    }
+
+    .status {
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+    }
+
+    .data-hint {
+        font-size: 1rem;
+        margin-top: 0.75rem;
+    }
+
+    .daily-filter-btn {
+        min-height: 52px;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+
+    .chart-controls select {
+        min-height: 52px;
+        padding: 1rem;
+        font-size: 1.1rem;
+    }
+
+    /* 記錄卡片極小螢幕優化 */
+    .health-record-card {
+        border-radius: 12px;
+    }
+
+    .prescription-card,
+    .info-card,
+    .vital-card {
+        border-radius: 8px;
+    }
+
+    /* 下載按鈕極小螢幕優化 */
+    .btn-download,
+    .btn-download-full {
+        min-height: 52px;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+}
+
+/* 觸控設備特殊優化 */
+@media (hover: none) and (pointer: coarse) {
+    /* 移除懸停效果 */
+    .daily-filter-btn:hover,
+    .daily-action-btn:hover,
+    .health-action-btn:hover,
+    .daily-record-card:hover,
+    .health-record-card:hover,
+    .btn-download:hover,
+    .btn-download-full:hover {
+        transform: none;
+        background: var(--health-primary);
+    }
+
+    /* 觸控反饋 */
+    .daily-filter-btn:active,
+    .daily-action-btn:active,
+    .health-action-btn:active {
+        transform: scale(0.96);
+        transition: transform 0.1s ease;
+    }
+
+    .daily-record-card:active,
+    .health-record-card:active {
+        transform: scale(0.98);
+        transition: transform 0.15s ease;
+    }
+
+    .btn-download:active,
+    .btn-download-full:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+
+    /* 確保觸控區域足夠大 */
+    .daily-filter-btn,
+    .daily-action-btn,
+    .health-action-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* 防止長按選擇文字 */
+    .daily-filter-btn,
+    .daily-action-btn,
+    .health-action-btn,
+    .status,
+    .value,
+    .vital-value,
+    .drug-name {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+}
+
+/* 手機橫屏模式優化 */
+@media (max-width: 768px) and (orientation: landscape) {
+    .daily-filters {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 1rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .daily-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .daily-filters .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+        min-width: max-content;
+    }
+
+    .health-tabs {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.5rem;
+    }
+
+    .chart-container {
+        height: 200px;
+    }
+
+    .health-records-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
 }

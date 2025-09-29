@@ -4,520 +4,885 @@
 {% block title %}預約管理 - {{ clinic.clinic_name }}{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/clinic/appointment-management.css' %}">
+<link rel="stylesheet" href="{% static 'css/vet_pages/vet-appointments.css' %}">
+<style>
+/* 專業醫療風格樣式 */
+.appointments-management {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 20px;
+    width: 100%;
+    max-width: none;
+}
+
+.clinic-header {
+    background: white;
+    color: #2c5aa0;
+    padding: 30px 0;
+    margin-bottom: 30px;
+    border: 3px solid #2c5aa0;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.15);
+}
+
+.clinic-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.clinic-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #2c5aa0, #1a4480);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    border: 3px solid #2c5aa0;
+    box-shadow: 0 2px 8px rgba(44, 90, 160, 0.2);
+}
+
+.clinic-details {
+    flex: 1;
+}
+
+.clinic-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.clinic-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.95rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-clinic {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-clinic-primary {
+    background: #28a745;
+    color: white;
+}
+
+.btn-clinic-primary:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.btn-clinic-outline {
+    background: transparent;
+    color: #2c5aa0;
+    border: 2px solid #2c5aa0;
+}
+
+.btn-clinic-outline:hover {
+    background: #2c5aa0;
+    color: white;
+    text-decoration: none;
+}
+
+/* 統計摘要 */
+.appointments-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.summary-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #2c5aa0;
+    transition: transform 0.3s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+}
+
+.summary-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c5aa0;
+    margin-bottom: 5px;
+}
+
+.summary-label {
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+/* 控制面板 */
+.appointments-controls {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+}
+
+.control-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.filter-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.filter-select {
+    padding: 8px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+    min-width: 150px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+.search-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-input {
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    width: 250px;
+    font-size: 0.9rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #2c5aa0;
+}
+
+.btn-search {
+    padding: 10px 20px;
+    background: #2c5aa0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-search:hover {
+    background: #1a4480;
+}
+
+/* 篩選標籤 */
+.filter-tags {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.filter-tag {
+    padding: 8px 20px;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    color: #6c757d;
+}
+
+.filter-tag:hover {
+    border-color: #2c5aa0;
+    color: #2c5aa0;
+}
+
+.filter-tag.active {
+    background: #2c5aa0;
+    border-color: #2c5aa0;
+    color: white;
+}
+
+/* 預約表格 */
+.appointments-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.appointments-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.appointments-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.appointment-row:hover {
+    background: #f8f9fa;
+}
+
+.pet-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pet-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #6c757d;
+}
+
+.pet-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pet-details h6 {
+    margin: 0 0 5px 0;
+    font-weight: 600;
+    color: #2c5aa0;
+}
+
+.pet-details p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 80px;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-badge.confirmed {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.status-badge.cancelled {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-badge.completed {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.appointment-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.appointment-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-action {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-action.confirm {
+    background: #28a745;
+    color: white;
+}
+
+.btn-action.confirm:hover {
+    background: #218838;
+}
+
+.btn-action.cancel {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-action.cancel:hover {
+    background: #c82333;
+}
+
+.btn-action.complete {
+    background: #007bff;
+    color: white;
+}
+
+.btn-action.complete:hover {
+    background: #0056b3;
+}
+
+.btn-action.view {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-action.view:hover {
+    background: #545b62;
+}
+
+/* 空狀態 */
+.empty-appointments {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-appointments i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #dee2e6;
+}
+
+.empty-appointments h3 {
+    margin-bottom: 10px;
+    color: #495057;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .clinic-info {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .action-buttons {
+        justify-content: center;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    .control-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-section {
+        justify-content: space-between;
+    }
+
+    .search-input {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .appointments-table-container {
+        overflow-x: auto;
+    }
+
+    .appointments-table {
+        min-width: 800px;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="appointment-management-container">
-  
-  <!-- 現代化頁面標題 -->
-  <div class="page-header-modern">
-    <div class="row align-items-center">
-      <div class="col-lg-8">
-        <h1 class="page-title-modern">
-          <i class="bi bi-calendar-check-fill me-3"></i>
-          預約管理中心
-        </h1>
-        <div class="page-subtitle-modern">
-          <div class="clinic-info-header">
-            <div class="clinic-avatar">
-              <i class="bi bi-hospital-fill"></i>
+<div class="appointments-management">
+    <!-- 診所標題 -->
+    <div class="clinic-header">
+        <div style="width: 100%; padding: 0 20px;">
+            <div class="clinic-info">
+                <div class="clinic-avatar">
+                    {% if clinic.logo %}
+                        <img src="{{ clinic.logo.url }}" alt="{{ clinic.clinic_name }}">
+                    {% else %}
+                        {{ clinic.clinic_name|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="clinic-details">
+                    <h1 class="clinic-name">{{ clinic.clinic_name }}</h1>
+                    <div class="clinic-status">
+                        <span><i class="bi bi-shield-check"></i> 認證診所</span>
+                        <span><i class="bi bi-geo-alt"></i> 預約管理系統</span>
+                        <span><i class="bi bi-clock"></i> 專業醫療服務</span>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <a href="{% url 'create_walkin_appointment' %}" class="btn-clinic btn-clinic-primary">
+                        <i class="bi bi-person-plus"></i> 現場預約
+                    </a>
+                    <a href="{% url 'clinic_dashboard' %}" class="btn-clinic btn-clinic-outline">
+                        <i class="bi bi-arrow-left"></i> 返回主控台
+                    </a>
+                </div>
             </div>
-            <div class="clinic-details">
-              <div class="clinic-name">
-                <span>{{ clinic.clinic_name }}</span>
-              </div>
-              <div class="clinic-status">
-                <i class="bi bi-shield-check me-2"></i>
-                <span class="text-success">已驗證診所</span>
-                <span class="mx-2">•</span>
-                <i class="bi bi-clock me-2"></i>
-                <span>即時預約管理</span>
-              </div>
-            </div>
-          </div>
         </div>
-        
-        <!-- 預約統計概覽 -->
-        <div class="appointment-stats">
-          <div class="stat-item">
-            <div class="stat-number">{{ appointments|length }}</div>
-            <div class="stat-label">總預約</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" id="confirmedCount">0</div>
-            <div class="stat-label">已確認</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" id="pendingCount">0</div>
-            <div class="stat-label">待確認</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" id="todayCount">0</div>
-            <div class="stat-label">今日預約</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-lg-4">
-        <div class="action-buttons-modern">
-          <a href="{% url 'create_walkin_appointment' %}" class="btn-modern btn-primary-modern">
-            <i class="bi bi-person-walking"></i>
-            <span>現場預約</span>
-          </a>
-          <button class="btn-modern btn-secondary-modern" onclick="refreshAppointments()">
-            <i class="bi bi-arrow-clockwise"></i>
-            <span>重新整理</span>
-          </button>
-          <a href="{% url 'clinic_dashboard' %}" class="btn-modern btn-outline-modern">
-            <i class="bi bi-arrow-left"></i>
-            <span>返回主控台</span>
-          </a>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- 智能篩選工具列 -->
-  <div class="filter-toolbar-modern">
-    <div class="row align-items-center">
-      <div class="col-lg-8">
-        <div class="filter-controls">
-          <div class="filter-group">
-            <label class="filter-label">日期範圍</label>
-            <div class="filter-chip-group">
-              <button class="filter-chip {% if date_filter == 'today' %}active{% endif %}" data-filter="date" data-value="today">
-                <i class="bi bi-calendar-day me-1"></i>今天
-              </button>
-              <button class="filter-chip {% if date_filter == 'tomorrow' %}active{% endif %}" data-filter="date" data-value="tomorrow">
-                <i class="bi bi-calendar-plus me-1"></i>明天
-              </button>
-              <button class="filter-chip {% if date_filter == 'week' %}active{% endif %}" data-filter="date" data-value="week">
-                <i class="bi bi-calendar-week me-1"></i>本週
-              </button>
-              <button class="filter-chip {% if date_filter == 'all' %}active{% endif %}" data-filter="date" data-value="all">
-                <i class="bi bi-calendar3 me-1"></i>全部
-              </button>
+    <div style="width: 100%; padding: 0 20px;">
+        <!-- 統計摘要 -->
+        <div class="appointments-summary">
+            <div class="summary-card">
+                <div class="summary-number" id="totalCount">{{ appointments|length }}</div>
+                <div class="summary-label">總預約數</div>
             </div>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label">預約狀態</label>
-            <div class="filter-chip-group">
-              <button class="filter-chip {% if status_filter == 'all' %}active{% endif %}" data-filter="status" data-value="all">
-                <i class="bi bi-list-ul me-1"></i>全部
-              </button>
-              <button class="filter-chip {% if status_filter == 'pending' %}active{% endif %}" data-filter="status" data-value="pending">
-                <i class="bi bi-clock me-1"></i>待確認
-              </button>
-              <button class="filter-chip {% if status_filter == 'confirmed' %}active{% endif %}" data-filter="status" data-value="confirmed">
-                <i class="bi bi-check-circle me-1"></i>已確認
-              </button>
-              <button class="filter-chip {% if status_filter == 'completed' %}active{% endif %}" data-filter="status" data-value="completed">
-                <i class="bi bi-check2-circle me-1"></i>已完成
-              </button>
+            <div class="summary-card">
+                <div class="summary-number" id="confirmedCount">0</div>
+                <div class="summary-label">已確認</div>
             </div>
-          </div>
-          
-          <div class="filter-group">
-            <label class="filter-label">獸醫師</label>
-            <div class="doctor-filter-dropdown">
-              <button class="dropdown-toggle" id="doctorFilterDropdown" data-bs-toggle="dropdown">
-                <i class="bi bi-person-badge me-2"></i>
-                <span id="selectedDoctorText">
-                  {% if doctor_filter == 'all' %}全部醫師{% else %}
-                    {% for doctor in doctors %}
-                      {% if doctor.id|stringformat:"s" == doctor_filter %}
-                        Dr. {{ doctor.user.first_name|default:doctor.user.username }}
-                      {% endif %}
+            <div class="summary-card">
+                <div class="summary-number" id="pendingCount">0</div>
+                <div class="summary-label">待確認</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="todayCount">0</div>
+                <div class="summary-label">今日預約</div>
+            </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="appointments-controls">
+            <div class="control-section">
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label class="filter-label">時間範圍:</label>
+                        <select class="filter-select" id="dateFilter" onchange="filterByDate()">
+                            <option value="all">全部時間</option>
+                            <option value="today">今天</option>
+                            <option value="week">本週</option>
+                            <option value="month">本月</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">獸醫師:</label>
+                        <select class="filter-select" id="doctorFilter" onchange="filterByDoctor()">
+                            <option value="">所有醫師</option>
+                            {% for doctor in clinic.doctors.all %}
+                                {% if doctor.is_active %}
+                                <option value="{{ doctor.id }}">Dr. {{ doctor.user.get_full_name|default:doctor.user.username }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="search-section">
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜尋寵物名稱、飼主姓名...">
+                    <button class="btn-search" onclick="searchAppointments()">
+                        <i class="bi bi-search"></i> 搜尋
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 篩選標籤 -->
+        <div class="filter-tags">
+            <span class="filter-tag active" data-status="all" onclick="filterByStatus('all')">全部</span>
+            <span class="filter-tag" data-status="pending" onclick="filterByStatus('pending')">待確認</span>
+            <span class="filter-tag" data-status="confirmed" onclick="filterByStatus('confirmed')">已確認</span>
+            <span class="filter-tag" data-status="completed" onclick="filterByStatus('completed')">已完成</span>
+            <span class="filter-tag" data-status="cancelled" onclick="filterByStatus('cancelled')">已取消</span>
+        </div>
+
+        <!-- 預約表格 -->
+        <div class="appointments-table-container">
+            {% if appointments %}
+            <table class="appointments-table">
+                <thead>
+                    <tr>
+                        <th width="200">寵物資訊</th>
+                        <th width="150">預約時間</th>
+                        <th width="130">獸醫師</th>
+                        <th width="200">症狀描述</th>
+                        <th width="120">聯絡電話</th>
+                        <th width="100">狀態</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="appointmentsTableBody">
+                    {% for appointment in appointments %}
+                    <tr class="appointment-row"
+                        data-status="{{ appointment.status }}"
+                        data-doctor="{{ appointment.slot.doctor.id }}"
+                        data-date="{{ appointment.slot.date|date:'Y-m-d' }}"
+                        data-search="{{ appointment.pet.name|lower }} {{ appointment.owner.first_name|default:appointment.owner.username|lower }}">
+
+                        <td>
+                            <div class="pet-info">
+                                <div class="pet-avatar">
+                                    {% if appointment.pet.picture %}
+                                        <img src="{{ appointment.pet.picture.url }}" alt="{{ appointment.pet.name }}">
+                                    {% else %}
+                                        {{ appointment.pet.name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="pet-details">
+                                    <h6>{{ appointment.pet.name }}</h6>
+                                    <p>飼主: {{ appointment.owner.first_name|default:appointment.owner.username }}</p>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="appointment-time">
+                                <i class="bi bi-calendar3"></i>
+                                <div>
+                                    <div>{{ appointment.slot.date|date:"m/d (D)" }}</div>
+                                    <small>{{ appointment.slot.start_time|time:"H:i" }} - {{ appointment.slot.end_time|time:"H:i" }}</small>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div>
+                                <strong>Dr. {{ appointment.slot.doctor.user.get_full_name|default:appointment.slot.doctor.user.username }}</strong>
+                                {% if appointment.slot.doctor.specialization %}
+                                <br><small class="text-muted">{{ appointment.slot.doctor.specialization }}</small>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td>
+                            {% if appointment.reason %}
+                                <div title="{{ appointment.reason }}">
+                                    {{ appointment.reason|truncatechars:50 }}
+                                </div>
+                            {% else %}
+                                <span class="text-muted">無症狀描述</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div>
+                                {% if appointment.contact_phone %}
+                                    <i class="bi bi-telephone"></i> {{ appointment.contact_phone }}
+                                {% else %}
+                                    <span class="text-muted">未提供</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="status-badge {{ appointment.status }}">
+                                {% if appointment.status == 'confirmed' %}
+                                    已確認
+                                {% elif appointment.status == 'pending' %}
+                                    待確認
+                                {% elif appointment.status == 'cancelled' %}
+                                    已取消
+                                {% elif appointment.status == 'completed' %}
+                                    已完成
+                                {% endif %}
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="appointment-actions">
+                                {% if appointment.status == 'pending' %}
+                                    <button class="btn-action confirm" onclick="confirmAppointment({{ appointment.id }})">
+                                        <i class="bi bi-check"></i> 確認
+                                    </button>
+                                {% endif %}
+
+                                {% if appointment.status in 'pending,confirmed' %}
+                                    <button class="btn-action cancel" onclick="cancelAppointment({{ appointment.id }})">
+                                        <i class="bi bi-x"></i> 取消
+                                    </button>
+                                {% endif %}
+
+
+                                <button class="btn-action view" onclick="viewDetail({{ appointment.id }})">
+                                    <i class="bi bi-eye"></i> 詳情
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
-                  {% endif %}
-                </span>
-                <i class="bi bi-chevron-down ms-2"></i>
-              </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item doctor-filter-item" data-doctor="all">
-                  <i class="bi bi-people me-2"></i>全部醫師
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-                {% for doctor in doctors %}
-                <li><a class="dropdown-item doctor-filter-item" data-doctor="{{ doctor.id }}">
-                  <div class="doctor-avatar-mini">
-                    {{ doctor.user.first_name|first|default:doctor.user.username|first }}
-                  </div>
-                  <span>Dr. {{ doctor.user.first_name|default:doctor.user.username }}</span>
-                  {% if doctor.specialization %}
-                    <small class="text-muted ms-auto">{{ doctor.specialization }}</small>
-                  {% endif %}
-                </a></li>
-                {% endfor %}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-lg-4">
-        <div class="search-and-actions">
-          <div class="search-box">
-            <input type="text" id="quickSearch" class="form-control" placeholder="搜尋寵物名稱或飼主...">
-            <button class="search-btn">
-              <i class="bi bi-search"></i>
-            </button>
-          </div>
-          <div class="view-toggle-modern">
-            <button class="view-btn active" data-view="cards">
-              <i class="bi bi-grid"></i>
-            </button>
-            <button class="view-btn" data-view="list">
-              <i class="bi bi-list"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 預約列表容器 -->
-  <div class="appointments-container">
-    
-    <!-- 卡片檢視 -->
-    <div id="cardsView" class="appointments-view active">
-      <div class="appointments-grid" id="appointmentsGrid">
-        {% for appointment in appointments %}
-        <div class="appointment-card-modern" 
-             data-appointment-id="{{ appointment.id }}"
-             data-status="{{ appointment.status }}"
-             data-doctor="{{ appointment.slot.doctor.id }}"
-             data-date="{{ appointment.slot.date|date:'Y-m-d' }}"
-             data-search-terms="{{ appointment.pet.name|lower }} {{ appointment.owner.first_name|default:appointment.owner.username|lower }}">
-          
-          <!-- 卡片標題列 -->
-          <div class="card-header-modern">
-            <div class="pet-info">
-              <div class="pet-avatar-modern">
-                {% if appointment.pet.picture %}
-                  <img src="{{ appointment.pet.picture.url }}" alt="{{ appointment.pet.name }}">
-                {% else %}
-                  <span>{{ appointment.pet.name|first }}</span>
-                {% endif %}
-              </div>
-              <div class="pet-details">
-                <h3 class="pet-name">{{ appointment.pet.name }}</h3>
-                <div class="owner-info">
-                  <i class="bi bi-person me-1"></i>
-                  {{ appointment.owner.first_name|default:appointment.owner.username }}
-                </div>
-              </div>
-            </div>
-            
-            <div class="appointment-status">
-              <span class="status-badge-modern status-{{ appointment.status }}">
-                {% if appointment.status == 'confirmed' %}
-                  <i class="bi bi-check-circle"></i>已確認
-                {% elif appointment.status == 'pending' %}
-                  <i class="bi bi-clock"></i>待確認
-                {% elif appointment.status == 'cancelled' %}
-                  <i class="bi bi-x-circle"></i>已取消
-                {% elif appointment.status == 'completed' %}
-                  <i class="bi bi-check2-circle"></i>已完成
-                {% endif %}
-              </span>
-            </div>
-          </div>
-          
-          <!-- 預約時間資訊 -->
-          <div class="appointment-time-info">
-            <div class="time-block">
-              <div class="date-display">
-                <i class="bi bi-calendar3 me-2"></i>
-                <span class="date-text">{{ appointment.slot.date|date:"n月j日" }}</span>
-                <span class="weekday-text">{{ appointment.slot.date|date:"l" }}</span>
-              </div>
-              <div class="time-display">
-                <i class="bi bi-clock me-2"></i>
-                <span class="time-range">
-                  {{ appointment.slot.start_time|time:"H:i" }} - {{ appointment.slot.end_time|time:"H:i" }}
-                </span>
-              </div>
-            </div>
-            
-            <div class="doctor-info">
-              <i class="bi bi-person-badge me-2"></i>
-              <span>Dr. {{ appointment.slot.doctor.user.first_name|default:appointment.slot.doctor.user.username }}</span>
-              {% if appointment.slot.doctor.specialization %}
-                <small class="specialty">{{ appointment.slot.doctor.specialization }}</small>
-              {% endif %}
-            </div>
-          </div>
-          
-          <!-- 預約詳情 -->
-          <div class="appointment-details">
-            {% if appointment.reason %}
-            <div class="detail-item">
-              <i class="bi bi-note-text me-2"></i>
-              <strong>預約原因：</strong>
-              <span>{{ appointment.reason|truncatechars:80 }}</span>
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-appointments">
+                <i class="bi bi-calendar-x"></i>
+                <h3>目前沒有預約記錄</h3>
+                <p>診所尚未收到任何預約，可以開始設定排班來接受預約</p>
             </div>
             {% endif %}
-            
-            {% if appointment.notes %}
-            <div class="detail-item">
-              <i class="bi bi-chat-dots me-2"></i>
-              <strong>備註：</strong>
-              <span>{{ appointment.notes|truncatechars:80 }}</span>
-            </div>
-            {% endif %}
-            
-            <div class="contact-info">
-              <i class="bi bi-telephone me-2"></i>
-              <span>{{ appointment.contact_phone|default:"未提供聯絡電話" }}</span>
-            </div>
-          </div>
-          
-          <!-- 操作按鈕區域 -->
-          <div class="card-actions">
-            {% if appointment.status == 'pending' %}
-            <button class="action-btn btn-success" onclick="confirmAppointment({{ appointment.id }})">
-              <i class="bi bi-check"></i>
-              <span>確認預約</span>
-            </button>
-            {% endif %}
-            
-            {% if appointment.status in 'pending,confirmed' %}
-            <button class="action-btn btn-warning" onclick="showCancelModal({{ appointment.id }})">
-              <i class="bi bi-x"></i>
-              <span>取消預約</span>
-            </button>
-            {% endif %}
-            
-            {% if appointment.status == 'confirmed' %}
-            <button class="action-btn btn-secondary" onclick="markCompleted({{ appointment.id }})">
-              <i class="bi bi-check2"></i>
-              <span>標記完成</span>
-            </button>
-            {% endif %}
-          </div>
-          
-          <!-- 時間戳記 -->
-          <div class="card-footer-modern">
-            <small class="timestamp">
-              <i class="bi bi-clock-history me-1"></i>
-              建立於 {{ appointment.created_at|date:"m/d H:i" }}
-              {% if appointment.updated_at != appointment.created_at %}
-                | 更新於 {{ appointment.updated_at|date:"m/d H:i" }}
-              {% endif %}
-            </small>
-          </div>
         </div>
-        {% endfor %}
-      </div>
     </div>
-    
-    <!-- 列表檢視 -->
-    <div id="listView" class="appointments-view">
-      <div class="appointments-table-container">
-        <table class="appointments-table">
-          <thead>
-            <tr>
-              <th>寵物 & 飼主</th>
-              <th>預約時間</th>
-              <th>醫師</th>
-              <th>狀態</th>
-              <th>預約原因</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="appointmentsTableBody">
-            {% for appointment in appointments %}
-            <tr class="appointment-row" data-appointment-id="{{ appointment.id }}">
-              <td>
-                <div class="pet-owner-cell">
-                  <div class="pet-avatar-small">{{ appointment.pet.name|first }}</div>
-                  <div>
-                    <div class="pet-name">{{ appointment.pet.name }}</div>
-                    <div class="owner-name">{{ appointment.owner.first_name|default:appointment.owner.username }}</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <div class="datetime-cell">
-                  <div class="date">{{ appointment.slot.date|date:"m/d" }}</div>
-                  <div class="time">{{ appointment.slot.start_time|time:"H:i" }}</div>
-                </div>
-              </td>
-              <td>
-                <div class="doctor-cell">
-                  Dr. {{ appointment.slot.doctor.user.first_name|default:appointment.slot.doctor.user.username }}
-                </div>
-              </td>
-              <td>
-                <span class="status-badge-modern status-{{ appointment.status }}">
-                  {% if appointment.status == 'confirmed' %}已確認
-                  {% elif appointment.status == 'pending' %}待確認
-                  {% elif appointment.status == 'cancelled' %}已取消
-                  {% elif appointment.status == 'completed' %}已完成
-                  {% endif %}
-                </span>
-              </td>
-              <td>
-                <span class="reason-text">{{ appointment.reason|default:"未填寫"|truncatechars:30 }}</span>
-              </td>
-              <td>
-                <div class="table-actions">
-                  <button class="table-action-btn" onclick="viewAppointmentDetail({{ appointment.id }})">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                  {% if appointment.status == 'pending' %}
-                  <button class="table-action-btn btn-success" onclick="confirmAppointment({{ appointment.id }})">
-                    <i class="bi bi-check"></i>
-                  </button>
-                  {% endif %}
-                  {% if appointment.status in 'pending,confirmed' %}
-                  <button class="table-action-btn btn-warning" onclick="showCancelModal({{ appointment.id }})">
-                    <i class="bi bi-x"></i>
-                  </button>
-                  {% endif %}
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
-    <!-- 空狀態 -->
-    {% if not appointments %}
-    <div class="empty-state-modern">
-      <div class="empty-icon">
-        <i class="bi bi-calendar-x"></i>
-      </div>
-      <h3 class="empty-title">目前沒有預約記錄</h3>
-      <p class="empty-description">
-        {% if date_filter != 'all' %}
-          在選定的時間範圍內暫無預約記錄
-        {% else %}
-          診所尚未收到任何預約，可以開始設定排班來接受預約
-        {% endif %}
-      </p>
-      <!-- 排班管理已移除，重新設計中 -->
-      <button class="btn-modern btn-secondary-modern" disabled style="opacity: 0.6;">
-        <i class="bi bi-tools me-2"></i>
-        重新設計中
-      </button>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- 預約詳情 Modal -->
-  <div id="appointmentDetailModal" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3>預約詳情</h3>
-        <button class="modal-close" onclick="closeAppointmentDetailModal()">
-          <i class="bi bi-x"></i>
-        </button>
-      </div>
-      <div class="modal-body" id="appointmentDetailContent">
-        <!-- 動態載入預約詳情 -->
-      </div>
-    </div>
-  </div>
-
-  <!-- 取消預約 Modal -->
-  <div id="cancelAppointmentModal" class="modal-overlay">
-    <div class="modal-container modal-sm">
-      <div class="modal-header">
-        <h3>取消預約</h3>
-        <button class="modal-close" onclick="closeCancelModal()">
-          <i class="bi bi-x"></i>
-        </button>
-      </div>
-      <form id="cancelAppointmentForm">
-        {% csrf_token %}
-        <input type="hidden" id="cancelAppointmentId">
-        <div class="modal-body">
-          <div class="cancel-appointment-info">
-            <p>確定要取消以下預約嗎？</p>
-            <div class="appointment-summary" id="cancelAppointmentSummary">
-              <!-- 動態載入預約摘要 -->
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">取消原因 <span class="required">*</span></label>
-            <textarea id="cancelReason" name="cancel_reason" class="form-control" rows="3" 
-                      placeholder="請說明取消原因，此訊息將發送給飼主" required></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-modern btn-outline-modern" onclick="closeCancelModal()">
-            <i class="bi bi-x me-2"></i>取消
-          </button>
-          <button type="submit" class="btn-modern btn-danger-modern">
-            <i class="bi bi-trash me-2"></i>確認取消預約
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-
 </div>
 
 <!-- 隱藏表單用於AJAX -->
 <form id="ajaxForm" style="display: none;">
-  {% csrf_token %}
+    {% csrf_token %}
 </form>
-
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/clinic/appointment-management.js' %}"></script>
-
 <script>
-// 傳遞 Django 數據到 JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-  window.appointmentPageData = {
-    clinic: {
-      id: {{ clinic.id|default:0 }}, 
-      name: "{{ clinic.clinic_name|default:'未知診所'|escapejs }}" 
-    },
-    appointments: [
-      {% for appointment in appointments %}
-      {
-        id: {{ appointment.id }},
-        petName: '{{ appointment.pet.name|escapejs }}',
-        ownerName: '{{ appointment.owner.first_name|default:appointment.owner.username|escapejs }}',
-        doctorId: {{ appointment.slot.doctor.id }},
-        doctorName: '{{ appointment.slot.doctor.user.first_name|default:appointment.slot.doctor.user.username|escapejs }}',
-        date: '{{ appointment.slot.date|date:"Y-m-d" }}',
-        startTime: '{{ appointment.slot.start_time|time:"H:i" }}',
-        endTime: '{{ appointment.slot.end_time|time:"H:i" }}',
-        status: '{{ appointment.status }}',
-        reason: '{{ appointment.reason|default:""|escapejs }}',
-        notes: '{{ appointment.notes|default:""|escapejs }}',
-        contactPhone: '{{ appointment.contact_phone|default:""|escapejs }}',
-        createdAt: '{{ appointment.created_at|date:"Y-m-d H:i" }}'
-      }{% if not forloop.last %},{% endif %}
-      {% endfor %}
-    ],
-    currentFilters: {
-      date: '{{ date_filter|escapejs }}',
-      status: '{{ status_filter|escapejs }}',
-      doctor: '{{ doctor_filter|escapejs }}'
-    },
-    csrfToken: '{{ csrf_token }}',
-    urls: {
-      appointmentDetail: '/clinic/appointments/{id}/',
-      confirmAppointment: '/clinic/appointments/{id}/confirm/',
-      cancelAppointment: '/clinic/appointments/{id}/cancel/',
-      completeAppointment: '/clinic/appointments/{id}/complete/'
+    updateStats();
+});
+
+// 更新統計數據
+function updateStats() {
+    const rows = document.querySelectorAll('.appointment-row:not([style*="display: none"])');
+    let confirmed = 0, pending = 0, today = 0;
+    const todayDate = new Date().toLocaleDateString('sv-SE');
+
+    rows.forEach(row => {
+        const status = row.dataset.status;
+        const date = row.dataset.date;
+
+        if (status === 'confirmed') confirmed++;
+        if (status === 'pending') pending++;
+        if (date === todayDate) today++;
+    });
+
+    document.getElementById('confirmedCount').textContent = confirmed;
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('todayCount').textContent = today;
+    document.getElementById('totalCount').textContent = rows.length;
+}
+
+// 狀態篩選
+function filterByStatus(status) {
+    document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+    document.querySelector(`[data-status="${status}"]`).classList.add('active');
+
+    const rows = document.querySelectorAll('.appointment-row');
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    updateStats();
+}
+
+// 醫師篩選
+function filterByDoctor() {
+    const selectedDoctor = document.getElementById('doctorFilter').value;
+    const rows = document.querySelectorAll('.appointment-row');
+
+    rows.forEach(row => {
+        if (!selectedDoctor || row.dataset.doctor === selectedDoctor) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    updateStats();
+}
+
+// 日期篩選
+function filterByDate() {
+    const selectedDate = document.getElementById('dateFilter').value;
+    const today = new Date();
+    const rows = document.querySelectorAll('.appointment-row');
+
+    rows.forEach(row => {
+        const rowDate = new Date(row.dataset.date);
+        let show = true;
+
+        switch(selectedDate) {
+            case 'today':
+                show = rowDate.toDateString() === today.toDateString();
+                break;
+            case 'week':
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                show = rowDate >= weekStart && rowDate <= weekEnd;
+                break;
+            case 'month':
+                show = rowDate.getMonth() === today.getMonth() && rowDate.getFullYear() === today.getFullYear();
+                break;
+            default:
+                show = true;
+        }
+
+        row.style.display = show ? '' : 'none';
+    });
+
+    updateStats();
+}
+
+// 搜尋功能
+function searchAppointments() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.appointment-row');
+
+    rows.forEach(row => {
+        const searchData = row.dataset.search;
+        if (searchData.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    updateStats();
+}
+
+// AJAX操作函數
+function confirmAppointment(id) {
+    if (confirm('確定要確認這個預約嗎？')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/clinic/appointments/${id}/confirm/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('確認預約時發生錯誤:', error);
+            alert('確認預約失敗，請稍後再試');
+        });
     }
-  };
-  
-  // 初始化預約管理系統
-  initializeAppointmentManagement();
+}
+
+function cancelAppointment(id) {
+    if (confirm('確定要取消這個預約嗎？')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/clinic/appointments/${id}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            },
+            body: 'cancel_reason=診所管理員取消'
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('取消預約時發生錯誤:', error);
+            alert('取消預約失敗，請稍後再試');
+        });
+    }
+}
+
+
+function viewDetail(id) {
+    // 顯示詳情 - 可以實現為模態框或跳轉到詳情頁
+    window.open(`/clinic/appointments/${id}/`, '_blank');
+}
+
+// 即時搜尋
+document.getElementById('searchInput').addEventListener('input', function() {
+    searchAppointments();
 });
 </script>
 {% endblock %}

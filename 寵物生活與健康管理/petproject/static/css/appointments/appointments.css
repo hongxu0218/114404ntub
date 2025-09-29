@@ -37,6 +37,16 @@
     --vital-border: #10b981;
     --prescription-bg: #fdf4ff;
     --prescription-border: #8b5cf6;
+
+    /* 症狀描述顏色 */
+    --symptoms-bg: #fef7e3;
+    --symptoms-border: #f59e0b;
+    --symptoms-text: #92400e;
+
+    /* 取消原因顏色 */
+    --cancel-bg: #fef2f2;
+    --cancel-border: #ef4444;
+    --cancel-text: #dc2626;
 }
 
 /* ===== 主容器 ===== */
@@ -47,9 +57,9 @@
 }
 
 .appointments-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    width: 100%;
+    margin: 0;
+    padding: 0 2rem;
 }
 
 /* ===== 頁面標題 ===== */
@@ -912,6 +922,276 @@
     color: #1a365d;
 }
 
+/* ===== 症狀描述樣式 ===== */
+.symptoms-description {
+    background: var(--symptoms-bg);
+    border: 1px solid var(--symptoms-border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.symptoms-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--symptoms-text);
+    font-weight: 600;
+}
+
+.symptoms-header i {
+    color: var(--symptoms-border);
+    font-size: 1.1rem;
+}
+
+.symptoms-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.symptoms-content {
+    color: var(--symptoms-text);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    padding: 0.75rem;
+}
+
+/* ===== 取消原因樣式 ===== */
+.cancel-reason-section {
+    background: var(--cancel-bg);
+    border: 1px solid var(--cancel-border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.cancel-reason-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--cancel-text);
+    font-weight: 600;
+}
+
+.cancel-reason-header i {
+    color: var(--cancel-border);
+    font-size: 1.1rem;
+}
+
+.cancel-reason-title {
+    font-size: 0.95rem;
+}
+
+.cancel-reason-content {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.75rem;
+    border-radius: 8px;
+    color: var(--cancel-text);
+    line-height: 1.5;
+    font-size: 0.95rem;
+    border-left: 3px solid var(--cancel-border);
+}
+
+/* ===== 取消預約模態框樣式 ===== */
+.cancel-appointment-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cancel-appointment-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.cancel-appointment-modal .modal-content {
+    position: relative;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.cancel-appointment-modal .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--cancel-bg);
+}
+
+.cancel-appointment-modal .modal-header h3 {
+    margin: 0;
+    color: var(--cancel-text);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.cancel-appointment-modal .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--cancel-text);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.cancel-appointment-modal .modal-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.cancel-appointment-modal .modal-body {
+    padding: 1.5rem;
+}
+
+.cancel-appointment-modal .cancel-info {
+    background: var(--pet-warm);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.cancel-appointment-modal .cancel-info p {
+    margin: 0.25rem 0;
+    color: var(--text-primary);
+}
+
+.cancel-appointment-modal .cancel-reason-input {
+    margin-bottom: 1rem;
+}
+
+.cancel-appointment-modal .cancel-reason-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cancel-appointment-modal .cancel-reason-input textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s;
+}
+
+.cancel-appointment-modal .cancel-reason-input textarea:focus {
+    outline: none;
+    border-color: var(--cancel-border);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.cancel-appointment-modal .modal-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: var(--radius);
+    color: #92400e;
+    font-size: 0.9rem;
+}
+
+.cancel-appointment-modal .modal-warning i {
+    color: #f59e0b;
+}
+
+.cancel-appointment-modal .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.cancel-appointment-modal .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 0.9rem;
+}
+
+.cancel-appointment-modal .btn-cancel {
+    background: var(--pet-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.cancel-appointment-modal .btn-cancel:hover {
+    background: var(--border);
+}
+
+.cancel-appointment-modal .btn-confirm {
+    background: var(--cancel-border);
+    color: white;
+}
+
+.cancel-appointment-modal .btn-confirm:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== 取消預約按鈕樣式 ===== */
+.action-btn.cancel-appointment {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.action-btn.cancel-appointment:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.action-btn.reschedule {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.action-btn.reschedule:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
 /* 響應式 */
 @media (max-width: 768px) {
     .section-header {
@@ -925,5 +1205,25 @@
     .treatment-step {
         margin-bottom: 0.5rem;
         padding: 0.4rem 0.6rem;
+    }
+
+    .symptoms-description {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+    }
+
+    .symptoms-content {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .cancel-reason-section {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+    }
+
+    .cancel-reason-content {
+        padding: 0.5rem;
+        font-size: 0.9rem;
     }
 }

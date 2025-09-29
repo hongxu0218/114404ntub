@@ -596,6 +596,278 @@
   font-size: 16px;
 }
 
+/* ===== 手機響應式設計 ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0.5rem;
+  }
+
+  .page-header {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .title-icon {
+    font-size: 2rem;
+  }
+
+  .form-container {
+    padding: 1.5rem 1rem;
+    border-radius: 12px;
+  }
+
+  .form-section {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* 輸入欄位優化 */
+  input, select, textarea {
+    padding: 1rem 0.75rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    min-height: 48px;
+  }
+
+  label {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* 多選介面手機優化 */
+  .multi-select-tags {
+    min-height: 60px;
+    padding: 0.75rem;
+  }
+
+  .multi-select-button {
+    padding: 1rem 0.75rem;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .multi-select-options {
+    max-height: 300px;
+  }
+
+  .multi-select-option {
+    padding: 1rem;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .tag-item {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    margin: 0.25rem;
+  }
+
+  .tag-remove {
+    width: 24px;
+    height: 24px;
+    margin-left: 0.75rem;
+  }
+
+  /* 其他輸入框優化 */
+  .other-input-group {
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .other-input-group textarea {
+    min-height: 80px;
+  }
+
+  /* 圖片上傳優化 */
+  .img-upload-section {
+    padding: 1rem;
+  }
+
+  .preview-img {
+    width: 120px;
+    height: 120px;
+  }
+
+  .custom-file {
+    margin-top: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .img-input {
+    padding: 1rem;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .img-input:first-child {
+    min-width: 100px;
+  }
+
+  /* 按鈕優化 */
+  .button-row {
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .back-btn,
+  .submit-btn {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    min-height: 48px;
+    border-radius: 8px;
+  }
+
+  .submit-btn {
+    order: -1; /* 提交按鈕放上面 */
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .page-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.6rem;
+  }
+
+  .form-container {
+    padding: 1rem 0.75rem;
+  }
+
+  .form-section {
+    padding: 0.75rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+
+  /* 更大的觸控區域 */
+  .multi-select-button,
+  .multi-select-option {
+    min-height: 52px;
+    padding: 1.25rem 1rem;
+  }
+
+  input, select, textarea {
+    min-height: 52px;
+    padding: 1.25rem 1rem;
+    font-size: 1.1rem;
+  }
+
+  .tag-item {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  .tag-remove {
+    width: 28px;
+    height: 28px;
+    font-size: 1.1rem;
+  }
+
+  /* 圖片預覽優化 */
+  .preview-img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .img-input {
+    min-height: 52px;
+    padding: 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  /* 按鈕更大 */
+  .back-btn,
+  .submit-btn {
+    min-height: 52px;
+    font-size: 1.2rem;
+    padding: 1.25rem 2rem;
+  }
+
+  /* 檔案刪除按鈕優化 */
+  .delete-img-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    top: -8px;
+    right: -8px;
+  }
+
+  .delete-img-btn.delete-file {
+    right: -16px;
+  }
+}
+
+/* 觸控設備優化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 移除懸停效果，改用點擊效果 */
+  .tag-item:hover,
+  .multi-select-button:hover,
+  .custom-file:hover,
+  .preview-img:hover {
+    transform: none;
+  }
+
+  .tag-item:active,
+  .multi-select-button:active,
+  .submit-btn:active,
+  .back-btn:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* 增大可點擊區域 */
+  .tag-remove {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .delete-img-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* 防止長按選擇文字 */
+  .multi-select-button,
+  .multi-select-option,
+  .tag-item,
+  .submit-btn,
+  .back-btn {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
 .img-input {
   padding: 8px 8px;
   background: #fff;

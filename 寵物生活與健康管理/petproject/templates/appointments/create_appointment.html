@@ -627,15 +627,20 @@ class AppointmentApp {
     
     setupDateRestrictions() {
         const dateInput = document.getElementById('appointmentDate');
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const minDate = tomorrow.toISOString().split('T')[0];
+        // 修正時區問題：使用本地時間
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        // 使用本地時間格式，避免時區轉換問題
+        const minDate = tomorrow.toLocaleDateString('sv-SE'); // 格式: YYYY-MM-DD
         dateInput.setAttribute('min', minDate);
-        
+
         // 設置最大日期為3個月後
-        const maxDate = new Date();
-        maxDate.setMonth(maxDate.getMonth() + 3);
-        dateInput.setAttribute('max', maxDate.toISOString().split('T')[0]);
+        const maxDate = new Date(today);
+        maxDate.setMonth(today.getMonth() + 3);
+        const maxDateStr = maxDate.toLocaleDateString('sv-SE');
+        dateInput.setAttribute('max', maxDateStr);
     }
     
     onDateChange() {
@@ -821,14 +826,16 @@ class AppointmentApp {
         const slots = [];
         const startHour = 9;
         const endHour = 17;
+        // 修正時區問題：使用台北時區
         const now = new Date();
-        const selectedDateObj = new Date(selectedDate + 'T00:00:00');
-        const isToday = selectedDateObj.toDateString() === now.toDateString();
-        
+        const selectedDateObj = new Date(selectedDate);
+        const todayStr = now.toLocaleDateString('sv-SE'); // 使用 'sv-SE' 格式獲得 YYYY-MM-DD
+        const isToday = selectedDate === todayStr;
+
         for (let hour = startHour; hour < endHour; hour++) {
             for (let minute = 0; minute < 60; minute += 30) {
                 const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                
+
                 // 檢查時段是否已經過期（如果是今天的話）
                 let available = true;
                 if (isToday) {
@@ -843,7 +850,7 @@ class AppointmentApp {
                 }
                 
                 slots.push({
-                    id: `${hour}-${minute}`,
+                    id: timeString,  // 統一使用 HH:MM 格式
                     time: timeString,
                     available: available
                 });

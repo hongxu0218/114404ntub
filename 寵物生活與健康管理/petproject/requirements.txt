@@ -1,0 +1,44 @@
+# Django 核心依賴
+Django==5.2.4
+django-allauth==65.10.0
+django-cleanup==9.0.0
+
+# AI 客服相關
+ollama==0.5.4
+chromadb==1.1.0
+sentence-transformers==5.1.1
+
+# 資料處理
+pandas==2.3.0
+numpy==2.3.3
+openpyxl==3.1.5
+
+# 網路請求
+requests==2.32.4
+httpx==0.28.1
+
+# 配置管理
+python-decouple==3.8
+python-dotenv==1.1.1
+
+# 資料庫
+PyMySQL==1.1.1
+
+# 圖像處理
+Pillow==11.2.1
+
+# 時區處理
+pytz==2025.2
+
+# 機器學習基礎
+torch==2.7.1+cu118
+transformers==4.56.2
+scikit-learn==1.7.0
+
+# API 框架 (如果需要)
+fastapi==0.117.1
+uvicorn==0.36.0
+
+# 實用工具
+colorama==0.4.6
+tqdm==4.67.1

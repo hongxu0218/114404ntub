@@ -231,7 +231,20 @@ class NotificationManager:
         if notification.post:
             return f'/social/post/{notification.post.id}/'
         elif notification.notification_type.startswith('appointment'):
-            return '/vet/appointments/'
+            # 根據接收者身份決定跳轉頁面
+            try:
+                vet_profile = notification.recipient.vet_profile
+                if vet_profile:
+                    # 如果是診所管理員，跳轉到診所預約管理頁面
+                    if vet_profile.is_clinic_admin:
+                        return '/clinic/appointments/'
+                    # 如果是獸醫師，跳轉到獸醫預約頁面
+                    else:
+                        return '/vet/appointments/'
+            except:
+                pass
+            # 飼主收到的預約通知跳轉到飼主預約頁面
+            return '/appointments/my/'
         else:
             return '#'
 

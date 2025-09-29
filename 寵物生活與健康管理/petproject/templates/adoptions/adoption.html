@@ -767,6 +767,29 @@
     .sterilization-buttons {
       justify-content: center;
     }
+
+    /* 手機版篩選器優化 */
+    .option-btn {
+      min-width: 70px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .filter-section {
+      width: 100%;
+      min-width: unset;
+    }
+
+    .section-label {
+      text-align: left;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .option-buttons {
+      justify-content: flex-start;
+      gap: 0.5rem;
+    }
   }
 
   @media (max-width: 576px) {
@@ -776,6 +799,21 @@
 
     .page-header {
       padding: 1.5rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-title h1 {
+      font-size: 1.8rem;
+    }
+
+    .title-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .publish-btn {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.9rem;
     }
 
     .search-header {
@@ -785,11 +823,11 @@
       text-align: center;
     }
 
-    .filters-container {
-      padding: 1rem;
+    .search-title {
+      font-size: 1.1rem;
     }
 
-    .filter-group {
+    .filters-container {
       padding: 1rem;
     }
 
@@ -799,10 +837,12 @@
 
     .pets-grid {
       grid-template-columns: 1fr;
+      gap: 1rem;
     }
 
     .pet-details {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
     }
 
     .pet-card-footer {
@@ -813,23 +853,257 @@
 
     .view-btn {
       text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
     }
 
-    .gender-buttons,
-    .age-buttons,
-    .sterilization-buttons {
-      flex-direction: column;
+    /* 手機版篩選器進階優化 */
+    .filter-section {
+      margin-bottom: 1.5rem;
     }
 
-    .gender-btn,
-    .age-btn,
-    .sterilization-btn {
-      width: 100%;
+    .section-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .option-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      justify-content: stretch;
+    }
+
+    .option-btn {
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 12px;
+      text-align: center;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .option-btn:hover,
+    .option-buttons input[type="radio"]:checked + .option-btn {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* 輸入欄位優化 */
+    .input-wrapper input {
+      padding: 1rem 1rem 1rem 3rem;
+      font-size: 1rem;
+      border-radius: 15px;
+      min-height: 48px;
+    }
+
+    .input-icon {
+      left: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .select-wrapper select {
+      padding: 1rem 3rem 1rem 1rem;
+      font-size: 1rem;
+      border-radius: 15px;
+      min-height: 48px;
+    }
+
+    .select-icon {
+      right: 1rem;
+      font-size: 1.2rem;
+    }
+
+    /* 按鈕優化 */
+    .search-btn.primary {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      min-height: 48px;
+      border-radius: 24px;
+    }
+
+    .clear-btn {
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      min-height: 48px;
+      border-radius: 24px;
+    }
+
+    .sort-btn {
+      min-height: 48px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 24px;
+    }
+
+    /* 寵物卡片優化 */
+    .pet-card {
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .pet-image-container {
+      height: 220px;
+    }
+
+    .pet-name {
+      font-size: 1.3rem;
+      line-height: 1.4;
+    }
+
+    .pet-detail-item {
+      padding: 0.5rem;
+      background: var(--light-bg);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .pet-detail-item i {
+      font-size: 1.1rem;
+    }
+
+    /* 特徵標籤優化 */
+    .feature-tag {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      border-radius: 12px;
+    }
+
+    /* 空狀態優化 */
+    .empty-state {
+      padding: 3rem 1rem;
+      border-radius: 20px;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-title {
+      font-size: 1.3rem;
+    }
+
+    .empty-action {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      min-height: 48px;
+    }
+
+    /* 篩選標籤優化 */
+    .filter-tag {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 20px;
+      margin: 0.25rem;
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+    }
+
+    .filter-tag .remove-filter {
+      margin-left: 0.5rem;
+      font-size: 1.2rem;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
       justify-content: center;
     }
+  }
 
-    .search-control.full-width {
-      max-width: 100%;
+  /* 觸控設備優化 */
+  @media (hover: none) and (pointer: coarse) {
+    /* 移除懸停效果，改用點擊效果 */
+    .pet-card:hover {
+      transform: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pet-card:active {
+      transform: scale(0.98);
+      transition: transform 0.15s ease;
+    }
+
+    .option-btn:hover {
+      transform: none;
+      background: white;
+      border-color: var(--border-color);
+    }
+
+    .option-btn:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+
+    .search-btn.primary:hover,
+    .clear-btn:hover,
+    .sort-btn:hover,
+    .view-btn:hover,
+    .publish-btn:hover {
+      transform: none;
+    }
+
+    .search-btn.primary:active,
+    .clear-btn:active,
+    .sort-btn:active,
+    .view-btn:active,
+    .publish-btn:active {
+      transform: scale(0.96);
+      transition: transform 0.1s ease;
+    }
+
+    /* 增大可點擊區域 */
+    .option-btn {
+      min-height: 48px;
+      min-width: 48px;
+    }
+
+    .filter-tag .remove-filter {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  /* 橫向滾動支援（手機橫屏時的篩選器） */
+  @media (max-width: 768px) and (orientation: landscape) {
+    .filter-row.compact-row {
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .filter-row.compact-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-section {
+      flex-shrink: 0;
+      min-width: 150px;
+    }
+
+    .option-buttons {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .pets-grid {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
   }
 
@@ -843,6 +1117,30 @@
   @keyframes skeleton-loading {
     0% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+  }
+
+  /* 改善滾動性能 */
+  .search-section,
+  .pets-grid,
+  .pet-card {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* 防止長按選擇文字 */
+  .option-btn,
+  .search-btn,
+  .clear-btn,
+  .sort-btn,
+  .view-btn,
+  .publish-btn,
+  .filter-tag {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 </style>
 

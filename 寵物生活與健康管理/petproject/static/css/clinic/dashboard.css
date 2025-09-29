@@ -66,6 +66,8 @@
   background: var(--dashboard-bg);
   min-height: 100vh;
   padding: var(--spacing-lg);
+  width: 100%;
+  margin: 0;
 }
 
 /* ========== 頁面標題區域（診所資訊） ========== */

@@ -18,6 +18,8 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     position: relative;
     overflow-x: hidden;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .appointments-wrapper::before {
@@ -1205,6 +1207,292 @@
 
 .trend-neutral {
     color: var(--text-muted);
+}
+
+/* ===== 專業醫療風格變數 ===== */
+:root {
+    --medical-white: #ffffff;
+    --medical-gray-50: #f8fafc;
+    --medical-gray-100: #f1f5f9;
+    --medical-gray-200: #e2e8f0;
+    --medical-gray-300: #cbd5e1;
+    --medical-gray-400: #94a3b8;
+    --medical-gray-500: #64748b;
+    --medical-gray-600: #475569;
+    --medical-gray-700: #334155;
+    --medical-gray-800: #1e293b;
+    --medical-blue-50: #eff6ff;
+    --medical-blue-100: #dbeafe;
+    --medical-blue-500: #3b82f6;
+    --medical-blue-600: #2563eb;
+    --medical-green-50: #f0fdf4;
+    --medical-green-500: #10b981;
+    --medical-yellow-50: #fefce8;
+    --medical-yellow-500: #eab308;
+    --medical-red-50: #fef2f2;
+    --medical-red-500: #ef4444;
+}
+
+/* ===== 專業醫療風格覆蓋 ===== */
+.appointments-wrapper {
+    background: var(--medical-gray-50);
+    min-height: 100vh;
+}
+
+.appointments-wrapper::before {
+    display: none;
+}
+
+.appointments-container {
+    background: transparent;
+    padding: 2rem 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header-appointments {
+    background: var(--medical-white);
+    border: 1px solid var(--medical-gray-200);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.header-title h1 {
+    background: var(--medical-gray-800);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--medical-gray-800);
+}
+
+.title-icon {
+    background: var(--medical-blue-500);
+    box-shadow: 0 1px 3px 0 rgba(59, 130, 246, 0.3);
+}
+
+/* ===== 進階篩選專業樣式 ===== */
+.enhanced-filter-panel {
+    background: var(--medical-white);
+    border: 1px solid var(--medical-gray-200);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.advanced-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+    background: var(--medical-gray-50);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--medical-gray-200);
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+.filter-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--medical-gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--medical-gray-300);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background: var(--medical-white);
+    color: var(--medical-gray-800);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--medical-blue-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--medical-blue-500);
+    color: var(--medical-white);
+    border-color: var(--medical-blue-500);
+}
+
+.btn-primary:hover {
+    background: var(--medical-blue-600);
+    border-color: var(--medical-blue-600);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px 0 rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+    background: var(--medical-white);
+    color: var(--medical-gray-700);
+    border-color: var(--medical-gray-300);
+}
+
+.btn-secondary:hover {
+    background: var(--medical-gray-50);
+    color: var(--medical-gray-800);
+    border-color: var(--medical-gray-400);
+}
+
+/* ===== 專業卡片樣式 ===== */
+.appointment-card-modern {
+    background: var(--medical-white);
+    border: 1px solid var(--medical-gray-200);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 0.75rem;
+}
+
+.appointment-card-modern:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+}
+
+.appointment-card-modern::before {
+    height: 3px;
+}
+
+.appointment-card-modern.status-confirmed::before {
+    background: var(--medical-green-500);
+}
+
+.appointment-card-modern.status-pending::before {
+    background: var(--medical-yellow-500);
+}
+
+.appointment-card-modern.status-cancelled::before {
+    background: var(--medical-red-500);
+}
+
+.status-badge-modern {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-confirmed {
+    background: var(--medical-green-50);
+    color: var(--medical-green-500);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-pending {
+    background: var(--medical-yellow-50);
+    color: var(--medical-yellow-500);
+    border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.status-cancelled {
+    background: var(--medical-red-50);
+    color: var(--medical-red-500);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ===== 專業統計卡片 ===== */
+.stat-card {
+    background: var(--medical-white);
+    border: 1px solid var(--medical-gray-200);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 0.75rem;
+}
+
+.stat-card::before {
+    height: 3px;
+}
+
+.stat-card.stat-pending::before {
+    background: var(--medical-yellow-500);
+}
+
+.stat-card.stat-upcoming::before {
+    background: var(--medical-blue-500);
+}
+
+.stat-card.stat-total::before {
+    background: var(--medical-green-500);
+}
+
+.stat-icon {
+    border-radius: 0.5rem;
+}
+
+.stat-upcoming .stat-icon {
+    background: var(--medical-blue-500);
+}
+
+.stat-pending .stat-icon {
+    background: var(--medical-yellow-500);
+}
+
+.stat-total .stat-icon {
+    background: var(--medical-green-500);
+}
+
+/* ===== 空狀態專業樣式 ===== */
+.empty-state-modern {
+    background: var(--medical-white);
+    border: 1px solid var(--medical-gray-200);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon-modern {
+    background: var(--medical-blue-50);
+    color: var(--medical-blue-500);
+}
+
+.empty-icon-modern::before {
+    background: var(--medical-blue-500);
+}
+
+.cta-button {
+    background: var(--medical-blue-500);
+    box-shadow: 0 1px 3px 0 rgba(59, 130, 246, 0.3);
+}
+
+.cta-button:hover {
+    background: var(--medical-blue-600);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+}
+
+/* ===== 取消按鈕專業樣式 ===== */
+.cancel-button {
+    background: var(--medical-red-50);
+    color: var(--medical-red-500);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.cancel-button:hover {
+    background: var(--medical-red-500);
+    color: var(--medical-white);
+    border-color: var(--medical-red-500);
 }
 
 /* ===== 響應式設計 ===== */

@@ -6,11 +6,861 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/appointments/appointments.css' %}?v=2.2">
+<style>
+/* 專業統一風格 - 與獸醫頁面一致 */
+:root {
+  /* 專業主色調 - 溫和藍灰色系 */
+  --primary-color: #475569;
+  --primary-light: #64748b;
+  --primary-dark: #334155;
+  --primary-muted: #f1f5f9;
+
+  /* 專業背景色彩 */
+  --bg-primary: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+
+  /* 專業漸變 */
+  --gradient-primary: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  --gradient-soft: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+
+  /* 專業陰影系統 */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* 專業文字色彩 */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  /* 狀態顏色 - 簡化 */
+  --status-pending: #f59e0b;
+  --status-confirmed: #059669;
+  --status-completed: #3b82f6;
+  --status-cancelled: #dc2626;
+
+  /* 狀態背景 - 統一淺色調 */
+  --status-pending-bg: #fef3c7;
+  --status-confirmed-bg: #d1fae5;
+  --status-completed-bg: #dbeafe;
+  --status-cancelled-bg: #fecaca;
+
+  /* 間距系統 */
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+
+  /* 圓角系統 */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  /* 過渡效果 */
+  --transition-fast: 150ms ease-in-out;
+}
+
+/* 整體背景優化 */
+.appointments-wrapper {
+  background: var(--gradient-soft);
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+.appointments-container {
+  width: 100%;
+  margin: 0;
+  padding: 0 2rem;
+}
+
+/* 頁面標題區域 - 寵物親和風格 */
+.page-header-appointments {
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header-appointments::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-light);
+}
+
+.page-header-appointments::after {
+  content: '📅';
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  font-size: 3.5rem;
+  opacity: 0.2;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.title-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.8rem;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.header-title h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  backdrop-filter: blur(10px);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  text-decoration: none;
+  transform: translateX(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* 篩選面板 - 專業風格 */
+.enhanced-filter-panel {
+  background: var(--bg-card);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.enhanced-filter-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-color);
+}
+
+/* 篩選區段 */
+.filter-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.filter-section:last-child {
+  margin-bottom: 0;
+}
+
+.filter-section h6 {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 進階篩選控制 */
+.advanced-filters {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 1px solid #e2e8f0;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.filter-group label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.filter-group .form-control {
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.5rem;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
+}
+
+.filter-group .form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.1);
+  outline: none;
+}
+
+/* 篩選按鈕樣式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  border-color: #545b62;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.2rem;
+  border: 2px solid #e2e8f0;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.filter-tab:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+
+.filter-tab.active {
+  background: var(--gradient-primary);
+  border-color: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.filter-tab i {
+  font-size: 1rem;
+}
+
+/* 預約卡片 - 寵物親和設計 */
+.appointment-card {
+  background: var(--bg-card);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.appointment-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.appointment-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  border-color: var(--primary-color);
+}
+
+.appointment-card:hover::before {
+  opacity: 1;
+}
+
+/* 寵物頭像增強 */
+.pet-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: bold;
+  font-size: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 3px solid white;
+}
+
+.pet-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.appointment-id {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+/* 狀態徽章 - 寵物親和版 */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid transparent;
+}
+
+.status-pending {
+  background: var(--status-pending-bg);
+  color: var(--status-pending);
+  border-color: var(--status-pending);
+}
+
+.status-confirmed {
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed);
+  border-color: var(--status-confirmed);
+}
+
+.status-completed {
+  background: var(--status-completed-bg);
+  color: var(--status-completed);
+  border-color: var(--status-completed);
+}
+
+.status-cancelled {
+  background: var(--status-cancelled-bg);
+  color: var(--status-cancelled);
+  border-color: var(--status-cancelled);
+}
+
+/* 日期時間信息 - 專業樣式 */
+.datetime-info {
+  background: var(--bg-hover);
+  border: 1px solid var(--primary-light);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.datetime-info::before {
+  content: '📅';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  opacity: 0.3;
+}
+
+.date, .time {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.date i, .time i {
+  color: var(--primary-color);
+  width: 20px;
+  font-size: 1.1rem;
+}
+
+/* 診所信息 */
+.clinic-info {
+  background: rgba(135, 169, 107, 0.08);
+  border: 1px solid rgba(135, 169, 107, 0.3);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  position: relative;
+}
+
+.clinic-info::before {
+  content: '🏥';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  opacity: 0.3;
+}
+
+.clinic-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.clinic-name i {
+  color: var(--primary-light);
+  width: 20px;
+  font-size: 1.2rem;
+}
+
+/* 醫療記錄摘要 - 寵物親和風格 */
+.medical-summary {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-hover) 100%);
+  border: 2px solid var(--primary-light);
+  border-radius: 1.25rem;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.medical-summary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+}
+
+.medical-summary:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(74, 144, 164, 0.1);
+  border-bottom: 1px solid var(--primary-light);
+}
+
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 1rem;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.record-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--gradient-primary);
+  color: white;
+  text-transform: none;
+  letter-spacing: 0.05em;
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-content {
+  padding: 1.5rem;
+}
+
+.medical-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 0.75rem;
+  border-left: 4px solid var(--primary-color);
+}
+
+.medical-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 80px;
+  flex-shrink: 0;
+  text-transform: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.medical-value {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* 症狀描述 - 寵物親和風格 */
+.symptoms-description {
+  background: var(--status-pending-bg);
+  border: 2px solid var(--primary-color);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.symptoms-description::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-color);
+}
+
+.symptoms-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.symptoms-header i {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.symptoms-title {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.symptoms-content {
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 0.75rem;
+  border-left: 4px solid var(--primary-color);
+  font-weight: 500;
+}
+
+/* 取消原因 - 寵物親和風格 */
+.cancel-reason-section {
+  background: var(--status-cancelled-bg);
+  border: 2px solid var(--status-cancelled);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.cancel-reason-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--status-cancelled);
+}
+
+.cancel-reason-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.cancel-reason-header i {
+  color: #ef4444;
+  font-size: 1.2rem;
+}
+
+.cancel-reason-title {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.cancel-reason-content {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  color: #991b1b;
+  line-height: 1.6;
+  font-size: 1rem;
+  border-left: 4px solid #ef4444;
+  font-weight: 500;
+}
+
+/* 操作按鈕 - 寵物親和風格 */
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.action-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+
+.action-btn.view-details {
+  background: var(--gradient-primary);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.action-btn.view-details:hover {
+  background: var(--primary-dark);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn.view-medical-record {
+  background: var(--gradient-primary);
+  color: white;
+  border-color: var(--primary-light);
+}
+
+.action-btn.view-medical-record:hover {
+  background: var(--primary-light);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* 空狀態 - 寵物親和風格 */
+.empty-state-modern {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--bg-card);
+  border-radius: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-state-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.empty-icon-modern {
+  font-size: 4rem;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 4px rgba(74, 144, 164, 0.1);
+}
+
+.empty-title-modern {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.empty-description-modern {
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+  font-size: 1.1rem;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2.5rem;
+  background: var(--gradient-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.95rem;
+}
+
+.cta-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  color: white;
+  text-decoration: none;
+}
+
+/* 響應式設計優化 */
+@media (max-width: 768px) {
+  .appointments-container {
+    padding: 0 1rem;
+  }
+
+  .page-header-appointments {
+    padding: 2rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .header-title h1 {
+    font-size: 1.8rem;
+  }
+
+  .page-header-appointments::after {
+    display: none;
+  }
+
+  .appointment-card {
+    padding: 1.5rem;
+  }
+
+  .pet-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+
+  .pet-name {
+    font-size: 1.2rem;
+  }
+
+  .filter-tab {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .datetime-info::before,
+  .clinic-info::before {
+    display: none;
+  }
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="appointments-wrapper">
-    <div class="container appointments-container">
+    <div class="appointments-container">
         
         <!-- 美化的頁面標題 -->
         <div class="page-header-appointments">
@@ -32,32 +882,48 @@
             </div>
         </div>
 
-        <!-- 篩選面板 -->
+        <!-- 進階篩選面板 -->
         <div class="enhanced-filter-panel">
-            <!-- 篩選標籤 - 簡化為3個主要狀態 -->
             <div class="filter-section">
-                <div class="filter-tabs">
-                    <button class="filter-tab {% if status_filter == 'active' %}active{% endif %}" 
-                            onclick="filterAppointments('active')">
-                        <i class="fas fa-clock"></i>
-                        <span>進行中</span>
-                    </button>
-                    <button class="filter-tab {% if status_filter == 'completed' %}active{% endif %}" 
-                            onclick="filterAppointments('completed')">
-                        <i class="fas fa-check-circle"></i>
-                        <span>已完成</span>
-                    </button>
-                    <button class="filter-tab {% if status_filter == 'cancelled' %}active{% endif %}" 
-                            onclick="filterAppointments('cancelled')">
-                        <i class="fas fa-times-circle"></i>
-                        <span>已取消</span>
-                    </button>
-                    <button class="filter-tab {% if status_filter == 'all' %}active{% endif %}" 
-                            onclick="filterAppointments('all')">
-                        <i class="fas fa-list"></i>
-                        <span>全部</span>
-                    </button>
-                </div>
+                <h6 style="margin-bottom: 12px; color: #475569; font-weight: 600;">
+                    <i class="fas fa-filter" style="margin-right: 8px;"></i>
+                    進階篩選
+                </h6>
+                <form method="GET" id="advancedFilterForm" class="advanced-filters" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div class="filter-group">
+                        <label for="dateRangeFilter" style="font-size: 14px; margin-right: 8px;">日期範圍：</label>
+                        <select name="date_range" id="dateRangeFilter" class="form-control filter-auto-submit" style="min-width: 120px;">
+                            <option value="all" {% if request.GET.date_range == 'all' or not request.GET.date_range %}selected{% endif %}>所有日期</option>
+                            <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>今日</option>
+                            <option value="tomorrow" {% if request.GET.date_range == 'tomorrow' %}selected{% endif %}>明日</option>
+                            <option value="past-week" {% if request.GET.date_range == 'past-week' %}selected{% endif %}>過去7天</option>
+                            <option value="current-week" {% if request.GET.date_range == 'current-week' %}selected{% endif %}>本週</option>
+                            <option value="next-week" {% if request.GET.date_range == 'next-week' %}selected{% endif %}>下週</option>
+                            <option value="current-month" {% if request.GET.date_range == 'current-month' %}selected{% endif %}>本月</option>
+                            <option value="next-month" {% if request.GET.date_range == 'next-month' %}selected{% endif %}>下月</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="statusAdvancedFilter" style="font-size: 14px; margin-right: 8px;">狀態：</label>
+                        <select name="status" id="statusAdvancedFilter" class="form-control filter-auto-submit" style="min-width: 100px;">
+                            <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>所有狀態</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>待確認</option>
+                            <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>已確認</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>已完成</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>已取消</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <input type="text" name="search" id="searchFilter" class="form-control" placeholder="搜尋寵物名稱、診所..." value="{{ request.GET.search }}" style="min-width: 200px;">
+                    </div>
+
+                    <a href="{% url 'my_appointments' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-undo"></i>
+                        清除篩選
+                    </a>
+                </form>
             </div>
         </div>
 
@@ -191,39 +1057,90 @@
                     </div>
                     {% endif %}
 
+                    <!-- 症狀描述 -->
+                    {% if appointment.reason %}
+                    <div class="symptoms-description">
+                        <div class="symptoms-header">
+                            <i class="fas fa-stethoscope"></i>
+                            <span class="symptoms-title">症狀描述</span>
+                        </div>
+                        <div class="symptoms-content">
+                            {{ appointment.reason }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 取消原因 -->
+                    {% if appointment.status == 'cancelled' and appointment.cancel_reason %}
+                    <div class="cancel-reason-section">
+                        <div class="cancel-reason-header">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="cancel-reason-title">取消原因</span>
+                        </div>
+                        <div class="cancel-reason-content">
+                            {{ appointment.cancel_reason }}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- 次要資訊 - 可展開 -->
                     <div class="secondary-info" style="display: none;">
                         <div class="info-item">
                             <span class="label">醫師：</span>
                             <span class="value">{{ appointment.slot.doctor.user.get_full_name|default:"任何醫師" }}</span>
                         </div>
-                        {% if appointment.reason %}
+                        {% if appointment.contact_phone %}
                         <div class="info-item">
-                            <span class="label">原因：</span>
-                            <span class="value">{{ appointment.reason }}</span>
+                            <span class="label">聯絡電話：</span>
+                            <span class="value">{{ appointment.contact_phone }}</span>
                         </div>
                         {% endif %}
                         <div class="info-item">
                             <span class="label">創建時間：</span>
                             <span class="value">{{ appointment.created_at|date:"m/d H:i" }}</span>
                         </div>
+                        {% if appointment.notes %}
+                        <div class="info-item">
+                            <span class="label">備註：</span>
+                            <span class="value">{{ appointment.notes }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
-                <!-- 操作按鈕 - 簡化 -->
+                <!-- 操作按鈕 -->
                 <div class="card-actions">
                     <button class="action-btn view-details">
                         <i class="fas fa-info-circle"></i>
                         <span>詳細資料</span>
                     </button>
+
                     {% if enhanced_view and medical_record %}
                     <button class="action-btn view-medical-record" data-record-id="{{ medical_record.id }}">
                         <i class="fas fa-file-medical"></i>
                         <span>完整診療記錄</span>
                     </button>
                     {% endif %}
-                    
-                    <!-- Cancel button removed - cancellation should be in history records only -->
+
+                    <!-- 飼主取消預約功能 -->
+                    {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}
+                        <button class="action-btn cancel-appointment"
+                                data-appointment-id="{{ appointment.id }}"
+                                data-pet-name="{{ appointment.pet.name }}"
+                                data-date="{{ appointment.slot.date|date:'m/d' }}"
+                                data-time="{{ appointment.slot.start_time|time:'H:i' }}">
+                            <i class="fas fa-times-circle"></i>
+                            <span>取消預約</span>
+                        </button>
+                    {% endif %}
+
+                    <!-- 重新預約 - 僅限已取消的預約 -->
+                    {% if appointment.status == 'cancelled' %}
+                        <a href="{% url 'create_appointment' appointment.pet.id %}" class="action-btn reschedule">
+                            <i class="fas fa-redo"></i>
+                            <span>重新預約</span>
+                        </a>
+                    {% endif %}
                 </div>
                 
             </div>
@@ -273,4 +1190,28 @@
 
 {% block extra_js %}
 <script src="{% static 'js/appointments/my_appointment.js' %}?v=2.1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 即時篩選功能
+    const form = document.getElementById('advancedFilterForm');
+    const autoSubmitElements = document.querySelectorAll('.filter-auto-submit');
+    const searchInput = document.getElementById('searchFilter');
+
+    // 為日期範圍和狀態選擇器添加即時觸發
+    autoSubmitElements.forEach(element => {
+        element.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+
+    // 為搜尋輸入框添加延遲觸發（避免每個字都觸發）
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            form.submit();
+        }, 500); // 500ms 延遲
+    });
+});
+</script>
 {% endblock %}

@@ -124,7 +124,17 @@ def social_home(request):
     # 獲取追蹤列表
     following_list = []
     if request.user.is_authenticated:
-        following_list = Follow.objects.filter(follower=request.user).select_related('following__social_profile')[:10]
+        try:
+            following_list = Follow.objects.filter(follower=request.user).select_related('following')[:10]
+            # 確保每個被追蹤的用戶都有 UserProfile
+            for follow in following_list:
+                if not hasattr(follow.following, 'social_profile'):
+                    UserProfile.objects.get_or_create(user=follow.following)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error loading following list: {str(e)}", exc_info=True)
+            following_list = []
 
     # 獲取熱門話題
     trending_topics = get_trending_topics()
@@ -135,6 +145,40 @@ def social_home(request):
         'trending_topics': trending_topics,
     }
     return render(request, 'social/home.html', context)
+
+
+def post_detail(request, post_id):
+    """單一貼文詳細頁面"""
+    post = get_object_or_404(Post, id=post_id)
+
+    # 確保貼文作者有 social_profile
+    if not hasattr(post.user, 'social_profile'):
+        UserProfile.objects.get_or_create(user=post.user)
+
+    # 檢查用戶是否已點讚
+    user_liked = False
+    if request.user.is_authenticated:
+        user_liked = Like.objects.filter(post=post, user=request.user).exists()
+
+    # 獲取留言
+    comments = Comment.objects.filter(post=post).select_related('user').prefetch_related(
+        'comment_likes'
+    ).order_by('-created_at')
+
+    # 確保留言作者都有 social_profile 並檢查用戶對每個留言的點讚狀態
+    for comment in comments:
+        if not hasattr(comment.user, 'social_profile'):
+            UserProfile.objects.get_or_create(user=comment.user)
+
+        if request.user.is_authenticated:
+            comment.user_liked = CommentLike.objects.filter(comment=comment, user=request.user).exists()
+
+    context = {
+        'post': post,
+        'user_liked': user_liked,
+        'comments': comments,
+    }
+    return render(request, 'social/post_detail.html', context)
 
 
 @login_required
@@ -270,68 +314,83 @@ def create_post(request):
 @require_http_methods(["POST"])
 def toggle_like(request, post_id):
     """切換貼文點讚狀態"""
-    post = get_object_or_404(Post, id=post_id)
+    try:
+        post = get_object_or_404(Post, id=post_id)
 
-    like, created = Like.objects.get_or_create(user=request.user, post=post)
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
 
-    if not created:
-        # 已經點讚，取消點讚
-        like.delete()
-        post.likes_count = max(0, post.likes_count - 1)
-        liked = False
-    else:
-        # 新增點讚
-        post.likes_count += 1
-        liked = True
+        if not created:
+            # 已經點讚，取消點讚
+            like.delete()
+            post.likes_count = max(0, post.likes_count - 1)
+            liked = False
+        else:
+            # 新增點讚
+            post.likes_count += 1
+            liked = True
 
-    post.save()
+        post.save()
 
-    return JsonResponse({
-        'success': True,
-        'liked': liked,
-        'likes_count': post.likes_count
-    })
+        return JsonResponse({
+            'success': True,
+            'liked': liked,
+            'likes_count': post.likes_count
+        })
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"toggle_like error: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 @login_required
 @require_http_methods(["POST"])
 def add_comment(request, post_id):
     """新增留言"""
-    post = get_object_or_404(Post, id=post_id)
-
     try:
-        data = json.loads(request.body)
-        content = data.get('content', '').strip()
-        parent_id = data.get('parent_id')
+        post = get_object_or_404(Post, id=post_id)
 
-        if not content:
-            return JsonResponse({'success': False, 'error': '留言內容不能為空'})
+        try:
+            data = json.loads(request.body)
+            content = data.get('content', '').strip()
 
-        parent_comment = None
-        if parent_id:
-            parent_comment = get_object_or_404(Comment, id=parent_id)
+            if not content:
+                return JsonResponse({'success': False, 'error': '留言內容不能為空'})
 
-        comment = Comment.objects.create(
-            user=request.user,
-            post=post,
-            content=content,
-            parent_comment=parent_comment
-        )
+            comment = Comment.objects.create(
+                user=request.user,
+                post=post,
+                content=content
+            )
 
-        # 更新貼文的留言數
-        post.comments_count = Comment.objects.filter(post=post).count()
-        post.save()
+            # 更新貼文的留言數（現在所有留言都是頂級留言）
+            post.comments_count = Comment.objects.filter(post=post).count()
+            post.save()
 
-        return JsonResponse({
-            'success': True,
-            'comment_id': comment.id,
-            'content': comment.content,
-            'username': comment.user.username,
-            'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M')
-        })
+            return JsonResponse({
+                'success': True,
+                'comment_id': comment.id,
+                'content': comment.content,
+                'username': comment.user.username,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M')
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': '無效的JSON格式'})
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"add_comment inner error: {str(e)}", exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)})
 
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"add_comment outer error: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required
@@ -340,6 +399,13 @@ def delete_post(request, post_id):
     """刪除貼文"""
     try:
         post = get_object_or_404(Post, id=post_id, user=request.user)
+
+        # 如果是轉發貼文，需要減少原貼文的分享數
+        if post.is_repost and post.original_post:
+            original_post = post.original_post
+            if original_post.shares_count > 0:
+                original_post.shares_count -= 1
+                original_post.save()
 
         # 刪除相關媒體文件
         for media in post.media_files.all():
@@ -368,27 +434,67 @@ def delete_post(request, post_id):
 @require_http_methods(["POST"])
 def toggle_comment_like(request, comment_id):
     """切換留言點讚狀態"""
-    comment = get_object_or_404(Comment, id=comment_id)
+    try:
+        comment = get_object_or_404(Comment, id=comment_id)
 
-    like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)
+        like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)
 
-    if not created:
-        # 已經點讚，取消點讚
-        like.delete()
-        comment.likes_count = max(0, comment.likes_count - 1)
-        liked = False
-    else:
-        # 新增點讚
-        comment.likes_count += 1
-        liked = True
+        if not created:
+            # 已經點讚，取消點讚
+            like.delete()
+            comment.likes_count = max(0, comment.likes_count - 1)
+            liked = False
+        else:
+            # 新增點讚
+            comment.likes_count += 1
+            liked = True
 
-    comment.save()
+        comment.save()
 
-    return JsonResponse({
-        'success': True,
-        'liked': liked,
-        'likes_count': comment.likes_count
-    })
+        return JsonResponse({
+            'success': True,
+            'liked': liked,
+            'likes_count': comment.likes_count
+        })
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"toggle_comment_like error: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+
+
+@login_required
+@require_http_methods(["POST"])
+def share_post(request, post_id):
+    """分享貼文（增加分享計數）"""
+    try:
+        post = get_object_or_404(Post, id=post_id)
+
+        # 增加分享數
+        post.shares_count += 1
+        post.save()
+
+        return JsonResponse({
+            'success': True,
+            'shares_count': post.shares_count,
+            'message': '分享成功'
+        })
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"share_post error: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
 
 
 @login_required
@@ -435,30 +541,40 @@ def toggle_follow(request, username):
 @require_http_methods(["POST"])
 def repost(request, post_id):
     """轉發貼文"""
-    original_post = get_object_or_404(Post, id=post_id)
+    target_post = get_object_or_404(Post, id=post_id)
 
-    # 檢查是否已經轉發過
+    # 檢查是否已經轉發過該貼文
     existing_repost = Post.objects.filter(
         user=request.user,
-        original_post=original_post,
+        original_post=target_post,
         is_repost=True
     ).exists()
 
     if existing_repost:
         return JsonResponse({'success': False, 'error': '已經轉發過此貼文'})
 
+    # 獲取轉發評論（如果有的話）
+    try:
+        data = json.loads(request.body) if request.body else {}
+        repost_comment = data.get('comment', '').strip()
+    except:
+        repost_comment = ''
+
     # 創建轉發貼文
+    # 轉發者的評論作為內容，原始內容通過 original_post 保存
     repost = Post.objects.create(
         user=request.user,
-        content=original_post.content,
-        post_type=original_post.post_type,
-        original_post=original_post,
+        content=repost_comment,  # 只保存轉發者的評論
+        post_type='text',  # 轉發本身是文字類型
+        original_post=target_post,  # 直接指向被轉發的貼文（可能是原始貼文或轉發貼文）
         is_repost=True
     )
 
-    # 更新原貼文的分享數
-    original_post.shares_count += 1
-    original_post.save()
+    # 轉發不需要複製媒體檔案，媒體會通過原始貼文顯示
+
+    # 更新被轉發貼文的分享數
+    target_post.shares_count += 1
+    target_post.save()
 
     # 更新用戶檔案的貼文數
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
@@ -468,40 +584,53 @@ def repost(request, post_id):
     return JsonResponse({
         'success': True,
         'repost_id': repost.id,
-        'shares_count': original_post.shares_count
+        'shares_count': target_post.shares_count
     })
 
 
 @login_required
 def get_comments(request, post_id):
     """獲取貼文留言"""
-    post = get_object_or_404(Post, id=post_id)
+    try:
+        post = get_object_or_404(Post, id=post_id)
 
-    comments = Comment.objects.filter(post=post, parent_comment=None).select_related('user').prefetch_related(
-        'comment_likes'
-    ).annotate(
-        user_liked=Exists(
-            CommentLike.objects.filter(comment=OuterRef('pk'), user=request.user)
-        ) if request.user.is_authenticated else False
-    ).order_by('created_at')
+        comments = Comment.objects.filter(post=post).select_related('user').prefetch_related(
+            'comment_likes'
+        ).annotate(
+            user_liked=Exists(
+                CommentLike.objects.filter(comment=OuterRef('pk'), user=request.user)
+            ) if request.user.is_authenticated else False
+        ).order_by('created_at')
 
-    comments_data = []
-    for comment in comments:
-        comments_data.append({
-            'id': comment.id,
-            'content': comment.content,
-            'username': comment.user.username,
-            'avatar_url': comment.user.social_profile.avatar.url if hasattr(comment.user, 'social_profile') and comment.user.social_profile.avatar else None,
-            'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M'),
-            'likes_count': comment.likes_count,
-            'user_liked': comment.user_liked,
-            'is_own_comment': comment.user == request.user
+        comments_data = []
+        for comment in comments:
+            # 確保留言作者有 UserProfile
+            if not hasattr(comment.user, 'social_profile'):
+                UserProfile.objects.get_or_create(user=comment.user)
+
+            comments_data.append({
+                'id': comment.id,
+                'content': comment.content,
+                'username': comment.user.username,
+                'avatar_url': comment.user.social_profile.avatar.url if hasattr(comment.user, 'social_profile') and comment.user.social_profile.avatar else None,
+                'created_at': timezone.localtime(comment.created_at).strftime('%Y-%m-%d %H:%M'),
+                'likes_count': comment.likes_count,
+                'user_liked': comment.user_liked,
+                'is_own_comment': comment.user == request.user
+            })
+
+        return JsonResponse({
+            'success': True,
+            'comments': comments_data
         })
-
-    return JsonResponse({
-        'success': True,
-        'comments': comments_data
-    })
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"get_comments error: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 def get_topic_keywords(topic_title):
@@ -599,3 +728,53 @@ def edit_profile(request):
         'profile': profile,
     }
     return render(request, 'social/edit_profile.html', context)
+
+
+@require_http_methods(["DELETE", "POST"])
+@login_required
+def delete_comment(request, comment_id):
+    """刪除留言"""
+    try:
+        comment = get_object_or_404(Comment, id=comment_id)
+
+        # 檢查用戶是否有權限刪除此留言
+        if comment.user != request.user:
+            return JsonResponse({'error': '您沒有權限刪除此留言'}, status=403)
+
+        # 獲取貼文引用（在刪除留言之前）
+        post = comment.post
+
+        # 刪除留言
+        comment.delete()
+
+        # 更新貼文的留言數
+        post.comments_count = Comment.objects.filter(post=post).count()
+        post.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': '留言已刪除'
+        })
+
+    except Comment.DoesNotExist:
+        return JsonResponse({'error': '留言不存在'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def get_comment_location(request, comment_id):
+    """獲取留言所在的貼文ID"""
+    try:
+        comment = get_object_or_404(Comment, id=comment_id)
+
+        return JsonResponse({
+            'success': True,
+            'post_id': comment.post.id,
+            'comment_id': comment.id
+        })
+
+    except Comment.DoesNotExist:
+        return JsonResponse({'error': '留言不存在'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

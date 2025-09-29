@@ -156,108 +156,622 @@
     color: #4caf50;
 }
 
-.pet-info {
-    background: linear-gradient(135deg, #4caf50, #81c784);
+/* ===== 現代化寵物資訊卡片 ===== */
+.pet-card-container {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+/* 主要寵物英雄卡片 */
+.pet-hero-card {
+    position: relative;
+    background: linear-gradient(135deg, #4caf50 0%, #81c784 50%, #66bb6a 100%);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: 0 20px 40px rgba(76, 175, 80, 0.25);
+    min-height: 180px;
+    transition: all 0.3s ease;
+}
+
+.pet-hero-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(76, 175, 80, 0.35);
+}
+
+.pet-hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #4caf50 0%, #81c784 50%, #66bb6a 100%);
+}
+
+.hero-gradient-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+}
+
+.floating-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.floating-paw {
+    position: absolute;
+    font-size: 24px;
+    opacity: 0.1;
+    animation: float 6s ease-in-out infinite;
+}
+
+.paw-1 {
+    top: 20%;
+    right: 15%;
+    animation-delay: 0s;
+}
+
+.paw-2 {
+    top: 60%;
+    right: 80%;
+    animation-delay: 2s;
+}
+
+.paw-3 {
+    bottom: 20%;
+    right: 40%;
+    animation-delay: 4s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(10deg); }
+}
+
+/* 英雄卡片內容 */
+.pet-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
     color: white;
+}
+
+/* 主要頭像 */
+.pet-main-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-ring {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.avatar-ring::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #81c784, #66bb6a, #4caf50, #388e3c, #2e7d32);
+    z-index: -1;
+    animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+    100% { transform: rotate(360deg); }
+}
+
+.avatar-inner {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    font-size: 2rem;
+    color: rgba(255,255,255,0.8);
+}
+
+.pet-status-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    border: 3px solid white;
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* 主要資訊 */
+.pet-main-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pet-main-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.pet-main-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.pet-species-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.2);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.pet-breed-text {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-style: italic;
+}
+
+/* 現代化切換按鈕 */
+.pet-switcher-modern {
+    flex-shrink: 0;
+}
+
+.switcher-trigger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 15px;
+    padding: 1rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.switcher-trigger:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.switcher-trigger::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.switcher-trigger:hover::before {
+    left: 100%;
+}
+
+.trigger-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.trigger-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.trigger-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+/* 寵物選擇面板 */
+.pet-switcher-panel {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 0;
+}
+
+.pet-switcher-panel.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    max-height: 500px;
+}
+
+.panel-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+}
+
+.panel-title i {
+    color: #4caf50;
+}
+
+.panel-close {
+    background: none;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.panel-close:hover {
+    background: rgba(108, 117, 125, 0.1);
+    color: #495057;
+}
+
+/* 寵物網格 */
+.pets-grid {
     padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.pet-option-card {
+    background: white;
+    border: 2px solid #e9ecef;
     border-radius: 12px;
-    margin-bottom: 1.5rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pet-option-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4caf50, #81c784);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.pet-option-card:hover::before {
+    transform: scaleX(1);
+}
+
+.pet-option-card:hover {
+    border-color: #4caf50;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.15);
+    transform: translateY(-2px);
+}
+
+.pet-option-card.current {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.05), rgba(129, 199, 132, 0.05));
+}
+
+.pet-option-card.current::before {
+    transform: scaleX(1);
+}
+
+.pet-option-card {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
-.pet-avatar {
-    width: 50px;
-    height: 50px;
+.pet-option-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.option-avatar-ring {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.2);
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.option-avatar-ring img {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.option-avatar-placeholder {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4caf50, #81c784);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
     font-size: 1.5rem;
 }
 
-.pet-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.current-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
     border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
-.pet-details h3 {
-    margin: 0;
-    font-size: 1.2rem;
+.pet-option-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.pet-option-name {
+    font-size: 1.1rem;
     font-weight: 600;
+    color: #495057;
+    margin: 0 0 0.25rem 0;
 }
 
-.pet-details p {
-    margin: 0.25rem 0 0 0;
-    opacity: 0.9;
+.pet-option-meta {
+    margin: 0;
     font-size: 0.9rem;
-}
-
-.pet-switcher {
-    margin-top: 0.8rem;
+    color: #6c757d;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: wrap;
 }
 
-.pet-switcher label {
-    font-size: 0.85rem;
-    opacity: 0.9;
-    font-weight: 500;
-    white-space: nowrap;
+.meta-separator {
+    opacity: 0.5;
 }
 
-.pet-select {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 6px;
+.pet-option-action {
+    flex-shrink: 0;
+}
+
+.action-current {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: white;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    min-width: 160px;
-    cursor: pointer;
+    font-size: 0.9rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.action-switch {
+    width: 32px;
+    height: 32px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4caf50;
+    font-size: 0.8rem;
     transition: all 0.3s ease;
 }
 
-.pet-select:hover {
-    background: rgba(255,255,255,0.25);
-    border-color: rgba(255,255,255,0.5);
-}
-
-.pet-select:focus {
-    outline: none;
-    background: rgba(255,255,255,0.25);
-    border-color: rgba(255,255,255,0.7);
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
-}
-
-.pet-select option {
+.pet-option-card:hover .action-switch {
     background: #4caf50;
     color: white;
-    padding: 0.5rem;
+    transform: translateX(2px);
 }
 
 @media (max-width: 768px) {
     .add-daily-container {
         padding: 0 0.5rem;
     }
-    
+
     .add-daily-card {
         padding: 1.5rem;
     }
-    
+
     .add-daily-header {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .form-actions {
         flex-direction: column;
+    }
+
+    /* 響應式現代化寵物卡片 */
+    .pet-hero-card {
+        min-height: 140px;
+    }
+
+    .pet-hero-content {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .avatar-ring {
+        width: 60px;
+        height: 60px;
+    }
+
+    .avatar-inner {
+        width: 52px;
+        height: 52px;
+    }
+
+    .pet-main-name {
+        font-size: 1.2rem;
+    }
+
+    .pet-main-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .switcher-trigger {
+        padding: 0.8rem 1rem;
+        gap: 0.4rem;
+    }
+
+    .trigger-text {
+        font-size: 0.75rem;
+    }
+
+    .pets-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .pet-option-card {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .option-avatar-ring {
+        width: 50px;
+        height: 50px;
+    }
+
+    .option-avatar-ring img,
+    .option-avatar-placeholder {
+        width: 44px;
+        height: 44px;
+    }
+
+    .pet-option-name {
+        font-size: 1rem;
+    }
+
+    .pet-option-meta {
+        font-size: 0.85rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .meta-separator {
+        display: none;
     }
 }
 </style>
@@ -277,34 +791,122 @@
                 </div>
             </div>
 
-            <div class="pet-info">
-                <div class="pet-avatar">
-                    {% if pet.picture %}
-                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
-                    {% else %}
-                        <i class="fas fa-paw"></i>
-                    {% endif %}
-                </div>
-                <div class="pet-details">
-                    <h3>{{ pet.name }}</h3>
-                    <p>{{ pet.species }} • {{ pet.breed }}</p>
-
-                    {% if user_pets.count > 1 %}
-                    <div class="pet-switcher">
-                        <label for="pet-select">
-                            <i class="fas fa-exchange-alt"></i> 切換寵物：
-                        </label>
-                        <select id="pet-select" class="pet-select" onchange="switchPet(this.value)">
-                            {% for user_pet in user_pets %}
-                                <option value="{{ user_pet.id }}"
-                                        {% if user_pet.id == current_pet_id %}selected{% endif %}>
-                                    {{ user_pet.name }} ({{ user_pet.species }})
-                                </option>
-                            {% endfor %}
-                        </select>
+            <!-- 現代化寵物資訊卡片 -->
+            <div class="pet-card-container">
+                <div class="pet-hero-card">
+                    <div class="pet-hero-background">
+                        <div class="hero-gradient-overlay"></div>
+                        <div class="floating-elements">
+                            <div class="floating-paw paw-1">🐾</div>
+                            <div class="floating-paw paw-2">🐾</div>
+                            <div class="floating-paw paw-3">🐾</div>
+                        </div>
                     </div>
-                    {% endif %}
+
+                    <div class="pet-hero-content">
+                        <div class="pet-main-avatar">
+                            <div class="avatar-ring">
+                                <div class="avatar-inner">
+                                    {% if pet.picture %}
+                                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder">
+                                            <i class="fas fa-paw"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="pet-status-badge">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+
+                        <div class="pet-main-info">
+                            <h2 class="pet-main-name">{{ pet.name }}</h2>
+                            <div class="pet-main-details">
+                                <span class="pet-species-badge">
+                                    <i class="fas fa-tag"></i>
+                                    {{ pet.species }}
+                                </span>
+                                <span class="pet-breed-text">{{ pet.breed|default:"可愛毛孩" }}</span>
+                            </div>
+                        </div>
+
+                        {% if user_pets.count > 1 %}
+                        <div class="pet-switcher-modern">
+                            <button class="switcher-trigger" onclick="togglePetSwitcher()" id="switcherTrigger">
+                                <div class="trigger-icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <span class="trigger-text">切換毛孩</span>
+                                <div class="trigger-count">{{ user_pets.count }}</div>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
+
+                {% if user_pets.count > 1 %}
+                <!-- 寵物選擇面板 -->
+                <div class="pet-switcher-panel" id="petSwitcherPanel">
+                    <div class="panel-header">
+                        <h4 class="panel-title">
+                            <i class="fas fa-paw"></i>
+                            選擇毛孩
+                        </h4>
+                        <button class="panel-close" onclick="closePetSwitcher()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="pets-grid">
+                        {% for user_pet in user_pets %}
+                        <div class="pet-option-card {% if user_pet.id == current_pet_id %}current{% endif %}"
+                             onclick="switchToModernPet('{{ user_pet.id }}')">
+                            <div class="pet-option-avatar">
+                                <div class="option-avatar-ring">
+                                    {% if user_pet.picture %}
+                                        <img src="{{ user_pet.picture.url }}" alt="{{ user_pet.name }}">
+                                    {% else %}
+                                        <div class="option-avatar-placeholder">
+                                            <i class="fas fa-paw"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if user_pet.id == current_pet_id %}
+                                <div class="current-indicator">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="pet-option-content">
+                                <h5 class="pet-option-name">{{ user_pet.name }}</h5>
+                                <p class="pet-option-meta">
+                                    <span class="meta-species">{{ user_pet.species }}</span>
+                                    {% if user_pet.breed %}
+                                    <span class="meta-separator">•</span>
+                                    <span class="meta-breed">{{ user_pet.breed }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="pet-option-action">
+                                {% if user_pet.id == current_pet_id %}
+                                    <div class="action-current">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="action-switch">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <form method="post" class="add-daily-form">
@@ -376,8 +978,63 @@
 </div>
 
 <script>
-// 寵物切換功能
-function switchPet(petId) {
+// 現代化寵物切換器功能
+function togglePetSwitcher() {
+    const panel = document.getElementById('petSwitcherPanel');
+    const trigger = document.getElementById('switcherTrigger');
+
+    if (!panel) return;
+
+    const isShowing = panel.classList.contains('show');
+
+    if (isShowing) {
+        closePetSwitcher();
+    } else {
+        openPetSwitcher();
+    }
+}
+
+function openPetSwitcher() {
+    const panel = document.getElementById('petSwitcherPanel');
+    const trigger = document.getElementById('switcherTrigger');
+
+    if (panel && trigger) {
+        panel.classList.add('show');
+        trigger.style.transform = 'scale(0.95)';
+
+        // 添加點擊外部關閉功能
+        setTimeout(() => {
+            document.addEventListener('click', closePetSwitcherOnClickOutside);
+        }, 100);
+    }
+}
+
+function closePetSwitcher() {
+    const panel = document.getElementById('petSwitcherPanel');
+    const trigger = document.getElementById('switcherTrigger');
+
+    if (panel && trigger) {
+        panel.classList.remove('show');
+        trigger.style.transform = 'scale(1)';
+
+        // 移除點擊外部關閉功能
+        document.removeEventListener('click', closePetSwitcherOnClickOutside);
+    }
+}
+
+function closePetSwitcherOnClickOutside(event) {
+    const panel = document.getElementById('petSwitcherPanel');
+    const trigger = document.getElementById('switcherTrigger');
+
+    if (panel && trigger &&
+        !panel.contains(event.target) &&
+        !trigger.contains(event.target)) {
+        closePetSwitcher();
+    }
+}
+
+// 現代化寵物切換功能
+function switchToModernPet(petId) {
     if (petId && petId !== '{{ current_pet_id }}') {
         // 檢查表單是否有未保存的數據
         const form = document.querySelector('.add-daily-form');
@@ -395,15 +1052,90 @@ function switchPet(petId) {
         if (hasData) {
             const confirmed = confirm('表單中有未保存的數據，切換寵物將會遺失這些數據。是否繼續？');
             if (!confirmed) {
-                // 重設選擇器到原始值
-                document.getElementById('pet-select').value = '{{ current_pet_id }}';
                 return;
             }
         }
 
-        // 轉到新的寵物頁面
-        window.location.href = `/pet/${petId}/add_daily_record/`;
+        // 關閉面板
+        closePetSwitcher();
+
+        // 顯示載入動畫
+        showModernSwitchingLoader();
+
+        // 跳轉到新寵物頁面
+        setTimeout(() => {
+            window.location.href = `/pet/${petId}/add_daily_record/`;
+        }, 800);
     }
+}
+
+// 顯示現代化切換載入動畫
+function showModernSwitchingLoader() {
+    const heroCard = document.querySelector('.pet-hero-card');
+    if (heroCard) {
+        heroCard.style.transform = 'scale(0.98)';
+        heroCard.style.opacity = '0.7';
+
+        // 添加載入覆蓋層
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'switching-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="switching-content">
+                <div class="switching-spinner">
+                    <i class="fas fa-paw"></i>
+                </div>
+                <p class="switching-text">切換中...</p>
+            </div>
+        `;
+
+        heroCard.appendChild(loadingOverlay);
+
+        // 添加載入動畫樣式
+        const style = document.createElement('style');
+        style.textContent = `
+            .switching-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(76, 175, 80, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+                border-radius: 20px;
+            }
+
+            .switching-content {
+                text-align: center;
+                color: white;
+            }
+
+            .switching-spinner {
+                font-size: 2rem;
+                margin-bottom: 1rem;
+                animation: switching-bounce 1s ease-in-out infinite;
+            }
+
+            .switching-text {
+                font-size: 1rem;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            @keyframes switching-bounce {
+                0%, 100% { transform: translateY(0) rotate(0deg); }
+                50% { transform: translateY(-10px) rotate(15deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// 原始切換函數保留作為備用
+function switchPet(petId) {
+    switchToModernPet(petId);
 }
 
 // 動態更新寵物資訊

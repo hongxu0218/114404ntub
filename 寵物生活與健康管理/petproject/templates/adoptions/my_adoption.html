@@ -484,17 +484,20 @@
                 {% endif %}
 
                 <!-- 上架/下架 按鈕 -->
-                <form method="post" action="{% url 'toggle_status' adoption.id %}" style="display: inline;">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="publish">
-                  <button type="submit" class="btn-sm btn-toggle" title="切換刊登狀態">
-                    {% if adoption.is_publish %}
-                      <i class="bi bi-eye-slash"></i> 下架
-                    {% else %}
-                      <i class="bi bi-eye"></i> 上架
-                    {% endif %}
-                  </button>
-                </form>
+                {% if not adoption.is_adopted %}
+                  <form method="post" action="{% url 'toggle_status' adoption.id %}" style="display: inline;"
+                        onsubmit="return confirm('{% if adoption.is_publish %}確定將此寵物設為暫不刊登嗎？{% else %}確定將此寵物重新上架刊登嗎？{% endif %}');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="publish">
+                    <button type="submit" class="btn-sm btn-toggle" title="切換刊登狀態">
+                      {% if adoption.is_publish %}
+                        <i class="bi bi-eye-slash"></i> 下架
+                      {% else %}
+                        <i class="bi bi-eye"></i> 上架
+                      {% endif %}
+                    </button>
+                  </form>
+                {% endif %}
 
               </div>
               <span class="posted-date">{{ adoption.posted_date|date:"Y-m-d" }}</span>

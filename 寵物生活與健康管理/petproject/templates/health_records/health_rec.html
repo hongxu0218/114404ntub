@@ -24,28 +24,8 @@
                         <p class="health-subtitle">守護毛孩的每一個健康時刻 💚</p>
                     </div>
                 </div>
-                
-                <div class="health-nav-buttons">
-                    {% if all_pets.count > 1 %}
-                    <div class="pet-filter-container">
-                        <div class="pet-filter-icon">
-                            <i class="fas fa-paw"></i>
-                        </div>
-                        <select id="pet-filter" class="pet-filter-select" onchange="filterByPet(this.value)">
-                            <option value="">全部毛孩</option>
-                            {% for pet in all_pets %}
-                                <option value="{{ pet.id }}"
-                                        {% if selected_pet_id and pet.id|stringformat:"s" == selected_pet_id %}selected{% endif %}>
-                                    🐾 {{ pet.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <div class="pet-filter-arrow">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    {% endif %}
 
+                <div class="health-nav-buttons">
                     <a href="{% url 'pet_list' %}" class="health-nav-btn">
                         <i class="fas fa-arrow-left"></i>
                         <span>回到毛孩列表</span>
@@ -53,6 +33,98 @@
                 </div>
             </div>
         </div>
+
+        <!-- 篩選工具列 -->
+        {% if all_pets.count > 1 %}
+        <div class="filter-toolbar">
+            <div class="filter-toolbar-content">
+                <div class="filter-section-left">
+                    <div class="filter-icon">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <div class="filter-info">
+                        <h3>篩選毛孩健康記錄</h3>
+                        <p class="filter-subtitle">選擇要查看的毛孩記錄</p>
+                    </div>
+                </div>
+
+                <div class="filter-section-right">
+                    <div class="pet-filter-enhanced" id="petFilterEnhanced">
+                        <button class="pet-filter-button" onclick="togglePetFilter()">
+                            <div class="selected-pet">
+                                {% if selected_pet %}
+                                    <div class="selected-pet-avatar">
+                                        {% if selected_pet.picture %}
+                                            <img src="{{ selected_pet.picture.url }}" alt="{{ selected_pet.name }}">
+                                        {% else %}
+                                            <i class="fas fa-paw"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="selected-pet-info">
+                                        <p class="selected-pet-name">{{ selected_pet.name }}</p>
+                                        <p class="selected-pet-breed">{{ selected_pet.species|default:"寵物" }} • {{ selected_pet.breed|default:"品種未知" }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class="selected-pet-avatar">
+                                        <i class="fas fa-home"></i>
+                                    </div>
+                                    <div class="selected-pet-info">
+                                        <p class="selected-pet-name">全部毛孩</p>
+                                        <p class="selected-pet-breed">顯示所有寵物記錄</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <i class="fas fa-chevron-down filter-dropdown-arrow"></i>
+                        </button>
+
+                        <div class="pet-filter-menu" id="petFilterMenu">
+                            <div class="pet-filter-option {% if not selected_pet %}active{% endif %}"
+                                 onclick="filterByPet('')">
+                                <div class="pet-option-avatar">
+                                    <i class="fas fa-home"></i>
+                                </div>
+                                <div class="pet-option-info">
+                                    <p class="pet-option-name">全部毛孩</p>
+                                    <p class="pet-option-details">顯示所有寵物的健康記錄</p>
+                                </div>
+                                <div class="pet-option-badge">{{ all_pets.count }} 隻</div>
+                            </div>
+
+                            {% for pet in all_pets %}
+                            <div class="pet-filter-option {% if selected_pet and pet.id == selected_pet.id %}active{% endif %}"
+                                 onclick="filterByPet('{{ pet.id }}')">
+                                <div class="pet-option-avatar">
+                                    {% if pet.picture %}
+                                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
+                                    {% else %}
+                                        <i class="fas fa-paw"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="pet-option-info">
+                                    <p class="pet-option-name">{{ pet.name }}</p>
+                                    <p class="pet-option-details">{{ pet.species|default:"寵物" }} • {{ pet.breed|default:"品種未知" }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="filter-stats">
+                        <div class="filter-stat">
+                            <p class="filter-stat-number">{{ all_pets.count }}</p>
+                            <p class="filter-stat-label">隻毛孩</p>
+                        </div>
+                        {% if selected_pet %}
+                        <div class="filter-stat">
+                            <p class="filter-stat-number">1</p>
+                            <p class="filter-stat-label">已篩選</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- 健康分類標籤 -->
         <div class="health-tabs">
@@ -685,7 +757,7 @@
                 <!-- 生活記錄卡片 -->
                 <div class="daily-records-container">
                     {% for record in daily_records %}
-                    <div class="daily-record-card" data-category="{{ record.category }}">
+                    <div class="daily-record-card" data-category="{{ record.category }}" data-record-id="{{ record.id }}" data-pet-id="{{ record.pet.id }}">
                         <div class="daily-record-header">
                             <div class="daily-record-pet">
                                 <div class="daily-pet-avatar">
@@ -847,6 +919,35 @@ function filterByPet(petId) {
     currentUrl.searchParams.set('tab', currentTab);
 
     window.location.href = currentUrl.toString();
+}
+
+// 增強型寵物篩選器切換功能
+function togglePetFilter() {
+    const filterEnhanced = document.getElementById('petFilterEnhanced');
+    const filterMenu = document.getElementById('petFilterMenu');
+
+    if (!filterEnhanced || !filterMenu) {
+        return;
+    }
+
+    filterEnhanced.classList.toggle('open');
+
+    // 點擊外部關閉下拉選單
+    if (filterEnhanced.classList.contains('open')) {
+        document.addEventListener('click', closeFilterOnClickOutside);
+    } else {
+        document.removeEventListener('click', closeFilterOnClickOutside);
+    }
+}
+
+// 點擊外部關閉篩選器
+function closeFilterOnClickOutside(event) {
+    const filterEnhanced = document.getElementById('petFilterEnhanced');
+
+    if (!filterEnhanced.contains(event.target)) {
+        filterEnhanced.classList.remove('open');
+        document.removeEventListener('click', closeFilterOnClickOutside);
+    }
 }
 </script>
 {% endblock %}

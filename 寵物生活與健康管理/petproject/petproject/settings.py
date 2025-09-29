@@ -23,15 +23,15 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.s
 CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='http://127.0.0.1:8000,http://localhost:8000')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
 
-# 🚨 HTTPS 生產環境安全設定
-if not DEBUG:
+# 🚨 HTTPS 生產環境安全設定 (開發時停用)
+if False:  # 暫時停用所有 HTTPS 設定
     # 確保 ALLOWED_HOSTS 不為空
     if not ALLOWED_HOSTS:
         ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pawday114404.duckdns.org']
 
     # HTTPS 安全設定（Caddy 自動處理 SSL）
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Caddy 代理設定
-    SECURE_SSL_REDIRECT = True   # 強制 HTTPS 重定向
+    # SECURE_SSL_REDIRECT = True   # 強制 HTTPS 重定向 (開發時註解)
     SECURE_HSTS_SECONDS = 31536000  # HSTS 一年
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -39,7 +39,23 @@ if not DEBUG:
     # SESSION 與 CSRF Cookie 安全設定
     SESSION_COOKIE_SECURE = True   # 僅 HTTPS 傳送
     CSRF_COOKIE_SECURE = True      # 僅 HTTPS 傳送
-    CSRF_COOKIE_HTTPONLY = True    # 防止 XSS 攻擊
+    # 生產環境也允許JavaScript訪問CSRF cookie（為了AJAX請求）
+    CSRF_COOKIE_HTTPONLY = False
+else:
+    # 開發環境設置
+    CSRF_COOKIE_HTTPONLY = False   # 開發環境允許JavaScript訪問CSRF cookie
+
+# CSRF設置 - 適用於所有環境
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_SAMESITE = 'Lax'  # 防止CSRF攻擊但允許必要的跨站請求
+CSRF_COOKIE_AGE = 3600  # CSRF cookie 1小時過期，增加安全性
+CSRF_USE_SESSIONS = False  # 使用cookie而不是session存儲CSRF token
+
+# 額外的安全措施
+if not DEBUG:
+    # 生產環境額外的CSP安全頭
+    SECURE_CONTENT_SECURITY_POLICY = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
 
     # 其他安全標頭
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -262,6 +278,10 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+# Google OAuth 回調 URL 設定
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/logout-success/'
+
 # ===== Logging 配置 =====
 LOGGING = {
     'version': 1,
@@ -298,4 +318,5 @@ USE_TZ = True   # 啟用時區支援
 
 
 # ===== 預設主鍵欄位型別設定（從 Django 3.2 起建議）=====
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

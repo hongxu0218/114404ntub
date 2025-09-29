@@ -210,6 +210,9 @@ body.owner-theme {
   background: var(--sidebar-bg);
   min-height: 100vh;
   box-shadow: var(--medical-shadow-lg);
+;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .medical-sidebar .nav-link {

@@ -68,3 +68,58 @@
   --z-index-tooltip: 1070;
   --z-index-toast: 9999;
 }
+
+/* ===== 手機版響應式變量 ===== */
+@media (max-width: 768px) {
+  :root {
+    /* 手機版間距調整 */
+    --spacing-sm: 0.4rem;
+    --spacing-md: 0.8rem;
+    --spacing-lg: 1.2rem;
+    --spacing-xl: 1.6rem;
+    --spacing-xxl: 2.4rem;
+
+    /* 手機版字體大小調整 */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.85rem;
+    --font-size-base: 0.95rem;
+    --font-size-lg: 1.05rem;
+    --font-size-xl: 1.15rem;
+    --font-size-2xl: 1.35rem;
+    --font-size-3xl: 1.8rem;
+    --font-size-4xl: 2.5rem;
+
+    /* 手機版圓角調整 */
+    --border-radius-sm: 6px;
+    --border-radius-md: 10px;
+    --border-radius-lg: 15px;
+    --border-radius-xl: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  :root {
+    /* 極小螢幕間距調整 */
+    --spacing-sm: 0.3rem;
+    --spacing-md: 0.6rem;
+    --spacing-lg: 1rem;
+    --spacing-xl: 1.4rem;
+    --spacing-xxl: 2rem;
+
+    /* 極小螢幕字體大小調整 */
+    --font-size-xs: 0.7rem;
+    --font-size-sm: 0.8rem;
+    --font-size-base: 0.9rem;
+    --font-size-lg: 1rem;
+    --font-size-xl: 1.1rem;
+    --font-size-2xl: 1.25rem;
+    --font-size-3xl: 1.6rem;
+    --font-size-4xl: 2.2rem;
+
+    /* 極小螢幕圓角調整 */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+  }
+}

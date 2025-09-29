@@ -9,8 +9,8 @@
 <style>
 /* 批量操作樣式 */
 .batch-operations {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border: 1px solid #2196F3;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 15px 20px;
     margin: 20px 0;
@@ -33,7 +33,7 @@
 
 .batch-info {
     font-weight: 600;
-    color: #1976D2;
+    color: #475569;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -64,37 +64,37 @@
 }
 
 .btn-batch-confirm {
-    background: #4CAF50;
+    background: #059669;
     color: white;
 }
 
 .btn-batch-confirm:hover {
-    background: #45a049;
+    background: #047857;
     transform: translateY(-1px);
 }
 
 .btn-batch-complete {
-    background: #2196F3;
+    background: #64748b;
     color: white;
 }
 
 .btn-batch-complete:hover {
-    background: #1976D2;
+    background: #475569;
     transform: translateY(-1px);
 }
 
 .btn-batch-cancel {
-    background: #f44336;
+    background: #dc2626;
     color: white;
 }
 
 .btn-batch-cancel:hover {
-    background: #da190b;
+    background: #b91c1c;
     transform: translateY(-1px);
 }
 
 .btn-batch-clear {
-    background: #9e9e9e;
+    background: #9ca3af;
     color: white;
 }
 
@@ -475,16 +475,58 @@
   </div>
   {% endif %}
 
-  <!-- 篩選標籤 -->
-  <div class="filter-tags">
-    <span class="filter-tag active" data-filter="all">全部</span>
-    <span class="filter-tag" data-filter="today">今日</span>
-    <span class="filter-tag" data-filter="week">本週</span>
-    <span class="filter-tag" data-filter="pending">待確認</span>
-    <span class="filter-tag" data-filter="confirmed">已確認</span>
-    {% if show_history %}
-      <span class="filter-tag" data-filter="completed">已完成</span>
-    {% endif %}
+  <!-- 篩選控制區域 -->
+  <div class="unified-filters" style="margin: 15px 0;">
+    <div class="filter-section">
+      <h6 style="margin-bottom: 8px; color: #475569; font-weight: 600;">篩選條件</h6>
+      <div class="advanced-filters" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+        <div class="filter-group">
+          <label for="dateRangeFilter" style="font-size: 14px; margin-right: 8px;">日期範圍：</label>
+          <select id="dateRangeFilter" class="form-control" style="min-width: 120px;">
+            <option value="all">所有日期</option>
+            <option value="today">今日</option>
+            <option value="tomorrow">明日</option>
+            <option value="past-week">過去7天</option>
+            <option value="current-week">本週</option>
+            <option value="next-week">下週</option>
+            <option value="current-month">本月</option>
+            <option value="next-month">下月</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="statusFilter" style="font-size: 14px; margin-right: 8px;">狀態：</label>
+          <select id="statusFilter" class="form-control" style="min-width: 100px;">
+            <option value="all">所有狀態</option>
+            <option value="pending">待確認</option>
+            <option value="confirmed">已確認</option>
+            <option value="cancelled">已取消</option>
+            {% if show_history %}
+              <option value="completed">已完成</option>
+            {% endif %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="timeSlotFilter" style="font-size: 14px; margin-right: 8px;">時段：</label>
+          <select id="timeSlotFilter" class="form-control" style="min-width: 100px;">
+            <option value="all">全時段</option>
+            <option value="morning">上午 (06:00-12:00)</option>
+            <option value="afternoon">下午 (12:00-18:00)</option>
+            <option value="evening">晚上 (18:00-24:00)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <input type="text" id="searchFilter" class="form-control" placeholder="搜尋寵物名稱、飼主..." style="min-width: 200px;">
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllFilters()">
+          <i class="bi bi-arrow-clockwise"></i>
+          清除篩選
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- 預約表格區域 -->
@@ -497,12 +539,12 @@
               <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
             </th>
           {% endif %}
-          <th>日期</th>
-          <th>時間</th>
-          <th>寵物資訊</th>
-          <th>飼主</th>
+          <th width="120">日期</th>
+          <th width="80">時間</th>
+          <th width="150">寵物資訊</th>
+          <th width="120">飼主</th>
           <th>預約原因</th>
-          <th>狀態</th>
+          <th width="180">狀態</th>
           {% if not show_history %}
             <th>操作</th>
           {% endif %}
@@ -513,9 +555,13 @@
           {% regroup appointments by slot.date as date_groups %}
           {% for group in date_groups %}
             <tr class="date-group-row">
-              <td colspan="{% if show_history %}6{% else %}8{% endif %}">
-                <i class="bi bi-calendar3"></i>
-                {{ group.grouper|date:"Y年m月d日" }}（{{ group.grouper|date:"l" }}）
+              <td colspan="{% if show_history %}6{% else %}8{% endif %}" class="date-group-header">
+                <div class="date-group-content">
+                  <i class="bi bi-calendar3 me-2"></i>
+                  <span class="group-date">{{ group.grouper|date:"Y年m月d日" }}</span>
+                  <span class="group-weekday">（{{ group.grouper|date:"l" }}）</span>
+                  <small class="group-count">- {{ group.list|length }}個預約</small>
+                </div>
               </td>
             </tr>
             {% for appointment in group.list %}
@@ -528,11 +574,23 @@
                            onchange="updateBatchOperations()">
                   </td>
                 {% endif %}
-                <td>{{ appointment.slot.date|date:"m/d" }}</td>
                 <td>
-                  <strong>{{ appointment.slot.start_time|time:"H:i" }}</strong>
-                  -
-                  {{ appointment.slot.end_time|time:"H:i" }}
+                  <div class="appointment-date">
+                    <span class="date-primary">{{ appointment.slot.date|date:"m/d" }}</span>
+                    <small class="date-weekday">{{ appointment.slot.date|date:"D" }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div class="appointment-time">
+                    <span class="time-range">
+                      <strong>{{ appointment.slot.start_time|time:"H:i" }}</strong>
+                      <span class="time-separator">至</span>
+                      <strong>{{ appointment.slot.end_time|time:"H:i" }}</strong>
+                    </span>
+                    <small class="time-duration">
+                      ({{ appointment.slot.start_time|time:"H:i" }}開始，約{{ appointment.slot.duration|default:"30" }}分鐘)
+                    </small>
+                  </div>
                 </td>
                 <td>
                   <div>
@@ -592,10 +650,21 @@
                       已完成
                     {% elif appointment.status == 'cancelled' %}
                       已取消
+                      {% if appointment.cancel_reason %}
+                        <div class="cancel-reason-tooltip" title="取消原因：{{ appointment.cancel_reason }}">
+                          <i class="bi bi-info-circle" style="margin-left: 5px; cursor: help;"></i>
+                        </div>
+                      {% endif %}
                     {% else %}
                       {{ appointment.get_status_display }}
                     {% endif %}
                   </span>
+                  {% if appointment.status == 'cancelled' and appointment.cancel_reason %}
+                    <div class="cancel-reason-detail" style="margin-top: 8px; font-size: 12px; color: #666; max-width: 160px; word-wrap: break-word; line-height: 1.4;">
+                      <strong style="color: #dc2626;">取消原因：</strong><br>
+                      <span style="background: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #991b1b;">{{ appointment.cancel_reason }}</span>
+                    </div>
+                  {% endif %}
                 </td>
                 {% if not show_history %}
                   <td>
@@ -904,9 +973,64 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('獸醫師預約管理系統初始化完成');
 });
 
-// 兼容性函數
+// 兼容性函數 - 增強為AJAX取消
 function confirmCancelAppointment(event, petName, date, time) {
-    return confirm(`確定要取消 ${petName} 在 ${date} ${time} 的預約嗎？\n\n請確認已填寫取消原因。`);
+    event.preventDefault();
+
+    if (!confirm(`確定要取消 ${petName} 在 ${date} ${time} 的預約嗎？\n\n請確認已填寫取消原因。`)) {
+        return false;
+    }
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // 檢查取消原因是否已填寫
+    const cancelReason = formData.get('cancel_reason');
+    if (!cancelReason || cancelReason.trim() === '') {
+        alert('請填寫取消原因');
+        return false;
+    }
+
+    // 發送AJAX請求
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response URL:', response.url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        if (response.redirected) {
+            // 如果後端返回重定向，直接重載頁面
+            window.location.reload();
+            return;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            // 成功後重載頁面以更新數據
+            window.location.reload();
+        } else if (data && data.message) {
+            alert(data.message);
+        } else {
+            alert('取消預約時發生未知錯誤');
+        }
+    })
+    .catch(error => {
+        console.error('取消預約時發生錯誤:', error);
+        alert(`取消預約失敗：${error.message}`);
+    });
+
+    return false;
 }
 
 // === 批量操作功能 ===
@@ -996,21 +1120,6 @@ function batchConfirmAppointments() {
     batchOperationRequest('confirm', selectedIds, '確認');
 }
 
-// 批量完成預約
-function batchCompleteAppointments() {
-    const selectedIds = getSelectedAppointmentIds();
-    
-    if (selectedIds.length === 0) {
-        showWarningMessage('請先選擇要完成的預約');
-        return;
-    }
-    
-    if (!confirm(`確定要將 ${selectedIds.length} 個預約標記為已完成嗎？`)) {
-        return;
-    }
-    
-    batchOperationRequest('complete', selectedIds, '完成');
-}
 
 // 批量取消預約
 function batchCancelAppointments() {
@@ -1191,6 +1300,256 @@ function showSuccessMessage(message) {
         }
     }, 3000);
 }
+
+// 整合篩選功能
+function initializeAdvancedFilters() {
+    const dateRangeFilter = document.getElementById('dateRangeFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const timeSlotFilter = document.getElementById('timeSlotFilter');
+    const searchFilter = document.getElementById('searchFilter');
+
+    // 為所有篩選器添加事件監聽器
+    [dateRangeFilter, statusFilter, timeSlotFilter].forEach(filter => {
+        if (filter) {
+            filter.addEventListener('change', applyAdvancedFilters);
+        }
+    });
+
+    if (searchFilter) {
+        let searchTimeout;
+        searchFilter.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyAdvancedFilters, 300);
+        });
+    }
+
+}
+
+// 應用進階篩選
+function applyAdvancedFilters() {
+    const dateRange = document.getElementById('dateRangeFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const timeSlot = document.getElementById('timeSlotFilter').value;
+    const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
+
+    const table = document.getElementById('appointmentsTable');
+    const rows = table.querySelectorAll('tbody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        // 跳過日期分組行
+        if (row.classList.contains('date-group-row') || row.querySelector('.date-group-header')) {
+            return;
+        }
+
+        let showRow = true;
+        const appointmentRow = row.closest('.appointment-row');
+        if (!appointmentRow) return;
+
+        // 獲取預約數據
+        const appointmentDate = appointmentRow.dataset.date;
+        const appointmentStatus = appointmentRow.dataset.status;
+
+        // 日期範圍篩選
+        if (dateRange !== 'all' && appointmentDate) {
+            if (!matchesDateRange(appointmentDate, dateRange)) {
+                showRow = false;
+            }
+        }
+
+        // 狀態篩選
+        if (status !== 'all' && appointmentStatus) {
+            if (appointmentStatus !== status) {
+                showRow = false;
+            }
+        }
+
+        // 時段篩選
+        if (timeSlot !== 'all') {
+            const timeCell = appointmentRow.querySelector('td:nth-child(3)'); // 時間列
+            if (timeCell && !matchesTimeSlot(timeCell.textContent, timeSlot)) {
+                showRow = false;
+            }
+        }
+
+        // 搜尋篩選
+        if (searchTerm) {
+            const petCell = appointmentRow.querySelector('td:nth-child(4)'); // 寵物信息
+            const ownerCell = appointmentRow.querySelector('td:nth-child(5)'); // 飼主信息
+            if (petCell && ownerCell) {
+                const petText = petCell.textContent.toLowerCase();
+                const ownerText = ownerCell.textContent.toLowerCase();
+                if (!petText.includes(searchTerm) && !ownerText.includes(searchTerm)) {
+                    showRow = false;
+                }
+            }
+        }
+
+        appointmentRow.style.display = showRow ? '' : 'none';
+        if (showRow) visibleCount++;
+    });
+
+    // 處理日期分組行的顯示
+    updateDateGroupVisibility();
+    updateFilteredCount(visibleCount);
+}
+
+// 更新日期分組行的顯示狀態
+function updateDateGroupVisibility() {
+    const table = document.getElementById('appointmentsTable');
+    const dateGroupRows = table.querySelectorAll('tr:has(.date-group-header)');
+
+    dateGroupRows.forEach(groupRow => {
+        let hasVisibleAppointments = false;
+        let currentRow = groupRow.nextElementSibling;
+
+        // 檢查這個日期分組下是否有可見的預約
+        while (currentRow && !currentRow.querySelector('.date-group-header')) {
+            if (currentRow.style.display !== 'none' && currentRow.classList.contains('appointment-row')) {
+                hasVisibleAppointments = true;
+                break;
+            }
+            currentRow = currentRow.nextElementSibling;
+        }
+
+        // 根據是否有可見預約來決定分組行的顯示
+        groupRow.style.display = hasVisibleAppointments ? '' : 'none';
+    });
+}
+
+// 檢查日期是否符合範圍
+function matchesDateRange(dateText, range) {
+    try {
+        // 處理多種日期格式: "YYYY-MM-DD" 或 data-date 屬性
+        const appointmentDate = new Date(dateText);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // 重置時間為當天開始
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        // 計算本週開始和結束
+        const currentWeekStart = new Date(today);
+        currentWeekStart.setDate(today.getDate() - today.getDay());
+        const currentWeekEnd = new Date(currentWeekStart);
+        currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+
+        // 計算下週開始和結束
+        const nextWeekStart = new Date(currentWeekEnd);
+        nextWeekStart.setDate(currentWeekEnd.getDate() + 1);
+        const nextWeekEnd = new Date(nextWeekStart);
+        nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+
+        appointmentDate.setHours(0, 0, 0, 0); // 重置時間
+
+        switch (range) {
+            case 'today':
+                return appointmentDate.getTime() === today.getTime();
+            case 'tomorrow':
+                return appointmentDate.getTime() === tomorrow.getTime();
+            case 'past-week':
+                const pastWeek = new Date(today);
+                pastWeek.setDate(today.getDate() - 7);
+                return appointmentDate >= pastWeek && appointmentDate < today;
+            case 'current-week':
+                return appointmentDate >= currentWeekStart && appointmentDate <= currentWeekEnd;
+            case 'next-week':
+                return appointmentDate >= nextWeekStart && appointmentDate <= nextWeekEnd;
+            case 'current-month':
+                return appointmentDate.getMonth() === today.getMonth() &&
+                       appointmentDate.getFullYear() === today.getFullYear();
+            case 'next-month':
+                const nextMonth = new Date(today);
+                nextMonth.setMonth(today.getMonth() + 1);
+                return appointmentDate.getMonth() === nextMonth.getMonth() &&
+                       appointmentDate.getFullYear() === nextMonth.getFullYear();
+            default:
+                return true;
+        }
+    } catch {
+        return true;
+    }
+}
+
+// 檢查時間是否符合時段
+function matchesTimeSlot(timeText, slot) {
+    try {
+        const timeMatch = timeText.match(/(\d{1,2}):(\d{2})/);
+        if (!timeMatch) return true;
+
+        const hour = parseInt(timeMatch[1]);
+
+        switch (slot) {
+            case 'morning':
+                return hour >= 6 && hour < 12;
+            case 'afternoon':
+                return hour >= 12 && hour < 18;
+            case 'evening':
+                return hour >= 18 && hour < 24;
+            default:
+                return true;
+        }
+    } catch {
+        return true;
+    }
+}
+
+// 檢查寵物類型
+function matchesPetType(petText, type) {
+    const petInfo = petText.toLowerCase();
+
+    switch (type) {
+        case 'dog':
+            return petInfo.includes('狗') || petInfo.includes('犬');
+        case 'cat':
+            return petInfo.includes('貓') || petInfo.includes('喵');
+        case 'bird':
+            return petInfo.includes('鳥') || petInfo.includes('鸚鵡') || petInfo.includes('雀');
+        case 'rabbit':
+            return petInfo.includes('兔') || petInfo.includes('兔子');
+        case 'other':
+            return !petInfo.includes('狗') && !petInfo.includes('犬') &&
+                   !petInfo.includes('貓') && !petInfo.includes('喵') &&
+                   !petInfo.includes('鳥') && !petInfo.includes('兔');
+        default:
+            return true;
+    }
+}
+
+// 更新篩選後的數量顯示
+function updateFilteredCount() {
+    const table = document.getElementById('appointmentsTable');
+    const allRows = table.querySelectorAll('tbody tr');
+    const visibleRows = table.querySelectorAll('tbody tr:not([style*="display: none"])');
+
+    // 在頁面上顯示篩選結果數量（如果有相應的元素）
+    const countDisplay = document.querySelector('.filter-count');
+    if (countDisplay) {
+        countDisplay.textContent = `顯示 ${visibleRows.length} / ${allRows.length} 筆預約`;
+    }
+}
+
+// 清除所有篩選
+function clearAllFilters() {
+    document.getElementById('dateRangeFilter').value = 'all';
+    document.getElementById('statusFilter').value = 'all';
+    document.getElementById('timeSlotFilter').value = 'all';
+    document.getElementById('searchFilter').value = '';
+
+    // 顯示所有行
+    const table = document.getElementById('appointmentsTable');
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+
+    updateFilteredCount();
+}
+
+// 在頁面載入完成時初始化進階篩選
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAdvancedFilters();
+});
 
 console.log('獸醫師預約管理模板載入完成');
 </script>

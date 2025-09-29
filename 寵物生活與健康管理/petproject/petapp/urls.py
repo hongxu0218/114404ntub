@@ -3,7 +3,7 @@
 from django.urls import path, include  # 匯入 path，用來定義每個 URL 與對應的 view 函數
 from . import views  # 匯入目前資料夾下的 views 模組
 from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
-from . import chat_service, views_handoff  # 匯入進階AI客服和人工客服模組
+from . import chat_service, views_handoff, notification_views  # 匯入進階AI客服、人工客服和通知模組
 from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 from django.contrib import admin
@@ -84,7 +84,7 @@ urlpatterns = [
     path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),
     path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),
     path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),
-    path('clinic/appointments/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),
+    # path('clinic/appointments/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),  # Removed: appointments auto-complete when medical record is created
 
     # ============ 獸醫師工作台系統 ============
     path('vet/home/', views.vet_home, name='vet_home'),
@@ -147,6 +147,7 @@ urlpatterns = [
     # ============ 通知系統 API ============
     path('api/notifications/', views.get_notifications_api, name='get_notifications_api'),
     path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('api/notifications/<int:notification_id>/click/', notification_views.notification_click_redirect_api, name='notification_click_redirect'),
     path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     
     # ============ 註冊與帳號管理 ============
@@ -172,6 +173,9 @@ urlpatterns = [
     path('daily_record/<int:record_id>/update/', views.update_daily_record, name='update_daily_record'),
     path('api/chart-data/', views.daily_record_chart_data, name='daily_record_chart_data'),
 
+    # CSRF Token
+    path('api/csrf-token/', views.get_csrf_token, name='get_csrf_token'),
+
 
     # ============ 疫苗管理 ============
     path('vaccine/add/<int:pet_id>/', views.add_vaccine, name='add_vaccine'),
@@ -192,6 +196,7 @@ urlpatterns = [
     path('adoption/add/', views.add_adoption, name='add_adoption'),
     path('adoption/add_adoptpet/', views.add_adoptpet, name='add_adoptpet'),
     path('adoption/my/', views.my_adoption, name='my_adoption'),
+    path('adoptions/my_adoption/', views.my_adoption, name='my_adoption_alt'),
     path('adoption/<int:adoption_id>/', views.adoption_petDetail, name='adoption_petDetail'),
     path('adoption/edit/<int:pk>/', views.edit_adoption, name='edit_adoption'),
     path('adoption/delete/<int:pk>/', views.delete_adoption, name='delete_adoption'),
@@ -230,8 +235,8 @@ urlpatterns = [
     path('api/chat/', include([
         path('', chat_service.api_chat, name='api_chat'),
         path('stream/', chat_service.api_chat_stream, name='api_chat_stream'),
-        path('kb_status/', chat_service.api_kb_status, name='api_kb_status'),
-        path('clear_cache/', chat_service.api_clear_cache, name='api_clear_cache'),
+        path('kb_status/', chat_service.kb_status, name='api_kb_status'),
+        path('clear_cache/', chat_service.clear_cache, name='api_clear_cache'),
     ])),
 
     # ============ 人工客服轉接 ============

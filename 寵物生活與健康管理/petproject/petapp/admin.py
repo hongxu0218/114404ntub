@@ -196,7 +196,7 @@ class LikeAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'post', 'content_preview', 'parent_comment', 'likes_count', 'created_at')
+    list_display = ('user', 'post', 'content_preview', 'likes_count', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('user__username', 'content', 'post__content')
     readonly_fields = ('likes_count', 'created_at', 'updated_at')

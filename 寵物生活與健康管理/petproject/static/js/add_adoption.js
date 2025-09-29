@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // ===== 後端傳入 JSON =====
     const dogBreeds = JSON.parse(document.getElementById('dogBreedsData').textContent || '[]');
     const catBreeds = JSON.parse(document.getElementById('catBreedsData').textContent || '[]');
+    const otherBreeds = JSON.parse(document.getElementById('otherBreedsData').textContent || '[]');
     const dogVaccines = JSON.parse(document.getElementById('dogVaccinesData').textContent || '[]');
     const catVaccines = JSON.parse(document.getElementById('catVaccinesData').textContent || '[]');
     const otherPetNames = JSON.parse(document.getElementById('otherPetNamesData').textContent || '[]');
@@ -39,7 +40,10 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             breedOtherGroup.style.display = 'none';
             breedOtherInput.removeAttribute("required");
-            breedOtherInput.value = '';
+            // 只有在不是數據帶入過程中才清空其他品種輸入框
+            if (!window.isImportingPetData) {
+                breedOtherInput.value = '';
+            }
         }
     }
 
@@ -52,11 +56,20 @@ document.addEventListener("DOMContentLoaded", function () {
 function updateSpecies() {
     hiddenSpecies.value = speciesSelect.value;
 
+    // 保存當前選擇的品種
+    const currentBreedValue = breedSelect.value;
+
     // 更新品種選項
     let breeds = [['', '請選擇']];
-    if (speciesSelect.value === '狗') breeds = breeds.concat(dogBreeds);
-    if (speciesSelect.value === '貓') breeds = breeds.concat(catBreeds);
-    if (speciesSelect.value === '其他') breeds.push(['其他', '其他']);
+    if (speciesSelect.value === '狗') {
+        breeds = breeds.concat(dogBreeds);
+    } else if (speciesSelect.value === '貓') {
+        breeds = breeds.concat(catBreeds);
+    } else if (speciesSelect.value === '其他') {
+        // 對於"其他"種類，使用其他動物的品種選項
+        breeds = breeds.concat(otherBreeds);
+    }
+
     breedSelect.innerHTML = breeds.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('');
 
     // 疫苗選項現在由 multi-select 介面動態處理
@@ -65,12 +78,27 @@ function updateSpecies() {
     if (speciesSelect.value === '其他') {
         speciesOtherGroup.style.display = 'block';
         speciesOtherInput.setAttribute("required", "required");
-        // 自動選擇品種其他
-        breedSelect.value = '其他';
+
+        // 當選擇"其他"種類時，不要自動改變品種選擇
+        // 只有在當前品種為空或不在新選項中時，才設為"其他"
+        const breedOptions = Array.from(breedSelect.options).map(opt => opt.value);
+        if (currentBreedValue && breedOptions.includes(currentBreedValue)) {
+            breedSelect.value = currentBreedValue;
+        } else {
+            breedSelect.value = '其他';
+        }
     } else {
         speciesOtherGroup.style.display = 'none';
         speciesOtherInput.removeAttribute("required");
         speciesOtherInput.value = '';
+
+        // 當不是"其他"種類時，嘗試保持原有品種選擇
+        const breedOptions = Array.from(breedSelect.options).map(opt => opt.value);
+        if (currentBreedValue && breedOptions.includes(currentBreedValue)) {
+            breedSelect.value = currentBreedValue;
+        } else {
+            breedSelect.value = '';
+        }
     }
 
     // 呼叫更新函式確保「其他」文字框顯示

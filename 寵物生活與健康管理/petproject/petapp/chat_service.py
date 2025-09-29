@@ -1,934 +1,893 @@
 # petapp/chat_service.py
 # -*- coding: utf-8 -*-
-import os, re, json, requests, traceback, time
+import os, re, json, requests, traceback
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-# ====== 可選：環境變數覆蓋 ======
+# ====== 配置參數 ======
+# AI 服務配置
 OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
-OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL",    "qwen2.5:3b-instruct")  # 建議先 3B 穩定
-TOP_K           = int(os.getenv("RAG_TOP_K", "4"))
-SNIPPET_CHARS   = int(os.getenv("RAG_SNIPPET_CHARS", "800"))  # >0 時截斷每段脈絡長度
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b-instruct")  # 改用更輕量的模型
+OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "120"))  # 虛擬機環境增加至120秒
+AI_SERVICE_MODE = os.getenv("AI_SERVICE_MODE", "ollama")  # 新增：auto/ollama/fallback/hybrid
 
-# 模型與網路參數（優化性能）
-OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "30"))  # 減少超時時間
-OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))    # 增加上下文長度以支持更完整對話
-OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "800")) # 增加預測token數以支持完整回答
-OLLAMA_TEMP        = float(os.getenv("OLLAMA_TEMP", "0.2"))      # 降低溫度提高一致性
-
-# 是否把 sources 顯示給使用者（預設關閉）
-_SHOW_SOURCES_ENV = os.getenv("SHOW_SOURCES_TO_USER", "0").lower()
-SHOW_SOURCES_TO_USER = _SHOW_SOURCES_ENV in ("1", "true", "yes", "y")
-
-# ====== 專案路徑 / 向量庫路徑 ======
+# ====== 專案路徑 ======
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_DIR = os.path.join(PROJECT_ROOT, "rag", "chroma_db")   # ← 指向你的向量庫資料夾
-COLLECTION_NAME = os.getenv("RAG_COLLECTION", "faq_with_training")      # ← 和你匯入的 collection 一致
+DB_DIR = os.path.join(PROJECT_ROOT, "rag", "chroma_db")
+COLLECTION_NAME = "faq_with_training"
 
-# ====== 防 500：條件性載入 ======
-try:
-    import chromadb
-    from chromadb.config import Settings
-except Exception:
-    chromadb, Settings = None, None
+# ====== 初始化向量檢索 ======
+_client = None
+_collection = None
+_embedder = None
 
-# 匹配向量庫的嵌入模型維度
-try:
-    from sentence_transformers import SentenceTransformer
-    # 使用768維的模型 - 實際測試確認的維度
-    _embedder = SentenceTransformer("BAAI/bge-base-zh-v1.5")  # 768維
-except Exception:
+def init_vector_search():
+    """初始化向量檢索系統"""
+    global _client, _collection, _embedder
+
+    if _client is not None:
+        return True
+
     try:
-        # 備用選項：也是768維
-        _embedder = SentenceTransformer("BAAI/bge-small-zh-v1.5")  # 768維
-    except Exception:
-        _embedder = None
+        # 初始化向量資料庫
+        import chromadb
+        from chromadb.config import Settings
+        _client = chromadb.PersistentClient(
+            path=DB_DIR,
+            settings=Settings(anonymized_telemetry=False)
+        )
+        _collection = _client.get_collection(COLLECTION_NAME)
 
-# ====== 回覆風格與格式 ======
-FORMAT_INSTRUCTIONS = (
-    "【輸出格式要求】\n"
-    "若有命中知識片段：第一句以「根據提供的知識片段，」起頭；"
-    "若無命中：第一句以「（一般建議）」起頭。\n"
-    "接著輸出：\n"
-    "1) 以條列步驟（1., 2., 3.）提供可執行指引；\n"
-    "2) 接一個『注意事項：』小節，至少 2 點；\n"
-    "請勿在最終輸出中主動加入「來源／參考來源」等字樣或清單。\n"
-)
-SYSTEM_PROMPT = (
-    "你是『毛日好 Paw&Day』網站 AI 客服，請一律使用『繁體中文』回覆，"
-    "先釐清使用者需求，再以條列步驟給出精簡可執行的回答。"
-    "若屬於網站功能（註冊/登入/預約/健康紀錄/通知等），請指出頁面與按鈕路徑。"
-    "若用戶問 FAQs，優先引用下方檢索的知識內容；若找不到就基於一般常識回覆，並標示『（一般建議）』。"
-    "無論知識片段或產出中出現簡體或錯字，輸出給使用者前一律轉為正確的繁體中文（台灣用語），"
-    "並自動校正常見錯字（如：'按鈍'→'按鈕'，'寻找/尋找'→'尋找'，'注册/注冊'→'註冊'，'登录/登錄'→'登入'）。"
-    "\n\n" + FORMAT_INSTRUCTIONS
-)
+        # 初始化嵌入模型
+        from sentence_transformers import SentenceTransformer
+        _embedder = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")  
 
-def _truncate(text: str, n: int) -> str:
-    if not n or n <= 0 or len(text) <= n:
-        return text
-    return text[:n] + "…"
+        print(f"[AI客服] 初始化成功，資料庫共有 {_collection.count()} 筆資料")
+        return True
 
-# ====== 繁體（台灣用語）＋常見錯字校正 ======
-try:
-    from opencc import OpenCC
-    _cc_s2twp = OpenCC('s2twp')  # 簡 → 台灣繁體
-    _cc_t2twp = OpenCC('t2twp')  # 繁 → 台灣用語
-except Exception:
-    _cc_s2twp = _cc_t2twp = None  # 沒裝 opencc 也不會當
-
-_CUSTOM_REPLACE = {
-    "按鈍": "按鈕",
-    "寻找": "尋找",
-    "注册": "註冊",
-    "注冊": "註冊",
-    "会员": "會員",
-    "登录": "登入",
-    "登錄": "登入",
-    "菜單": "選單",
-}
-
-def normalize_zh_tw(text: str) -> str:
-    if not isinstance(text, str) or not text:
-        return text
-    t = text
-    if _cc_s2twp and _cc_t2twp:
-        t = _cc_s2twp.convert(t)
-        t = _cc_t2twp.convert(t)
-    for bad, good in _CUSTOM_REPLACE.items():
-        t = t.replace(bad, good)
-    return t
-
-# ====== 後處理：條列與注意事項換行（更嚴謹）＋來源段落移除 ======
-_LINE_ITEM_RE = re.compile(r'(?<!\S)(\d{1,2}\.)')  # 行首或空白邊界的「1.」「2.」
-_SOURCE_LINE_PAT = re.compile(r"^\s*(參考來源|來源|資料來源)\s*[:：]?\s*$")
-
-def _force_linebreaks(text: str) -> str:
-    if not isinstance(text, str) or not text.strip():
-        return text
-    t = text
-    # 處理注意事項前的換行
-    t = t.replace("注意事項：", "\n注意事項：")
-    # 處理數字項目換行，但只在需要時添加
-    t = re.sub(r'([^\n])(\d{1,2}\.)', r'\1\n\2', t)
-    # 清理多餘的空白和換行
-    t = re.sub(r'[ \t]+', ' ', t)  # 合併多餘空格
-    t = re.sub(r'\n{3,}', '\n\n', t)  # 最多保留一個空行
-    t = re.sub(r'^\s*\n+', '', t)  # 移除開頭的空行
-    return t.strip()
-
-def _strip_source_section(text: str) -> str:
-    """
-    移除模型正文裡以「來源：」「參考來源：」等開頭的段落與條列。
-    也移除結尾殘留的「參考來源：無」。
-    """
-    if not isinstance(text, str) or not text.strip():
-        return text
-    t = text.replace("參考來源：無", "").rstrip()
-
-    lines = t.splitlines()
-    new_lines, skip = [], False
-    for ln in lines:
-        if _SOURCE_LINE_PAT.match(ln):
-            skip = True
-            continue
-        if skip:
-            if not ln.strip():  # 空行當作段落結束
-                skip = False
-            continue
-        if ln.strip() in ("來源", "參考來源", "資料來源"):
-            continue
-        new_lines.append(ln)
-    t = "\n".join(new_lines).rstrip()
-    return t
-
-# ====== 串流安全包裝：偵測用戶端中斷，安靜收尾 ======
-def _guard_stream(generator):
-    """
-    將任一字串產生器包起來；若用戶端關閉連線（BrokenPipe / Reset / GeneratorExit），
-    立即停止迴圈，避免 console 汙染與上游資源浪費。
-    """
-    try:
-        for chunk in generator:
-            yield chunk
-    except (BrokenPipeError, ConnectionResetError, GeneratorExit):
-        return
     except Exception as e:
-        try:
-            yield json.dumps({"type":"error","message":f"（一般建議）串流發生錯誤：{e}"}) + "\n"
-        finally:
-            return
-
-# ====== 轉人工客服：連續失敗判斷 ======
-HANDOFF_THRESHOLD = int(os.getenv("HANDOFF_THRESHOLD", "3"))
-HANDOFF_COOLDOWN_SEC = int(os.getenv("HANDOFF_COOLDOWN_SEC", "900"))
-HANDOFF_SESSION_KEY = "handoff_fail_count"
-HANDOFF_LAST_TS_KEY = "handoff_last_ts"
-
-_HANDOFF_FAIL_HINTS = [
-    "（一般建議）", "我不太清楚", "我不確定", "無法判斷",
-    "找不到相關資訊", "建議您聯絡客服"
-]
-
-def _is_ai_failure(reply_text: str, context_hit: bool, smalltalk: bool) -> bool:
-    if smalltalk:
+        print(f"[AI客服] 初始化失敗: {e}")
         return False
-    if context_hit:
-        return False
-    t = (reply_text or "").strip()
-    return any(h in t for h in _HANDOFF_FAIL_HINTS)
 
-def _update_handoff_state(request, failed: bool):
-    sess = request.session
-    cnt = int(sess.get(HANDOFF_SESSION_KEY, 0))
-    last = int(sess.get(HANDOFF_LAST_TS_KEY, 0))
-    now  = int(time.time())
+def exact_text_search(query):
+    """智能文本匹配搜索 - 改進版（返回最佳匹配）"""
+    if not init_vector_search():
+        return None
 
-    if failed:
-        cnt += 1
-        sess[HANDOFF_SESSION_KEY] = cnt
-    else:
-        cnt = 0
-        sess[HANDOFF_SESSION_KEY] = 0
+    try:
+        # 獲取所有數據進行智能匹配
+        all_data = _collection.get(include=['documents', 'metadatas'])
 
-    suggest = False
-    if cnt >= HANDOFF_THRESHOLD and (now - last >= HANDOFF_COOLDOWN_SEC):
-        suggest = True
-        sess[HANDOFF_LAST_TS_KEY] = now
+        # 清理查詢文本 - 移除標點符號和停用詞
+        import re
+        query_clean = re.sub(r'[？?！!。，,、\s]', '', query.lower())
 
-    meta = {
-        "count": cnt,
-        "threshold": HANDOFF_THRESHOLD,
-        "cooldown_sec": HANDOFF_COOLDOWN_SEC,
-        "suggest": suggest
-    }
-    return suggest, meta
+        candidates = []  # 存儲候選匹配
 
-# ====== 小聊/寒暄偵測 ======
-_GREETING_PAT = re.compile(
-    r"^(你好|您好|哈囉|嗨|hi|hello|hey|早安|午安|晚安|在嗎|有人在嗎|測試|test)$",
-    re.IGNORECASE
-)
-_SMALLTALK_HINTS = [
-    "無聊", "難過", "好累", "壓力", "焦慮", "生氣", "好開心",
-    "不想上班", "不想工作", "想請假", "好懶"
-]
+        for doc, meta in zip(all_data['documents'], all_data['metadatas']):
+            title = meta.get('title', '')
+            title_clean = re.sub(r'[？?！!。，,、\s]', '', title.lower())
 
-def is_low_intent_smalltalk(text: str) -> bool:
-    if not text:
-        return True
-    t = (text or "").strip()
-    if _GREETING_PAT.match(t):
-        return True
-    if any(k in t for k in _SMALLTALK_HINTS):
-        return True
-    return False
+            # 計算相似度：檢查關鍵詞重疊
+            query_chars = set(query_clean)
+            title_chars = set(title_clean)
 
-def smalltalk_reply(user_text: str = "") -> str:
-    t = (user_text or "").strip()
+            # 多種匹配策略
+            overlap = len(query_chars & title_chars)
+            similarity = overlap / max(len(query_chars), len(title_chars)) if max(len(query_chars), len(title_chars)) > 0 else 0
 
-    if "無聊" in t:
-        return normalize_zh_tw(
-            "有點無聊嗎？來幾個和毛孩的輕鬆小任務：\n"
-            "1. 零食嗅聞遊戲：把小零食藏在紙杯或毛巾底下，讓牠用鼻子找。\n"
-            "2. 腦力玩具：用益智玩具（或寶特瓶戳洞自製）讓飼料慢慢掉出來。\n"
-            "3. 快速放電：室內 5 分鐘逗貓棒／拋接玩具。\n"
-            "4. 新把戲：練「坐下/碰拳/旋轉」，每次 1–2 分鐘。\n"
-            "5. 嗅聞散步：散步時允許慢慢聞（聞=工作）。\n\n"
-            "需要我把這些加入『每日任務』清單嗎？🙂"
-        )
+            # 關鍵詞匹配 - 檢查是否包含核心詞彙
+            query_words = [query_clean[i:i+2] for i in range(len(query_clean)-1)]  # 提取所有2字詞
+            title_words = [title_clean[i:i+2] for i in range(len(title_clean)-1)]
 
-    if any(k in t for k in ["壓力", "焦慮", "難過", "心情不好"]):
-        return normalize_zh_tw(
-            "先深呼吸一下～也許和毛孩做點安定的小事會有幫助：\n"
-            "1. 規律撫摸胸前/肩頸 3–5 分鐘。\n"
-            "2. 低刺激散步，讓牠多嗅聞。\n"
-            "3. 穩定儀式：固定點心/喝水/回籠順序。\n"
-        )
+            common_words = set(query_words) & set(title_words)
+            word_match_score = len(common_words)
 
-    if any(k in t for k in ["不想上班", "不想工作", "想請假", "好懶"]):
-        return normalize_zh_tw(
-            "看起來你現在真的不太想上班～先讓自己深呼吸一下吧。\n"
-            "1. 想像下班後的小確幸。\n"
-            "2. 走動與喝水 3–5 分鐘。\n"
-            "3. 和毛孩互動一下減壓。"
-        )
+            # 增強語義衝突檢測 - 避免錯誤匹配
+            semantic_conflict = False
+            severe_conflict = False
 
-    if _GREETING_PAT.match(t):
-        return normalize_zh_tw(
-            "哈囉～我在這！🙂\n"
-            "想查詢預約、健康紀錄或常見問題嗎？你可以試試：\n"
-            "1. 如何新增寵物？\n"
-            "2. 預約洗澡的流程？\n"
-            "3. 狗狗疫苗時程怎麼看？"
-        )
+            # 嚴重衝突：完全不相關的主題
+            severe_conflict_pairs = [
+                ('受傷', '排泄'), ('受傷', '嘔吐'), ('受傷', '記仇'), ('受傷', '外出'),
+                ('意外', '預防'), ('緊急', '日常'), ('處理受傷', '處理排泄'),
+                ('外傷', '大小便'), ('傷口', '廁所'), ('急救', '訓練'),
+                ('醫療', '玩具'), ('治療', '食物'), ('包紮', '清潔'),
+                ('流血', '嘔吐'), ('骨折', '腹瀉'),
+                ('指甲', '洗澡'), ('修剪', '沐浴'), ('剪指甲', '洗澡'),
+                ('指甲修剪', '洗澡頻率'), ('指甲護理', '清潔身體'),
 
-    return normalize_zh_tw(
-        "嗨～我在這。如果你願意，我可以：\n"
-        "• 依毛孩年齡/體力安排每日互動清單\n"
-        "• 幫你查常見問題或預約流程\n"
-        "• 紀錄今天的散步/飲水/便便狀況"
-    )
+                # 新增關鍵衝突對 - 根據用戶回報的錯誤
+                ('走失', '輸血'), ('不見', '醫療'), ('外面', '外傷'), ('丟失', '治療'),
+                ('用品', '如廁'), ('選擇', '定點'), ('適合', '清潔'), ('商品', '訓練'),
+                ('睡覺', '過敏'), ('休息', '皮膚病'), ('昏睡', '寄生蟲'),
+                ('洗澡', '記仇'), ('沐浴', '記憶'), ('吹乾', '經驗'), ('清潔', '避免'),
+                ('血液', '尋找'), ('配對', '協尋'), ('輸血', '走失'), ('醫院', '收容所'),
+                ('獎勵', '寵物用品'), ('制度', '選擇用品'), ('建立', '適合用品'),
+                ('絕育', '皮膚病'), ('結紮', '腸胃炎'), ('時機', '牙周病'), ('手術', '關節炎'),
+                ('最佳', '疾病'), ('絕育時機', '慢性病'), ('結紮時間', '老化疾病'),
+                ('領養', '食器'), ('條件', '水碗'), ('需要', '寵物床'), ('申請', '籠子'),
+                ('領養條件', '用品'), ('領養需要', '食具'), ('申請領養', '玩具')
+            ]
 
-# ====== 「不要/不用了」快捷出口 ======
-NEGATIVE_EXIT_WORDS = {"不要", "不用了", "算了", "先這樣", "不需要", "no", "No", "NO"}
-def is_negative_exit(text: str) -> bool:
-    return (text or "").strip() in NEGATIVE_EXIT_WORDS
+            # 一般衝突：相關但不同的概念
+            general_conflict_pairs = [
+                ('居家', '外出'), ('室內', '戶外'), ('家具', '食物'),
+                ('訓練', '醫療'), ('玩耍', '治療'), ('健康', '生病')
+            ]
 
-# ====== 基本回應生成（當檢索失敗時） ======
-def generate_fallback_response(user_msg: str) -> str:
-    """當知識庫檢索失敗時，生成基本的寵物護理回應"""
-    msg = (user_msg or "").lower()
+            # 檢查嚴重衝突
+            for pair in severe_conflict_pairs:
+                if (pair[0] in query_clean and pair[1] in title_clean) or (pair[1] in query_clean and pair[0] in title_clean):
+                    severe_conflict = True
+                    break
 
-    # 洗澡相關
-    if any(word in msg for word in ["洗澡", "清潔", "沐浴"]):
-        return normalize_zh_tw(
-            "（一般建議）關於寵物洗澡的基本建議：\n\n"
-            "1. 狗狗一般每1-2個月洗澡一次，貓咪通常不需要經常洗澡。\n"
-            "2. 使用寵物專用洗毛精，水溫保持溫暖（約38-40°C）。\n"
-            "3. 洗澡前先梳理毛髮，洗後徹底吹乾避免感冒。\n"
-            "4. 耳朵進水可能引發感染，建議使用棉球保護。\n\n"
-            "注意事項：\n"
-            "• 幼齡或生病的寵物應避免洗澡。\n"
-            "• 如有皮膚問題，請先諮詢獸醫師。"
-        )
+            # 檢查一般衝突
+            if not severe_conflict:
+                for pair in general_conflict_pairs:
+                    if (pair[0] in query_clean and pair[1] in title_clean) or (pair[1] in query_clean and pair[0] in title_clean):
+                        semantic_conflict = True
+                        break
 
-    # 疫苗相關
-    if any(word in msg for word in ["疫苗", "預防針", "接種"]):
-        return normalize_zh_tw(
-            "（一般建議）關於寵物疫苗接種：\n\n"
-            "1. 幼犬：8-10週齡開始首次疫苗，之後每3-4週補強。\n"
-            "2. 幼貓：9-12週齡開始首次疫苗，之後每3-4週補強。\n"
-            "3. 成年寵物每年需要補強疫苗。\n"
-            "4. 狂犬病疫苗為法定必須接種項目。\n\n"
-            "注意事項：\n"
-            "• 疫苗前確保寵物身體健康。\n"
-            "• 建議諮詢當地獸醫師制定個人化疫苗計畫。"
-        )
+            # 衝突懲罰：嚴重衝突幾乎排除，一般衝突降低評分
+            if severe_conflict:
+                conflict_penalty = 0.05  # 幾乎排除
+            elif semantic_conflict:
+                conflict_penalty = 0.3   # 大幅降低
+            else:
+                conflict_penalty = 1.0
 
-    # 飲食相關
-    if any(word in msg for word in ["飼料", "食物", "飲食", "餵食", "營養"]):
-        return normalize_zh_tw(
-            "（一般建議）關於寵物飲食：\n\n"
-            "1. 選擇符合年齡段的高品質寵物飼料。\n"
-            "2. 定時定量餵食，避免暴飲暴食。\n"
-            "3. 確保充足的乾淨飲水。\n"
-            "4. 避免餵食人類食物，特別是巧克力、洋蔥等有毒食物。\n\n"
-            "注意事項：\n"
-            "• 幼齡寵物需要較高頻率的餵食。\n"
-            "• 如有特殊健康狀況，請諮詢獸醫師。"
-        )
+            # 增強正向語義加權 - 專題特定關鍵詞匹配
+            positive_boost = 1.0
+            topic_specific_keywords = {
+                # 受傷相關
+                '受傷': ['外傷', '傷口', '急救', '醫療', '處理', '治療', '包紮', '流血', '骨折', '扭傷'],
+                '意外': ['緊急', '急救', '處理', '怎麼辦', '立即', '馬上', '快速'],
+                '緊急': ['立即', '馬上', '急救', '處理', '送醫', '就醫'],
 
-    # 訓練相關
-    if any(word in msg for word in ["訓練", "教育", "行為", "服從"]):
-        return normalize_zh_tw(
-            "（一般建議）關於寵物訓練：\n\n"
-            "1. 使用正向強化方式，獎勵良好行為。\n"
-            "2. 保持訓練的一致性和耐心。\n"
-            "3. 從基本指令開始：坐下、等待、過來。\n"
-            "4. 社會化訓練同樣重要，讓寵物適應不同環境。\n\n"
-            "注意事項：\n"
-            "• 避免體罰，可能造成心理創傷。\n"
-            "• 每次訓練時間不宜過長（10-15分鐘）。"
-        )
+                # 健康相關
+                '嘔吐': ['腹瀉', '生病', '症狀', '醫療', '不適', '食慾'],
+                '腹瀉': ['嘔吐', '生病', '症狀', '醫療', '水便', '軟便'],
 
-    return ""  # 如果都不匹配，返回空字串
+                # 日常照護
+                '訓練': ['行為', '教導', '學習', '指令', '服從', '練習'],
+                '指甲': ['修剪', '剪指甲', '護理', '血線', '止血', '過長', '喀喀聲'],
+                '修剪': ['指甲', '剪', '血線', '止血粉', '過長', '卡到'],
+                '洗澡': ['沐浴', '清潔', '洗髮精', '沐浴乳', '頻率', '皮膚'],
+                '清潔': ['洗澡', '梳毛', '衛生', '護理', '美容'],
+                '餵食': ['食物', '飼料', '營養', '吃飯', '進食'],
 
-# ====== 意圖分流：每日互動清單 ======
-_INTENT_PATTERNS = {
-    "activity_plan": [
-        "依毛孩年齡/體力安排每日互動清單",
-        "每日互動清單", "互動清單", "活動清單", "每日任務",
+                # 行為問題
+                '咬': ['家具', '鞋子', '東西', '玩具', '無聊', '長牙', '焦慮', '替代物'],
+                '護食': ['資源', '保護', '本能', '信任', '訓練', '口令'],
+                '撲人': ['打招呼', '注意', '轉身', '忽視', '四腳著地'],
+
+                # 醫療健康
+                '獸醫': ['醫院', '預約', '服務', '選擇', '醫師', '經驗', '評價', '信任'],
+                '疫苗': ['預防針', '注射', '接種', '免疫', '保護', '定期', '健康'],
+                '生病': ['症狀', '治療', '醫療', '就醫', '診斷', '藥物', '康復'],
+                '健康': ['檢查', '預防', '保健', '營養', '運動', '照護', '管理'],
+
+                # 緊急醫療
+                '中毒': ['症狀', '急救', '中毒', '治療', '緊急', '就醫', '毒物'],
+                '急救': ['緊急', '處理', '受傷', '中毒', '立即', '急救', '送醫'],
+                '受傷': ['外傷', '傷口', '急救', '處理', '緊急', '醫療', '治療'],
+                '緊急': ['急救', '立即', '馬上', '處理', '送醫', '危險', '嚴重'],
+
+                # 年齡和飲食
+                '幼': ['幼犬', '幼貓', '小狗', '小貓', '年輕', '成長', '發育'],
+
+                # 新增用戶回報問題的關鍵主題
+                '走失': ['不見', '丟失', '外面', '尋找', '協尋', '收容所', '警察', '晶片', '名牌'],
+                '用品': ['選擇', '適合', '食器', '水碗', '寵物床', '籠子', '玩具', '用具', '設備'],
+                '睡覺': ['休息', '昏睡', '嗜睡', '疲倦', '精神', '活力', '正常', '作息'],
+                '洗澡完': ['吹乾', '烘乾', '毛髮', '濕氣', '黴菌', '細菌', '長毛'],
+                '絕育': ['結紮', '時機', '手術', '年齡', '性成熟', '健康', '獸醫', '最佳'],
+                '領養': ['條件', '申請', '資格', '收入', '住家', '經驗', '責任', '承諾'],
+                '老': ['老年', '老犬', '老貓', '高齡', '年紀', '衰老', '照護'],
+                '飲食': ['餵食', '食物', '營養', '吃', '餵', '飼料', '食慾'],
+                '餵食': ['飲食', '食物', '營養', '頻率', '時間', '份量', '方法'],
+
+                # 其他重要
+                '領養': ['收養', '認養', '選擇', '條件', '準備', '責任', '愛心'],
+                '絕育': ['結紮', '手術', '時機', '好處', '風險', '年齡', '健康'],
+
+                # 環境相關
+                '居家': ['家具', '安全', '環境', '注意', '室內', '防護'],
+                '外出': ['散步', '運動', '戶外', '遛狗', '活動']
+            }
+
+            # 計算主題匹配度
+            topic_match_boost = 1.0
+            for key, related_words in topic_specific_keywords.items():
+                if key in query_clean:
+                    match_count = sum(1 for word in related_words if word in title_clean)
+                    if match_count >= 2:
+                        topic_match_boost = 2.0  # 強匹配
+                        break
+                    elif match_count == 1:
+                        topic_match_boost = 1.5  # 中等匹配
+
+            positive_boost = topic_match_boost
+
+            # 綜合評分：基礎匹配 * 衝突懲罰 * 主題加權
+            base_score = similarity * 0.4 + (word_match_score / max(len(query_words), len(title_words))) * 0.6
+            total_score = base_score * conflict_penalty * positive_boost
+
+            # 嚴格的匹配條件：確保質量
+            should_include = False
+
+            # 條件1：高相似度且無嚴重衝突
+            if similarity > 0.7 and not severe_conflict:
+                should_include = True
+
+            # 條件2：完全包含關係且高詞匹配
+            elif (query_clean in title_clean or title_clean in query_clean) and word_match_score >= 2 and not severe_conflict:
+                should_include = True
+
+            # 條件3：主題特定高匹配
+            elif word_match_score >= 4 and positive_boost >= 1.5 and not severe_conflict:
+                should_include = True
+
+            # 條件4：受傷相關的特殊處理
+            elif ('受傷' in query_clean or '意外' in query_clean or '緊急' in query_clean):
+                injury_keywords_in_title = sum(1 for keyword in ['受傷', '外傷', '傷口', '急救', '醫療', '處理', '治療'] if keyword in title_clean)
+                if injury_keywords_in_title >= 2 and not severe_conflict:
+                    should_include = True
+
+            # 條件5：行為問題的特殊處理（如護食、撲人、咬人等）
+            elif any(behavior in query_clean for behavior in ['護食', '撲人', '咬人', '亂叫', '亂抓', '亂尿', '咬']):
+                behavior_match = False
+
+                # 精確行為匹配
+                exact_behaviors = ['護食', '撲人', '咬人', '亂叫', '亂抓', '亂尿']
+                for behavior in exact_behaviors:
+                    if behavior in query_clean and behavior in title_clean:
+                        behavior_match = True
+                        break
+
+                # 特殊處理：咬東西的行為
+                if '咬' in query_clean and ('咬' in title_clean or '咬東西' in title_clean or '咬家具' in title_clean):
+                    # 檢查是否包含具體物品
+                    items = ['鞋子', '家具', '東西', '玩具', '沙發', '椅子']
+                    for item in items:
+                        if item in query_clean and (item in title_clean or '家具' in title_clean or '東西' in title_clean):
+                            behavior_match = True
+                            break
+
+                if behavior_match and not severe_conflict:
+                    should_include = True
+
+            # 條件6：複合關鍵詞特殊匹配（跨主題查詢）
+            elif any(combo in query_clean for combo in ['差異', '不同', '比較']):
+                # 年齡相關飲食差異
+                if ('幼' in query_clean or '老' in query_clean) and ('飲食' in query_clean or '餵食' in query_clean):
+                    age_diet_keywords = ['老年', '幼', '飲食', '餵食', '營養', '調整']
+                    age_diet_count = sum(1 for keyword in age_diet_keywords if keyword in title_clean)
+                    if age_diet_count >= 2 and not severe_conflict:
+                        should_include = True
+
+            # 條件7：核心關鍵詞的部分匹配（針對簡短查詢）
+            elif len(query_clean) <= 6:  # 簡短查詢
+                # 首先檢查單字關鍵詞（最嚴格匹配）
+                if len(query_clean) <= 3:  # 單字查詢
+                    single_word_keywords = ['獸醫', '醫院', '疫苗', '領養', '訓練', '洗澡']
+                    for keyword in single_word_keywords:
+                        if keyword == query_clean and keyword in title_clean and not severe_conflict:
+                            # 單字匹配直接通過
+                            should_include = True
+                            break
+
+                # 如果單字匹配失敗，嘗試核心關鍵詞匹配
+                if not should_include:
+                    core_keywords = [
+                        # 行為問題
+                        '護食', '撲人', '咬人', '記仇', '咬',
+                        # 護理照護
+                        '洗澡', '指甲', '訓練', '餵食', '飲食',
+                        # 醫療健康
+                        '嘔吐', '腹瀉', '獸醫', '醫院', '疫苗', '生病', '健康',
+                        # 緊急情況
+                        '中毒', '急救', '受傷', '緊急', '意外',
+                        # 年齡相關
+                        '幼', '老', '幼犬', '老年',
+                        # 其他重要
+                        '領養', '絕育'
+                    ]
+                    for keyword in core_keywords:
+                        if keyword in query_clean and keyword in title_clean and not severe_conflict:
+                            # 簡短查詢降低門檻
+                            if word_match_score >= 2 or similarity > 0.4:
+                                should_include = True
+                                break
+
+            if should_include:
+                candidates.append({
+                    'doc': doc,
+                    'title': title,
+                    'score': total_score,
+                    'similarity': similarity,
+                    'common_words': word_match_score,
+                    'conflict_penalty': conflict_penalty,
+                    'positive_boost': positive_boost,
+                    'severe_conflict': severe_conflict
+                })
+
+        # 如果有候選者，選擇最佳匹配
+        if candidates:
+            # 按評分排序，優先選擇無嚴重衝突的結果
+            candidates.sort(key=lambda x: (not x['severe_conflict'], x['score']), reverse=True)
+            best_match = candidates[0]
+
+            # 動態調整質量門檻（針對簡短查詢）
+            query_length = len(re.sub(r'[？?！!。，,、\s]', '', query.lower()))
+            if query_length <= 6:  # 簡短查詢
+                min_score = 0.6 if best_match['severe_conflict'] else 0.4
+            else:
+                min_score = 0.8 if best_match['severe_conflict'] else 0.6
+
+            if best_match['score'] >= min_score:
+                print(f"[AI客服] 智能匹配找到最佳結果")
+                print(f"  評分: {best_match['score']:.3f}, 相似度: {best_match['similarity']:.3f}")
+                print(f"  共同詞: {best_match['common_words']}, 衝突懲罰: {best_match['conflict_penalty']}")
+                print(f"  主題加權: {best_match['positive_boost']}, 嚴重衝突: {best_match['severe_conflict']}")
+                print(f"  標題: {best_match['title']}")
+                # 清理回答格式，移除問題前綴
+                cleaned_answer = clean_response_format(best_match['doc'])
+                return cleaned_answer
+            else:
+                print(f"[AI客服] 智能匹配質量不足 (評分: {best_match['score']:.3f} < {min_score})")
+                # 顯示前3個候選結果供調試
+                for i, candidate in enumerate(candidates[:3]):
+                    title_preview = candidate['title'][:20] if len(candidate['title']) > 20 else candidate['title']
+                    print(f"  候選{i+1}: 評分{candidate['score']:.3f}, 衝突: {candidate['severe_conflict']}, 標題: {title_preview}")
+
+                # 對於特定查詢類型，降低門檻
+                query_length = len(re.sub(r'[？?！!。，,、\s]', '', query.lower()))
+
+                # 單字查詢降低門檻
+                if query_length <= 3 and not best_match['severe_conflict'] and best_match['score'] > 0.2:
+                    print(f"[AI客服] 單字查詢降低門檻，接受候選答案")
+                    cleaned_answer = clean_response_format(best_match['doc'])
+                    return cleaned_answer
+
+                # 複合查詢（如差異、比較）降低門檻
+                if any(combo in query for combo in ['差異', '不同', '比較']) and best_match['score'] > 0.25:
+                    print(f"[AI客服] 複合查詢降低門檻，接受候選答案")
+                    cleaned_answer = clean_response_format(best_match['doc'])
+                    return cleaned_answer
+
+                print(f"[AI客服] 使用向量搜索")
+
+        return None
+    except Exception as e:
+        print(f"[AI客服] 智能匹配搜索錯誤: {e}")
+        return None
+
+def clean_response_format(response):
+    """清理回答格式，讓回答更自然"""
+    if not response:
+        return response
+
+    import re
+
+    # 移除常見的問題前綴格式
+    patterns_to_remove = [
+        r'^問題：.*?\n\n',  # 移除 "問題：xxx" 開頭
+        r'^問題：.*?\n',   # 移除單行問題前綴
+        r'^Q：.*?\n\n',    # 移除 "Q：xxx" 開頭
+        r'^Q：.*?\n',      # 移除單行Q前綴
+        r'^.*？\s*\n\n',   # 移除以問號結尾的問題行
     ]
-}
 
-def detect_intent(text: str) -> str:
-    t = (text or "").strip()
-    for intent, phrases in _INTENT_PATTERNS.items():
-        if any(p in t for p in phrases):
-            return intent
-    return ""
+    cleaned = response
+    for pattern in patterns_to_remove:
+        cleaned = re.sub(pattern, '', cleaned, flags=re.MULTILINE)
 
-def generate_activity_plan(
-    species: str = "", age_years: float = None, weight_kg: float = None,
-    energy: str = "", notes: str = ""
-) -> str:
-    sp = species or ""
-    eg = (energy or "中").strip()
+    # 移除 "回答：" 前綴
+    cleaned = re.sub(r'^回答：', '', cleaned)
+    cleaned = re.sub(r'^答：', '', cleaned)
+    cleaned = re.sub(r'^A：', '', cleaned)
+
+    # 清理多餘的空行
+    cleaned = re.sub(r'\n\n+', '\n\n', cleaned)
+    cleaned = cleaned.strip()
+
+    return cleaned
+
+def generate_natural_response(query, relevant_docs):
+    """即使沒有Ollama也能生成自然回答的智能組合功能"""
+    if not relevant_docs:
+        return None
+
+    # 取得最相關的文檔
+    best_doc = relevant_docs[0]
+    best_content = clean_response_format(best_doc['content'])
+
+    # 如果只有一個高品質文檔，直接返回清理後的內容
+    if len(relevant_docs) == 1 or best_doc['similarity'] > 0.85:
+        return best_content
+
+    # 多文檔智能組合
+    print(f"[AI客服] 組合 {len(relevant_docs)} 個相關文檔生成回答")
+
+    # 清理所有相關文檔
+    cleaned_docs = []
+    for doc in relevant_docs[:3]:  # 最多使用3個文檔
+        cleaned = clean_response_format(doc['content'])
+        if cleaned and len(cleaned) > 20:  # 過濾太短的內容
+            cleaned_docs.append({
+                'content': cleaned,
+                'similarity': doc['similarity']
+            })
+
+    if not cleaned_docs:
+        return best_content
+
+    # 智能重組答案
+    import re
+
+    # 分析查詢類型來決定組合策略
+    if any(keyword in query for keyword in ['如何', '怎麼', '方法', '步驟']):
+        # 步驟類問題：組合建議
+        combined_tips = []
+        for doc in cleaned_docs:
+            content = doc['content']
+            # 提取建議和方法
+            sentences = re.split(r'[。！？\n]', content)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 10 and any(word in sentence for word in ['建議', '應該', '可以', '需要', '避免']):
+                    if sentence not in combined_tips:
+                        combined_tips.append(sentence)
+
+        if combined_tips:
+            return '。'.join(combined_tips[:3]) + '。'
+
+    elif any(keyword in query for keyword in ['什麼', '哪些', '有什麼']):
+        # 列舉類問題：提取關鍵點
+        key_points = []
+        for doc in cleaned_docs:
+            content = doc['content']
+            # 提取關鍵信息
+            sentences = re.split(r'[。！？\n]', content)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 8 and sentence not in key_points:
+                    key_points.append(sentence)
+
+        if key_points:
+            return '。'.join(key_points[:2]) + '。'
+
+    elif any(keyword in query for keyword in ['可以', '能否', '會不會', '是否']):
+        # 是非類問題：給出明確答案加解釋
+        first_sentence = re.split(r'[。！？\n]', best_content)[0].strip()
+        if first_sentence:
+            # 如果有其他相關信息，補充說明
+            if len(cleaned_docs) > 1:
+                additional = re.split(r'[。！？\n]', cleaned_docs[1]['content'])[0].strip()
+                if additional and additional != first_sentence:
+                    return f"{first_sentence}。{additional}。"
+            return f"{first_sentence}。"
+
+    # 默認：返回最佳匹配的清理內容
+    return best_content
+
+def direct_text_search(query):
+    """簡化的AI客服 - 優先使用RAG管道"""
     try:
-        age = float(age_years) if age_years is not None else None
-    except Exception:
-        age = None
+        print(f"[AI客服] 處理查詢: {query}")
 
-    stage = "成齡"
-    if age is not None:
-        if age < 1:
-            stage = "幼齡"
-        elif age >= 7 and sp == "狗":
-            stage = "熟齡"
-        elif age >= 10 and sp == "貓":
-            stage = "熟齡"
+        # 1. 優先使用RAG管道（自然AI生成）
+        rag_result = rag_search_and_generate(query)
+        if rag_result:
+            return rag_result
 
-    mult = {"低": 0.7, "中": 1.0, "高": 1.3}.get(eg, 1.0)
+        # 2. 備用：基礎向量搜索
+        print(f"[AI客服] RAG失敗，使用備用搜索...")
+        search_results = simple_search(query, top_k=3)
 
-    def mins(base):
-        import math
-        return int(5 * round((base * mult) / 5.0))
+        if search_results and len(search_results) > 0:
+            # 返回最相關的文檔
+            best_result = search_results[0]
+            if best_result['similarity'] > 0.4:
+                print(f"[AI客服] 使用備用答案，相似度: {best_result['similarity']}")
+                return best_result['content']
 
-    if sp == "狗":
-        walk_main = 25 if stage == "幼齡" else (35 if stage == "成齡" else 20)
-        brain = 8 if stage == "幼齡" else (10 if stage == "成齡" else 8)
-        play = 10 if stage == "幼齡" else (12 if stage == "成齡" else 8)
-        plan = [
-            f"1) 早晨：嗅聞散步＋如廁（{mins(walk_main)} 分）。",
-            f"2) 上午：益智找食／嗅聞盒（{mins(brain)} 分）。",
-            f"3) 下午：基礎訓練（{mins(brain)} 分）。",
-            f"4) 傍晚：互動遊戲（{mins(play)} 分）。",
-            f"5) 晚間：短程舒緩散步（{mins(15)} 分）。",
-            f"6) 安定儀式（{mins(8)} 分）。",
-        ]
-        guard = [
-            "注意事項：",
-            "• 炎熱/雨天改室內嗅聞與找食。",
-            "• 若有喘氣過快、跛行，立即降強度並評估就醫。",
-            "• 零食總量 ≤ 每日熱量 10%。"
-        ]
-    elif sp == "貓":
-        hunt = 8 if stage == "幼齡" else (10 if stage == "成齡" else 6)
-        plan = [
-            f"1) 早晨：逗貓棒狩獵循環（{mins(hunt)} 分）。",
-            f"2) 上午：嗅聞找食（{mins(8)} 分）。",
-            "3) 下午：環境探索（即時）。",
-            f"4) 傍晚：逗貓棒第二回合（{mins(hunt)} 分）。",
-            f"5) 晚間：梳理＋安定撫摸（{mins(6)} 分）。",
-            "6) 貓砂巡檢（即時）。",
-        ]
-        guard = [
-            "注意事項：",
-            "• 若持續張口呼吸/躲藏不出，立即停止並評估壓力源。",
-            "• 玩具收納避免誤食；避免高處危險跳躍。",
-            "• 濕食可增攝水；器具每日清洗。"
-        ]
-    else:
-        plan = [
-            "1) 早晨：簡短互動（10–15 分）。",
-            "2) 上午：腦力小任務（5–10 分）。",
-            "3) 傍晚：主要活動（15–25 分）。",
-            "4) 晚間：安定儀式（5–10 分）。"
-        ]
-        guard = [
-            "注意事項：",
-            "• 若喘氣、跛行、拒食、嘔吐等異常，降量並視情況就醫。",
-            "• 每日至少一次腦力任務以降低破壞行為。"
-        ]
+        print(f"[AI客服] 所有方法都失敗")
+        return None
 
-    header = f"（一般建議）已為你生成**每日互動清單**（{sp or '通用'}｜能量：{eg}）"
-    if age is not None:
-        header += f"｜年齡：約 {age} 歲"
-    extra = []
-    if weight_kg:
-        extra.append(f"體重：約 {weight_kg} kg")
-    if notes:
-        extra.append(f"備註：{notes}")
-    if extra:
-        header += "（" + "；".join(extra) + "）"
+    except Exception as e:
+        print(f"[AI客服] 處理錯誤: {e}")
+        return None
 
-    return normalize_zh_tw(
-        header + "\n" + "\n".join(plan) + "\n\n" + "\n".join(guard) +
-        "\n\n需要我把這份清單存到你的『健康紀錄／每日任務』嗎？"
-    )
+def generate_intelligent_response(query, relevant_docs):
+    """使用Ollama生成智能回答"""
+    try:
+        import requests
 
-# ====== 向量檢索（回 context_text 與 sources） ======
-# 快取客戶端和嵌入模型來避免重複初始化
-_client_cache = None
-_collection_cache = None
+        # 構建上下文
+        context_parts = []
+        for i, doc in enumerate(relevant_docs[:3]):  # 最多使用3個文檔
+            context_parts.append(f"參考資料{i+1}：{doc['content']}")
 
-def clear_cache():
-    """清除快取的客戶端和集合"""
-    global _client_cache, _collection_cache
-    _client_cache = None
-    _collection_cache = None
-    print("[api_chat] 已清除快取")
+        context = "\n\n".join(context_parts)
 
-def _get_cached_client():
-    """獲取快取的客戶端和集合"""
-    global _client_cache, _collection_cache
+        # 構建prompt
+        prompt = f"""你是一個專業的寵物照護客服助理。請根據以下參考資料回答用戶問題。
 
-    if _client_cache is None or _collection_cache is None:
-        if not chromadb or not Settings:
-            return None, None
-        try:
-            _client_cache = chromadb.PersistentClient(
-                path=DB_DIR,
-                settings=Settings(anonymized_telemetry=False)
-            )
-            _collection_cache = _client_cache.get_or_create_collection(COLLECTION_NAME)
-        except Exception as e:
-            print(f"[api_chat] 初始化客戶端失敗: {e}")
-            return None, None
+參考資料：
+{context}
 
-    return _client_cache, _collection_cache
+用戶問題：{query}
 
-def safe_retrieve(query: str, top_k: int = TOP_K):
-    """
-    回傳：(context_text, sources: List[Dict])。
-    優化版本：使用快取和降低的相似度門檻。
-    """
-    if _embedder is None:
-        print("[api_chat] _embedder 缺失，無法檢索")
-        return "", []
+請用繁體中文回答，要求：
+1. 基於參考資料提供準確答案
+2. 如果參考資料不足以回答問題，請誠實說明
+3. 保持友善和專業的語調
+4. 回答要簡潔明確
 
-    client, col = _get_cached_client()
-    if not client or not col:
-        print("[api_chat] 無法獲取檢索客戶端")
-        return "", []
+回答："""
+
+        # 調用Ollama API
+        ollama_response = requests.post(
+            'http://127.0.0.1:11434/api/generate',
+            json={
+                'model': OLLAMA_MODEL,
+                'prompt': prompt,
+                'stream': False
+            },
+            timeout=OLLAMA_TIMEOUT_SEC
+        )
+
+        if ollama_response.status_code == 200:
+            response_data = ollama_response.json()
+            answer = response_data.get('response', '').strip()
+
+            if answer:
+                print(f"[AI客服] Ollama智能生成成功")
+                return answer
+            else:
+                print(f"[AI客服] Ollama返回空答案")
+                # 備用：返回最相關的文檔
+                return relevant_docs[0]['content']
+        else:
+            print(f"[AI客服] Ollama API錯誤: {ollama_response.status_code}")
+            # 備用：返回最相關的文檔
+            return relevant_docs[0]['content']
+
+    except requests.exceptions.Timeout:
+        print(f"[AI客服] Ollama連接超時(>{OLLAMA_TIMEOUT_SEC}秒)，返回None讓上級函數處理")
+        return None
+    except requests.exceptions.ConnectionError:
+        print(f"[AI客服] 無法連接到Ollama服務 ({OLLAMA_CHAT_URL})，返回None讓上級函數處理")
+        return None
+    except Exception as e:
+        print(f"[AI客服] Ollama生成錯誤: {e}，返回None讓上級函數處理")
+        return None
+
+def simple_search(query, top_k=5):
+    """優化版chroma_db向量檢索"""
+    if not init_vector_search():
+        return []
 
     try:
-        # 快速嵌入
-        q_emb = _embedder.encode([query], normalize_embeddings=True).tolist()
-
-        # 減少檢索數量以提高速度
-        search_k = min(top_k, 3)  # 最多檢索3個結果
-
-        res = col.query(
-            query_embeddings=q_emb,
-            n_results=search_k,
+        # 執行檢索，增加檢索數量以提高準確性
+        results = _collection.query(
+            query_texts=[query],
+            n_results=top_k * 2,  # 檢索更多結果再篩選
             include=["documents", "metadatas", "distances"]
         )
 
-        docs = (res or {}).get("documents", [[]])[0] or []
-        metas = (res or {}).get("metadatas", [[]])[0] or []
-        dists = (res or {}).get("distances", [[]])[0] or []
+        docs = results.get("documents", [[]])[0]
+        metas = results.get("metadatas", [[]])[0]
+        distances = results.get("distances", [[]])[0]
 
+        # 處理結果
+        matched_docs = []
+        for doc, meta, dist in zip(docs, metas, distances):
+            distance = abs(float(dist))
+            source = meta.get('source', '')
+
+            # 改進的相似度計算
+            if distance <= 0.6:
+                base_similarity = 1.0 - distance  # 高相似度
+            elif distance <= 1.0:
+                base_similarity = 0.7 - (distance - 0.6) * 0.5  # 中等相似度
+            elif distance <= 1.5:
+                base_similarity = 0.5 - (distance - 1.0) * 0.4  # 低相似度
+            else:
+                base_similarity = max(0.1, 0.3 - (distance - 1.5) * 0.2)  # 很低相似度
+
+            # 移除不合理的數據來源加權，保持原始相似度
+            final_similarity = base_similarity
+
+            # 僅用於標記數據類型
+            if 'platform_manual' in source:
+                data_type = 'platform'
+            elif 'faq' in source or 'qa' in source:
+                data_type = 'qa'
+            else:
+                data_type = 'other'
+
+            # 提高質量門檻
+            min_threshold = 0.2
+
+            if final_similarity > min_threshold:
+                matched_docs.append({
+                    'content': doc,
+                    'title': meta.get('title', '寵物知識'),
+                    'similarity': final_similarity,
+                    'source': source,
+                    'id': meta.get('id', ''),
+                    'original_distance': distance,
+                    'data_type': data_type
+                })
+
+        # 按數據類型和相似度排序
+        matched_docs.sort(key=lambda x: (x['data_type'] == 'platform', x['data_type'] == 'qa', x['similarity']), reverse=True)
+
+        # 調試信息
+        print(f"[AI客服] chroma_db檢索到 {len(matched_docs)} 筆相關資料")
+        for i, doc in enumerate(matched_docs[:3]):
+            print(f"  {i+1}. 類型: {doc['data_type']}, 相似度: {doc['similarity']:.3f}, 距離: {doc['original_distance']:.3f}")
+
+        return matched_docs[:top_k]
+
+    except Exception as e:
+        print(f"[AI客服] chroma_db檢索錯誤: {e}")
+        return []
+
+def create_ai_prompt(user_question, search_results):
+    """生成AI提示詞"""
+
+    if not search_results:
+        return f"""你是寵物照護專家，用戶問：{user_question}
+
+由於暫時沒有找到直接相關的資料，請基於你的專業知識提供實用建議。
+回答要求：
+1. 直接回答問題，提供具體可行的建議
+2. 用繁體中文回答
+3. 內容要專業但易懂
+4. 長度控制在150-300字
+5. 如果是複雜醫療問題，建議諮詢獸醫"""
+
+    # 整理檢索到的內容
+    context = "\n".join([f"參考資料{i+1}：{doc['content']}" for i, doc in enumerate(search_results)])
+
+    return f"""基於以下資料回答問題，用繁體中文，150字以內：
+
+問題：{user_question}
+資料：{context}
+
+要求：實用、準確、簡潔。"""
+
+# 移除不再使用的AI模式相關函數，簡化系統架構
+
+def fallback_response(question):
+    """強化版回退回答方案（無需AI模型的智能匹配）"""
+
+    # 優先匹配系統功能問題（更精確的模式）
+    system_keywords = {
+        "毛日好.*功能|毛日好.*平台|毛日好.*系統|毛日好.*介紹|這個.*平台.*功能|平台.*有什麼.*功能|系統.*功能|網站.*功能": "🏠 毛日好寵物生活管理平台\n\n主要功能：\n• 寵物檔案管理\n• 健康記錄追蹤\n• 獸醫預約服務\n• 領養資訊平台\n• AI智能客服\n\n如需詳細操作說明，歡迎繼續提問！",
+
+        "註冊|如何註冊|建立帳號|加入會員": "📝 毛日好註冊步驟\n\n1. 點擊右上角「註冊」按鈕\n2. 填寫基本資料（姓名、Email、密碼）\n3. 點擊「註冊」完成\n4. 至信箱確認Email驗證\n5. 登入開始使用\n\n💡 也可使用Google帳號一鍵註冊！",
+
+        "登入|如何登入|無法登入|忘記密碼": "🔑 登入相關說明\n\n登入方式：\n1. Email + 密碼登入\n2. Google帳號登入\n\n忘記密碼：\n1. 點擊「忘記密碼？」\n2. 輸入註冊Email\n3. 至信箱點擊重設連結\n4. 設定新密碼\n\n如仍有問題，請聯繫客服協助。",
+
+        "新增寵物|新增.*寵物|寵物.*新增|寵物.*資料|添加寵物|加入寵物": "🐾 新增寵物資料步驟\n\n1. 登入毛日好平台\n2. 進入「我的毛孩們」頁面\n3. 點擊「新增寵物」或「+」按鈕\n4. 填寫寵物基本資料：\n   • 寵物名稱\n   • 種類（狗/貓/其他）\n   • 品種\n   • 性別\n   • 出生日期\n   • 體重\n5. 上傳寵物照片（可選）\n6. 點擊「儲存」完成新增\n\n📝 建議填寫完整資料以便管理！",
+
+        "編輯寵物|修改寵物|更新寵物|寵物.*編輯|寵物.*修改": "✏️ 編輯寵物資料步驟\n\n1. 進入「我的毛孩們」頁面\n2. 找到要編輯的寵物\n3. 點擊寵物卡片的「設定」按鈕\n4. 選擇「編輯資料」\n5. 修改需要的資訊\n6. 點擊「儲存」保存變更\n\n💡 隨時更新寵物資料有助健康管理！",
+
+        "刪除寵物|移除寵物|寵物.*刪除|寵物.*移除": "🗑️ 刪除寵物資料步驟\n\n1. 進入「我的毛孩們」頁面\n2. 找到要刪除的寵物\n3. 點擊寵物卡片的「設定」按鈕\n4. 選擇「刪除寵物」\n5. 確認刪除操作\n\n⚠️ 刪除後資料無法復原，請謹慎操作！",
+
+        "健康記錄|健康.*記錄|記錄.*健康|寵物.*健康": "📋 寵物健康記錄管理\n\n1. 選擇寵物後點擊「健康記錄」\n2. 可記錄的項目：\n   • 體重記錄\n   • 體溫記錄\n   • 疫苗接種\n   • 驅蟲記錄\n   • 醫療記錄\n   • 日常生活記錄\n3. 點擊對應項目進行新增\n4. 填寫詳細資訊並儲存\n\n📊 定期記錄有助追蹤寵物健康狀況！"
+    }
+
+    # 寵物照護核心知識庫
+    pet_care_keywords = {
+        "餵食|食物|飼料|營養|吃|餵|餓|食慾": "🍽️ 寵物餵食指南\n\n基本原則：\n• 定時定量餵食\n• 選擇適齡專用飼料\n• 保持充足飲水\n• 避免人類食物\n\n餵食時間建議：\n• 幼齡：一日3-4餐\n• 成年：一日2餐\n• 老年：少量多餐\n\n⚠️ 巧克力、洋蔥、葡萄等對寵物有毒！",
+
+        "健康|生病|疾病|症狀|不舒服|檢查|醫療": "🏥 寵物健康管理\n\n預防保健：\n• 定期健康檢查（年輕寵物1年1次，老年寵物6個月1次）\n• 按時接種疫苗\n• 定期驅蟲\n• 維持環境清潔\n\n緊急症狀須立即就醫：\n• 嘔吐、腹瀉持續\n• 食慾不振超過24小時\n• 呼吸困難\n• 行動異常\n\n💡 使用毛日好預約功能找到附近獸醫院！",
+
+        "訓練|行為|吠叫|咬|亂叫|教|學習|服從": "🎓 寵物行為訓練\n\n基本訓練原則：\n• 正向鼓勵勝於懲罰\n• 保持指令一致性\n• 耐心重複練習\n• 適時給予獎勵\n\n常見問題處理：\n• 亂吠：轉移注意力，不要大聲制止\n• 咬東西：提供適當玩具\n• 不聽話：建立明確規則\n\n🐕 幼犬黃金訓練期：3-14週齡",
+
+        "洗澡|清潔|衛生|梳毛|護理|美容|毛髮|指甲": "🛁 寵物清潔護理\n\n洗澡頻率：\n• 狗：1-2週一次\n• 貓：自行清潔，特殊情況才洗\n• 水溫：37-38°C\n\n日常護理：\n• 每日梳毛（長毛品種需更頻繁）\n• 清潔牙齒（2-3天一次）\n• 清理耳朵（週檢查）\n• 修剪指甲（2-3週一次）\n\n🧴 使用寵物專用清潔用品！",
+
+        "體重|紀錄|記錄|重量|胖|瘦": "⚖️ 寵物體重管理\n\n記錄方法：\n• 固定時間測量（建議早餐前）\n• 使用精準秤具\n• 記錄在毛日好健康紀錄\n• 觀察體態變化\n\n理想體重判斷：\n• 可摸到但不明顯看到肋骨\n• 腰部有明顯收縮\n• 從上方看呈沙漏型\n\n📊 體重管理幫助預防疾病！",
+
+        "運動|散步|活動|玩|精力|累": "🏃 寵物運動需求\n\n運動重要性：\n• 維持健康體重\n• 促進心血管健康\n• 消耗多餘精力\n• 增進親密關係\n\n運動建議：\n• 小型犬：每日30分鐘\n• 中型犬：每日60分鐘\n• 大型犬：每日90分鐘以上\n• 貓咪：室內遊戲15-20分鐘×2-3次\n\n🌡️ 炎熱天氣避免中午時段運動！",
+
+
+        "疫苗|預防針|接種|免疫": "💉 寵物疫苗接種\n\n核心疫苗（必須）：\n狗：狂犬病、犬瘟熱、腺病毒、小病毒\n貓：狂犬病、貓瘟、卡里西病毒、疱疹病毒\n\n接種時程：\n• 首次：6-8週齡開始\n• 補強：間隔2-4週\n• 年度補強：依獸醫建議\n\n📅 使用毛日好記錄疫苗時程，不錯過重要接種！",
+
+        "懷孕|生產|繁殖|配種|生小孩": "🤱 寵物繁殖須知\n\n懷孕期照護：\n• 狗：懷孕期約63天\n• 貓：懷孕期約65天\n• 增加營養攝取\n• 減少激烈運動\n• 定期產檢\n\n生產準備：\n• 準備舒適生產環境\n• 備妥緊急聯絡獸醫\n• 觀察生產徵兆\n\n⚠️ 建議在專業獸醫指導下進行！"
+    }
+
+    # 季節性照護建議
+    seasonal_keywords = {
+        "夏天|熱|中暑|降溫": "☀️ 夏季寵物照護\n\n防中暑措施：\n• 提供充足陰涼處\n• 隨時準備新鮮水源\n• 避免中午外出\n• 可準備降溫墊\n• 注意室內通風\n\n中暑症狀：喘氣、流口水、體溫過高\n🚨 發現中暑立即就醫！",
+
+        "冬天|冷|保暖|禦寒": "❄️ 冬季寵物照護\n\n保暖措施：\n• 提供溫暖睡窩\n• 短毛品種可穿衣物\n• 減少洗澡頻率\n• 注意室內溫度\n• 增加熱量攝取\n\n🧥 選擇透氣、合身的寵物衣物！"
+    }
+
+    # 緊急情況處理
+    emergency_keywords = {
+        "嘔吐.*腹瀉|腹瀉.*嘔吐|嘔吐.*處理|腹瀉.*處理|拉肚子|吐|嘔": "🚨 寵物嘔吐腹瀉處理\n\n**立即就醫情況：**\n• 持續嘔吐超過24小時\n• 嚴重腹瀉伴隨血絲\n• 同時出現嘔吐和腹瀉\n• 精神萎靡、不吃不喝\n• 脫水症狀(牙齦乾燥、皮膚失去彈性)\n\n**緊急處理：**\n1. 暫停餵食12-24小時\n2. 提供少量清水\n3. 觀察症狀變化\n4. 記錄嘔吐腹瀉次數\n5. 儘速就醫\n\n⚠️ 幼犬幼貓更需要立即就醫！",
+
+        "中毒|吃壞|誤食|急救": "🚨 緊急狀況處理\n\n立即就醫徵象：\n• 持續嘔吐或腹瀉\n• 誤食有毒物質\n• 呼吸困難\n• 意識不清\n• 大量出血\n\n急救措施：\n1. 保持冷靜\n2. 立即聯絡獸醫\n3. 依指示進行初步處理\n4. 儘速送醫\n\n☎️ 建議預存24小時急診獸醫電話！"
+    }
+
+    # 按優先級檢查所有關鍵字庫
+    all_keywords = [system_keywords, emergency_keywords, pet_care_keywords, seasonal_keywords]
+
+    for keyword_dict in all_keywords:
+        for pattern, response in keyword_dict.items():
+            if re.search(pattern, question, re.IGNORECASE):
+                return response
+
+    # 如果沒有匹配到，提供通用建議
+    return "🤖 毛日好AI客服\n\n很抱歉，我無法理解您的問題。\n\n您可以詢問：\n• 寵物餵食、健康、訓練\n• 平台功能使用\n• 註冊登入相關\n• 預約獸醫服務\n\n💬 或點擊下方【轉人工客服】獲得專人協助！"
+
+def rag_search_and_generate(query, top_k=3):
+    """簡化的RAG管道：參考RAGpipeline.py的方法"""
+    if not init_vector_search():
+        return None
+
+    try:
+        print(f"[RAG] 檢索查詢: {query}")
+
+        # 1. 檢索相關文檔 - 參考RAGpipeline.py第20行
+        results = _collection.query(
+            query_texts=[query],
+            n_results=top_k,
+            include=["documents", "metadatas"]
+        )
+
+        docs = results.get("documents", [[]])[0]
         if not docs:
-            return "", []
+            print(f"[RAG] 沒有找到相關文檔")
+            return None
 
-        # 使用更寬鬆的門檻以更快找到結果
-        threshold = 0.4  # 固定使用較低門檻
-        pairs = []
+        # 2. 組合上下文 - 參考RAGpipeline.py第21行
+        context = " ".join(docs)
+        print(f"[RAG] 找到 {len(docs)} 個文檔，組合上下文")
 
-        for d, m, dist in zip(docs, metas, dists):
-            try:
-                sim = 1.0 - float(dist)
-                if sim >= threshold:
-                    pairs.append((d, m or {}, sim))
-            except Exception:
-                continue
+        # 3. 建構提示詞 - 參考RAGpipeline.py第24行
+        prompt = f"根據以下資料回答問題:\n\n{context}\n\n問題: {query}"
 
-        if not pairs:
-            return "", []
+        # 4. 調用Ollama - 參考RAGpipeline.py第25行
+        import ollama
 
-        pairs.sort(key=lambda x: x[2], reverse=True)
+        response = ollama.chat(
+            model=OLLAMA_MODEL,  # 直接使用配置中的模型名稱
+            messages=[{"role": "user", "content": prompt}]
+        )
 
-        blocks, sources = [], []
-        for i, (d, m, sim) in enumerate(pairs[:2], start=1):  # 最多使用2個片段
-            # 縮短片段長度以減少處理時間
-            snippet_len = min(SNIPPET_CHARS, 400) if SNIPPET_CHARS > 0 else 400
-            snippet = _truncate(d, snippet_len)
-            blocks.append(snippet.strip())
-            sources.append({
-                "id": (m.get("id") or f"rank-{i}"),
-                "title": (m.get("title") or m.get("source") or "片段"),
-                "score": round(sim, 4),
-            })
+        answer = response["message"]["content"].strip()
 
-        print(f"[api_chat] 快速檢索命中 {len(pairs)} 筆")
-        return "\n\n---\n\n".join(blocks), sources
+        if answer and len(answer) > 10:
+            print(f"[RAG] 成功生成: {answer[:50]}...")
+            return answer
+        else:
+            print(f"[RAG] 生成答案太短")
+            return None
 
     except Exception as e:
-        print(f"[api_chat] 檢索錯誤：{e}")
-        return "", []
+        print(f"[RAG] 錯誤: {e}")
+        return None
 
-# ====== 與 Ollama 對話（一次回傳版） ======
-def chat_with_ollama(messages):
-    payload = {
-        "model": OLLAMA_MODEL,
-        "messages": messages,
-        "stream": False,
-        "options": {
-            "temperature": OLLAMA_TEMP,
-            "num_ctx": OLLAMA_NUM_CTX,
-            "num_predict": OLLAMA_NUM_PREDICT,
-            "keep_alive": "10m",  # 增加模型快取時間
-        }
-    }
-    try:
-        r = requests.post(OLLAMA_CHAT_URL, json=payload, timeout=OLLAMA_TIMEOUT_SEC)
-        r.raise_for_status()
-        data = r.json()
-        if isinstance(data, dict):
-            if isinstance(data.get("message"), dict) and "content" in data["message"]:
-                return data["message"]["content"]
-            if "response" in data:
-                return data["response"]
-        return "（一般建議）收到非預期格式回應，請稍後再試。"
-    except requests.exceptions.ConnectionError:
-        return "（一般建議）本機模型尚未啟動，請先執行：`ollama serve`，並確認已 `ollama pull qwen2.5:3b-instruct`。"
-    except Exception as e:
-        print("[api_chat] 與 Ollama 溝通錯誤：", e)
-        traceback.print_exc()
-        return f"（一般建議）AI 回覆發生錯誤：{e}"
-
-# ====== 與 Ollama 串流對話（NDJSON）—強化版 ======
-def chat_with_ollama_stream(messages):
-    payload = {
-        "model": OLLAMA_MODEL,
-        "messages": messages,
-        "stream": True,
-        "options": {
-            "temperature": OLLAMA_TEMP,
-            "num_ctx": OLLAMA_NUM_CTX,
-            "num_predict": OLLAMA_NUM_PREDICT,
-            "keep_alive": "10m",  # 增加模型快取時間
-        }
-    }
-    r = None
-    try:
-        r = requests.post(OLLAMA_CHAT_URL, json=payload, timeout=OLLAMA_TIMEOUT_SEC, stream=True)
-        r.raise_for_status()
-
-        # 逐行讀取 NDJSON；若下游（瀏覽器）已關閉，外層 _guard_stream 會終止並走到 finally 關 connection
-        for line in r.iter_lines(chunk_size=8192, decode_unicode=True):
-            if not line:
-                continue
-            try:
-                piece = json.loads(line)
-            except Exception:
-                raw = normalize_zh_tw(line)
-                yield json.dumps({"type": "delta", "text": raw}) + "\n"
-                continue
-
-            delta = ""
-            if isinstance(piece.get("message"), dict):
-                delta = piece["message"].get("content", "") or ""
-            if not delta and "response" in piece:
-                delta = piece.get("response") or ""
-
-            if delta:
-                delta = normalize_zh_tw(delta)
-                yield json.dumps({"type": "delta", "text": delta}) + "\n"
-
-        yield json.dumps({"type": "done"}) + "\n"
-
-    except requests.exceptions.ConnectionError:
-        yield json.dumps({"type":"error","message":"（一般建議）本機模型尚未啟動，請先執行：ollama serve，並確認已 pull 模型。"}) + "\n"
-        yield json.dumps({"type":"done"}) + "\n"
-    except (BrokenPipeError, ConnectionResetError, GeneratorExit):
-        return
-    except Exception as e:
-        yield json.dumps({"type":"error","message":f"（一般建議）AI 回覆發生錯誤：{e}"}) + "\n"
-        yield json.dumps({"type":"done"}) + "\n"
-    finally:
-        try:
-            if r is not None:
-                r.close()
-        except Exception:
-            pass
-
-# ====== 非串流端點：/api/chat/ ======
 @csrf_exempt
 @require_POST
 def api_chat(request):
+    """AI客服主要API"""
     try:
-        body = request.body
-        if isinstance(body, bytes):
-            body = body.decode('utf-8', errors='ignore')
-        data = json.loads(body)
-    except Exception:
-        return JsonResponse({"reply": "（一般建議）請檢查JSON格式是否正確"})
+        # 解析請求
+        try:
+            body = request.body.decode('utf-8')
+            data = json.loads(body)
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            print(f"[AI客服] 請求解析錯誤: {e}")
+            return JsonResponse({"response": "請求格式錯誤"})
 
-    user_msg = (data.get("message") or "").strip()
-    history = data.get("history") or []
-    if not user_msg:
-        return JsonResponse({"reply": "（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})
+        user_question = data.get("message", "").strip()
 
-    # ✅ 使用者明確說「不要/不用了…」→ 立刻收尾並建議轉人工
-    if is_negative_exit(user_msg):
-        return JsonResponse({
-            "reply": "了解～那我就不再建議囉。如需協助可以隨時點選【轉人工客服】🙂",
-            "sources": [],
-            "handoff": {
-                "count": 0,
-                "threshold": HANDOFF_THRESHOLD,
-                "cooldown_sec": HANDOFF_COOLDOWN_SEC,
-                "suggest": True
-            }
-        })
+        if not user_question:
+            return JsonResponse({"response": "請輸入您的問題"})
 
-    # 小聊
-    if is_low_intent_smalltalk(user_msg):
-        return JsonResponse({"reply": smalltalk_reply(user_msg), "sources": [], "handoff": {
-            "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False
-        }})
+        print(f"[AI客服] 收到問題: {user_question}")
 
-    # 意圖攔截
-    intent = detect_intent(user_msg)
-    if intent == "activity_plan":
-        reply = generate_activity_plan()
-        reply = _force_linebreaks(reply)
-        reply = _strip_source_section(reply)
-        return JsonResponse({"reply": reply, "sources": [], "handoff": {
-            "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False
-        }})
+        # 優先檢查簡單的打招呼
+        greeting_patterns = [
+            r"^(hi|hello|嗨|哈囉|你好|您好)[\!！\?？]*$",
+            r"^(早|午安|晚安|安|在嗎|在不在)[\!！\?？]*$"
+        ]
 
-    # RAG 檢索 - 添加快速失敗機制
-    try:
-        context, sources = safe_retrieve(user_msg)
+        for pattern in greeting_patterns:
+            if re.search(pattern, user_question, re.IGNORECASE):
+                return JsonResponse({
+                    "response": "您好！歡迎使用毛日好寵物生活管理平台！\n\n我是您的AI寵物照護助手，可以協助您：\n• 寵物餵食與營養指導\n• 健康照護建議\n• 行為訓練指導\n• 日常護理方法\n\n請告訴我您想了解什麼寵物相關問題？"
+                })
+
+        # 優先檢查常見系統操作問題（高優先級關鍵字匹配）
+        priority_keywords = {
+            "忘記密碼|忘記帳號|重設密碼|找回密碼|密碼重置": "密碼重設步驟：\n1. 點擊登入頁面的「忘記密碼？」連結\n2. 輸入您註冊時使用的Email地址\n3. 檢查信箱收取重設密碼郵件\n4. 點擊郵件中的重設連結\n5. 設定新密碼並確認\n\n如果沒有收到郵件，請檢查垃圾郵件匣或使用Google帳號登入。",
+
+            "註冊|如何註冊|註冊帳號|建立帳號": "毛日好註冊步驟：\n1. 點擊右上角「註冊」按鈕\n2. 填寫姓名、Email、用戶名和密碼\n3. 點擊「註冊」按鈕\n4. 檢查信箱點擊確認連結\n5. 完成註冊即可登入使用\n\n也可以使用Google帳號快速註冊登入。",
+
+            "登入|如何登入|無法登入": "登入方式：\n1. 使用註冊時的Email和密碼登入\n2. 或點擊「使用Google帳號登入」\n3. 如果忘記密碼，點擊「忘記密碼？」\n\n登入問題請確認：\n• Email拼寫正確\n• 密碼大小寫是否正確\n• 是否已完成Email驗證",
+
+            "上傳.*照片|照片.*上傳|寵物.*照片|照片.*限制": "寵物照片上傳規格：\n1. 支援格式：JPG、PNG\n2. 檔案大小：不超過5MB\n3. 建議尺寸：800x800像素以上\n4. 系統會自動壓縮過大圖片\n5. 每隻寵物可上傳多張照片\n6. 照片用於寵物檔案和領養展示",
+
+            "預約.*獸醫|獸醫.*預約|預約.*門診|門診.*預約": "毛日好預約獸醫門診：\n1. 點擊「預約門診」功能\n2. 選擇獸醫院和醫師\n3. 挑選可預約時段\n4. 填寫就診資訊和聯絡方式\n5. 確認預約資訊並送出\n6. 獸醫院會確認預約時間",
+
+            "如何瀏覽領養資訊|瀏覽領養資訊|領養資訊.*瀏覽": "🐾 領養資訊瀏覽\n\n1. 點擊「空心愛心領養」頁面\n2. 瀏覽可領養的寵物\n3. 使用篩選功能(品種、年齡、地區)\n4. 點擊寵物卡片查看詳細資訊\n5. 聯絡送養人或機構\n\n💡 也可以發佈送養資訊幫助寵物找到新家！",
+
+            "如何.*送養|發佈.*送養|送養.*流程|我要送養": "📝 發佈送養資訊\n\n1. 進入「空心愛心領養」頁面\n2. 點擊「我要送養」\n3. 填寫寵物詳細資訊\n4. 上傳清晰照片\n5. 說明送養原因和要求\n6. 留下聯絡方式\n7. 提交審核\n\n💝 幫助毛孩找到溫暖的家！",
+
+            "其他.*領養.*管道|領養.*管道|還有.*領養|其他.*領養.*途徑|領養.*途徑": "🏠 其他領養管道\n\n除了毛日好平台，您還可以透過：\n\n1. **官方收容所**\n   • 各縣市動物收容所\n   • 台灣動物緊急救援小組\n\n2. **民間救援組織**\n   • 流浪動物花園協會\n   • 台灣之心愛護動物協會\n   • 各地動物救援協會\n\n3. **社群平台**\n   • Facebook領養社團\n   • Instagram救援帳號\n\n4. **動物醫院**\n   • 部分獸醫院提供中途資訊\n\n⚠️ 無論透過何種管道，都要確認：\n• 寵物健康狀況\n• 疫苗接種記錄\n• 是否已絕育\n• 領養合約內容",
+
+            "領養流程|領養.*步驟|如何領養": "📋 領養流程指南\n\n標準領養流程：\n1. 線上瀏覽寵物資訊\n2. 聯絡送養方表達意願\n3. 安排實地見面\n4. 填寫領養申請表\n5. 等待審核通過\n6. 簽署領養協議\n7. 完成領養手續\n\n💡 建議準備：\n• 身分證明文件\n• 居住證明\n• 家庭成員同意書\n• 經濟能力證明"
+        }
+
+        for pattern, response in priority_keywords.items():
+            if re.search(pattern, user_question, re.IGNORECASE):
+                return JsonResponse({"response": response})
+
+        # 使用統一的chroma_db向量搜索
+        print("[AI客服] 使用chroma_db統一向量搜索")
+        try:
+            vector_result = direct_text_search(user_question)
+            if vector_result:
+                print(f"[AI客服] chroma_db搜索成功")
+                return JsonResponse({"response": vector_result})
+        except Exception as e:
+            print(f"[AI客服] chroma_db搜索失敗: {e}")
+
+        # 向量搜索失敗，使用關鍵字匹配兜底
+        print("[AI客服] 使用關鍵字匹配兜底")
+        fallback = fallback_response(user_question)
+        return JsonResponse({"response": fallback})
+
     except Exception as e:
-        print(f"[api_chat] 檢索系統錯誤，使用預設回應: {e}")
-        context, sources = "", []
+        print(f"[AI客服] 處理錯誤: {e}")
+        traceback.print_exc()
+        return JsonResponse({"response": "服務暫時不可用，請稍後再試"})
 
-    if not context:
-        # 提供基本的寵物護理回應
-        fallback_response = generate_fallback_response(user_msg)
-        if fallback_response:
+@csrf_exempt
+def api_chat_stream(request):
+    """串流版本（暫時返回普通版本）"""
+    return api_chat(request)
+
+def clear_cache(request):
+    """清除快取"""
+    global _client, _collection, _embedder
+    _client = None
+    _collection = None
+    _embedder = None
+    return JsonResponse({"status": "cache cleared"})
+
+def kb_status(request):
+    """知識庫狀態檢查"""
+    try:
+        if init_vector_search():
+            count = _collection.count() if _collection else 0
             return JsonResponse({
-                "reply": fallback_response,
-                "sources": [],
-                "handoff": _update_handoff_state(request, failed=False)[1],
+                "status": "ok",
+                "vector_db": "connected",
+                "documents": count,
+                "embedder": "loaded"
             })
         else:
             return JsonResponse({
-                "reply": "目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。",
-                "sources": [],
-                "handoff": _update_handoff_state(request, failed=True)[1],  # 記一次失敗
+                "status": "error",
+                "vector_db": "disconnected",
+                "documents": 0,
+                "embedder": "failed"
             })
-
-    opening = "根據提供的知識片段，"
-    user_block = (
-        f"{opening}請回答下列問題。\n\n"
-        f"【站內知識】\n{context}\n\n"
-        f"【使用者問題】{user_msg}"
-    )
-
-    messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": user_block}]
-    for h in history[-6:]:
-        if isinstance(h, dict) and "role" in h and "content" in h:
-            messages.insert(1, h)
-
-    reply = chat_with_ollama(messages)
-    reply = normalize_zh_tw(reply)
-    reply = _force_linebreaks(reply)
-    reply = _strip_source_section(reply)
-
-    if isinstance(reply, str) and reply.strip().endswith("參考來源：無"):
-        reply = reply.rsplit("參考來源：無", 1)[0].rstrip()
-
-    # 既然有命中 context，就不視為失敗
-    _, handoff_meta = _update_handoff_state(request, failed=False)
-
-    debug = bool(data.get("debug"))
-    return JsonResponse({
-        "reply": reply,
-        "sources": (sources if (SHOW_SOURCES_TO_USER or debug) else []),
-        "handoff": handoff_meta,
-    })
-
-# ====== 串流端點：/api/chat/stream/（NDJSON） ======
-@csrf_exempt
-@require_POST
-def api_chat_stream(request):
-    try:
-        body = request.body
-        if isinstance(body, bytes):
-            body = body.decode('utf-8', errors='ignore')
-        data = json.loads(body)
-    except Exception:
-        return StreamingHttpResponse(
-            _guard_stream(iter([json.dumps({"type":"error","message":"（一般建議）請檢查JSON格式是否正確"})+"\n",
-                                json.dumps({"type":"done"})+"\n"])),
-            content_type="application/x-ndjson; charset=utf-8"
-        )
-
-    user_msg = (data.get("message") or "").strip()
-    history  = (data.get("history") or [])
-    if not user_msg:
-        return StreamingHttpResponse(
-            _guard_stream(iter([json.dumps({"type":"error","message":"（一般建議）請輸入想詢問的內容，例如：如何新增寵物？"})+"\n",
-                                json.dumps({"type":"done"})+"\n"])),
-            content_type="application/x-ndjson; charset=utf-8"
-        )
-
-    # ✅ 使用者明確說「不要/不用了…」→ 立刻收尾並建議轉人工
-    if is_negative_exit(user_msg):
-        def _bye_gen():
-            yield json.dumps({"type":"meta","sources": []}) + "\n"
-            yield json.dumps({"type":"delta","text":"了解～那我就不再建議囉。如需協助可以隨時點選【轉人工客服】🙂"}) + "\n"
-            yield json.dumps({"type":"handoff","payload":{
-                "count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": True
-            }}) + "\n"
-            yield json.dumps({"type":"done"}) + "\n"
-        resp = StreamingHttpResponse(_guard_stream(_bye_gen()), content_type="application/x-ndjson; charset=utf-8")
-        resp["Cache-Control"] = "no-cache, no-transform"
-        resp["X-Accel-Buffering"] = "no"
-        return resp
-
-    # 小聊
-    if is_low_intent_smalltalk(user_msg):
-        def _greet_gen():
-            yield json.dumps({"type":"meta","sources": []}) + "\n"
-            yield json.dumps({"type":"delta","text": smalltalk_reply(user_msg)}) + "\n"
-            payload = {"count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False}
-            yield json.dumps({"type":"handoff","payload": payload}) + "\n"
-            yield json.dumps({"type":"done"}) + "\n"
-        resp = StreamingHttpResponse(_guard_stream(_greet_gen()), content_type="application/x-ndjson; charset=utf-8")
-        resp["Cache-Control"] = "no-cache, no-transform"
-        resp["X-Accel-Buffering"] = "no"
-        return resp
-
-    # 意圖攔截
-    intent = detect_intent(user_msg)
-    if intent == "activity_plan":
-        def _plan_gen():
-            yield json.dumps({"type":"meta","sources": []}) + "\n"
-            text = generate_activity_plan()
-            text = _force_linebreaks(text)
-            text = _strip_source_section(text)
-            yield json.dumps({"type":"delta","text": text}) + "\n"
-            payload = {"count": 0, "threshold": HANDOFF_THRESHOLD, "cooldown_sec": HANDOFF_COOLDOWN_SEC, "suggest": False}
-            yield json.dumps({"type":"handoff","payload": payload}) + "\n"
-            yield json.dumps({"type":"done"}) + "\n"
-        resp = StreamingHttpResponse(_guard_stream(_plan_gen()), content_type="application/x-ndjson; charset=utf-8")
-        resp["Cache-Control"] = "no-cache, no-transform"
-        resp["X-Accel-Buffering"] = "no"
-        return resp
-
-    # RAG 檢索 - 添加快速失敗機制
-    try:
-        context, sources = safe_retrieve(user_msg)
     except Exception as e:
-        print(f"[api_chat_stream] 檢索系統錯誤，使用預設回應: {e}")
-        context, sources = "", []
-
-    if not context:
-        # 嘗試使用fallback回應
-        fallback_response = generate_fallback_response(user_msg)
-
-        def _nohit_gen():
-            yield json.dumps({"type":"meta","sources": []}) + "\n"
-            if fallback_response:
-                yield json.dumps({"type":"delta","text": fallback_response}) + "\n"
-                # 不記失敗，因為有提供實用回應
-                _, handoff_meta = _update_handoff_state(request, failed=False)
-            else:
-                yield json.dumps({"type":"delta","text":"目前知識庫沒有找到相關資訊，建議您點選【轉人工客服】進一步協助。"}) + "\n"
-                # 記一次失敗
-                _, handoff_meta = _update_handoff_state(request, failed=True)
-            yield json.dumps({"type":"handoff","payload": handoff_meta}) + "\n"
-            yield json.dumps({"type":"done"}) + "\n"
-
-        resp = StreamingHttpResponse(_guard_stream(_nohit_gen()), content_type="application/x-ndjson; charset=utf-8")
-        resp["Cache-Control"] = "no-cache, no-transform"
-        resp["X-Accel-Buffering"] = "no"
-        return resp
-
-    opening = "根據提供的知識片段，"
-    user_block = (
-        f"{opening}請回答下列問題。\n\n"
-        f"【站內知識】\n{context}\n\n"
-        f"【使用者問題】{user_msg}"
-    )
-
-    messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": user_block}]
-    for h in history[-6:]:
-        if isinstance(h, dict) and "role" in h and "content" in h:
-            messages.insert(1, h)
-
-    def _generator():
-        debug = bool((data or {}).get("debug"))
-        # 把 sources 先丟到前端（依環境開關/除錯開關）
-        yield json.dumps({"type":"meta","sources": (sources if (SHOW_SOURCES_TO_USER or debug) else [])}) + "\n"
-
-        full_text = []
-        in_source_block = False  # 串流即時過濾「來源」區塊
-        for raw in chat_with_ollama_stream(messages):
-            try:
-                piece = json.loads(raw)
-            except Exception:
-                # 非 JSON（保險）—直接略過或照舊轉發？
-                continue
-
-            if piece.get("type") == "delta":
-                txt = piece.get("text") or ""
-                # 觸發來源段落開始？
-                if _SOURCE_LINE_PAT.match(txt.strip()) or txt.strip() in ("來源", "參考來源", "資料來源"):
-                    in_source_block = True
-                    continue
-                # 若正在來源段落中，直到遇到空行才恢復
-                if in_source_block:
-                    if not txt.strip():
-                        in_source_block = False
-                    continue
-
-                # 正常輸出 delta
-                full_text.append(txt)
-                yield json.dumps({"type":"delta","text": txt}) + "\n"
-
-            elif piece.get("type") in ("error", "done"):
-                # 直接轉發
-                yield raw
-
-        # 串流結束後做換行與 handoff 事件（僅用於計算與整潔，不補發內容）
-        merged = normalize_zh_tw("".join(full_text))
-        merged = _force_linebreaks(merged)
-        merged = _strip_source_section(merged)
-
-        _, handoff_meta = _update_handoff_state(request, failed=False)
-        yield json.dumps({"type":"handoff","payload": handoff_meta}) + "\n"
-        yield json.dumps({"type":"done"}) + "\n"
-
-    resp = StreamingHttpResponse(
-        _guard_stream(_generator()),
-        content_type="application/x-ndjson; charset=utf-8"
-    )
-    # 代理/瀏覽器友善：盡可能避免緩衝與轉碼
-    resp["Cache-Control"] = "no-cache, no-transform"
-    resp["X-Accel-Buffering"] = "no"  # Nginx：關閉代理端緩衝，SSE/串流更穩
-    # ⚠️ 不要設定 Connection（WSGI 不允許 hop-by-hop header）
-    return resp
-
-# ====== 知識庫健康檢查：/api/chat/kb_status ======
-@csrf_exempt
-def api_kb_status(request):
-    info = {
-        "chromadb_loaded": bool(chromadb),
-        "embedder_loaded": bool(_embedder),
-        "db_dir": DB_DIR,
-        "collection": COLLECTION_NAME,
-        "count": None,
-        "error": None,
-    }
-    try:
-        if not chromadb or not Settings:
-            info["error"] = "chromadb not available"
-            return JsonResponse(info)
-
-        if _embedder is None:
-            info["error"] = "embedder not loaded (BAAI/bge-small-zh-v1.5)"
-            return JsonResponse(info)
-
-        client = chromadb.PersistentClient(path=DB_DIR, settings=Settings(anonymized_telemetry=False))
-        try:
-            col = client.get_or_create_collection(COLLECTION_NAME)
-        except Exception:
-            col = client.get_or_create_collection(COLLECTION_NAME)
-
-        # 煙霧測試
-        try:
-            q = col.query(query_texts=["test"], n_results=1, include=["metadatas", "documents"])
-            info["count"] = len((q or {}).get("documents", [[]])[0] or [])
-        except Exception as e:
-            info["error"] = f"query error: {e}"
-    except Exception as e:
-        info["error"] = str(e)
-
-    return JsonResponse(info)
-
-# ====== 清除快取端點：/api/chat/clear_cache ======
-@csrf_exempt
-def api_clear_cache(request):
-    clear_cache()
-    return JsonResponse({"status": "cache cleared"})
+        return JsonResponse({
+            "status": "error",
+            "error": str(e)
+        })

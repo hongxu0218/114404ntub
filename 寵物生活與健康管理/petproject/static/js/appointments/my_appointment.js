@@ -60,6 +60,21 @@ class MyAppointments {
                 e.stopPropagation();
                 return;
             }
+
+            // 處理取消預約按鈕
+            const cancelBtn = e.target.closest('.cancel-appointment');
+            if (cancelBtn) {
+                const appointmentId = cancelBtn.dataset.appointmentId;
+                const petName = cancelBtn.dataset.petName;
+                const date = cancelBtn.dataset.date;
+                const time = cancelBtn.dataset.time;
+                if (appointmentId) {
+                    this.cancelAppointment(appointmentId, petName, date, time);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
         });
     }
 
@@ -141,6 +156,235 @@ class MyAppointments {
     viewMedicalRecord(recordId) {
         // 創建模態框顯示完整醫療記錄
         this.createMedicalRecordModal(recordId);
+    }
+
+    // 取消預約
+    async cancelAppointment(appointmentId, petName, date, time) {
+        // 創建取消預約確認模態框
+        const modal = document.createElement('div');
+        modal.className = 'cancel-appointment-modal';
+        modal.innerHTML = `
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>取消預約</h3>
+                    <button class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="cancel-info">
+                        <p><strong>寵物：</strong>${petName}</p>
+                        <p><strong>日期：</strong>${date}</p>
+                        <p><strong>時間：</strong>${time}</p>
+                    </div>
+                    <div class="cancel-reason-input">
+                        <label for="cancelReason">請提供取消原因（選填）：</label>
+                        <textarea id="cancelReason" name="cancel_reason" rows="3"
+                                placeholder="例如：寵物身體不適已康復、行程衝突等..."></textarea>
+                    </div>
+                    <div class="modal-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>取消預約後無法恢復，請確認是否要繼續？</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-cancel" onclick="this.closest('.cancel-appointment-modal').remove()">
+                        取消
+                    </button>
+                    <button class="btn btn-confirm" onclick="window.myAppointments.confirmCancel('${appointmentId}')">
+                        確認取消預約
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // 添加關閉功能
+        modal.querySelector('.modal-overlay').onclick = () => modal.remove();
+        modal.querySelector('.modal-close').onclick = () => modal.remove();
+
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        // 聚焦到取消原因輸入框
+        setTimeout(() => {
+            const textarea = modal.querySelector('#cancelReason');
+            if (textarea) textarea.focus();
+        }, 100);
+    }
+
+    // 確認取消預約
+    async confirmCancel(appointmentId) {
+        const modal = document.querySelector('.cancel-appointment-modal');
+        const cancelReason = modal.querySelector('#cancelReason').value.trim();
+
+        try {
+            // 獲取CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+            console.log('取消預約請求:', {
+                appointmentId,
+                cancelReason,
+                csrfToken: csrfToken ? 'found' : 'missing'
+            });
+
+            // 發送取消請求
+            const response = await fetch(`/appointments/${appointmentId}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `cancel_reason=${encodeURIComponent(cancelReason)}`
+            });
+
+            console.log('響應狀態:', response.status);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('取消成功:', result);
+
+                // 關閉模態框
+                modal.remove();
+                document.body.style.overflow = '';
+
+                // 顯示成功訊息
+                this.showMessage('預約取消成功！頁面即將刷新...', 'success');
+
+                // 延遲重新載入頁面以顯示更新後的狀態
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                const errorText = await response.text();
+                console.error('響應錯誤:', response.status, errorText);
+
+                let errorMessage = `取消預約失敗 (HTTP ${response.status})`;
+                if (response.status === 404) {
+                    errorMessage = '預約不存在或已被取消';
+                } else if (response.status === 403) {
+                    errorMessage = '您沒有權限取消此預約';
+                } else if (response.status >= 500) {
+                    errorMessage = '服務器錯誤，請稍後再試';
+                }
+
+                throw new Error(errorMessage);
+            }
+        } catch (error) {
+            console.error('取消預約錯誤:', error);
+            this.showMessage(`取消預約失敗：${error.message}，請稍後再試`, 'error');
+        }
+    }
+
+    // 顯示訊息提示
+    showMessage(message, type = 'info') {
+        // 移除現有的訊息提示
+        const existingMessage = document.querySelector('.message-toast');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        // 創建訊息元素
+        const messageElement = document.createElement('div');
+        messageElement.className = `message-toast message-${type}`;
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <i class="fas ${this.getMessageIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+            <button class="message-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        // 添加樣式
+        messageElement.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${this.getMessageColor(type)};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 400px;
+            font-size: 14px;
+            animation: slideInRight 0.3s ease-out;
+        `;
+
+        // 添加動畫樣式
+        if (!document.querySelector('#message-toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'message-toast-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                .message-close {
+                    background: none;
+                    border: none;
+                    color: white;
+                    cursor: pointer;
+                    padding: 0;
+                    margin-left: auto;
+                    opacity: 0.8;
+                }
+                .message-close:hover {
+                    opacity: 1;
+                }
+                .message-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(messageElement);
+
+        // 自動移除（成功訊息3秒，其他類型5秒）
+        const timeout = type === 'success' ? 3000 : 5000;
+        setTimeout(() => {
+            if (messageElement.parentElement) {
+                messageElement.style.animation = 'slideInRight 0.3s ease-out reverse';
+                setTimeout(() => messageElement.remove(), 300);
+            }
+        }, timeout);
+    }
+
+    // 獲取訊息圖示
+    getMessageIcon(type) {
+        const icons = {
+            'success': 'fa-check-circle',
+            'error': 'fa-exclamation-circle',
+            'warning': 'fa-exclamation-triangle',
+            'info': 'fa-info-circle'
+        };
+        return icons[type] || icons.info;
+    }
+
+    // 獲取訊息顏色
+    getMessageColor(type) {
+        const colors = {
+            'success': '#10B981',
+            'error': '#EF4444',
+            'warning': '#F59E0B',
+            'info': '#3B82F6'
+        };
+        return colors[type] || colors.info;
     }
 
     // 創建醫療記錄模態框
@@ -236,7 +480,7 @@ class MyAppointments {
 
         } catch (error) {
             console.error('獲取醫療記錄失敗:', error);
-            alert('無法獲取醫療記錄詳情，請稍後再試');
+            this.showMessage('無法獲取醫療記錄詳情，請稍後再試', 'error');
         }
     }
 

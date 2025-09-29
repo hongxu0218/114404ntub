@@ -537,26 +537,7 @@ window.PawDayApp = {
         loadingElement.style.display = 'block';
       }
 
-      const response = await fetch('/api/notifications/', {
-        method: 'GET',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Content-Type': 'application/json'
-        },
-        credentials: 'same-origin'  // 包含 cookies
-      });
-
-      // 處理重定向（未登入）
-      if (response.status === 302 || response.redirected) {
-        this.renderAuthenticationError();
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await PD.api.get('/api/notifications/');
 
       // 確保 data 是有效的 JSON 並包含 notifications
       if (data && data.notifications) {
@@ -621,8 +602,8 @@ window.PawDayApp = {
     if (notification.type === 'appointment') icon = 'bi-calendar-check';
     else if (notification.type === 'reminder') icon = 'bi-clock';
 
-    // 格式化時間
-    const timeAgo = this.formatTimeAgo(notification.created_at);
+    // 使用後端已處理的時間或格式化時間
+    const timeAgo = notification.time || this.formatTimeAgo(notification.created_at);
 
     element.innerHTML = `
       <div class="notification-content">
@@ -650,12 +631,48 @@ window.PawDayApp = {
    */
   handleNotificationClick: async function(notification) {
     try {
-      // 標記為已讀
-      if (!notification.is_read) {
-        await this.markNotificationRead(notification.id);
+      // 調用新的通知點擊API，會自動標記為已讀並返回目標URL
+      const response = await fetch(`/api/notifications/${notification.id}/click/`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.getCSRFToken()
+        },
+        credentials: 'same-origin'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // 執行動作（如果有URL）
+      const data = await response.json();
+
+      if (data.success) {
+        // 標記UI為已讀
+        const notificationElement = document.querySelector(`[data-notification-id="${notification.id}"]`);
+        if (notificationElement) {
+          notificationElement.classList.remove('unread');
+        }
+
+        // 更新通知計數
+        this.updateNotificationCount();
+
+        // 關閉通知下拉菜單
+        const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('notificationDropdown'));
+        if (dropdown) {
+          dropdown.hide();
+        }
+
+        // 跳轉到目標頁面
+        if (data.target_url && data.target_url !== window.location.pathname) {
+          window.location.href = data.target_url;
+        }
+      } else {
+        console.error('通知點擊處理失敗:', data.error);
+      }
+
+      // 如果有舊的URL邏輯，保留作為備用
       if (notification.url) {
         window.location.href = notification.url;
       }
@@ -815,6 +832,7 @@ window.PawDayApp = {
     div.textContent = text;
     return div.innerHTML;
   },
+
 
   /**
    * 更新通知數量
