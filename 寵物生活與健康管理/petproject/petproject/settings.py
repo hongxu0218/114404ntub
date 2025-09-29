@@ -209,7 +209,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 
 # 顯示信件主旨與寄件網址設定
 ACCOUNT_EMAIL_SUBJECT_TEMPLATE = "password_reset_subject.txt"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # HTTPS 部署
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  # HTTPS 部署
 
 # 註冊成功後立即導向登入頁（GET 請求立即登入）
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -220,7 +220,7 @@ SOCIALACCOUNT_ADAPTER = 'petapp.adapter.MySocialAccountAdapter'
 
 # 禁用 allauth 的重複登入訊息
 SOCIALACCOUNT_STORE_TOKENS = False
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"  # HTTPS 部署設定
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  # HTTPS 部署設定
 SOCIALACCOUNT_LOGIN_ON_GET = True  # 已存在，但確保設定
 
 # 禁用 allauth 的預設登入成功訊息
@@ -318,4 +318,5 @@ USE_TZ = True   # 啟用時區支援
 
 
 # ===== 預設主鍵欄位型別設定（從 Django 3.2 起建議）=====
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
