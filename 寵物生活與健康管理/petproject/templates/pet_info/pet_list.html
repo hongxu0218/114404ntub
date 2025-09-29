@@ -1030,10 +1030,46 @@
             // 手機版觸控事件處理
             element.addEventListener('touchstart', function(e) {
                 e.stopPropagation();
+                // 為刪除按鈕添加特殊的觸控反饋
+                if (this.classList.contains('danger')) {
+                    this.style.backgroundColor = '#dc3545';
+                    this.style.color = 'white';
+                }
             });
 
             element.addEventListener('touchend', function(e) {
                 e.stopPropagation();
+                // 重置刪除按鈕樣式
+                if (this.classList.contains('danger')) {
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                        this.style.color = '';
+                    }, 150);
+                }
+            });
+
+            // 防止長按事件觸發系統選單
+            element.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // 為 more-btn 添加額外的防誤觸處理
+        document.querySelectorAll('.more-btn').forEach(btn => {
+            let touchStartTime = 0;
+
+            btn.addEventListener('touchstart', function(e) {
+                touchStartTime = Date.now();
+            });
+
+            btn.addEventListener('touchend', function(e) {
+                const touchDuration = Date.now() - touchStartTime;
+                // 如果觸控時間太短（可能是誤觸），則不執行操作
+                if (touchDuration < 100) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
             });
         });
 
@@ -1058,31 +1094,50 @@
             const userAgent = navigator.userAgent;
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || window.innerWidth <= 768;
 
-            let confirmMessage = `確定要刪除寵物「${petName}」嗎？\n此操作無法復原。`;
+            // 手機版使用更安全的雙重確認
             if (isMobile) {
-                confirmMessage += `\n\n⚠️ 請確認您確實要執行此操作`;
-            }
-
-            if (confirm(confirmMessage)) {
-                // 創建表單並提交刪除請求
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/pets/delete/${petId}/`;
-
-                // 添加 CSRF token
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-                if (csrfToken) {
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrfmiddlewaretoken';
-                    csrfInput.value = csrfToken.value;
-                    form.appendChild(csrfInput);
+                // 第一次確認
+                const firstConfirm = confirm(`⚠️ 注意：您即將刪除寵物「${petName}」\n\n此操作將永久刪除所有相關資料，無法復原。\n\n確定要繼續嗎？`);
+                if (!firstConfirm) {
+                    return;
                 }
 
-                document.body.appendChild(form);
-                form.submit();
+                // 延遲第二次確認，防止連續誤觸
+                setTimeout(() => {
+                    const secondConfirm = confirm(`🚨 最後確認\n\n請再次確認您要刪除寵物「${petName}」的所有資料。\n\n輸入確認後將立即執行刪除。`);
+                    if (secondConfirm) {
+                        performDelete(petId);
+                    }
+                }, 300);
+            } else {
+                // 桌面版使用單次確認
+                const confirmMessage = `確定要刪除寵物「${petName}」嗎？\n此操作無法復原。`;
+                if (confirm(confirmMessage)) {
+                    performDelete(petId);
+                }
             }
         };
+
+        // 執行刪除操作的函數
+        function performDelete(petId) {
+            // 創建表單並提交刪除請求
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/pets/delete/${petId}/`;
+
+            // 添加 CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken.value;
+                form.appendChild(csrfInput);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
     });
 </script>
 {% endblock %}

@@ -419,7 +419,7 @@
         <div class="posts-grid">
             {% if posts %}
                 {% for post in posts %}
-                <div class="post-card-profile" data-post-id="{{ post.id }}">
+                <div class="post-card-profile" data-post-id="{{ post.id }}" style="cursor: pointer;" onclick="handlePostCardClick(event, '{{ post.id }}')">
                     <div class="post-meta">
                         <div>
                             <i class="bi bi-calendar3"></i>
@@ -452,7 +452,7 @@
                     <!-- 貼文操作 -->
                     {% if is_own_profile %}
                     <div class="post-actions-profile">
-                        <button class="action-btn-profile delete-btn" onclick="deletePost({{ post.id }})">
+                        <button class="action-btn-profile delete-btn" data-post-id="{{ post.id }}">
                             <i class="bi bi-trash"></i>
                             刪除
                         </button>
@@ -587,26 +587,74 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// 使用事件委派處理刪除按鈕點擊
+document.addEventListener('DOMContentLoaded', function() {
+    // 為所有刪除按鈕添加事件監聽器
+    document.addEventListener('click', function(event) {
+        // 檢查是否點擊了刪除按鈕或其子元素
+        const deleteBtn = event.target.closest('.delete-btn');
+        if (deleteBtn && deleteBtn.classList.contains('delete-btn')) {
+            console.log('Delete button clicked, preventing propagation');
+            event.stopPropagation();
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const postId = deleteBtn.dataset.postId;
+            console.log('Deleting post:', postId);
+            deletePost(postId);
+            return false;
+        }
+    }, true); // 使用捕獲階段
+});
+
 // 刪除貼文功能
 function deletePost(postId) {
     if (confirm('確定要刪除這篇貼文嗎？')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+
         fetch(`/social/post/${postId}/delete/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
+                'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}'
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // 移除貼文元素
+                // 移除貼文元素（帶平滑動畫）
                 const postElement = document.querySelector(`[data-post-id="${postId}"]`);
                 if (postElement) {
-                    postElement.remove();
+                    postElement.style.transition = 'all 0.3s ease-out';
+                    postElement.style.transform = 'scale(0.95)';
+                    postElement.style.opacity = '0';
+
+                    setTimeout(() => {
+                        postElement.remove();
+                    }, 300);
                 }
-                alert('貼文已刪除');
+
+                // 簡短的成功提示
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #28a745;
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                `;
+                toast.textContent = '貼文已刪除';
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+
             } else {
-                alert('刪除失敗：' + data.error);
+                alert('刪除失敗：' + (data.error || '未知錯誤'));
             }
         })
         .catch(error => {
@@ -625,5 +673,22 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         });
     });
 });
+// 處理貼文卡片點擊事件
+function handlePostCardClick(event, postId) {
+    // 檢查點擊的目標是否是刪除按鈕或其子元素
+    if (event.target.closest('.delete-btn')) {
+        console.log('Click on delete button detected, ignoring card click');
+        return; // 如果點擊的是刪除按鈕，不執行跳轉
+    }
+
+    // 如果不是刪除按鈕，執行正常的跳轉
+    console.log('Opening post detail for:', postId);
+    openPostDetail(postId);
+}
+
+// 開啟貼文詳情頁
+function openPostDetail(postId) {
+    window.location.href = `/social/post/${postId}/`;
+}
 </script>
 {% endblock %}

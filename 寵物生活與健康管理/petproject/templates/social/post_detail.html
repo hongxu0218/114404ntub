@@ -45,11 +45,14 @@
         gap: 10px;
         margin-top: 1rem;
     }
-    .post-media img {
+    .post-media img, .post-media video {
         width: 100%;
         border-radius: 10px;
         max-height: 400px;
         object-fit: cover;
+    }
+    .post-media.multiple {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
     .post-actions {
         display: flex;
@@ -128,10 +131,134 @@
         color: white;
         text-decoration: none;
     }
+    .comment-like-btn {
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+    }
+    .comment-like-btn:hover {
+        background: rgba(255, 182, 193, 0.1) !important;
+        color: #FF69B4 !important;
+        border-color: #FF69B4 !important;
+    }
+    .comment-like-btn.liked {
+        color: #e91e63 !important;
+        background: rgba(233, 30, 99, 0.1) !important;
+        border-color: #e91e63 !important;
+    }
+
+    /* 手機響應式設計 */
+    @media (max-width: 768px) {
+        .comment-actions, .reply-actions, .nested-reply-actions {
+            flex-wrap: wrap;
+            gap: 0.25rem !important;
+        }
+        .comment-like-btn, .reply-btn, .repost-comment-btn, .share-comment-btn, .delete-comment-btn {
+            font-size: 0.7rem !important;
+            padding: 0.2rem 0.4rem !important;
+        }
+        .comment-like-btn i, .reply-btn i, .repost-comment-btn i, .share-comment-btn i, .delete-comment-btn i {
+            font-size: 0.8rem;
+        }
+    }
+    .comment-sort-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .sort-btn {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .sort-btn.active {
+        background-color: #FFB6C1;
+        border-color: #FFB6C1;
+        color: white;
+    }
+    .sort-btn:hover {
+        background-color: #FFE4E1;
+        border-color: #FFB6C1;
+    }
+
+    /* 手機響應式設計 */
+    @media (max-width: 768px) {
+        .main-content {
+            padding: 1rem 0.5rem;
+        }
+        .post-header {
+            padding: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+        .post-header > div {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            width: 100%;
+        }
+        .post-content {
+            padding: 1rem;
+            font-size: 1rem;
+        }
+        .post-actions {
+            padding: 1rem;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .action-btn {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+        .comments-section {
+            padding: 1rem;
+        }
+        .comment-form .d-flex {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .comment-avatar {
+            align-self: flex-start;
+        }
+        .comment-content {
+            margin-left: 0;
+            margin-top: 0.5rem;
+        }
+        .comment-header {
+            flex-wrap: wrap;
+        }
+        .comment-sort-buttons {
+            flex-direction: column;
+            gap: 0.3rem;
+            margin-top: 0.5rem;
+        }
+        .sort-btn {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block social_content %}
+<script>
+// 確保頁面載入時隱藏loading spinner
+document.addEventListener('DOMContentLoaded', function() {
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    if (loadingSpinner) {
+        loadingSpinner.style.display = 'none';
+    }
+});
+
+// 頁面載入時立即隱藏
+window.addEventListener('load', function() {
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    if (loadingSpinner) {
+        loadingSpinner.style.display = 'none';
+    }
+});
+</script>
+
 <div class="main-content">
     <a href="{% url 'social:home' %}" class="back-btn">
         <i class="bi bi-arrow-left"></i>
@@ -140,25 +267,44 @@
 
     <div class="post-detail-container">
         <div class="post-header">
-            {% if post.user.social_profile.avatar %}
-                <img src="{{ post.user.social_profile.avatar.url }}" alt="{{ post.user.username }}" class="post-avatar">
-            {% else %}
-                <img src="{% static 'images/default_avatar.png' %}" alt="{{ post.user.username }}" class="post-avatar">
-            {% endif %}
-            <div>
-                <h5 class="mb-1">{{ post.user.social_profile.display_name|default:post.user.username }}</h5>
+            <a href="{% url 'social:profile' post.user.username %}">
+                {% if post.user.social_profile and post.user.social_profile.avatar %}
+                    <img src="{{ post.user.social_profile.avatar.url }}" alt="{{ post.user.username }}" class="post-avatar">
+                {% else %}
+                    <img src="{% static 'images/default_pet.jpg' %}" alt="{{ post.user.username }}" class="post-avatar">
+                {% endif %}
+            </a>
+            <div class="flex-grow-1">
+                <h5 class="mb-1">
+                    <a href="{% url 'social:profile' post.user.username %}" style="text-decoration: none; color: inherit; cursor: pointer;">
+                        {% if post.user.social_profile %}{{ post.user.social_profile.display_name|default:post.user.username }}{% else %}{{ post.user.username }}{% endif %}
+                    </a>
+                </h5>
                 <small class="text-muted">{{ post.created_at|date:"Y年m月d日 H:i" }}</small>
             </div>
+            {% if user == post.user %}
+            <div class="post-owner-actions">
+                <button class="btn btn-outline-danger btn-sm" onclick="deletePostDetail('{{ post.id }}')">
+                    <i class="bi bi-trash"></i>
+                    刪除貼文
+                </button>
+            </div>
+            {% endif %}
         </div>
 
         <div class="post-content">
             {{ post.content|linebreaks }}
 
             {% if post.media_files.all %}
-                <div class="post-media">
+                <div class="post-media{% if post.media_files.all|length > 1 %} multiple{% endif %}">
                     {% for media in post.media_files.all %}
-                        {% if media.file_type == 'image' %}
-                            <img src="{{ media.file.url }}" alt="貼文圖片">
+                        {% if media.media_type == 'image' %}
+                            <img src="{{ media.file.url }}" alt="貼文圖片" class="post-image">
+                        {% elif media.media_type == 'video' %}
+                            <video controls class="post-video">
+                                <source src="{{ media.file.url }}" type="video/mp4">
+                                您的瀏覽器不支援影片播放。
+                            </video>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -176,9 +322,13 @@
                     <i class="bi bi-chat"></i>
                     {{ post.comments_count }} 留言
                 </button>
-                <button class="action-btn">
+                <button class="action-btn share-btn" data-post-id="{{ post.id }}" onclick="sharePost(this)">
                     <i class="bi bi-share"></i>
-                    {{ post.shares_count }} 分享
+                    <span class="shares-count">{{ post.shares_count }}</span> 分享
+                </button>
+                <button class="action-btn repost-btn" data-post-id="{{ post.id }}" onclick="showRepostModal('{{ post.id }}', '{{ post.user.username }}', {{ post.shares_count }})">
+                    <i class="bi bi-repeat"></i>
+                    <span class="shares-count">{{ post.shares_count }}</span> 轉發
                 </button>
             </div>
             <small class="text-muted">{{ post.created_at|timesince }}前</small>
@@ -186,27 +336,208 @@
     </div>
 
     <div class="comments-section">
-        <h5 class="mb-3">
-            <i class="bi bi-chat-dots"></i>
-            留言 ({{ comments.count }})
-        </h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-chat-dots"></i>
+                留言 ({{ comments.count }})
+            </h5>
+            <div class="comment-sort-buttons">
+                <button class="btn btn-sm btn-outline-secondary sort-btn active" data-sort="newest" onclick="sortComments('newest')">
+                    <i class="bi bi-sort-down"></i> 最新留言
+                </button>
+                <button class="btn btn-sm btn-outline-secondary sort-btn" data-sort="oldest" onclick="sortComments('oldest')">
+                    <i class="bi bi-sort-up"></i> 最早留言
+                </button>
+            </div>
+        </div>
 
-        {% for comment in comments %}
-            <div class="comment">
-                <div class="comment-header">
-                    {% if comment.user.social_profile.avatar %}
-                        <img src="{{ comment.user.social_profile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+        {% if user.is_authenticated %}
+        <div class="comment-form mb-4">
+            <form id="commentForm">
+                {% csrf_token %}
+                <div class="d-flex gap-3">
+                    {% if user.social_profile and user.social_profile.avatar %}
+                        <img src="{{ user.social_profile.avatar.url }}" alt="{{ user.username }}" class="comment-avatar">
                     {% else %}
-                        <img src="{% static 'images/default_avatar.png' %}" alt="{{ comment.user.username }}" class="comment-avatar">
+                        <img src="{% static 'images/default_pet.jpg' %}" alt="{{ user.username }}" class="comment-avatar">
                     {% endif %}
+                    <div class="flex-grow-1">
+                        <textarea class="form-control" id="commentInput" placeholder="寫下你的留言..." rows="3" style="border-radius: 15px; border: 2px solid #e9ecef; resize: none;"></textarea>
+                        <div class="d-flex justify-content-end mt-2">
+                            <button type="button" class="btn btn-primary" onclick="submitComment()" style="border-radius: 20px; padding: 8px 20px;">
+                                <i class="bi bi-send"></i> 發布留言
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="text-center mb-4 p-3" style="background: #f8f9fa; border-radius: 15px;">
+            <p class="mb-2">請先登入才能留言</p>
+            <a href="{% url 'account_login' %}" class="btn btn-outline-primary">登入</a>
+        </div>
+        {% endif %}
+
+        <div id="commentsContainer">
+        {% for comment in comments %}
+            <div class="comment" data-created="{{ comment.created_at|date:'c' }}">
+                <div class="comment-header">
+                    <a href="{% url 'social:profile' comment.user.username %}">
+                        {% if comment.user.social_profile and comment.user.social_profile.avatar %}
+                            <img src="{{ comment.user.social_profile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+                        {% else %}
+                            <img src="{% static 'images/default_pet.jpg' %}" alt="{{ comment.user.username }}" class="comment-avatar">
+                        {% endif %}
+                    </a>
                     <div>
-                        <strong>{{ comment.user.social_profile.display_name|default:comment.user.username }}</strong>
+                        <strong>
+                            <a href="{% url 'social:profile' comment.user.username %}" style="text-decoration: none; color: inherit;">
+                                {% if comment.user.social_profile %}{{ comment.user.social_profile.display_name|default:comment.user.username }}{% else %}{{ comment.user.username }}{% endif %}
+                            </a>
+                        </strong>
                         <small class="text-muted ms-2">{{ comment.created_at|timesince }}前</small>
                     </div>
                 </div>
                 <div class="comment-content">
                     {{ comment.content|linebreaks }}
                 </div>
+                {% if user.is_authenticated %}
+                <div class="comment-actions mt-2">
+                    <button class="btn btn-sm btn-outline-secondary comment-like-btn {% if comment.user_liked %}liked{% endif %}"
+                            data-comment-id="{{ comment.id }}" onclick="toggleCommentLike(this)">
+                        <i class="bi bi-heart{% if comment.user_liked %}-fill{% endif %}"></i>
+                        <span class="like-count d-none d-sm-inline">{{ comment.likes_count }}</span>
+                        <span class="like-count d-inline d-sm-none">{{ comment.likes_count }}</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary share-comment-btn"
+                            data-comment-id="{{ comment.id }}"
+                            onclick="shareComment('{{ comment.id }}')">
+                        <i class="bi bi-share"></i> 分享
+                    </button>
+                    {% if comment.user == user %}
+                    <button class="btn btn-sm btn-outline-danger delete-comment-btn"
+                            data-comment-id="{{ comment.id }}"
+                            onclick="deleteComment(this)">
+                        <i class="bi bi-trash"></i> 刪除
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- 回覆表單（默認隱藏） -->
+                <div class="reply-form mt-2" id="replyForm{{ comment.id }}" style="display: none;">
+                    <div class="d-flex gap-2">
+                        <textarea class="form-control reply-input"
+                                placeholder="回覆 {% if comment.user.social_profile %}{{ comment.user.social_profile.display_name|default:comment.user.username }}{% else %}{{ comment.user.username }}{% endif %}..."
+                                rows="2" style="font-size: 0.9rem;"></textarea>
+                        <div class="d-flex flex-column gap-1">
+                            <button class="btn btn-sm btn-primary" onclick="submitReply('{{ comment.id }}')">
+                                <i class="bi bi-send"></i>
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="cancelReply('{{ comment.id }}')">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 顯示回覆 -->
+                {% if comment.replies.exists %}
+                <div class="replies mt-3 ms-4" id="replies{{ comment.id }}">
+                    {% for reply in comment.replies.all %}
+                    <div class="reply mb-2 p-2 comment" data-created="{{ reply.created_at|date:'c' }}" data-comment-id="{{ reply.id }}" style="background: #f8f9fa; border-radius: 8px; border-left: 3px solid #FFB6C1;">
+                        <div class="reply-header d-flex align-items-center gap-2 mb-1">
+                            <a href="{% url 'social:profile' reply.user.username %}">
+                                {% if reply.user.social_profile and reply.user.social_profile.avatar %}
+                                    <img src="{{ reply.user.social_profile.avatar.url }}" alt="{{ reply.user.username }}" class="rounded-circle" style="width: 24px; height: 24px;">
+                                {% else %}
+                                    <img src="{% static 'images/default_pet.jpg' %}" alt="{{ reply.user.username }}" class="rounded-circle" style="width: 24px; height: 24px;">
+                                {% endif %}
+                            </a>
+                            <strong>
+                                <a href="{% url 'social:profile' reply.user.username %}" style="text-decoration: none; color: inherit; font-size: 0.85rem;">
+                                    {% if reply.user.social_profile %}{{ reply.user.social_profile.display_name|default:reply.user.username }}{% else %}{{ reply.user.username }}{% endif %}
+                                </a>
+                            </strong>
+                            <small class="text-muted">{{ reply.created_at|timesince }}前</small>
+                        </div>
+                        <div class="reply-content" style="font-size: 0.9rem;">
+                            {{ reply.content|linebreaks }}
+                        </div>
+
+                        <!-- 回覆的互動功能 -->
+                        {% if user.is_authenticated %}
+                        <div class="reply-actions mt-2 d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary comment-like-btn {% if reply.user_liked %}liked{% endif %}"
+                                    data-comment-id="{{ reply.id }}" onclick="toggleCommentLike(this)">
+                                <i class="bi bi-heart{% if reply.user_liked %}-fill{% endif %}"></i>
+                                <span class="like-count d-none d-sm-inline">{{ reply.likes_count }}</span>
+                                <span class="like-count d-inline d-sm-none">{{ reply.likes_count }}</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary reply-btn"
+                                    data-comment-id="{{ reply.id }}"
+                                    data-username="{% if reply.user.social_profile %}{{ reply.user.social_profile.display_name|default:reply.user.username }}{% else %}{{ reply.user.username }}{% endif %}"
+                                    onclick="replyToComment(this)">
+                                <i class="bi bi-reply"></i>
+                                <span class="reply-count">{{ reply.replies_count }}</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary repost-comment-btn"
+                                    data-comment-id="{{ reply.id }}"
+                                    onclick="repostComment(this)">
+                                <i class="bi bi-repeat"></i>
+                                <span class="repost-count">{{ reply.reposts_count }}</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary share-comment-btn"
+                                    data-comment-id="{{ reply.id }}"
+                                    onclick="shareComment(this)">
+                                <i class="bi bi-share"></i>
+                            </button>
+                            {% if reply.user == user %}
+                            <button class="btn btn-sm btn-outline-danger delete-comment-btn"
+                                    data-comment-id="{{ reply.id }}"
+                                    onclick="deleteComment(this)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- 回覆的回覆表單 -->
+                        <div class="reply-form mt-2" id="replyForm{{ reply.id }}" style="display: none;">
+                            <div class="d-flex gap-2">
+                                <textarea class="form-control reply-input"
+                                        placeholder="回覆 {% if reply.user.social_profile %}{{ reply.user.social_profile.display_name|default:reply.user.username }}{% else %}{{ reply.user.username }}{% endif %}..."
+                                        rows="2" style="font-size: 0.9rem;"></textarea>
+                                <div class="d-flex flex-column gap-1">
+                                    <button class="btn btn-sm btn-primary" onclick="submitReply('{{ reply.id }}')">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="cancelReply('{{ reply.id }}')">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 嵌套回覆（遞歸） -->
+                        {% include 'social/comment_replies.html' with comment=reply level=2 %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <!-- 展開/收起控制 -->
+                    {% if comment.replies.count > 3 %}
+                    <div class="text-center mt-2">
+                        <button class="btn btn-sm btn-link text-muted toggle-replies-btn"
+                                data-target="replies{{ comment.id }}"
+                                onclick="toggleReplies(this)">
+                            <span class="show-more">查看更多回覆 ({{ comment.replies.count }})</span>
+                            <span class="show-less" style="display: none;">收起回覆</span>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endif %}
             </div>
         {% empty %}
             <p class="text-muted text-center py-4">
@@ -214,17 +545,60 @@
                 還沒有留言，快來成為第一個留言的人吧！
             </p>
         {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 轉發模態框 -->
+<div class="modal fade" id="repostModal" tabindex="-1" aria-labelledby="repostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center">
+                    {% if user.social_profile and user.social_profile.avatar %}
+                        <img src="{{ user.social_profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px;">
+                    {% else %}
+                        <img src="{% static 'images/default_pet.jpg' %}" alt="{{ user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px;">
+                    {% endif %}
+                    <div>
+                        <strong>{% if user.social_profile %}{{ user.social_profile.display_name|default:user.username }}{% else %}{{ user.username }}{% endif %}</strong>
+                        <br><small class="text-muted">轉發給您的粉絲</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <textarea class="form-control border-0" id="repostComment" placeholder="想說些什麼嗎？（選填）" rows="3" style="font-size: 1.1rem; resize: none;"></textarea>
+
+                <div class="original-post-preview mt-3 p-3" style="background: #f8f9fa; border-radius: 15px; border-left: 4px solid #FFB6C1;">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-repeat text-muted me-2"></i>
+                        <small class="text-muted">轉發來自 <strong>@<span id="originalAuthor"></span></strong> 的貼文</small>
+                    </div>
+                    <div id="originalContent" style="font-size: 0.95rem;"></div>
+                    <small class="text-muted mt-2 d-block">包含原始內容和媒體檔案</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 20px;">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmRepost" style="border-radius: 20px; background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%); border: none;">
+                    <i class="bi bi-repeat me-1"></i>轉發
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
 function toggleLike(btn) {
     const postId = btn.dataset.postId;
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
 
     fetch(`/social/post/${postId}/like/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
             'Content-Type': 'application/json',
         }
     })
@@ -251,5 +625,591 @@ function toggleLike(btn) {
         console.error('Error:', error);
     });
 }
+
+function submitComment() {
+    const commentInput = document.getElementById('commentInput');
+    const content = commentInput.value.trim();
+
+    if (!content) {
+        alert('請輸入留言內容');
+        return;
+    }
+
+    const postId = '{{ post.id }}';
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/post/${postId}/comment/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 清空輸入框
+            commentInput.value = '';
+
+            // 重新載入頁面以顯示新留言
+            location.reload();
+        } else {
+            alert('留言失敗：' + (data.error || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('留言失敗，請重試');
+    });
+}
+
+function toggleCommentLike(btn) {
+    const commentId = btn.dataset.commentId;
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/comment/${commentId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const icon = btn.querySelector('i');
+            const count = btn.querySelector('.like-count');
+
+            if (data.liked) {
+                btn.classList.add('liked');
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+            } else {
+                btn.classList.remove('liked');
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+            }
+
+            count.textContent = data.likes_count;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function sharePost(btn) {
+    const postId = btn.dataset.postId;
+    const postUrl = `${window.location.origin}/social/post/${postId}/`;
+    const postTitle = `來自毛日好社群的貼文`;
+    const postText = `{{ post.content|truncatechars:100|escapejs }}`;
+
+    // 檢查是否支援 Web Share API
+    if (navigator.share) {
+        navigator.share({
+            title: postTitle,
+            text: postText,
+            url: postUrl
+        }).then(() => {
+            // 更新分享數
+            updateShareCount(btn, postId);
+        }).catch((error) => {
+            console.log('分享取消或失敗:', error);
+        });
+    } else {
+        // 降級：複製連結到剪貼板
+        navigator.clipboard.writeText(postUrl).then(() => {
+            alert('貼文連結已複製到剪貼板！');
+            // 更新分享數
+            updateShareCount(btn, postId);
+        }).catch(() => {
+            // 如果複製失敗，顯示連結讓用戶手動複製
+            prompt('請複製以下連結分享：', postUrl);
+            updateShareCount(btn, postId);
+        });
+    }
+}
+
+function updateShareCount(btn, postId) {
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/post/${postId}/share/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 更新分享數
+            const sharesCount = btn.querySelector('.shares-count');
+            if (sharesCount) {
+                sharesCount.textContent = data.shares_count;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating share count:', error);
+    });
+}
+
+let currentRepostPostId = null;
+
+function showRepostModal(postId, originalAuthor, currentCount) {
+    currentRepostPostId = postId;
+
+    // 填充原貼文信息到模態框
+    document.getElementById('originalAuthor').textContent = originalAuthor;
+    document.getElementById('originalContent').innerHTML = `{{ post.content|linebreaks|escapejs }}`.substring(0, 150) + '...';
+
+    // 清空之前的評論
+    document.getElementById('repostComment').value = '';
+
+    // 顯示模態框
+    const modal = new bootstrap.Modal(document.getElementById('repostModal'));
+    modal.show();
+}
+
+function executeRepost() {
+    const comment = document.getElementById('repostComment').value.trim();
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/post/${currentRepostPostId}/repost/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            comment: comment || ''
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 關閉模態框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('repostModal'));
+            modal.hide();
+
+            // 顯示成功訊息
+            alert('轉發成功！');
+
+            // 更新轉發按鈕計數
+            const repostBtn = document.querySelector(`[data-post-id="${currentRepostPostId}"] .shares-count`);
+            if (repostBtn) {
+                repostBtn.textContent = data.shares_count;
+            }
+
+            // 重新載入頁面以顯示新轉發
+            location.reload();
+        } else {
+            alert('轉發失敗：' + (data.error || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('轉發失敗，請重試');
+    });
+}
+
+function repostPost(btn) {
+    currentRepostPostId = btn.dataset.postId;
+
+    // 填充原貼文信息到模態框
+    document.getElementById('originalAuthor').textContent = '{% if post.user.social_profile %}{{ post.user.social_profile.display_name|default:post.user.username }}{% else %}{{ post.user.username }}{% endif %}';
+    document.getElementById('originalContent').innerHTML = `{{ post.content|linebreaks|escapejs }}`.substring(0, 150) + '...';
+
+    // 清空之前的評論
+    document.getElementById('repostComment').value = '';
+
+    // 顯示模態框
+    const modal = new bootstrap.Modal(document.getElementById('repostModal'));
+    modal.show();
+}
+
+// 處理確認轉發
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('confirmRepost').addEventListener('click', executeRepost);
+});
+
+function sortComments(sortOrder) {
+    const container = document.getElementById('commentsContainer');
+    const comments = Array.from(container.querySelectorAll('.comment'));
+    const sortButtons = document.querySelectorAll('.sort-btn');
+
+    // 更新按鈕狀態
+    sortButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.sort === sortOrder) {
+            btn.classList.add('active');
+        }
+    });
+
+    // 排序留言
+    comments.sort((a, b) => {
+        const dateA = new Date(a.dataset.created);
+        const dateB = new Date(b.dataset.created);
+
+        if (sortOrder === 'newest') {
+            return dateB - dateA; // 新到舊
+        } else {
+            return dateA - dateB; // 舊到新
+        }
+    });
+
+    // 重新排列DOM元素
+    comments.forEach(comment => {
+        container.appendChild(comment);
+    });
+}
+
+function replyToComment(btn) {
+    const commentId = btn.dataset.commentId;
+    const replyForm = document.getElementById(`replyForm${commentId}`);
+
+    // 隱藏其他回覆表單
+    document.querySelectorAll('.reply-form').forEach(form => {
+        if (form.id !== `replyForm${commentId}`) {
+            form.style.display = 'none';
+        }
+    });
+
+    // 切換當前回覆表單
+    replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+
+    // 如果顯示表單，聚焦到輸入框
+    if (replyForm.style.display === 'block') {
+        const textarea = replyForm.querySelector('.reply-input');
+        textarea.focus();
+    }
+}
+
+function cancelReply(commentId) {
+    const replyForm = document.getElementById(`replyForm${commentId}`);
+    replyForm.style.display = 'none';
+    replyForm.querySelector('.reply-input').value = '';
+}
+
+function submitReply(commentId) {
+    const replyForm = document.getElementById(`replyForm${commentId}`);
+    const textarea = replyForm.querySelector('.reply-input');
+    const content = textarea.value.trim();
+
+    if (!content) {
+        alert('請輸入回覆內容');
+        return;
+    }
+
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/comment/${commentId}/reply/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 清空輸入框並隱藏表單
+            textarea.value = '';
+            replyForm.style.display = 'none';
+
+            // 更新回覆計數
+            const parentComment = document.querySelector(`[data-comment-id="${commentId}"]`).closest('.comment');
+            const replyCount = parentComment.querySelector('.reply-count');
+            if (replyCount) {
+                const currentCount = parseInt(replyCount.textContent) || 0;
+                replyCount.textContent = currentCount + 1;
+            }
+
+            // 重新載入頁面以顯示新回覆
+            location.reload();
+        } else {
+            alert('回覆失敗：' + (data.error || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('回覆失敗，請重試');
+    });
+}
+
+
+function shareComment(commentId) {
+    const postUrl = `${window.location.origin}/social/post/{{ post.id }}/#comment-${commentId}`;
+    const commentText = `來自毛日好社群的留言`;
+
+    // 檢查是否支援 Web Share API
+    if (navigator.share) {
+        navigator.share({
+            title: commentText,
+            url: postUrl
+        }).then(() => {
+            console.log('留言分享成功');
+        }).catch((error) => {
+            console.log('分享取消或失敗:', error);
+        });
+    } else {
+        // 降級：複製連結到剪貼板
+        navigator.clipboard.writeText(postUrl).then(() => {
+            alert('留言連結已複製到剪貼板！');
+        }).catch(() => {
+            // 如果複製失敗，顯示連結讓用戶手動複製
+            prompt('請複製以下連結分享：', postUrl);
+        });
+    }
+}
+
+// 刪除貼文詳情頁面的貼文
+function deletePostDetail(postId) {
+    if (!confirm('確定要刪除這篇貼文嗎？此操作無法復原，將會返回社群首頁。')) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/post/${postId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 顯示成功消息
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            toast.textContent = '貼文已刪除';
+            document.body.appendChild(toast);
+
+            // 1.5秒後跳轉到社群首頁
+            setTimeout(() => {
+                window.location.href = '/social/';
+            }, 1500);
+        } else {
+            alert('刪除失敗：' + (data.error || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('刪除失敗，請稍後再試');
+    });
+}
+
+function deleteComment(btn) {
+    const commentId = btn.dataset.commentId;
+
+    if (!confirm('確定要刪除這則留言嗎？此操作無法復原。')) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
+                     document.querySelector('[name=csrfmiddlewaretoken]');
+
+    fetch(`/social/comment/${commentId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 找到並移除留言元素
+            const commentElement = btn.closest('.comment, .reply, .nested-reply');
+            if (commentElement) {
+                commentElement.remove();
+            }
+
+            // 顯示成功訊息
+            alert('留言已刪除');
+        } else {
+            alert('刪除失敗：' + (data.error || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('刪除失敗，請稍後再試');
+    });
+}
+
+function toggleReplies(btn) {
+    const targetId = btn.dataset.target;
+    const repliesContainer = document.getElementById(targetId);
+    const showMore = btn.querySelector('.show-more');
+    const showLess = btn.querySelector('.show-less');
+
+    // 獲取所有回覆，除了前3個
+    const replies = repliesContainer.querySelectorAll('.reply');
+    const extraReplies = Array.from(replies).slice(3);
+
+    if (showMore.style.display !== 'none') {
+        // 展開：顯示所有回覆
+        extraReplies.forEach(reply => {
+            reply.style.display = 'block';
+        });
+        showMore.style.display = 'none';
+        showLess.style.display = 'inline';
+    } else {
+        // 收起：只顯示前3個回覆
+        extraReplies.forEach(reply => {
+            reply.style.display = 'none';
+        });
+        showMore.style.display = 'inline';
+        showLess.style.display = 'none';
+    }
+}
+
+function toggleNestedReplies(btn) {
+    const targetId = btn.dataset.target;
+    const repliesContainer = document.getElementById(targetId);
+    const showMore = btn.querySelector('.show-more');
+    const showLess = btn.querySelector('.show-less');
+
+    if (repliesContainer.style.display === 'none' || !repliesContainer.style.display) {
+        // 展開回覆
+        repliesContainer.style.display = 'block';
+        repliesContainer.style.opacity = '0';
+        repliesContainer.style.transform = 'translateY(-10px)';
+        repliesContainer.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+        setTimeout(() => {
+            repliesContainer.style.opacity = '1';
+            repliesContainer.style.transform = 'translateY(0)';
+        }, 10);
+
+        showMore.style.display = 'none';
+        showLess.style.display = 'inline';
+    } else {
+        // 收起回覆
+        repliesContainer.style.opacity = '0';
+        repliesContainer.style.transform = 'translateY(-10px)';
+
+        setTimeout(() => {
+            repliesContainer.style.display = 'none';
+            repliesContainer.style.opacity = '';
+            repliesContainer.style.transform = '';
+        }, 300);
+
+        showMore.style.display = 'inline';
+        showLess.style.display = 'none';
+    }
+}
+
+// 初始化：隱藏超過3個的回覆
+document.addEventListener('DOMContentLoaded', function() {
+    // 隱藏超過3個的直接回覆
+    document.querySelectorAll('.replies').forEach(repliesContainer => {
+        const replies = repliesContainer.querySelectorAll('.reply');
+        if (replies.length > 3) {
+            Array.from(replies).slice(3).forEach(reply => {
+                reply.style.display = 'none';
+            });
+        }
+    });
+
+    // 初始隱藏嵌套回覆（當回覆數超過3個時）
+    document.querySelectorAll('.nested-replies').forEach(container => {
+        const parentComment = container.closest('.comment, .reply, .nested-reply');
+        const toggleBtn = parentComment ? parentComment.querySelector('.toggle-nested-replies-btn') : null;
+
+        if (toggleBtn) {
+            // 如果有展開/收起按鈕，說明回覆數超過3個，預設隱藏
+            container.style.display = 'none';
+        }
+    });
+});
+
+// Enter鍵提交留言
+document.addEventListener('DOMContentLoaded', function() {
+    // 主留言輸入框
+    const commentInput = document.getElementById('commentInput');
+    if (commentInput) {
+        commentInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitComment();
+            }
+        });
+    }
+
+    // 回覆輸入框的 ENTER 鍵功能（事件委託）
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && e.target.classList.contains('reply-input')) {
+            e.preventDefault();
+
+            // 找到對應的回覆表單和留言ID
+            const replyForm = e.target.closest('.reply-form');
+            if (replyForm) {
+                const commentId = replyForm.id.replace('replyForm', '');
+                submitReply(commentId);
+            }
+        }
+    });
+
+    // 處理 highlight 參數來高亮顯示指定的留言
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightCommentId = urlParams.get('highlight');
+
+    if (highlightCommentId) {
+        // 延遲一點時間確保頁面完全載入
+        setTimeout(() => {
+            const commentElement = document.querySelector(`[data-comment-id="${highlightCommentId}"]`);
+
+            if (commentElement) {
+                // 滾動到留言位置
+                commentElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+
+                // 高亮顯示留言
+                commentElement.style.backgroundColor = '#fff3cd';
+                commentElement.style.transition = 'background-color 0.3s ease';
+                commentElement.style.border = '2px solid #ffc107';
+                commentElement.style.borderRadius = '8px';
+                commentElement.style.padding = '0.5rem';
+
+                // 3秒後移除高亮
+                setTimeout(() => {
+                    commentElement.style.backgroundColor = '';
+                    commentElement.style.border = '';
+                    setTimeout(() => {
+                        commentElement.style.transition = '';
+                        commentElement.style.padding = '';
+                    }, 300);
+                }, 3000);
+            }
+        }, 500);
+    }
+});
 </script>
 {% endblock %}

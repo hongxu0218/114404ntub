@@ -308,6 +308,7 @@
         }
     }
 
+
     @keyframes toastSlideIn {
         from {
             opacity: 0;
@@ -1056,7 +1057,7 @@
         <div class="post-feed">
             {% if posts %}
                 {% for post in posts %}
-                <div class="post-item" data-post-id="{{ post.id }}">
+                <div class="post-item" data-post-id="{{ post.id }}" style="cursor: pointer;" onclick="openPostDetail('{{ post.id }}')">
                     {% if post.is_repost and post.original_post %}
                         <!-- 轉發標示 -->
                         <div class="repost-header">
@@ -1104,7 +1105,8 @@
                                 </button>
                             {% endif %}
                         </div>
-                        <div class="post-content">{{ post.content }}</div>
+                        <!-- 普通貼文 -->
+                        <div class="post-content" data-post-id="{{ post.id }}">{{ post.content }}</div>
                     {% endif %}
 
                     {% if post.is_repost and post.original_post %}
@@ -1158,26 +1160,26 @@
                     {% endif %}
                     <div class="post-actions">
                         <button class="action-btn like-btn {% if post.user_liked %}active{% endif %}"
-                                onclick="toggleLike('{{ post.id }}', this)">
+                                onclick="toggleLike('{{ post.id }}', this, event)">
                             <i class="bi bi-heart{% if post.user_liked %}-fill{% endif %}"></i>
                             <span class="like-count">{{ post.likes_count }}</span>
                         </button>
-                        <button class="action-btn comment-btn" onclick="toggleComments('{{ post.id }}')">
+                        <button class="action-btn comment-btn" onclick="toggleComments(event, '{{ post.id }}')">
                             <i class="bi bi-chat"></i>
                             <span>{{ post.comments_count }}</span>
                         </button>
                         {% if post.is_repost and post.original_post %}
-                            <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.original_post.id }}', '{{ post.original_post.user.username }}', {{ post.original_post.shares_count }})">
+                            <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.id }}', '{{ post.user.username }}', {{ post.shares_count }}, event)">
                                 <i class="bi bi-arrow-repeat"></i>
-                                <span>{{ post.original_post.shares_count }}</span>
+                                <span>{{ post.shares_count }}</span>
                             </button>
                         {% else %}
-                            <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.id }}', '{{ post.user.username }}', {{ post.shares_count }})">
+                            <button class="action-btn repost-btn" onclick="showRepostModal('{{ post.id }}', '{{ post.user.username }}', {{ post.shares_count }}, event)">
                                 <i class="bi bi-arrow-repeat"></i>
                                 <span>{{ post.shares_count }}</span>
                             </button>
                         {% endif %}
-                        <button class="action-btn share-btn" onclick="sharePost('{{ post.id }}')">
+                        <button class="action-btn share-btn" onclick="sharePost('{{ post.id }}', event)">
                             <i class="bi bi-share"></i>
                             <span>分享</span>
                         </button>
@@ -1191,13 +1193,15 @@
 
                         <!-- 留言輸入框 -->
                         {% if user.is_authenticated %}
-                        <div class="comment-form">
+                        <div class="comment-form" onclick="event.stopPropagation();">
                             <img src="{% if user.social_profile.avatar and user.social_profile.avatar.name %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
                                  alt="{{ user.username }}" class="comment-avatar">
-                            <div class="comment-input-container">
+                            <div class="comment-input-container" onclick="event.stopPropagation();">
                                 <textarea class="comment-input" id="comment-input-{{ post.id }}"
-                                         placeholder="寫下你的留言..." rows="1"></textarea>
-                                <button class="comment-submit-btn" onclick="submitComment('{{ post.id }}')">
+                                         placeholder="寫下你的留言..." rows="1"
+                                         onclick="event.stopPropagation();"
+                                         onfocus="event.stopPropagation();"></textarea>
+                                <button class="comment-submit-btn" onclick="submitComment('{{ post.id }}', event)">
                                     <i class="bi bi-send"></i>
                                 </button>
                             </div>
@@ -1266,7 +1270,7 @@
 
 <!-- 載入更多按鈕 -->
 {% if posts.has_next %}
-<div class="text-center mt-4">
+<div class="text-center mt-4" data-has-next="true">
     <button class="btn btn-outline-primary btn-lg" onclick="loadMorePosts()">
         <i class="bi bi-arrow-down-circle"></i>
         載入更多貼文
@@ -1617,165 +1621,84 @@ function selectPostToRepost(postId, username, content) {
     }
 }
 
-// Threads風格的轉發模態框
-function showRepostModal(postId, username, sharesCount) {
+// Bootstrap Modal 風格的轉發模態框
+let currentRepostPostId = null;
+
+function showRepostModal(postId, username, sharesCount, event) {
+    // 阻止事件傳播，避免觸發父元素的點擊事件
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     {% if not user.is_authenticated %}
         alert('請先登入');
         return;
     {% endif %}
 
-    // 移除現有模態框
-    const existingModal = document.querySelector('.repost-modal-overlay');
-    if (existingModal) {
-        existingModal.remove();
-    }
+    currentRepostPostId = postId;
 
-    // 創建模態框
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'repost-modal-overlay';
-    modalOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        backdrop-filter: blur(4px);
-    `;
+    // 填充原貼文信息到模態框
+    document.getElementById('originalAuthor').textContent = username;
+    document.getElementById('originalContent').innerHTML = `來自 @${username} 的貼文`;
 
-    const modal = document.createElement('div');
-    modal.className = 'repost-modal';
-    modal.style.cssText = `
-        background: white;
-        border-radius: 20px;
-        padding: 0;
-        min-width: 300px;
-        max-width: 400px;
-        width: 90%;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        animation: modalSlideIn 0.3s ease-out;
-    `;
+    // 清空之前的評論
+    document.getElementById('repostComment').value = '';
 
-    modal.innerHTML = `
-        <div style="padding: 1.5rem; border-bottom: 1px solid #f0f0f0;">
-            <h3 style="margin: 0; color: #333; font-size: 1.2rem; text-align: center;">
-                <i class="bi bi-arrow-repeat me-2" style="color: #28a745;"></i>
-                轉發貼文
-            </h3>
-        </div>
-        <div style="padding: 1.5rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                <img src="{% if user.social_profile.avatar and user.social_profile.avatar.name %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
-                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                <div>
-                    <div style="font-weight: 600; color: #333;">{{ user.username }}</div>
-                    <div style="font-size: 0.9rem; color: #666;">轉發給您的粉絲</div>
-                </div>
-            </div>
-
-            <textarea id="repostComment" placeholder="想說些什麼嗎？（選填）"
-                     style="width: 100%; border: 2px solid #f0f0f0; border-radius: 12px; padding: 1rem; resize: none; font-size: 1rem; min-height: 80px; outline: none; transition: border-color 0.3s ease;"
-                     onfocus="this.style.borderColor='#28a745'"
-                     onblur="this.style.borderColor='#f0f0f0'"></textarea>
-
-            <div style="background: #f8f9fa; border-radius: 12px; padding: 1rem; margin: 1rem 0; border-left: 3px solid #28a745;">
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">轉發來自 @${username} 的貼文</div>
-                <div style="font-size: 0.85rem; color: #999;">包含原始內容和媒體檔案</div>
-            </div>
-        </div>
-
-        <div style="padding: 1rem 1.5rem; background: #f8f9fa; border-radius: 0 0 20px 20px; display: flex; gap: 1rem;">
-            <button onclick="closeRepostModal()"
-                   style="flex: 1; padding: 0.75rem; border: 2px solid #ddd; background: white; border-radius: 12px; color: #666; font-weight: 500; cursor: pointer; transition: all 0.3s ease;"
-                   onmouseover="this.style.borderColor='#999'"
-                   onmouseout="this.style.borderColor='#ddd'">
-                取消
-            </button>
-            <button onclick="executeRepost('${postId}', ${sharesCount})"
-                   style="flex: 2; padding: 0.75rem; border: none; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;"
-                   onmouseover="this.style.transform='translateY(-1px)'"
-                   onmouseout="this.style.transform='translateY(0)'">
-                <i class="bi bi-arrow-repeat me-1"></i>轉發
-            </button>
-        </div>
-    `;
-
-    modalOverlay.appendChild(modal);
-    document.body.appendChild(modalOverlay);
-
-    // 點擊背景關閉
-    modalOverlay.addEventListener('click', function(e) {
-        if (e.target === modalOverlay) {
-            closeRepostModal();
-        }
-    });
-
-    // 自動聚焦到文字框
-    setTimeout(() => {
-        document.getElementById('repostComment').focus();
-    }, 100);
+    // 顯示模態框
+    const modal = new bootstrap.Modal(document.getElementById('repostModal'));
+    modal.show();
 }
 
-function closeRepostModal() {
-    const modal = document.querySelector('.repost-modal-overlay');
-    if (modal) {
-        modal.style.animation = 'modalSlideOut 0.2s ease-in';
-        setTimeout(() => modal.remove(), 200);
-    }
-}
-
-function executeRepost(postId, currentSharesCount) {
+function executeRepost() {
     const comment = document.getElementById('repostComment').value.trim();
-    const button = event.target;
-    const originalContent = button.innerHTML;
+    const csrfToken = getCSRFToken();
 
-    button.disabled = true;
-    button.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-1"></i>轉發中...';
-
-    fetch(`/social/post/${postId}/repost/`, {
+    fetch(`/social/post/${currentRepostPostId}/repost/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json'
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            comment: comment
+            comment: comment || ''
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // 更新分享數量
-            const shareBtn = document.querySelector(`[onclick*="showRepostModal('${postId}'"]`);
-            if (shareBtn) {
-                const countSpan = shareBtn.querySelector('span');
-                if (countSpan) {
-                    countSpan.textContent = data.shares_count;
-                }
-            }
+            // 關閉模態框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('repostModal'));
+            modal.hide();
 
-            closeRepostModal();
+            // 更新轉發按鈕計數
+            const shareButtons = document.querySelectorAll(`[onclick*="showRepostModal('${currentRepostPostId}'"]`);
+            shareButtons.forEach(shareBtn => {
+                // 只更新非轉發貼文的分享按鈕
+                const postElement = shareBtn.closest('.post-item');
+                const isRepostElement = postElement && postElement.querySelector('.repost-header');
+
+                if (!isRepostElement) {
+                    // 這是原始貼文的分享按鈕
+                    const countSpan = shareBtn.querySelector('span');
+                    if (countSpan) {
+                        countSpan.textContent = data.shares_count;
+                    }
+                }
+            });
 
             // 顯示成功訊息
             showToast('轉發成功！', 'success');
 
-            // 重新載入頁面以顯示轉發的貼文
+            // 重新載入頁面以顯示新轉發
             setTimeout(() => location.reload(), 1000);
         } else {
-            button.disabled = false;
-            button.innerHTML = originalContent;
-            showToast('轉發失敗：' + data.error, 'error');
+            showToast('轉發失敗：' + (data.error || '未知錯誤'), 'error');
         }
     })
     .catch(error => {
-        console.error('轉發錯誤:', error);
-        button.disabled = false;
-        button.innerHTML = originalContent;
-        showToast('網路錯誤，請稍後再試', 'error');
+        console.error('Error:', error);
+        showToast('轉發失敗，請重試', 'error');
     });
 }
 
@@ -2261,7 +2184,13 @@ document.getElementById('postForm').addEventListener('submit', function(e) {
 document.getElementById('submitPost').addEventListener('click', handlePostSubmission);
 
 // 按讚功能
-function toggleLike(postId, btn) {
+function toggleLike(postId, btn, event) {
+    // 阻止事件傳播，避免觸發父元素的點擊事件
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     {% if not user.is_authenticated %}
         alert('請先登入');
         return;
@@ -2319,7 +2248,12 @@ function toggleLike(postId, btn) {
 }
 
 // 分享功能
-function sharePost(postId) {
+function sharePost(postId, event) {
+    // 阻止事件傳播，避免觸發父元素的點擊事件
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
     if (navigator.share) {
         navigator.share({
             title: '毛日好社群分享',
@@ -2335,7 +2269,13 @@ function sharePost(postId) {
 }
 
 // 留言功能
-function toggleComments(postId) {
+function toggleComments(event, postId) {
+    // 阻止事件傳播，避免觸發父元素的點擊事件
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     {% if not user.is_authenticated %}
         alert('請先登入');
         return;
@@ -2395,12 +2335,16 @@ function loadComments(postId) {
                                     <div class="comment-time">${comment.created_at}</div>
                                     <div class="comment-actions">
                                         <button class="comment-action-btn ${comment.user_liked ? 'active' : ''}"
-                                                onclick="toggleCommentLike('${comment.id}', this)">
+                                                onclick="toggleCommentLike('${comment.id}', this, event)">
                                             <i class="bi bi-heart${comment.user_liked ? '-fill' : ''}"></i>
                                             ${comment.likes_count || 0}
                                         </button>
+                                        <button class="comment-action-btn"
+                                                onclick="shareComment('${comment.id}', event)">
+                                            <i class="bi bi-share"></i> 分享
+                                        </button>
                                         ${comment.is_own_comment ? `
-                                            <button class="comment-action-btn" onclick="deleteComment('${comment.id}', '${postId}')">
+                                            <button class="comment-action-btn" onclick="deleteComment('${comment.id}', '${postId}', event)">
                                                 <i class="bi bi-trash"></i> 刪除
                                             </button>
                                         ` : ''}
@@ -2431,7 +2375,13 @@ function loadComments(postId) {
         });
 }
 
-function submitComment(postId) {
+function submitComment(postId, event) {
+    // 阻止事件傳播，避免觸發父元素的點擊事件
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     console.log('submitComment called with postId:', postId);
 
     const commentInput = document.getElementById(`comment-input-${postId}`);
@@ -2476,9 +2426,21 @@ function submitComment(postId) {
 
             // 更新留言數量
             const commentCountSpan = document.querySelector(`[data-post-id="${postId}"] .comment-btn span`);
+            console.log('Comment count span found:', commentCountSpan);
             if (commentCountSpan) {
                 const currentCount = parseInt(commentCountSpan.textContent) || 0;
+                console.log('Current count:', currentCount);
                 commentCountSpan.textContent = currentCount + 1;
+                console.log('Updated count to:', currentCount + 1);
+            } else {
+                console.error('Comment count span not found for postId:', postId);
+                // 嘗試不同的選擇器
+                const alternativeSpan = document.querySelector(`div[data-post-id="${postId}"] .post-actions .comment-btn span`);
+                if (alternativeSpan) {
+                    const currentCount = parseInt(alternativeSpan.textContent) || 0;
+                    alternativeSpan.textContent = currentCount + 1;
+                    console.log('Updated using alternative selector');
+                }
             }
         } else {
             alert('留言失敗：' + data.error);
@@ -2495,7 +2457,13 @@ function submitComment(postId) {
 }
 
 // 留言按讚功能
-function toggleCommentLike(commentId, btn) {
+function toggleCommentLike(commentId, btn, event) {
+    // 阻止事件傳播
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     {% if not user.is_authenticated %}
         alert('請先登入');
         return;
@@ -2578,11 +2546,111 @@ function quickFollow(username, btn) {
     });
 }
 
+// 分享留言功能
+function shareComment(commentId, event) {
+    // 阻止事件傳播
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    // 建立分享連結
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}/social/comment/${commentId}/location/`;
+
+    // 使用 Web Share API 如果支援
+    if (navigator.share) {
+        navigator.share({
+            title: '分享留言',
+            text: '查看這則留言',
+            url: shareUrl
+        }).then(() => {
+            alert('分享成功！');
+        }).catch((error) => {
+            // 如果分享失敗，回退到複製連結
+            copyToClipboard(shareUrl);
+        });
+    } else {
+        // 如果不支援 Web Share API，複製連結到剪貼簿
+        copyToClipboard(shareUrl);
+    }
+}
+
+// 複製到剪貼簿功能
+function copyToClipboard(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('留言連結已複製到剪貼簿！');
+        }).catch(() => {
+            // 回退方法
+            fallbackCopyToClipboard(text);
+        });
+    } else {
+        fallbackCopyToClipboard(text);
+    }
+}
+
+// 回退複製方法
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        document.execCommand('copy');
+        alert('留言連結已複製到剪貼簿！');
+    } catch (err) {
+        alert('無法複製連結，請手動複製：' + text);
+    }
+
+    document.body.removeChild(textArea);
+}
+
 // 刪除留言功能
-function deleteComment(commentId, postId) {
+function deleteComment(commentId, postId, event) {
+    // 阻止事件傳播
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
     if (confirm('確定要刪除這則留言嗎？')) {
-        // 這裡需要實作刪除留言的後端功能
-        alert('刪除留言功能開發中...');
+        fetch(`/social/comment/${commentId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 重新載入留言列表
+                loadComments(postId);
+
+                // 更新留言數量
+                const commentCountSpan = document.querySelector(`[data-post-id="${postId}"] .comment-btn span`);
+                if (commentCountSpan) {
+                    const currentCount = parseInt(commentCountSpan.textContent) || 0;
+                    commentCountSpan.textContent = Math.max(0, currentCount - 1);
+                } else {
+                    const alternativeSpan = document.querySelector(`div[data-post-id="${postId}"] .post-actions .comment-btn span`);
+                    if (alternativeSpan) {
+                        const currentCount = parseInt(alternativeSpan.textContent) || 0;
+                        alternativeSpan.textContent = Math.max(0, currentCount - 1);
+                    }
+                }
+            } else {
+                alert('刪除失敗：' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('刪除失敗，請稍後再試');
+        });
     }
 }
 
@@ -2682,5 +2750,161 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+// 開啟貼文詳情頁
+function openPostDetail(postId) {
+    // 跳轉到貼文詳情頁
+    window.location.href = `/social/post/${postId}/`;
+}
+
+// 防止按鈕點擊觸發卡片點擊
+document.addEventListener('DOMContentLoaded', function() {
+    // 使用事件委託防止操作按鈕觸發卡片點擊
+    document.addEventListener('click', function(e) {
+        // 檢查點擊的元素是否為貼文操作按鈕或留言區域
+        if (e.target.closest('.post-actions button, .post-actions a, .quick-follow-btn, .comments-section, .comment-form, .comment-input, .comment-submit-btn, .comment-input-container, textarea')) {
+            e.stopPropagation();
+        }
+    });
+
+    // 為所有留言輸入框添加額外的事件處理
+    document.addEventListener('focus', function(e) {
+        if (e.target.matches('.comment-input, textarea')) {
+            e.stopPropagation();
+        }
+    }, true);
+
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.comment-input, textarea')) {
+            e.stopPropagation();
+        }
+    }, true);
+
+    // 處理轉發留言的點擊跳轉功能
+    processRepostComments();
+});
+
+function processRepostComments() {
+    document.querySelectorAll('.post-content').forEach(content => {
+        const originalCommentId = content.dataset.originalCommentId;
+        if (originalCommentId) {
+            const text = content.innerHTML;
+
+            // 匹配轉發留言的格式: "--- 轉發留言 ---\n@username: content"
+            const repostPattern = /--- 轉發留言 ---\s*<br>\s*@([^:]+):\s*(.+)/;
+            const match = text.match(repostPattern);
+
+            if (match) {
+                const username = match[1].trim();
+                const commentContent = match[2].trim();
+
+                // 替換為可點擊的連結
+                const clickableRepost = text.replace(
+                    repostPattern,
+                    `--- 轉發留言 ---<br><a href="#" class="repost-comment-link text-decoration-none" data-comment-id="${originalCommentId}" onclick="goToComment('${originalCommentId}'); return false;" style="color: #007bff; cursor: pointer;">@${username}: ${commentContent}</a>`
+                );
+
+                content.innerHTML = clickableRepost;
+            }
+        }
+    });
+}
+
+// 載入更多貼文功能
+function loadMorePosts() {
+    const currentPage = {{ posts.number }};
+    const nextPage = currentPage + 1;
+
+    // 顯示載入狀態
+    const loadButton = event.target;
+    const originalText = loadButton.innerHTML;
+    loadButton.innerHTML = '<i class="bi bi-arrow-repeat spinning"></i> 載入中...';
+    loadButton.disabled = true;
+
+    // 發送 AJAX 請求載入下一頁
+    fetch(`/social/?page=${nextPage}`)
+        .then(response => response.text())
+        .then(html => {
+            // 解析返回的 HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // 獲取新的貼文
+            const newPosts = doc.querySelectorAll('.post-item');
+            const postFeed = document.querySelector('.post-feed');
+
+            // 添加新貼文到現有列表
+            newPosts.forEach(post => {
+                postFeed.appendChild(post);
+            });
+
+            // 檢查是否還有下一頁
+            const hasNext = doc.querySelector('[data-has-next]');
+            if (!hasNext || hasNext.dataset.hasNext !== 'true') {
+                // 沒有更多貼文了，移除載入按鈕
+                loadButton.parentElement.remove();
+            } else {
+                // 恢復按鈕狀態
+                loadButton.innerHTML = originalText;
+                loadButton.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('載入更多貼文失敗:', error);
+            // 恢復按鈕狀態
+            loadButton.innerHTML = originalText;
+            loadButton.disabled = false;
+            alert('載入失敗，請稍後再試');
+        });
+}
+
+// 處理轉發模態框的確認按鈕
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmRepostBtn = document.getElementById('confirmRepost');
+    if (confirmRepostBtn) {
+        confirmRepostBtn.addEventListener('click', executeRepost);
+    }
+});
+
 </script>
+
+<!-- 轉發模態框 (Bootstrap Modal) -->
+<div class="modal fade" id="repostModal" tabindex="-1" aria-labelledby="repostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center">
+                    {% if user.social_profile and user.social_profile.avatar %}
+                        <img src="{{ user.social_profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px;">
+                    {% else %}
+                        <img src="{% static 'images/default_pet.jpg' %}" alt="{{ user.username }}" class="rounded-circle me-3" style="width: 40px; height: 40px;">
+                    {% endif %}
+                    <div>
+                        <strong>{% if user.social_profile %}{{ user.social_profile.display_name|default:user.username }}{% else %}{{ user.username }}{% endif %}</strong>
+                        <br><small class="text-muted">轉發給您的粉絲</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <textarea class="form-control border-0" id="repostComment" placeholder="想說些什麼嗎？（選填）" rows="3" style="font-size: 1.1rem; resize: none;"></textarea>
+
+                <div class="original-post-preview mt-3 p-3" style="background: #f8f9fa; border-radius: 15px; border-left: 4px solid #FFB6C1;">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-repeat text-muted me-2"></i>
+                        <small class="text-muted">轉發來自 <strong>@<span id="originalAuthor"></span></strong> 的貼文</small>
+                    </div>
+                    <div id="originalContent" style="font-size: 0.95rem;"></div>
+                    <small class="text-muted mt-2 d-block">包含原始內容和媒體檔案</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 20px;">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmRepost" style="border-radius: 20px; background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%); border: none;">
+                    <i class="bi bi-repeat me-1"></i>轉發
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

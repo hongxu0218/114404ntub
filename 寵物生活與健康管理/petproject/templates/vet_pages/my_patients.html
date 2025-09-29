@@ -11,38 +11,120 @@
 <link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
 <style>
 :root {
-    --primary-color: #2563eb;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-900: #111827;
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* 專業醫療主色調 - 醫院級配色 */
+    --medical-primary: #0369a1;        /* 醫療藍 */
+    --medical-primary-light: #0284c7;  /* 淺醫療藍 */
+    --medical-primary-dark: #075985;   /* 深醫療藍 */
+    --medical-primary-ultra-light: #e0f2fe; /* 極淺醫療藍 */
+
+    /* 醫療專業輔助色 */
+    --medical-secondary: #059669;      /* 醫療綠 */
+    --medical-accent: #7c3aed;         /* 醫療紫 */
+    --medical-tertiary: #dc2626;       /* 醫療紅 */
+
+    /* 專業醫療狀態色彩 */
+    --medical-success: #047857;        /* 健康綠 */
+    --medical-success-light: #059669;
+    --medical-success-bg: #d1fae5;
+    --medical-warning: #d97706;        /* 警告橙 */
+    --medical-warning-light: #f59e0b;
+    --medical-warning-bg: #fef3c7;
+    --medical-danger: #dc2626;         /* 危險紅 */
+    --medical-danger-light: #ef4444;
+    --medical-danger-bg: #fee2e2;
+    --medical-info: #0369a1;           /* 資訊藍 */
+    --medical-info-light: #0284c7;
+    --medical-info-bg: #dbeafe;
+
+    /* 醫療級灰色系統 */
+    --medical-gray-50: #f8fafc;
+    --medical-gray-100: #f1f5f9;
+    --medical-gray-200: #e2e8f0;
+    --medical-gray-300: #cbd5e1;
+    --medical-gray-400: #94a3b8;
+    --medical-gray-500: #64748b;
+    --medical-gray-600: #475569;
+    --medical-gray-700: #334155;
+    --medical-gray-800: #1e293b;
+    --medical-gray-900: #0f172a;
+
+    /* 醫療背景系統 */
+    --medical-bg-primary: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%);
+    --medical-bg-secondary: #ffffff;
+    --medical-bg-card: #ffffff;
+    --medical-bg-section: #f8fafc;
+
+    /* 醫療邊框系統 */
+    --medical-border-light: #e2e8f0;
+    --medical-border-medium: #cbd5e1;
+    --medical-border-focus: #0369a1;
+
+    /* 醫療文字系統 */
+    --medical-text-primary: #1e293b;
+    --medical-text-secondary: #475569;
+    --medical-text-muted: #64748b;
+
+    /* 醫療陰影系統 */
+    --medical-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --medical-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.1);
+    --medical-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
+    --medical-shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+
+    /* 醫療圓角系統 */
+    --medical-radius-sm: 0.375rem;
+    --medical-radius-md: 0.5rem;
+    --medical-radius-lg: 0.75rem;
+    --medical-radius-xl: 1rem;
+    --medical-radius-2xl: 1.5rem;
+
+    /* 醫療過渡效果 */
+    --medical-transition-fast: 150ms ease-in-out;
+    --medical-transition-normal: 250ms ease-in-out;
+    --medical-transition-slow: 350ms ease-in-out;
 }
 
 body {
-    background: linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 100%);
+    background: #ffffff;
     min-height: 100vh;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--medical-text-primary);
 }
 
 .patients-container {
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     padding: 24px;
 }
 
 .patients-header {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: linear-gradient(135deg, var(--medical-bg-card) 0%, var(--medical-gray-50) 100%);
+    border-radius: var(--medical-radius-2xl);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--medical-shadow-lg);
+    border: 1px solid var(--medical-border-light);
+    position: relative;
+    overflow: hidden;
+}
+
+.patients-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--medical-primary), var(--medical-secondary), var(--medical-accent));
+}
+
+.patients-header::after {
+    content: '🏥';
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 3rem;
+    opacity: 0.1;
+    z-index: 0;
 }
 
 .header-content {
@@ -55,42 +137,69 @@ body {
 .header-title {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--gray-900);
+    gap: 1rem;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--medical-text-primary);
+    position: relative;
+    z-index: 1;
+}
+
+.header-title::before {
+    content: '👩‍⚕️';
+    font-size: 2.5rem;
+    margin-right: 0.5rem;
 }
 
 .stats-bar {
     display: flex;
-    gap: 20px;
+    gap: 1.5rem;
     align-items: center;
-    padding: 16px;
-    background: var(--gray-50);
-    border-radius: 12px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, var(--medical-info-bg) 0%, var(--medical-primary-ultra-light) 100%);
+    border-radius: var(--medical-radius-xl);
+    border: 1px solid var(--medical-border-light);
+    position: relative;
+    z-index: 1;
 }
 
 .stat-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     font-size: 0.9rem;
+    color: var(--medical-text-secondary);
+    font-weight: 500;
 }
 
 .stat-number {
-    font-weight: 700;
-    color: var(--primary-color);
+    font-weight: 800;
+    color: var(--medical-primary);
+    font-size: 1.1rem;
 }
 
 .controls-bar {
     display: flex;
-    gap: 16px;
+    gap: 1rem;
     align-items: center;
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 24px;
+    background: var(--medical-bg-card);
+    padding: 1.5rem;
+    border-radius: var(--medical-radius-xl);
+    box-shadow: var(--medical-shadow-card);
+    border: 1px solid var(--medical-border-light);
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.controls-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--medical-secondary), var(--medical-primary));
+    border-radius: var(--medical-radius-xl) var(--medical-radius-xl) 0 0;
 }
 
 .search-box {
@@ -130,18 +239,50 @@ body {
 }
 
 .patient-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-200);
-    transition: all 0.3s ease;
+    background: var(--medical-bg-card);
+    border-radius: var(--medical-radius-xl);
+    padding: 1.5rem;
+    box-shadow: var(--medical-shadow-card);
+    border: 1px solid var(--medical-border-light);
+    transition: all var(--medical-transition-normal);
     position: relative;
+    overflow: hidden;
+}
+
+.patient-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--medical-success), var(--medical-primary), var(--medical-accent));
+    transform: scaleX(0);
+    transition: transform var(--medical-transition-normal);
+}
+
+.patient-card::after {
+    content: '🐾';
+    position: absolute;
+    top: 0.5rem;
+    right: 3rem;
+    font-size: 1.5rem;
+    opacity: 0.1;
+    transition: opacity var(--medical-transition-normal);
 }
 
 .patient-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px);
+    box-shadow: var(--medical-shadow-lg);
+    border-color: var(--medical-primary-light);
+}
+
+.patient-card:hover::before {
+    transform: scaleX(1);
+}
+
+.patient-card:hover::after {
+    opacity: 0.3;
 }
 
 .patient-header {
@@ -178,32 +319,62 @@ body {
 
 .health-status {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    padding: 4px 8px;
-    border-radius: 12px;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--medical-radius-lg);
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    z-index: 2;
+    box-shadow: var(--medical-shadow-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .status-good {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--medical-success-bg);
+    color: var(--medical-success);
+    border-color: var(--medical-success-light);
+}
+
+.status-good::before {
+    content: '✓ ';
+    font-weight: bold;
 }
 
 .status-attention {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--medical-warning-bg);
+    color: var(--medical-warning);
+    border-color: var(--medical-warning-light);
+}
+
+.status-attention::before {
+    content: '⚠ ';
+    font-weight: bold;
 }
 
 .status-needs_checkup {
-    background: #fecaca;
-    color: #991b1b;
+    background: var(--medical-danger-bg);
+    color: var(--medical-danger);
+    border-color: var(--medical-danger-light);
+}
+
+.status-needs_checkup::before {
+    content: '🩺 ';
+    font-weight: bold;
 }
 
 .status-new_patient {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--medical-info-bg);
+    color: var(--medical-info);
+    border-color: var(--medical-info-light);
+}
+
+.status-new_patient::before {
+    content: '+ ';
+    font-weight: bold;
 }
 
 .patient-stats {
@@ -214,23 +385,53 @@ body {
 }
 
 .stat-box {
-    background: var(--gray-50);
-    padding: 12px;
-    border-radius: 8px;
+    background: linear-gradient(135deg, var(--medical-gray-50) 0%, var(--medical-primary-ultra-light) 100%);
+    padding: 0.75rem;
+    border-radius: var(--medical-radius-md);
     text-align: center;
+    border: 1px solid var(--medical-border-light);
+    transition: all var(--medical-transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--medical-primary), var(--medical-secondary));
+    transform: scaleX(0);
+    transition: transform var(--medical-transition-fast);
+}
+
+.stat-box:hover {
+    background: linear-gradient(135deg, var(--medical-primary-ultra-light) 0%, var(--medical-success-bg) 100%);
+    border-color: var(--medical-primary-light);
+    transform: scale(1.05);
+}
+
+.stat-box:hover::before {
+    transform: scaleX(1);
 }
 
 .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--medical-primary);
     margin: 0;
+    line-height: 1;
 }
 
 .stat-label {
     font-size: 0.75rem;
-    color: var(--gray-600);
-    margin: 4px 0 0 0;
+    color: var(--medical-text-secondary);
+    margin: 0.25rem 0 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
 }
 
 .patient-actions {
@@ -254,21 +455,66 @@ body {
 }
 
 .btn-primary {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--medical-primary), var(--medical-primary-light));
     color: white;
+    border: none;
+    box-shadow: var(--medical-shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--medical-transition-normal);
 }
 
 .btn-primary:hover {
-    background: #1d4ed8;
+    background: linear-gradient(135deg, var(--medical-primary-dark), var(--medical-primary));
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: var(--medical-shadow-md);
+}
+
+.btn-primary:hover::before {
+    left: 100%;
 }
 
 .btn-secondary {
-    background: var(--gray-100);
-    color: var(--gray-700);
+    background: linear-gradient(135deg, var(--medical-gray-100), var(--medical-gray-50));
+    color: var(--medical-text-secondary);
+    border: 1px solid var(--medical-border-medium);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(3, 105, 161, 0.1), transparent);
+    transition: left var(--medical-transition-normal);
 }
 
 .btn-secondary:hover {
-    background: var(--gray-200);
+    background: linear-gradient(135deg, var(--medical-gray-200), var(--medical-gray-100));
+    color: var(--medical-text-primary);
+    text-decoration: none;
+    transform: translateY(-1px);
+    border-color: var(--medical-border-focus);
+}
+
+.btn-secondary:hover::before {
+    left: 100%;
 }
 
 .empty-state {
@@ -417,13 +663,6 @@ body {
             {% for patient_data in patients_data %}
                 {% with pet=patient_data.pet stats=patient_data.stats %}
                 <div class="patient-card">
-                    <div class="health-status status-{{ stats.health_status }}">
-                        {% if stats.health_status == 'good' %}良好
-                        {% elif stats.health_status == 'attention' %}需關注
-                        {% elif stats.health_status == 'needs_checkup' %}需檢查
-                        {% else %}新病患{% endif %}
-                    </div>
-
                     <div class="patient-header">
                         <div class="pet-avatar">
                             {% if pet.picture %}

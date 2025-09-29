@@ -7,72 +7,173 @@
 <link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
 <link rel="stylesheet" href="{% static 'css/vet_pages/medical-history.css' %}">
 <style>
-/* 醫療專業風格覆寫 */
+/* 專業醫療色彩系統 */
+:root {
+  /* 主色調 - 醫療藍 */
+  --medical-primary: #0369a1;
+  --medical-primary-light: #0284c7;
+  --medical-primary-dark: #075985;
+  --medical-primary-ultra-light: #eff6ff;
+
+  /* 輔助色彩 */
+  --medical-secondary: #059669;
+  --medical-accent: #7c3aed;
+  --medical-warning: #d97706;
+  --medical-danger: #dc2626;
+  --medical-success: #059669;
+
+  /* 文字色彩 */
+  --medical-text-primary: #1e293b;
+  --medical-text-secondary: #475569;
+  --medical-text-muted: #64748b;
+
+  /* 背景色彩 */
+  --medical-bg-primary: #ffffff;
+  --medical-bg-secondary: #f8fafc;
+  --medical-bg-card: #ffffff;
+
+  /* 邊框色彩 */
+  --medical-border-light: #e2e8f0;
+  --medical-border-medium: #cbd5e1;
+  --medical-border-focus: #0369a1;
+
+  /* 陰影 */
+  --medical-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --medical-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --medical-shadow-card: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* 專業醫療風格覆寫 */
 body {
-  background: var(--medical-bg-primary);
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background: #ffffff;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1e293b;
 }
 
 .medical-history-container {
   background: transparent;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 20px;
 }
 
-/* 專業醫療標題 */
+/* 專業醫療標題 - 優化版 */
 .page-header {
-  background: linear-gradient(135deg, var(--medical-primary), var(--medical-primary-dark));
-  color: white;
-  padding: 2rem;
-  border-radius: 12px;
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2.5rem;
+  border-radius: 1.5rem;
   margin-bottom: 2rem;
-  border: none;
-  box-shadow: var(--medical-shadow-lg);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #059669, #047857, #0369a1, #7c3aed);
+}
+
+.page-header::after {
+  content: '🏥';
+  position: absolute;
+  top: 1rem;
+  right: 2rem;
+  font-size: 4rem;
+  opacity: 0.15;
 }
 
 .page-title {
-  color: white;
+  color: #1e293b;
   font-size: 2.5rem;
-  font-weight: 600;
+  font-weight: 800;
   margin: 0 0 0.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .page-title::before {
-  content: '🏥';
-  font-size: 2rem;
+  content: '📋';
+  font-size: 2.5rem;
+  margin-right: 0.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .page-subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: #64748b;
   font-size: 1.1rem;
   margin: 0;
 }
 
 .back-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   backdrop-filter: blur(10px);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #e2e8f0;
+  color: #1e293b;
+  text-decoration: none;
   transform: translateX(-3px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* 醫療統計卡片 */
+/* 醫療統計卡片 - 增強版 */
 .stat-card {
-  border: 1px solid var(--medical-border-light);
-  box-shadow: var(--medical-shadow-card);
-  border-radius: 12px;
-  background: var(--medical-bg-card);
-  border-left-width: 4px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  border-radius: 1rem;
+  background: #ffffff;
+  border-left-width: 5px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  background: linear-gradient(135deg, rgba(3, 105, 161, 0.05), rgba(5, 150, 105, 0.05));
+  transition: width 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.stat-card:hover::before {
+  width: 100%;
 }
 
 .stat-card:nth-child(1) {
-  border-left-color: var(--medical-primary);
+  border-left-color: #0369a1;
 }
 
 .stat-card:nth-child(1) .stat-icon::before {
@@ -80,7 +181,7 @@ body {
 }
 
 .stat-card:nth-child(2) {
-  border-left-color: var(--medical-success);
+  border-left-color: #059669;
 }
 
 .stat-card:nth-child(2) .stat-icon::before {
@@ -88,7 +189,7 @@ body {
 }
 
 .stat-card:nth-child(3) {
-  border-left-color: var(--medical-accent);
+  border-left-color: #7c3aed;
 }
 
 .stat-card:nth-child(3) .stat-icon::before {
@@ -96,7 +197,7 @@ body {
 }
 
 .stat-card:nth-child(4) {
-  border-left-color: var(--medical-tertiary);
+  border-left-color: #dc2626;
 }
 
 .stat-card:nth-child(4) .stat-icon::before {
@@ -105,31 +206,59 @@ body {
 
 .stat-icon {
   font-size: 0;
-  width: 3rem;
-  height: 3rem;
-  background: linear-gradient(135deg, var(--medical-primary-light), var(--medical-primary));
+  width: 3.5rem;
+  height: 3.5rem;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
 }
 
 .stat-icon::before {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   color: white;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
 }
 
-/* 醫療篩選區域 */
+.stat-card:hover .stat-icon {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* 醫療篩選區域 - 增強版 */
 .filter-section {
-  border: 1px solid var(--medical-border-light);
-  box-shadow: var(--medical-shadow-md);
-  background: var(--medical-bg-card);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0369a1, #059669, #7c3aed);
 }
 
 .filter-group label {
   color: var(--medical-text-primary);
   font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  display: block;
 }
 
 .form-control {
@@ -155,34 +284,101 @@ body {
   box-shadow: var(--medical-shadow-md);
 }
 
-/* 醫療時間線 */
+/* 醫療時間線 - 專業版 */
 .timeline-container {
-  border: 1px solid var(--medical-border-light);
-  box-shadow: var(--medical-shadow-lg);
-  background: var(--medical-bg-card);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  background: #ffffff;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0369a1, #059669, #7c3aed, #dc2626);
+}
+
+.timeline-container::after {
+  content: '📋';
+  position: absolute;
+  top: 1rem;
+  right: 2rem;
+  font-size: 3rem;
+  opacity: 0.1;
 }
 
 .timeline-date {
-  border-color: var(--medical-primary);
-  background: var(--medical-bg-card);
-  box-shadow: var(--medical-shadow-card);
+  border-color: #0369a1;
+  background: #ffffff;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .timeline-content {
-  background: var(--medical-bg-secondary);
-  border-left-color: var(--medical-primary);
-  border-width: 4px;
+  background: #f8fafc;
+  border-left-color: #0369a1;
+  border-left-width: 5px;
+  border-radius: 0 1rem 1rem 0;
+  position: relative;
+  margin-left: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.timeline-content::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 1rem;
+  width: 12px;
+  height: 12px;
+  background: #0369a1;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px #ffffff, 0 0 0 6px #0369a1;
 }
 
 .pet-name {
-  color: var(--medical-primary-dark);
-  font-weight: 700;
+  color: #075985;
+  font-weight: 800;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pet-name::before {
+  content: '🐾';
+  font-size: 1rem;
+}
+
+.record-section {
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 1rem;
+  backdrop-filter: blur(10px);
 }
 
 .record-section h4 {
   color: var(--medical-text-primary);
   position: relative;
-  padding-left: 1.5rem;
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .record-section h4::before {
@@ -190,11 +386,28 @@ body {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 4px;
-  height: 100%;
-  background: var(--medical-primary);
-  border-radius: 2px;
+  width: 5px;
+  height: 1.5rem;
+  background: linear-gradient(135deg, var(--medical-primary), var(--medical-primary-light));
+  border-radius: 3px;
   content: '';
+  box-shadow: 0 2px 4px rgba(3, 105, 161, 0.3);
+}
+
+.record-section:nth-child(1) h4::before {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+}
+
+.record-section:nth-child(2) h4::before {
+  background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.record-section:nth-child(3) h4::before {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+
+.record-section:nth-child(4) h4::before {
+  background: linear-gradient(135deg, #0369a1, #0284c7);
 }
 
 .record-section p {
@@ -203,15 +416,42 @@ body {
   color: var(--medical-text-secondary);
 }
 
-/* 醫療記錄內容樣式 */
+/* 醫療記錄內容樣式 - 增強版 */
 .symptoms-content,
 .diagnosis-content,
 .treatment-content,
 .notes-content {
-  background: var(--medical-bg-card);
-  border: 1px solid var(--medical-border-light);
-  border-radius: 8px;
-  padding: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.symptoms-content:hover,
+.diagnosis-content:hover,
+.treatment-content:hover,
+.notes-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border-color: #0369a1;
+}
+
+.diagnosis-content {
+  border-left: 4px solid #059669;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.treatment-content {
+  border-left: 4px solid #7c3aed;
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.notes-content {
+  border-left: 4px solid #0369a1;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
 }
 
 .no-data {
@@ -417,8 +657,33 @@ body {
 
 /* 專業響應式優化 */
 @media (max-width: 768px) {
+  .medical-history-container {
+    padding: 0 15px;
+  }
+
+  .page-header {
+    padding: 2rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
   .page-title {
     font-size: 2rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .page-header::after {
+    display: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
   }
 
   .stat-icon {
@@ -428,6 +693,49 @@ body {
 
   .stat-icon::before {
     font-size: 1.25rem;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .timeline-container {
+    padding: 1rem;
+  }
+
+  .timeline-content {
+    margin-left: 0.5rem;
+    padding: 1rem;
+  }
+
+  .record-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-content h3 {
+    font-size: 1.5rem;
+  }
+
+  .timeline-date {
+    padding: 0.5rem;
+  }
+
+  .pet-name {
+    font-size: 1.1rem;
   }
 }
 </style>

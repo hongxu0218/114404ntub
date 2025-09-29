@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}取消預約 - 毛日好 Paw&Day{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
+<style>
+.cancel-appointment-page {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.cancel-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(239, 68, 68, 0.1);
+    border: 2px solid #fecaca;
+    overflow: hidden;
+}
+
+.cancel-header {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.cancel-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.cancel-header .warning-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.appointment-details {
+    padding: 1.5rem;
+    background: #fef2f2;
+    border-bottom: 1px solid #fecaca;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.detail-value {
+    color: #111827;
+}
+
+.cancel-form {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.custom-reason-group {
+    display: none;
+    margin-top: 1rem;
+}
+
+.custom-reason-group.show {
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 1rem;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 768px) {
+    .cancel-appointment-page {
+        margin: 1rem auto;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cancel-appointment-page">
+    <div class="cancel-card">
+        <div class="cancel-header">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2>取消預約確認</h2>
+        </div>
+
+        <div class="appointment-details">
+            <div class="detail-item">
+                <span class="detail-label">寵物名稱：</span>
+                <span class="detail-value">{{ appointment.pet.name }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">飼主：</span>
+                <span class="detail-value">{{ appointment.owner.get_full_name|default:appointment.owner.username }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">預約日期：</span>
+                <span class="detail-value">{{ appointment.slot.date|date:"Y年m月d日 (D)" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">預約時間：</span>
+                <span class="detail-value">{{ appointment.slot.start_time|time:"H:i" }} - {{ appointment.slot.end_time|time:"H:i" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">預約原因：</span>
+                <span class="detail-value">{{ appointment.reason|default:"一般檢查" }}</span>
+            </div>
+        </div>
+
+        <form method="post" class="cancel-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="cancel_reason" class="form-label">
+                    <i class="fas fa-list-ul"></i>
+                    取消原因 <span style="color: #ef4444;">*</span>
+                </label>
+                <select name="cancel_reason" id="cancel_reason" class="form-select" required>
+                    <option value="">請選擇取消原因</option>
+                    {% for code, label in cancel_reasons %}
+                        <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="custom-reason-group" id="customReasonGroup">
+                <label for="custom_reason" class="form-label">
+                    <i class="fas fa-edit"></i>
+                    請詳細說明原因
+                </label>
+                <textarea name="custom_reason" id="custom_reason" class="form-textarea"
+                         placeholder="請詳細說明取消的具體原因..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'vet_appointments' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    返回
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-times-circle"></i>
+                    確認取消預約
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cancelReasonSelect = document.getElementById('cancel_reason');
+    const customReasonGroup = document.getElementById('customReasonGroup');
+    const customReasonTextarea = document.getElementById('custom_reason');
+
+    cancelReasonSelect.addEventListener('change', function() {
+        if (this.value === 'other') {
+            customReasonGroup.classList.add('show');
+            customReasonTextarea.required = true;
+            customReasonTextarea.focus();
+        } else {
+            customReasonGroup.classList.remove('show');
+            customReasonTextarea.required = false;
+            customReasonTextarea.value = '';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}預約管理 - {{ clinic.clinic_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/clinic/appointments-simple.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="appointments-wrapper">
+    <div class="container">
+
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="page-title">
+                        <i class="bi bi-calendar-check me-3"></i>
+                        預約管理中心
+                    </h1>
+                    <p class="page-subtitle">{{ clinic.clinic_name }} - 預約管理系統</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'create_walkin_appointment' %}" class="btn btn-primary">
+                        <i class="bi bi-person-walking me-2"></i>
+                        現場預約
+                    </a>
+                    <a href="{% url 'clinic_dashboard' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        返回主控台
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 預約統計 -->
+        <div class="stats-row">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ appointments|length }}</div>
+                        <div class="stat-label">總預約</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="confirmedCount">0</div>
+                        <div class="stat-label">已確認</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingCount">0</div>
+                        <div class="stat-label">待確認</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayCount">0</div>
+                        <div class="stat-label">今日預約</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 篩選工具 -->
+        <div class="filter-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">全部</button>
+                        <button class="filter-btn" data-filter="pending">待確認</button>
+                        <button class="filter-btn" data-filter="confirmed">已確認</button>
+                        <button class="filter-btn" data-filter="completed">已完成</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="search-box">
+                        <input type="text" class="form-control" placeholder="搜尋寵物名稱或飼主...">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 預約列表 -->
+        <div class="appointments-grid">
+            {% for appointment in appointments %}
+            <div class="appointment-card" data-status="{{ appointment.status }}">
+                <div class="card-header">
+                    <div class="pet-info">
+                        <div class="pet-avatar">
+                            {% if appointment.pet.picture %}
+                                <img src="{{ appointment.pet.picture.url }}" alt="{{ appointment.pet.name }}">
+                            {% else %}
+                                <span>{{ appointment.pet.name|first }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="pet-details">
+                            <h5>{{ appointment.pet.name }}</h5>
+                            <p>{{ appointment.owner.first_name|default:appointment.owner.username }}</p>
+                        </div>
+                    </div>
+                    <div class="status-badge status-{{ appointment.status }}">
+                        {% if appointment.status == 'confirmed' %}
+                            <i class="bi bi-check-circle"></i>已確認
+                        {% elif appointment.status == 'pending' %}
+                            <i class="bi bi-clock"></i>待確認
+                        {% elif appointment.status == 'cancelled' %}
+                            <i class="bi bi-x-circle"></i>已取消
+                        {% elif appointment.status == 'completed' %}
+                            <i class="bi bi-check2-circle"></i>已完成
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="appointment-time">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        {{ appointment.slot.date|date:"Y年m月d日" }}
+                        <span class="time">{{ appointment.slot.start_time|time:"H:i" }} - {{ appointment.slot.end_time|time:"H:i" }}</span>
+                    </div>
+
+                    <div class="doctor-info">
+                        <i class="bi bi-person-badge me-2"></i>
+                        Dr. {{ appointment.slot.doctor.user.first_name|default:appointment.slot.doctor.user.username }}
+                    </div>
+
+                    {% if appointment.reason %}
+                    <div class="appointment-reason">
+                        <i class="bi bi-note-text me-2"></i>
+                        {{ appointment.reason|truncatechars:60 }}
+                    </div>
+                    {% endif %}
+
+                    <div class="contact-info">
+                        <i class="bi bi-telephone me-2"></i>
+                        {{ appointment.contact_phone|default:"未提供聯絡電話" }}
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    {% if appointment.status == 'pending' %}
+                    <button class="btn btn-success btn-sm" onclick="confirmAppointment({{ appointment.id }})">
+                        <i class="bi bi-check"></i>確認
+                    </button>
+                    {% endif %}
+
+                    {% if appointment.status in 'pending,confirmed' %}
+                    <button class="btn btn-warning btn-sm" onclick="cancelAppointment({{ appointment.id }})">
+                        <i class="bi bi-x"></i>取消
+                    </button>
+                    {% endif %}
+
+                    {% if appointment.status == 'confirmed' %}
+                    <button class="btn btn-secondary btn-sm" onclick="completeAppointment({{ appointment.id }})">
+                        <i class="bi bi-check2"></i>完成
+                    </button>
+                    {% endif %}
+
+                    <button class="btn btn-outline-primary btn-sm" onclick="viewDetail({{ appointment.id }})">
+                        <i class="bi bi-eye"></i>詳情
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 空狀態 -->
+        {% if not appointments %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-calendar-x"></i>
+            </div>
+            <h3>目前沒有預約記錄</h3>
+            <p>診所尚未收到任何預約，可以開始設定排班來接受預約</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- 隱藏表單用於AJAX -->
+<form id="ajaxForm" style="display: none;">
+    {% csrf_token %}
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 簡化的JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化統計數據
+    updateStats();
+
+    // 篩選功能
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            filterAppointments(this.dataset.filter);
+        });
+    });
+});
+
+function updateStats() {
+    const cards = document.querySelectorAll('.appointment-card');
+    let confirmed = 0, pending = 0, today = 0;
+    const todayDate = new Date().toLocaleDateString('sv-SE'); // 今日日期 YYYY-MM-DD，修正時區問題
+
+    cards.forEach(card => {
+        const status = card.dataset.status;
+        if (status === 'confirmed') confirmed++;
+        if (status === 'pending') pending++;
+
+        // 計算今日預約
+        const appointmentDate = card.querySelector('.appointment-time').textContent.match(/\d{4}年\d{1,2}月\d{1,2}日/);
+        if (appointmentDate) {
+            const dateStr = appointmentDate[0];
+            const year = dateStr.match(/(\d{4})年/)[1];
+            const month = dateStr.match(/(\d{1,2})月/)[1].padStart(2, '0');
+            const day = dateStr.match(/(\d{1,2})日/)[1].padStart(2, '0');
+            const cardDate = `${year}-${month}-${day}`;
+
+            if (cardDate === todayDate) {
+                today++;
+            }
+        }
+    });
+
+    document.getElementById('confirmedCount').textContent = confirmed;
+    document.getElementById('pendingCount').textContent = pending;
+    document.getElementById('todayCount').textContent = today;
+}
+
+function filterAppointments(filter) {
+    const cards = document.querySelectorAll('.appointment-card');
+    cards.forEach(card => {
+        if (filter === 'all' || card.dataset.status === filter) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function confirmAppointment(id) {
+    if (confirm('確定要確認這個預約嗎？')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/clinic/appointments/${id}/confirm/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('確認預約時發生錯誤:', error);
+            alert('確認預約失敗，請稍後再試');
+        });
+    }
+}
+
+function cancelAppointment(id) {
+    if (confirm('確定要取消這個預約嗎？')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/clinic/appointments/${id}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            },
+            body: 'cancel_reason=診所管理員取消'
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('取消預約時發生錯誤:', error);
+            alert('取消預約失敗，請稍後再試');
+        });
+    }
+}
+
+function completeAppointment(id) {
+    if (confirm('確定要標記這個預約為完成嗎？')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/clinic/appointments/${id}/complete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('完成預約時發生錯誤:', error);
+            alert('完成預約失敗，請稍後再試');
+        });
+    }
+}
+
+function viewDetail(id) {
+    // 顯示詳情
+    console.log('查看詳情:', id);
+}
+</script>
+{% endblock %}
