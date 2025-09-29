@@ -51,81 +51,455 @@ def init_vector_search():
         return False
 
 def exact_text_search(query):
-    """精確文本匹配搜索"""
+    """智能文本匹配搜索 - 改進版（返回最佳匹配）"""
     if not init_vector_search():
         return None
 
     try:
-        # 獲取所有數據進行精確匹配
+        # 獲取所有數據進行智能匹配
         all_data = _collection.get(include=['documents', 'metadatas'])
 
-        query_clean = query.replace('？', '').replace('?', '').strip()
+        # 清理查詢文本 - 移除標點符號和停用詞
+        import re
+        query_clean = re.sub(r'[？?！!。，,、\s]', '', query.lower())
+
+        candidates = []  # 存儲候選匹配
 
         for doc, meta in zip(all_data['documents'], all_data['metadatas']):
             title = meta.get('title', '')
-            title_clean = title.replace('？', '').replace('?', '').strip()
+            title_clean = re.sub(r'[？?！!。，,、\s]', '', title.lower())
 
-            # 精確匹配或高度相似
-            if query_clean == title_clean or query_clean in title_clean or title_clean in query_clean:
-                print(f"[AI客服] 精確匹配找到: {title}")
-                return doc
+            # 計算相似度：檢查關鍵詞重疊
+            query_chars = set(query_clean)
+            title_chars = set(title_clean)
 
-        return None
-    except Exception as e:
-        print(f"[AI客服] 精確匹配搜索錯誤: {e}")
-        return None
+            # 多種匹配策略
+            overlap = len(query_chars & title_chars)
+            similarity = overlap / max(len(query_chars), len(title_chars)) if max(len(query_chars), len(title_chars)) > 0 else 0
 
-def direct_text_search(query):
-    """升級為RAG架構的智能AI客服"""
-    try:
-        # 1. 首先嘗試精確文本匹配
-        exact_result = exact_text_search(query)
-        if exact_result:
-            print(f"[AI客服] 精確匹配成功，直接返回答案")
-            return exact_result
+            # 關鍵詞匹配 - 檢查是否包含核心詞彙
+            query_words = [query_clean[i:i+2] for i in range(len(query_clean)-1)]  # 提取所有2字詞
+            title_words = [title_clean[i:i+2] for i in range(len(title_clean)-1)]
 
-        # 2. 向量搜索獲取相關文檔
-        search_results = simple_search(query, top_k=5)
+            common_words = set(query_words) & set(title_words)
+            word_match_score = len(common_words)
 
-        if not search_results:
-            return None
+            # 增強語義衝突檢測 - 避免錯誤匹配
+            semantic_conflict = False
+            severe_conflict = False
 
-        print(f"[AI客服] 找到 {len(search_results)} 個相關文檔")
+            # 嚴重衝突：完全不相關的主題
+            severe_conflict_pairs = [
+                ('受傷', '排泄'), ('受傷', '嘔吐'), ('受傷', '記仇'), ('受傷', '外出'),
+                ('意外', '預防'), ('緊急', '日常'), ('處理受傷', '處理排泄'),
+                ('外傷', '大小便'), ('傷口', '廁所'), ('急救', '訓練'),
+                ('醫療', '玩具'), ('治療', '食物'), ('包紮', '清潔'),
+                ('流血', '嘔吐'), ('骨折', '腹瀉'),
+                ('指甲', '洗澡'), ('修剪', '沐浴'), ('剪指甲', '洗澡'),
+                ('指甲修剪', '洗澡頻率'), ('指甲護理', '清潔身體'),
 
-        # 3. 選擇最相關的文檔作為上下文
-        relevant_docs = []
-        for result in search_results:
-            if result['similarity'] > 0.3:  # 只選擇相似度夠高的文檔
-                relevant_docs.append({
-                    'title': result.get('title', ''),
-                    'content': result['content'],
-                    'similarity': result['similarity']
+                # 新增關鍵衝突對 - 根據用戶回報的錯誤
+                ('走失', '輸血'), ('不見', '醫療'), ('外面', '外傷'), ('丟失', '治療'),
+                ('用品', '如廁'), ('選擇', '定點'), ('適合', '清潔'), ('商品', '訓練'),
+                ('睡覺', '過敏'), ('休息', '皮膚病'), ('昏睡', '寄生蟲'),
+                ('洗澡', '記仇'), ('沐浴', '記憶'), ('吹乾', '經驗'), ('清潔', '避免'),
+                ('血液', '尋找'), ('配對', '協尋'), ('輸血', '走失'), ('醫院', '收容所'),
+                ('獎勵', '寵物用品'), ('制度', '選擇用品'), ('建立', '適合用品'),
+                ('絕育', '皮膚病'), ('結紮', '腸胃炎'), ('時機', '牙周病'), ('手術', '關節炎'),
+                ('最佳', '疾病'), ('絕育時機', '慢性病'), ('結紮時間', '老化疾病'),
+                ('領養', '食器'), ('條件', '水碗'), ('需要', '寵物床'), ('申請', '籠子'),
+                ('領養條件', '用品'), ('領養需要', '食具'), ('申請領養', '玩具')
+            ]
+
+            # 一般衝突：相關但不同的概念
+            general_conflict_pairs = [
+                ('居家', '外出'), ('室內', '戶外'), ('家具', '食物'),
+                ('訓練', '醫療'), ('玩耍', '治療'), ('健康', '生病')
+            ]
+
+            # 檢查嚴重衝突
+            for pair in severe_conflict_pairs:
+                if (pair[0] in query_clean and pair[1] in title_clean) or (pair[1] in query_clean and pair[0] in title_clean):
+                    severe_conflict = True
+                    break
+
+            # 檢查一般衝突
+            if not severe_conflict:
+                for pair in general_conflict_pairs:
+                    if (pair[0] in query_clean and pair[1] in title_clean) or (pair[1] in query_clean and pair[0] in title_clean):
+                        semantic_conflict = True
+                        break
+
+            # 衝突懲罰：嚴重衝突幾乎排除，一般衝突降低評分
+            if severe_conflict:
+                conflict_penalty = 0.05  # 幾乎排除
+            elif semantic_conflict:
+                conflict_penalty = 0.3   # 大幅降低
+            else:
+                conflict_penalty = 1.0
+
+            # 增強正向語義加權 - 專題特定關鍵詞匹配
+            positive_boost = 1.0
+            topic_specific_keywords = {
+                # 受傷相關
+                '受傷': ['外傷', '傷口', '急救', '醫療', '處理', '治療', '包紮', '流血', '骨折', '扭傷'],
+                '意外': ['緊急', '急救', '處理', '怎麼辦', '立即', '馬上', '快速'],
+                '緊急': ['立即', '馬上', '急救', '處理', '送醫', '就醫'],
+
+                # 健康相關
+                '嘔吐': ['腹瀉', '生病', '症狀', '醫療', '不適', '食慾'],
+                '腹瀉': ['嘔吐', '生病', '症狀', '醫療', '水便', '軟便'],
+
+                # 日常照護
+                '訓練': ['行為', '教導', '學習', '指令', '服從', '練習'],
+                '指甲': ['修剪', '剪指甲', '護理', '血線', '止血', '過長', '喀喀聲'],
+                '修剪': ['指甲', '剪', '血線', '止血粉', '過長', '卡到'],
+                '洗澡': ['沐浴', '清潔', '洗髮精', '沐浴乳', '頻率', '皮膚'],
+                '清潔': ['洗澡', '梳毛', '衛生', '護理', '美容'],
+                '餵食': ['食物', '飼料', '營養', '吃飯', '進食'],
+
+                # 行為問題
+                '咬': ['家具', '鞋子', '東西', '玩具', '無聊', '長牙', '焦慮', '替代物'],
+                '護食': ['資源', '保護', '本能', '信任', '訓練', '口令'],
+                '撲人': ['打招呼', '注意', '轉身', '忽視', '四腳著地'],
+
+                # 醫療健康
+                '獸醫': ['醫院', '預約', '服務', '選擇', '醫師', '經驗', '評價', '信任'],
+                '疫苗': ['預防針', '注射', '接種', '免疫', '保護', '定期', '健康'],
+                '生病': ['症狀', '治療', '醫療', '就醫', '診斷', '藥物', '康復'],
+                '健康': ['檢查', '預防', '保健', '營養', '運動', '照護', '管理'],
+
+                # 緊急醫療
+                '中毒': ['症狀', '急救', '中毒', '治療', '緊急', '就醫', '毒物'],
+                '急救': ['緊急', '處理', '受傷', '中毒', '立即', '急救', '送醫'],
+                '受傷': ['外傷', '傷口', '急救', '處理', '緊急', '醫療', '治療'],
+                '緊急': ['急救', '立即', '馬上', '處理', '送醫', '危險', '嚴重'],
+
+                # 年齡和飲食
+                '幼': ['幼犬', '幼貓', '小狗', '小貓', '年輕', '成長', '發育'],
+
+                # 新增用戶回報問題的關鍵主題
+                '走失': ['不見', '丟失', '外面', '尋找', '協尋', '收容所', '警察', '晶片', '名牌'],
+                '用品': ['選擇', '適合', '食器', '水碗', '寵物床', '籠子', '玩具', '用具', '設備'],
+                '睡覺': ['休息', '昏睡', '嗜睡', '疲倦', '精神', '活力', '正常', '作息'],
+                '洗澡完': ['吹乾', '烘乾', '毛髮', '濕氣', '黴菌', '細菌', '長毛'],
+                '絕育': ['結紮', '時機', '手術', '年齡', '性成熟', '健康', '獸醫', '最佳'],
+                '領養': ['條件', '申請', '資格', '收入', '住家', '經驗', '責任', '承諾'],
+                '老': ['老年', '老犬', '老貓', '高齡', '年紀', '衰老', '照護'],
+                '飲食': ['餵食', '食物', '營養', '吃', '餵', '飼料', '食慾'],
+                '餵食': ['飲食', '食物', '營養', '頻率', '時間', '份量', '方法'],
+
+                # 其他重要
+                '領養': ['收養', '認養', '選擇', '條件', '準備', '責任', '愛心'],
+                '絕育': ['結紮', '手術', '時機', '好處', '風險', '年齡', '健康'],
+
+                # 環境相關
+                '居家': ['家具', '安全', '環境', '注意', '室內', '防護'],
+                '外出': ['散步', '運動', '戶外', '遛狗', '活動']
+            }
+
+            # 計算主題匹配度
+            topic_match_boost = 1.0
+            for key, related_words in topic_specific_keywords.items():
+                if key in query_clean:
+                    match_count = sum(1 for word in related_words if word in title_clean)
+                    if match_count >= 2:
+                        topic_match_boost = 2.0  # 強匹配
+                        break
+                    elif match_count == 1:
+                        topic_match_boost = 1.5  # 中等匹配
+
+            positive_boost = topic_match_boost
+
+            # 綜合評分：基礎匹配 * 衝突懲罰 * 主題加權
+            base_score = similarity * 0.4 + (word_match_score / max(len(query_words), len(title_words))) * 0.6
+            total_score = base_score * conflict_penalty * positive_boost
+
+            # 嚴格的匹配條件：確保質量
+            should_include = False
+
+            # 條件1：高相似度且無嚴重衝突
+            if similarity > 0.7 and not severe_conflict:
+                should_include = True
+
+            # 條件2：完全包含關係且高詞匹配
+            elif (query_clean in title_clean or title_clean in query_clean) and word_match_score >= 2 and not severe_conflict:
+                should_include = True
+
+            # 條件3：主題特定高匹配
+            elif word_match_score >= 4 and positive_boost >= 1.5 and not severe_conflict:
+                should_include = True
+
+            # 條件4：受傷相關的特殊處理
+            elif ('受傷' in query_clean or '意外' in query_clean or '緊急' in query_clean):
+                injury_keywords_in_title = sum(1 for keyword in ['受傷', '外傷', '傷口', '急救', '醫療', '處理', '治療'] if keyword in title_clean)
+                if injury_keywords_in_title >= 2 and not severe_conflict:
+                    should_include = True
+
+            # 條件5：行為問題的特殊處理（如護食、撲人、咬人等）
+            elif any(behavior in query_clean for behavior in ['護食', '撲人', '咬人', '亂叫', '亂抓', '亂尿', '咬']):
+                behavior_match = False
+
+                # 精確行為匹配
+                exact_behaviors = ['護食', '撲人', '咬人', '亂叫', '亂抓', '亂尿']
+                for behavior in exact_behaviors:
+                    if behavior in query_clean and behavior in title_clean:
+                        behavior_match = True
+                        break
+
+                # 特殊處理：咬東西的行為
+                if '咬' in query_clean and ('咬' in title_clean or '咬東西' in title_clean or '咬家具' in title_clean):
+                    # 檢查是否包含具體物品
+                    items = ['鞋子', '家具', '東西', '玩具', '沙發', '椅子']
+                    for item in items:
+                        if item in query_clean and (item in title_clean or '家具' in title_clean or '東西' in title_clean):
+                            behavior_match = True
+                            break
+
+                if behavior_match and not severe_conflict:
+                    should_include = True
+
+            # 條件6：複合關鍵詞特殊匹配（跨主題查詢）
+            elif any(combo in query_clean for combo in ['差異', '不同', '比較']):
+                # 年齡相關飲食差異
+                if ('幼' in query_clean or '老' in query_clean) and ('飲食' in query_clean or '餵食' in query_clean):
+                    age_diet_keywords = ['老年', '幼', '飲食', '餵食', '營養', '調整']
+                    age_diet_count = sum(1 for keyword in age_diet_keywords if keyword in title_clean)
+                    if age_diet_count >= 2 and not severe_conflict:
+                        should_include = True
+
+            # 條件7：核心關鍵詞的部分匹配（針對簡短查詢）
+            elif len(query_clean) <= 6:  # 簡短查詢
+                # 首先檢查單字關鍵詞（最嚴格匹配）
+                if len(query_clean) <= 3:  # 單字查詢
+                    single_word_keywords = ['獸醫', '醫院', '疫苗', '領養', '訓練', '洗澡']
+                    for keyword in single_word_keywords:
+                        if keyword == query_clean and keyword in title_clean and not severe_conflict:
+                            # 單字匹配直接通過
+                            should_include = True
+                            break
+
+                # 如果單字匹配失敗，嘗試核心關鍵詞匹配
+                if not should_include:
+                    core_keywords = [
+                        # 行為問題
+                        '護食', '撲人', '咬人', '記仇', '咬',
+                        # 護理照護
+                        '洗澡', '指甲', '訓練', '餵食', '飲食',
+                        # 醫療健康
+                        '嘔吐', '腹瀉', '獸醫', '醫院', '疫苗', '生病', '健康',
+                        # 緊急情況
+                        '中毒', '急救', '受傷', '緊急', '意外',
+                        # 年齡相關
+                        '幼', '老', '幼犬', '老年',
+                        # 其他重要
+                        '領養', '絕育'
+                    ]
+                    for keyword in core_keywords:
+                        if keyword in query_clean and keyword in title_clean and not severe_conflict:
+                            # 簡短查詢降低門檻
+                            if word_match_score >= 2 or similarity > 0.4:
+                                should_include = True
+                                break
+
+            if should_include:
+                candidates.append({
+                    'doc': doc,
+                    'title': title,
+                    'score': total_score,
+                    'similarity': similarity,
+                    'common_words': word_match_score,
+                    'conflict_penalty': conflict_penalty,
+                    'positive_boost': positive_boost,
+                    'severe_conflict': severe_conflict
                 })
 
-        if not relevant_docs:
-            print(f"[AI客服] 沒有找到相似度足夠的文檔")
-            return None
+        # 如果有候選者，選擇最佳匹配
+        if candidates:
+            # 按評分排序，優先選擇無嚴重衝突的結果
+            candidates.sort(key=lambda x: (not x['severe_conflict'], x['score']), reverse=True)
+            best_match = candidates[0]
 
-        # 4. 根據AI_SERVICE_MODE決定回答策略
-        if AI_SERVICE_MODE == "fallback":
-            # 僅使用向量檢索，不調用Ollama
-            print(f"[AI客服] 使用fallback模式，返回最佳匹配文檔")
-            return relevant_docs[0]['content']
-        elif AI_SERVICE_MODE == "ollama":
-            # 嘗試使用Ollama，失敗時降級
-            print(f"[AI客服] 使用ollama模式，嘗試智能生成")
-            ollama_result = generate_intelligent_response(query, relevant_docs)
-            if ollama_result:
-                return ollama_result
+            # 動態調整質量門檻（針對簡短查詢）
+            query_length = len(re.sub(r'[？?！!。，,、\s]', '', query.lower()))
+            if query_length <= 6:  # 簡短查詢
+                min_score = 0.6 if best_match['severe_conflict'] else 0.4
             else:
-                print(f"[AI客服] Ollama失敗，降級到向量檢索")
-                return relevant_docs[0]['content']
-        else:
-            # auto或hybrid模式
-            return generate_intelligent_response(query, relevant_docs)
+                min_score = 0.8 if best_match['severe_conflict'] else 0.6
+
+            if best_match['score'] >= min_score:
+                print(f"[AI客服] 智能匹配找到最佳結果")
+                print(f"  評分: {best_match['score']:.3f}, 相似度: {best_match['similarity']:.3f}")
+                print(f"  共同詞: {best_match['common_words']}, 衝突懲罰: {best_match['conflict_penalty']}")
+                print(f"  主題加權: {best_match['positive_boost']}, 嚴重衝突: {best_match['severe_conflict']}")
+                print(f"  標題: {best_match['title']}")
+                # 清理回答格式，移除問題前綴
+                cleaned_answer = clean_response_format(best_match['doc'])
+                return cleaned_answer
+            else:
+                print(f"[AI客服] 智能匹配質量不足 (評分: {best_match['score']:.3f} < {min_score})")
+                # 顯示前3個候選結果供調試
+                for i, candidate in enumerate(candidates[:3]):
+                    title_preview = candidate['title'][:20] if len(candidate['title']) > 20 else candidate['title']
+                    print(f"  候選{i+1}: 評分{candidate['score']:.3f}, 衝突: {candidate['severe_conflict']}, 標題: {title_preview}")
+
+                # 對於特定查詢類型，降低門檻
+                query_length = len(re.sub(r'[？?！!。，,、\s]', '', query.lower()))
+
+                # 單字查詢降低門檻
+                if query_length <= 3 and not best_match['severe_conflict'] and best_match['score'] > 0.2:
+                    print(f"[AI客服] 單字查詢降低門檻，接受候選答案")
+                    cleaned_answer = clean_response_format(best_match['doc'])
+                    return cleaned_answer
+
+                # 複合查詢（如差異、比較）降低門檻
+                if any(combo in query for combo in ['差異', '不同', '比較']) and best_match['score'] > 0.25:
+                    print(f"[AI客服] 複合查詢降低門檻，接受候選答案")
+                    cleaned_answer = clean_response_format(best_match['doc'])
+                    return cleaned_answer
+
+                print(f"[AI客服] 使用向量搜索")
+
+        return None
+    except Exception as e:
+        print(f"[AI客服] 智能匹配搜索錯誤: {e}")
+        return None
+
+def clean_response_format(response):
+    """清理回答格式，讓回答更自然"""
+    if not response:
+        return response
+
+    import re
+
+    # 移除常見的問題前綴格式
+    patterns_to_remove = [
+        r'^問題：.*?\n\n',  # 移除 "問題：xxx" 開頭
+        r'^問題：.*?\n',   # 移除單行問題前綴
+        r'^Q：.*?\n\n',    # 移除 "Q：xxx" 開頭
+        r'^Q：.*?\n',      # 移除單行Q前綴
+        r'^.*？\s*\n\n',   # 移除以問號結尾的問題行
+    ]
+
+    cleaned = response
+    for pattern in patterns_to_remove:
+        cleaned = re.sub(pattern, '', cleaned, flags=re.MULTILINE)
+
+    # 移除 "回答：" 前綴
+    cleaned = re.sub(r'^回答：', '', cleaned)
+    cleaned = re.sub(r'^答：', '', cleaned)
+    cleaned = re.sub(r'^A：', '', cleaned)
+
+    # 清理多餘的空行
+    cleaned = re.sub(r'\n\n+', '\n\n', cleaned)
+    cleaned = cleaned.strip()
+
+    return cleaned
+
+def generate_natural_response(query, relevant_docs):
+    """即使沒有Ollama也能生成自然回答的智能組合功能"""
+    if not relevant_docs:
+        return None
+
+    # 取得最相關的文檔
+    best_doc = relevant_docs[0]
+    best_content = clean_response_format(best_doc['content'])
+
+    # 如果只有一個高品質文檔，直接返回清理後的內容
+    if len(relevant_docs) == 1 or best_doc['similarity'] > 0.85:
+        return best_content
+
+    # 多文檔智能組合
+    print(f"[AI客服] 組合 {len(relevant_docs)} 個相關文檔生成回答")
+
+    # 清理所有相關文檔
+    cleaned_docs = []
+    for doc in relevant_docs[:3]:  # 最多使用3個文檔
+        cleaned = clean_response_format(doc['content'])
+        if cleaned and len(cleaned) > 20:  # 過濾太短的內容
+            cleaned_docs.append({
+                'content': cleaned,
+                'similarity': doc['similarity']
+            })
+
+    if not cleaned_docs:
+        return best_content
+
+    # 智能重組答案
+    import re
+
+    # 分析查詢類型來決定組合策略
+    if any(keyword in query for keyword in ['如何', '怎麼', '方法', '步驟']):
+        # 步驟類問題：組合建議
+        combined_tips = []
+        for doc in cleaned_docs:
+            content = doc['content']
+            # 提取建議和方法
+            sentences = re.split(r'[。！？\n]', content)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 10 and any(word in sentence for word in ['建議', '應該', '可以', '需要', '避免']):
+                    if sentence not in combined_tips:
+                        combined_tips.append(sentence)
+
+        if combined_tips:
+            return '。'.join(combined_tips[:3]) + '。'
+
+    elif any(keyword in query for keyword in ['什麼', '哪些', '有什麼']):
+        # 列舉類問題：提取關鍵點
+        key_points = []
+        for doc in cleaned_docs:
+            content = doc['content']
+            # 提取關鍵信息
+            sentences = re.split(r'[。！？\n]', content)
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if len(sentence) > 8 and sentence not in key_points:
+                    key_points.append(sentence)
+
+        if key_points:
+            return '。'.join(key_points[:2]) + '。'
+
+    elif any(keyword in query for keyword in ['可以', '能否', '會不會', '是否']):
+        # 是非類問題：給出明確答案加解釋
+        first_sentence = re.split(r'[。！？\n]', best_content)[0].strip()
+        if first_sentence:
+            # 如果有其他相關信息，補充說明
+            if len(cleaned_docs) > 1:
+                additional = re.split(r'[。！？\n]', cleaned_docs[1]['content'])[0].strip()
+                if additional and additional != first_sentence:
+                    return f"{first_sentence}。{additional}。"
+            return f"{first_sentence}。"
+
+    # 默認：返回最佳匹配的清理內容
+    return best_content
+
+def direct_text_search(query):
+    """簡化的AI客服 - 優先使用RAG管道"""
+    try:
+        print(f"[AI客服] 處理查詢: {query}")
+
+        # 1. 優先使用RAG管道（自然AI生成）
+        rag_result = rag_search_and_generate(query)
+        if rag_result:
+            return rag_result
+
+        # 2. 備用：基礎向量搜索
+        print(f"[AI客服] RAG失敗，使用備用搜索...")
+        search_results = simple_search(query, top_k=3)
+
+        if search_results and len(search_results) > 0:
+            # 返回最相關的文檔
+            best_result = search_results[0]
+            if best_result['similarity'] > 0.4:
+                print(f"[AI客服] 使用備用答案，相似度: {best_result['similarity']}")
+                return best_result['content']
+
+        print(f"[AI客服] 所有方法都失敗")
+        return None
 
     except Exception as e:
-        print(f"[AI客服] RAG搜索錯誤: {e}")
+        print(f"[AI客服] 處理錯誤: {e}")
         return None
 
 def generate_intelligent_response(query, relevant_docs):
@@ -158,7 +532,7 @@ def generate_intelligent_response(query, relevant_docs):
 
         # 調用Ollama API
         ollama_response = requests.post(
-            OLLAMA_CHAT_URL.replace('/api/chat', '/api/generate'),
+            'http://127.0.0.1:11434/api/generate',
             json={
                 'model': OLLAMA_MODEL,
                 'prompt': prompt,
@@ -325,6 +699,7 @@ def fallback_response(question):
 
         "運動|散步|活動|玩|精力|累": "🏃 寵物運動需求\n\n運動重要性：\n• 維持健康體重\n• 促進心血管健康\n• 消耗多餘精力\n• 增進親密關係\n\n運動建議：\n• 小型犬：每日30分鐘\n• 中型犬：每日60分鐘\n• 大型犬：每日90分鐘以上\n• 貓咪：室內遊戲15-20分鐘×2-3次\n\n🌡️ 炎熱天氣避免中午時段運動！",
 
+
         "疫苗|預防針|接種|免疫": "💉 寵物疫苗接種\n\n核心疫苗（必須）：\n狗：狂犬病、犬瘟熱、腺病毒、小病毒\n貓：狂犬病、貓瘟、卡里西病毒、疱疹病毒\n\n接種時程：\n• 首次：6-8週齡開始\n• 補強：間隔2-4週\n• 年度補強：依獸醫建議\n\n📅 使用毛日好記錄疫苗時程，不錯過重要接種！",
 
         "懷孕|生產|繁殖|配種|生小孩": "🤱 寵物繁殖須知\n\n懷孕期照護：\n• 狗：懷孕期約63天\n• 貓：懷孕期約65天\n• 增加營養攝取\n• 減少激烈運動\n• 定期產檢\n\n生產準備：\n• 準備舒適生產環境\n• 備妥緊急聯絡獸醫\n• 觀察生產徵兆\n\n⚠️ 建議在專業獸醫指導下進行！"
@@ -339,7 +714,9 @@ def fallback_response(question):
 
     # 緊急情況處理
     emergency_keywords = {
-        "中毒|吃壞|嘔吐|腹瀉|急救": "🚨 緊急狀況處理\n\n立即就醫徵象：\n• 持續嘔吐或腹瀉\n• 誤食有毒物質\n• 呼吸困難\n• 意識不清\n• 大量出血\n\n急救措施：\n1. 保持冷靜\n2. 立即聯絡獸醫\n3. 依指示進行初步處理\n4. 儘速送醫\n\n☎️ 建議預存24小時急診獸醫電話！"
+        "嘔吐.*腹瀉|腹瀉.*嘔吐|嘔吐.*處理|腹瀉.*處理|拉肚子|吐|嘔": "🚨 寵物嘔吐腹瀉處理\n\n**立即就醫情況：**\n• 持續嘔吐超過24小時\n• 嚴重腹瀉伴隨血絲\n• 同時出現嘔吐和腹瀉\n• 精神萎靡、不吃不喝\n• 脫水症狀(牙齦乾燥、皮膚失去彈性)\n\n**緊急處理：**\n1. 暫停餵食12-24小時\n2. 提供少量清水\n3. 觀察症狀變化\n4. 記錄嘔吐腹瀉次數\n5. 儘速就醫\n\n⚠️ 幼犬幼貓更需要立即就醫！",
+
+        "中毒|吃壞|誤食|急救": "🚨 緊急狀況處理\n\n立即就醫徵象：\n• 持續嘔吐或腹瀉\n• 誤食有毒物質\n• 呼吸困難\n• 意識不清\n• 大量出血\n\n急救措施：\n1. 保持冷靜\n2. 立即聯絡獸醫\n3. 依指示進行初步處理\n4. 儘速送醫\n\n☎️ 建議預存24小時急診獸醫電話！"
     }
 
     # 按優先級檢查所有關鍵字庫
@@ -352,6 +729,54 @@ def fallback_response(question):
 
     # 如果沒有匹配到，提供通用建議
     return "🤖 毛日好AI客服\n\n很抱歉，我無法理解您的問題。\n\n您可以詢問：\n• 寵物餵食、健康、訓練\n• 平台功能使用\n• 註冊登入相關\n• 預約獸醫服務\n\n💬 或點擊下方【轉人工客服】獲得專人協助！"
+
+def rag_search_and_generate(query, top_k=3):
+    """簡化的RAG管道：參考RAGpipeline.py的方法"""
+    if not init_vector_search():
+        return None
+
+    try:
+        print(f"[RAG] 檢索查詢: {query}")
+
+        # 1. 檢索相關文檔 - 參考RAGpipeline.py第20行
+        results = _collection.query(
+            query_texts=[query],
+            n_results=top_k,
+            include=["documents", "metadatas"]
+        )
+
+        docs = results.get("documents", [[]])[0]
+        if not docs:
+            print(f"[RAG] 沒有找到相關文檔")
+            return None
+
+        # 2. 組合上下文 - 參考RAGpipeline.py第21行
+        context = " ".join(docs)
+        print(f"[RAG] 找到 {len(docs)} 個文檔，組合上下文")
+
+        # 3. 建構提示詞 - 參考RAGpipeline.py第24行
+        prompt = f"根據以下資料回答問題:\n\n{context}\n\n問題: {query}"
+
+        # 4. 調用Ollama - 參考RAGpipeline.py第25行
+        import ollama
+
+        response = ollama.chat(
+            model=OLLAMA_MODEL,  # 直接使用配置中的模型名稱
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        answer = response["message"]["content"].strip()
+
+        if answer and len(answer) > 10:
+            print(f"[RAG] 成功生成: {answer[:50]}...")
+            return answer
+        else:
+            print(f"[RAG] 生成答案太短")
+            return None
+
+    except Exception as e:
+        print(f"[RAG] 錯誤: {e}")
+        return None
 
 @csrf_exempt
 @require_POST
