@@ -427,8 +427,21 @@
             flex: 1;
         }
 
-        .action-btn {
+        .all-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .main-buttons {
+            display: flex;
+            gap: var(--space-sm);
             flex: 1;
+        }
+
+        .action-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -441,6 +454,12 @@
             transition: var(--transition-ease);
             border: none;
             box-shadow: var(--shadow-sm);
+            min-width: 80px;
+        }
+
+        .primary-actions .action-btn,
+        .main-buttons .action-btn {
+            flex: 1;
         }
 
         .action-btn.primary {
@@ -658,8 +677,116 @@
             vertical-align: middle;
         }
 
+        /* ===== 手機版操作區域 ===== */
+        .pet-actions-mobile {
+            margin-top: var(--space-lg);
+            border-top: 1px solid var(--border-light);
+            padding-top: var(--space-lg);
+        }
+
+        .actions-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-sm);
+        }
+
+        .mobile-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: var(--transition-ease);
+            border: none;
+            cursor: pointer;
+            min-height: 60px;
+            background: var(--surface);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .mobile-action-btn i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        .mobile-action-btn.appointment-btn {
+            background: linear-gradient(135deg, var(--owner-primary), #FFB842);
+            color: var(--surface);
+            border-color: var(--owner-primary);
+        }
+
+        .mobile-action-btn.appointment-btn:hover,
+        .mobile-action-btn.appointment-btn:active {
+            background: var(--owner-primary-hover);
+            color: var(--surface);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .mobile-action-btn.health-btn {
+            background: linear-gradient(135deg, var(--owner-secondary), #8ED1B0);
+            color: var(--surface);
+            border-color: var(--owner-secondary);
+        }
+
+        .mobile-action-btn.health-btn:hover,
+        .mobile-action-btn.health-btn:active {
+            background: var(--owner-secondary-hover);
+            color: var(--surface);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .mobile-action-btn.edit-btn {
+            background: var(--status-info);
+            color: var(--surface);
+            border-color: var(--status-info);
+        }
+
+        .mobile-action-btn.edit-btn:hover,
+        .mobile-action-btn.edit-btn:active {
+            background: #346a7a;
+            color: var(--surface);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .mobile-action-btn.delete-btn {
+            background: var(--status-urgent);
+            color: var(--surface);
+            border-color: var(--status-urgent);
+        }
+
+        .mobile-action-btn.delete-btn:hover,
+        .mobile-action-btn.delete-btn:active {
+            background: #c82333;
+            color: var(--surface);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* 手機版桌面版切換 */
+        .pet-actions-desktop {
+            margin-top: var(--space-lg);
+            border-top: 1px solid var(--border-light);
+            padding-top: var(--space-lg);
+        }
+
         /* ===== 手機版觸控優化 ===== */
-        .pet-actions a, .pet-actions button, .actions-menu a {
+        .pet-actions a, .pet-actions button, .actions-menu a, .mobile-action-btn {
             touch-action: manipulation;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -675,7 +802,31 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            /* 增加手機版按鈕大小 */
+            /* 手機版操作按鈕優化 */
+            .mobile-action-btn {
+                min-height: 64px;
+                padding: var(--space-md) var(--space-sm);
+                font-size: 0.75rem;
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-md);
+            }
+
+            .mobile-action-btn i {
+                font-size: 1.4rem;
+                margin-bottom: 4px;
+            }
+
+            .actions-row {
+                gap: var(--space-md);
+            }
+
+            .pet-actions-mobile {
+                margin-top: var(--space-xl);
+                padding-top: var(--space-xl);
+                border-top: 2px solid var(--border-light);
+            }
+
+            /* 增加桌面版按鈕大小 */
             .more-btn {
                 width: 44px;
                 height: 44px;
@@ -881,36 +1032,56 @@
                                 </div>
 
 
-                                <div class="pet-actions">
-                                    <div class="primary-actions">
-                                        <a href="{% url 'create_appointment' pet.id %}" class="action-btn primary">
-                                            <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                                            <span>預約</span>
+                                <!-- 手機版：簡潔的操作區域 -->
+                                <div class="pet-actions-mobile d-block d-md-none">
+                                    <div class="actions-row">
+                                        <a href="{% url 'create_appointment' pet.id %}" class="mobile-action-btn appointment-btn">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            預約
                                         </a>
-                                        <a href="{% url 'health_rec' %}?pet={{ pet.id }}" class="action-btn secondary">
-                                            <svg class="icon" viewBox="0 0 24 24"><path d="M2 8H4M20 8h2M15 12H9M16 4h-4-4M12 22h-.01"/><path d="M12 17a5 5 0 0 1-5-5V8a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5z"/></svg>
-                                            <span>健康</span>
+                                        <a href="{% url 'health_rec' %}?pet={{ pet.id }}" class="mobile-action-btn health-btn">
+                                            <i class="fas fa-heart"></i>
+                                            健康
                                         </a>
-                                    </div>
-
-                                    <div class="more-actions">
-                                        <button class="more-btn">
-                                            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                                        <a href="{% url 'edit_pet' pet.id %}" class="mobile-action-btn edit-btn">
+                                            <i class="fas fa-edit"></i>
+                                            編輯
+                                        </a>
+                                        <button class="mobile-action-btn delete-btn" onclick="deletePet('{{ pet.id }}', '{{ pet.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                            刪除
                                         </button>
-                                        <div class="actions-menu">
-                                            <a href="{% url 'edit_pet' pet.id %}" class="menu-item">
-                                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                                                <span>編輯資料</span>
+                                    </div>
+                                </div>
+
+                                <!-- 桌面版：原有的操作區域 -->
+                                <div class="pet-actions-desktop d-none d-md-block">
+                                    <div class="all-actions">
+                                        <div class="main-buttons">
+                                            <a href="{% url 'create_appointment' pet.id %}" class="action-btn primary">
+                                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                                                <span>預約</span>
                                             </a>
-                                            <a href="{% url 'health_rec' %}?pet={{ pet.id }}" class="menu-item">
+                                            <a href="{% url 'health_rec' %}?pet={{ pet.id }}" class="action-btn secondary">
                                                 <svg class="icon" viewBox="0 0 24 24"><path d="M2 8H4M20 8h2M15 12H9M16 4h-4-4M12 22h-.01"/><path d="M12 17a5 5 0 0 1-5-5V8a5 5 0 0 1 10 0v4a5 5 0 0 1-5 5z"/></svg>
-                                                <span>健康記錄</span>
+                                                <span>健康</span>
                                             </a>
-                                            <div class="menu-divider"></div>
-                                            <a href="#" class="menu-item danger" onclick="deletePet('{{ pet.id }}', '{{ pet.name }}'); return false;">
-                                                <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                                <span>刪除寵物</span>
-                                            </a>
+                                        </div>
+                                        <div class="more-actions">
+                                            <button class="more-btn">
+                                                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                                            </button>
+                                            <div class="actions-menu">
+                                                <a href="{% url 'edit_pet' pet.id %}" class="menu-item">
+                                                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                                    <span>編輯資料</span>
+                                                </a>
+                                                <div class="menu-divider"></div>
+                                                <a href="#" class="menu-item danger" onclick="deletePet('{{ pet.id }}', '{{ pet.name }}'); return false;">
+                                                    <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                    <span>刪除寵物</span>
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1025,7 +1196,58 @@
 
         // 防止手機版誤觸事件處理 - 分別處理不同類型的按鈕
 
-        // 處理主要操作按鈕（預約、健康）
+        // 處理手機版專用操作按鈕
+        document.querySelectorAll('.mobile-action-btn').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                // 為手機版按鈕添加觸控反饋
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+
+                // 如果是刪除按鈕，已經有onclick處理，不需要額外處理
+                if (this.classList.contains('delete-btn')) {
+                    return;
+                }
+
+                // 其他按鈕確保連結正常工作
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    e.preventDefault();
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 200); // 等待觸控反饋完成
+                }
+            });
+
+            element.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+                // 為手機版按鈕添加按下效果
+                this.style.opacity = '0.8';
+                this.style.transform = 'scale(0.98)';
+            });
+
+            element.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+                // 重置手機版按鈕樣式
+                setTimeout(() => {
+                    this.style.opacity = '';
+                    if (!this.style.transform.includes('scale(0.95)')) {
+                        this.style.transform = '';
+                    }
+                }, 100);
+            });
+
+            // 防止長按事件觸發系統選單
+            element.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // 處理桌面版主要操作按鈕（預約、健康）
         document.querySelectorAll('.primary-actions .action-btn').forEach(element => {
             element.addEventListener('click', function(e) {
                 e.stopPropagation();
