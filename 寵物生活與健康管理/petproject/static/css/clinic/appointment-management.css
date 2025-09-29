@@ -66,6 +66,9 @@
   background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
   min-height: 100vh;
   padding: var(--spacing-lg);
+  width: 100%;
+  margin: 0;
+  position: relative;
 }
 
 /* ========== 頁面標題區域 ========== */
@@ -1198,6 +1201,8 @@
 @media (max-width: 768px) {
   .appointment-management-container {
     padding: var(--spacing-md);
+    width: 100%;
+    margin: 0;
   }
   
   .page-header-modern {

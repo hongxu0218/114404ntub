@@ -50,6 +50,8 @@
   background: #f8fafc;
   min-height: 100vh;
   padding: var(--spacing-lg);
+  width: 100%;
+  margin: 0;
 }
 
 /* ========== 簡化的頁面標題區域 ========== */
@@ -1058,6 +1060,8 @@
 @media (max-width: 768px) {
   .doctor-management-container {
     padding: var(--spacing-md);
+    width: 100%;
+    margin: 0;
   }
   
   .page-header-enhanced {

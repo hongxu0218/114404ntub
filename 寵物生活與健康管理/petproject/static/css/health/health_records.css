@@ -45,6 +45,8 @@
     min-height: 100vh;
     background: linear-gradient(135deg, var(--background) 0%, #e8f5e8 100%);
     padding: 2rem 0;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .health-records-container {
