@@ -947,6 +947,9 @@
     </div>
 </div>
 
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // 更多操作選單
@@ -1205,14 +1208,38 @@
             form.method = 'POST';
             form.action = `/pets/delete/${petId}/`;
 
-            // 添加 CSRF token
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-            if (csrfToken) {
+            // 添加 CSRF token - 使用多種方法獲取
+            let csrfTokenValue = null;
+
+            // 方法1: 從表單中獲取
+            const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfTokenInput) {
+                csrfTokenValue = csrfTokenInput.value;
+            }
+
+            // 方法2: 從meta標籤獲取（如果存在）
+            if (!csrfTokenValue) {
+                const csrfMeta = document.querySelector('meta[name=csrf-token]');
+                if (csrfMeta) {
+                    csrfTokenValue = csrfMeta.getAttribute('content');
+                }
+            }
+
+            // 方法3: 從cookie獲取（備用方法）
+            if (!csrfTokenValue && typeof getCookie === 'function') {
+                csrfTokenValue = getCookie('csrftoken');
+            }
+
+            // 添加 CSRF token 到表單
+            if (csrfTokenValue) {
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = csrfToken.value;
+                csrfInput.value = csrfTokenValue;
                 form.appendChild(csrfInput);
+            } else {
+                alert('安全驗證失敗，請刷新頁面後重試。');
+                return;
             }
 
             document.body.appendChild(form);
