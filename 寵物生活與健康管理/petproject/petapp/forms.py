@@ -1104,10 +1104,10 @@ class CustomSignupForm(SignupForm):
 
         user.first_name = first_name
         user.last_name = last_name
-        user.backend = 'django.contrib.auth.backends.ModelBackend'
         user.save()
 
-        login(request, user)
+        # 移除自動登入,讓 allauth 的 email 驗證流程正常運作
+        # 使用者必須先驗證 email 才能登入
         return user
 
 # ===== Google 註冊後補資料表單 =====
