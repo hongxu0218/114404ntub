@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電子信箱驗證</title>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #ffaa00;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 30px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .verify-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background-color: #ffaa00;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .verify-button:hover {
+            background-color: #ff8800;
+        }
+        .alternative-link {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+        .warning {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🐾 寵物生活與健康管理系統</h1>
+        </div>
+
+        <div class="content">
+            <div class="greeting">
+                您好 <strong>{{ user.username }}</strong>,
+            </div>
+
+            <div class="message">
+                <p>感謝您註冊寵物生活與健康管理系統!</p>
+                <p>為了確保您的帳號安全,請點擊下方按鈕來驗證您的電子信箱:</p>
+            </div>
+
+            <div class="button-container">
+                <a href="{{ activate_url }}" class="verify-button">驗證電子信箱</a>
+            </div>
+
+            <div class="alternative-link">
+                如果按鈕無法點擊,請複製以下連結到瀏覽器:<br>
+                <a href="{{ activate_url }}">{{ activate_url }}</a>
+            </div>
+
+            <div class="warning">
+                ⚠️ 此驗證連結將在 7 天後失效。<br>
+                ⚠️ 如果您沒有註冊本網站,請忽略此信件。
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>祝您使用愉快!</p>
+            <p><strong>寵物生活與健康管理系統團隊</strong></p>
+            <p><a href="https://pawday114404.duckdns.org" style="color: #ffaa00; text-decoration: none;">https://pawday114404.duckdns.org</a></p>
+        </div>
+    </div>
+</body>
+</html>
