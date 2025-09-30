@@ -529,6 +529,12 @@
                                         <span class="label">施打日期</span>
                                         <span class="value">{{ record.date|date:"Y年m月d日" }}</span>
                                     </div>
+                                    {% if record.next_due_date %}
+                                    <div class="info-card">
+                                        <span class="label">下次施打日期</span>
+                                        <span class="value">{{ record.next_due_date|date:"Y年m月d日" }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
