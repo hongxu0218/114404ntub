@@ -265,8 +265,13 @@ class VetDoctor(models.Model):
     def role_display(self):
         """角色顯示名稱"""
         roles = []
-        if self.is_veterinarian:
-            roles.append('獸醫師')
+        # 檢查獸醫師身份：基於 is_active_veterinarian 而不是 license_verified_with_moa
+        # 這樣診所管理員新增的獸醫師即使沒有執照驗證也能正確顯示角色
+        if self.is_active and self.is_active_veterinarian:
+            if self.license_verified_with_moa:
+                roles.append('獸醫師')
+            else:
+                roles.append('獸醫師(待驗證)')
         if self.is_clinic_admin:
             roles.append('診所管理員')
         return ' / '.join(roles) if roles else '無啟用角色'

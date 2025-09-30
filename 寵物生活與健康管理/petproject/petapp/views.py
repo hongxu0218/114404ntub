@@ -7513,20 +7513,26 @@ def schedule_dashboard(request):
             'is_admin': vet_doctor.is_clinic_admin,
         }
         
-        # 取得當前週的排班資料
+        # 取得當前週的排班資料（擴大範圍以包含更多排班）
         today = date.today()
         week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
-        
-        # 個人本週排班 - 包含已核准和生效中的排班
+
+        # 擴大查詢範圍：包含前後各2週的排班，確保能看到相關排班
+        extended_start = week_start - timedelta(days=14)  # 前2週
+        extended_end = week_end + timedelta(days=14)      # 後2週
+
+        # 個人排班 - 包含所有相關狀態的排班（草稿、待審核、已核准、生效中）
         # 修復：正確處理 end_date 為 None 的情況（無限期排班）
+        # 修復：包含所有狀態以確保獸醫師能看到診所管理員建立的排班
+        # 修復：擴大時間範圍以顯示更多排班
         from django.db.models import Q
         personal_schedules = EnhancedVetSchedule.objects.filter(
             doctor=vet_doctor,
-            start_date__lte=week_end,
-            status__in=['approved', 'active']
+            start_date__lte=extended_end,
+            status__in=['draft', 'pending', 'approved', 'active']  # 包含所有相關狀態
         ).filter(
-            Q(end_date__gte=week_start) | Q(end_date__isnull=True)
+            Q(end_date__gte=extended_start) | Q(end_date__isnull=True)
         ).order_by('start_date')
         
         context.update({
@@ -7542,12 +7548,14 @@ def schedule_dashboard(request):
         # 團隊模式額外資料
         if clinic.clinic_mode == 'multi' and vet_doctor.is_clinic_admin:
             # 修復：正確處理 end_date 為 None 的情況（無限期排班）
+            # 修復：包含所有狀態以確保管理員能看到所有排班
+            # 修復：擴大時間範圍以顯示更多排班
             clinic_schedules = EnhancedVetSchedule.objects.filter(
                 clinic=clinic,
-                start_date__lte=week_end,
-                status__in=['approved', 'active']
+                start_date__lte=extended_end,
+                status__in=['draft', 'pending', 'approved', 'active']  # 包含所有相關狀態
             ).filter(
-                Q(end_date__gte=week_start) | Q(end_date__isnull=True)
+                Q(end_date__gte=extended_start) | Q(end_date__isnull=True)
             ).select_related('doctor').order_by('start_date')
             
             pending_requests = ScheduleChangeRequest.objects.filter(
@@ -8371,11 +8379,15 @@ def api_schedule_stats(request):
         this_month_start = today.replace(day=1)
         
         # 本週排班數
+        # 修復：正確處理 end_date 為 None 的情況（無限期排班）
+        # 修復：包含所有相關狀態以確保獸醫師能看到診所管理員建立的排班
+        from django.db.models import Q
         weekly_schedules = EnhancedVetSchedule.objects.filter(
             doctor=vet_doctor,
             start_date__lte=this_week_end,
-            end_date__gte=this_week_start,
-            status='active'
+            status__in=['draft', 'pending', 'approved', 'active']  # 包含所有相關狀態
+        ).filter(
+            Q(end_date__gte=this_week_start) | Q(end_date__isnull=True)  # 處理無限期排班
         ).count()
         
         # 本月總工時（估算）
@@ -8418,11 +8430,15 @@ def api_dashboard_schedules(request):
         week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
         
+        # 修復：正確處理 end_date 為 None 的情況（無限期排班）
+        # 修復：包含所有相關狀態以確保獸醫師能看到診所管理員建立的排班
+        from django.db.models import Q
         schedules_queryset = EnhancedVetSchedule.objects.filter(
             clinic=clinic,
             start_date__lte=week_end,
-            end_date__gte=week_start,
-            status__in=['approved', 'active']
+            status__in=['draft', 'pending', 'approved', 'active']  # 包含所有相關狀態
+        ).filter(
+            Q(end_date__gte=week_start) | Q(end_date__isnull=True)  # 處理無限期排班
         ).select_related('doctor__user')
         
         # 如果不是管理員，只顯示自己的排班
