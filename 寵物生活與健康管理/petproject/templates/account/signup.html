@@ -148,12 +148,21 @@ button:hover {
                 {{ form.first_name }}
                 {{ form.first_name.errors }}
 
-                <label for="{{ form.email.id_for_label }}">電子信箱</label>
+                <label for="{{ form.email.id_for_label }}">電子信箱 <span style="color: red;">*</span></label>
                 {{ form.email }}
-                {{ form.email.errors }}
+                {% if form.email.errors %}
+                    <div class="error-message" style="color: red; font-size: 14px; margin-top: -8px; margin-bottom: 12px;">
+                        {{ form.email.errors }}
+                    </div>
+                {% endif %}
 
-                <label for="phone_number">手機號碼</label>
-                <input type="text" name="phone_number" id="phone_number" required>
+                <label for="{{ form.phone_number.id_for_label }}">手機號碼 <span style="color: red;">*</span></label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                    <div class="error-message" style="color: red; font-size: 14px; margin-top: -8px; margin-bottom: 12px;">
+                        {{ form.phone_number.errors }}
+                    </div>
+                {% endif %}
             {% endif %}
         {% endif %}
         {% endfor %}
