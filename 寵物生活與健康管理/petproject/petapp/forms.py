@@ -1064,7 +1064,20 @@ class CustomSignupForm(SignupForm):
     last_name = forms.CharField(label="姓氏", max_length=30, required=False)
     first_name = forms.CharField(label="名字", max_length=30, required=False)
 
+    def clean_email(self):
+        """驗證電子信箱是否已被使用"""
+        email = self.cleaned_data.get('email')
+
+        # 檢查電子信箱是否已被註冊
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("此電子信箱已被註冊，請使用其他信箱或直接登入")
+
+        return email
+
     def clean_phone_number(self):
+        """驗證手機號碼格式與是否已被使用"""
         phone = self.cleaned_data.get('phone_number')
         if not re.match(r'^09\d{8}$', phone):
             raise forms.ValidationError("請輸入有效的台灣手機號碼（格式：09xxxxxxxx）")
@@ -1091,10 +1104,10 @@ class CustomSignupForm(SignupForm):
 
         user.first_name = first_name
         user.last_name = last_name
-        user.backend = 'django.contrib.auth.backends.ModelBackend'
         user.save()
 
-        login(request, user)
+        # 移除自動登入,讓 allauth 的 email 驗證流程正常運作
+        # 使用者必須先驗證 email 才能登入
         return user
 
 # ===== Google 註冊後補資料表單 =====

@@ -87,6 +87,9 @@ INSTALLED_APPS = [
 
     #換圖片就刪舊圖(寵物資料）
     'django_cleanup.apps.CleanupConfig',
+
+    # 定時任務
+    'django_apscheduler',
 ]
 
 

@@ -176,7 +176,10 @@
                             <div class="health-record-content">
                                 <strong>疫苗類型：</strong>{{ record.vaccine_name }}<br>
                                 {% if record.notes %}
-                                <strong>備註：</strong>{{ record.notes }}
+                                <strong>備註：</strong>{{ record.notes }}<br>
+                                {% endif %}
+                                {% if record.next_due_date %}
+                                <strong>下次施打日期：</strong>{{ record.next_due_date|date:"Y年m月d日" }}
                                 {% endif %}
                             </div>
                             <div class="health-record-meta">
