@@ -1247,21 +1247,21 @@
             </div>
 
             <h3><i class="bi bi-people"></i> 推薦關注</h3>
-            {% if following_list %}
-                {% for follow in following_list %}
-                <a href="{% url 'social:profile' follow.following.username %}" class="trending-item trending-link">
-                    <img src="{% if follow.following.social_profile.avatar and follow.following.social_profile.avatar.name %}{{ follow.following.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
-                         alt="{{ follow.following.username }}" class="composer-avatar" style="width: 40px; height: 40px;">
+            {% if recommended_users %}
+                {% for user in recommended_users %}
+                <a href="{% url 'social:profile' user.username %}" class="trending-item trending-link">
+                    <img src="{% if user.social_profile.avatar and user.social_profile.avatar.name %}{{ user.social_profile.avatar.url }}{% else %}{% static 'images/default_pet.jpg' %}{% endif %}"
+                         alt="{{ user.username }}" class="composer-avatar" style="width: 40px; height: 40px;">
                     <div>
-                        <strong>{{ follow.following.username }}</strong>
-                        <br><small class="text-muted">{{ follow.following.social_profile.followers_count }} 位粉絲</small>
+                        <strong>{{ user.username }}</strong>
+                        <br><small class="text-muted">{{ user.social_profile.followers_count }} 位粉絲</small>
                     </div>
                 </a>
                 {% endfor %}
             {% else %}
             <div class="text-center text-muted">
                 <i class="bi bi-person-plus" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                <p>開始關注其他用戶<br>獲得更多有趣內容</p>
+                <p>目前沒有推薦用戶<br>或您已追蹤所有用戶</p>
             </div>
             {% endif %}
         </div>
