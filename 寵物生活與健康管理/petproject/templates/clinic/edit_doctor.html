@@ -435,10 +435,11 @@ textarea.form-control {
 
 /* 🔄 切換開關 */
 .toggle-label {
-  display: flex;
+  display: flex !important;
   align-items: center;
   cursor: pointer;
   user-select: none;
+  margin-bottom: 0 !important;
 }
 
 .toggle-label input[type="checkbox"] {
@@ -484,6 +485,7 @@ textarea.form-control {
   font-weight: 500;
   color: var(--text-dark);
   font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 /* ℹ️ 權限說明 */
