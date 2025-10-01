@@ -8885,9 +8885,12 @@ def login_redirect(request):
     try:
         user = request.user
 
-        # 檢查是否為後台管理員（超級用戶）
-        if user.is_superuser or user.is_staff:
-            return redirect('/')  # 後台管理員到首頁 http://127.0.0.1:8000/
+        # 檢查是否為後台管理員（超級用戶或 staff）
+        # 後台管理員不需要 Profile，直接導向後台或首頁
+        if user.is_superuser:
+            return redirect('/admin/')  # 超級用戶到後台管理
+        elif user.is_staff:
+            return redirect('/')  # 一般 staff 到首頁
 
         # 檢查是否有 VetDoctor 資料
         if hasattr(user, 'vet_profile') and user.vet_profile:
