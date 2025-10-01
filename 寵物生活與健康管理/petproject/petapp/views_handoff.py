@@ -20,12 +20,27 @@ from django.contrib.auth.models import User
 def _ensure_session_key(request: HttpRequest) -> str:
     """確保匿名使用者也有 session_key 可追蹤"""
     if not request.session.session_key:
+        # 修改 session 以觸發自動創建
+        request.session.modified = True
         request.session.save()
+
+    # 如果還是沒有 session_key，創建一個臨時的
+    if not request.session.session_key:
+        import uuid
+        temp_key = f"temp_{uuid.uuid4().hex[:20]}"
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Session key not created, using temporary key: {temp_key}")
+        return temp_key
+
     return request.session.session_key
 
 
-def _json_error(message: str, status: int = 400) -> JsonResponse:
-    return JsonResponse({"ok": False, "error": message}, status=status)
+def _json_error(message: str, status: int = 400, extra_data: dict = None) -> JsonResponse:
+    response_data = {"ok": False, "error": message}
+    if extra_data:
+        response_data.update(extra_data)
+    return JsonResponse(response_data, status=status)
 
 
 # ----------------------------
@@ -379,9 +394,16 @@ def api_handoff_request(request: HttpRequest):
         return JsonResponse({"ok": True, "ticket_id": t.id, "reused": False})
     except Exception as e:
         import logging
+        import traceback
         logger = logging.getLogger(__name__)
-        logger.exception(f"Error in api_handoff_request: {e}")
-        return _json_error(f"Internal server error: {str(e)}", status=500)
+        tb = traceback.format_exc()
+        logger.error(f"Error in api_handoff_request: {e}")
+        logger.error(f"Traceback: {tb}")
+        return _json_error(
+            f"Internal server error: {str(e)}",
+            status=500,
+            extra_data={"traceback": tb.split('\n')[-5:]}  # 最後5行錯誤
+        )
 
 
 @csrf_exempt
@@ -483,9 +505,16 @@ def api_handoff_user_send(request: HttpRequest):
         HandoffMessage.objects.create(ticket=t, sender="user", text=text)
     except Exception as e:
         import logging
+        import traceback
         logger = logging.getLogger(__name__)
-        logger.exception(f"Error in api_handoff_user_send: {e}")
-        return _json_error(f"Internal server error: {str(e)}", status=500)
+        tb = traceback.format_exc()
+        logger.error(f"Error in api_handoff_user_send: {e}")
+        logger.error(f"Traceback: {tb}")
+        return _json_error(
+            f"Internal server error: {str(e)}",
+            status=500,
+            extra_data={"traceback": tb.split('\n')[-5:]}  # 最後5行錯誤
+        )
 
     # 通知所有員工有新的用戶訊息（即使失敗也不影響訊息發送）
     try:
