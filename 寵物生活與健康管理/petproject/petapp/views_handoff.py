@@ -29,22 +29,30 @@ logger = logging.getLogger(__name__)
 def get_session_key(request: HttpRequest) -> str:
     """獲取或創建 session key"""
     try:
-        # 確保 session 存在
-        if not request.session.exists(request.session.session_key or ''):
-            request.session.create()
+        # 嘗試訪問 session，這會自動創建 session
+        if not hasattr(request, 'session'):
+            temp_key = f"temp_{uuid.uuid4().hex[:20]}"
+            logger.error(f"No session middleware, using temporary key: {temp_key}")
+            return temp_key
 
+        # 確保 session 被創建（通過修改來觸發保存）
+        if not request.session.session_key:
+            request.session['_handoff_init'] = True
+            request.session.modified = True
+
+        # 再次獲取 session_key
         session_key = request.session.session_key
 
-        # 如果還是沒有，創建臨時 key
+        # 如果還是沒有，使用臨時 key
         if not session_key:
             session_key = f"temp_{uuid.uuid4().hex[:20]}"
-            logger.warning(f"Created temporary session key: {session_key}")
+            logger.warning(f"Session key not created, using temporary: {session_key}")
 
         return session_key
     except Exception as e:
         # 如果 session 完全失敗，使用臨時 key
         temp_key = f"temp_{uuid.uuid4().hex[:20]}"
-        logger.error(f"Session error: {e}, using temporary key: {temp_key}")
+        logger.exception(f"Session error: {e}, using temporary key: {temp_key}")
         return temp_key
 
 
