@@ -311,77 +311,77 @@ def api_handoff_request(request: HttpRequest):
             data = json.loads(request.body.decode("utf-8")) if request.body else {}
         except Exception:
             data = {}
-    except Exception as e:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.exception(f"Error in api_handoff_request initialization: {e}")
-        return _json_error(f"Internal server error: {str(e)}", status=500)
 
-    name = (data.get("name") or "").strip() or "匿名"
-    contact = (data.get("contact") or "").strip()
-    last_question = (data.get("last_question") or "").strip()
-    channel = (data.get("channel") or "web").strip() or "web"
+        name = (data.get("name") or "").strip() or "匿名"
+        contact = (data.get("contact") or "").strip()
+        last_question = (data.get("last_question") or "").strip()
+        channel = (data.get("channel") or "web").strip() or "web"
 
-    # 先找「同一 session 的未結案工單」
-    t = (
-        HandoffTicket.objects.filter(session_key=session_key, is_open=True)
-        .order_by("-created_at")
-        .first()
-    )
+        # 先找「同一 session 的未結案工單」
+        t = (
+            HandoffTicket.objects.filter(session_key=session_key, is_open=True)
+            .order_by("-created_at")
+            .first()
+        )
 
-    if t:
-        fields = []
-        # 你的 model 有 name/contact/channel，就直接更新；沒「last_question」欄位，改用訊息紀錄
-        if t.name != name:
-            t.name = name
-            fields.append("name")
-        if contact and t.contact != contact:
-            t.contact = contact
-            fields.append("contact")
-        if t.channel != channel:
-            t.channel = channel
-            fields.append("channel")
-        if fields:
-            t.save(update_fields=fields)
+        if t:
+            fields = []
+            # 你的 model 有 name/contact/channel，就直接更新；沒「last_question」欄位，改用訊息紀錄
+            if t.name != name:
+                t.name = name
+                fields.append("name")
+            if contact and t.contact != contact:
+                t.contact = contact
+                fields.append("contact")
+            if t.channel != channel:
+                t.channel = channel
+                fields.append("channel")
+            if fields:
+                t.save(update_fields=fields)
 
-        # 若有新的最後問題，用訊息附加（避免覆蓋舊資料）
+            # 若有新的最後問題，用訊息附加（避免覆蓋舊資料）
+            if last_question:
+                HandoffMessage.objects.create(ticket=t, sender="user", text=last_question)
+
+            return JsonResponse({"ok": True, "ticket_id": t.id, "reused": True})
+
+        # 找不到才新建
+        t = HandoffTicket.objects.create(
+            session_key=session_key,
+            name=name,
+            contact=contact,
+            channel=channel,
+            is_open=True,
+            created_at=timezone.now(),  # auto_now_add 仍會生效；顯式給也不影響
+        )
+
+        # 若有最後問題，把它當作首則使用者訊息；再補一則系統提示
         if last_question:
             HandoffMessage.objects.create(ticket=t, sender="user", text=last_question)
+        HandoffMessage.objects.create(ticket=t, sender="system", text="已建立人工客服工單，請稍候")
 
-        return JsonResponse({"ok": True, "ticket_id": t.id, "reused": True})
+        # 創建新工單通知給所有員工（即使失敗也不影響工單創建）
+        try:
+            staff_users = User.objects.filter(is_staff=True)
+            for staff_user in staff_users:
+                Notification.objects.create(
+                    user=staff_user,
+                    title="新的人工客服請求",
+                    message=f"用戶 {name} 發起了新的客服工單 (#{t.id})",
+                    notification_type="handoff_request"
+                )
+        except Exception as e:
+            # 記錄錯誤但不影響工單創建的成功返回
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to create notifications for handoff ticket {t.id}: {e}")
 
-    # 找不到才新建
-    t = HandoffTicket.objects.create(
-        session_key=session_key,
-        name=name,
-        contact=contact,
-        channel=channel,
-        is_open=True,
-        created_at=timezone.now(),  # auto_now_add 仍會生效；顯式給也不影響
-    )
-
-    # 若有最後問題，把它當作首則使用者訊息；再補一則系統提示
-    if last_question:
-        HandoffMessage.objects.create(ticket=t, sender="user", text=last_question)
-    HandoffMessage.objects.create(ticket=t, sender="system", text="已建立人工客服工單，請稍候")
-
-    # 創建新工單通知給所有員工（即使失敗也不影響工單創建）
-    try:
-        staff_users = User.objects.filter(is_staff=True)
-        for staff_user in staff_users:
-            Notification.objects.create(
-                user=staff_user,
-                title="新的人工客服請求",
-                message=f"用戶 {name} 發起了新的客服工單 (#{t.id})",
-                notification_type="handoff_request"
-            )
+        return JsonResponse({"ok": True, "ticket_id": t.id, "reused": False})
     except Exception as e:
-        # 記錄錯誤但不影響工單創建的成功返回
         import logging
         logger = logging.getLogger(__name__)
-        logger.warning(f"Failed to create notifications for handoff ticket {t.id}: {e}")
-
-    return JsonResponse({"ok": True, "ticket_id": t.id, "reused": False})
+        logger.exception(f"Error in api_handoff_request: {e}")
+        return _json_error(f"Internal server error: {str(e)}", status=500)
 
 
 @csrf_exempt
