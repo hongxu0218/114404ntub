@@ -1,1324 +1,1151 @@
-<!-- templates/clinic/edit_doctor.html -->
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}編輯醫師資料 - {{ clinic.name }}{% endblock %}
+{% block title %}編輯醫師資料{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/clinic/dashboard.css' %}">
-<link rel="stylesheet" href="{% static 'css/clinic/edit-doctor.css' %}">
 <style>
-/* 多選專科領域樣式 */
-.multi-select-wrapper {
-    position: relative;
-    width: 100%;
+/* 🎨 現代化醫師編輯頁面 - 優化版 */
+:root {
+  --primary: #667eea;
+  --primary-dark: #5568d3;
+  --secondary: #764ba2;
+  --success: #48bb78;
+  --danger: #f56565;
+  --warning: #ed8936;
+  --text-dark: #2d3748;
+  --text-muted: #718096;
+  --border: #e2e8f0;
+  --bg-light: #f7fafc;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-.multi-select-display {
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 12px 40px 12px 16px;
-    font-size: 14px;
-    background: #fafafa;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: all 0.3s ease;
-    position: relative;
+* {
+  box-sizing: border-box;
 }
 
-.multi-select-display:hover {
-    border-color: #cbd5e0;
-    background: white;
+body {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.multi-select-display.active {
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+/* 📦 容器 */
+.dashboard-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
 }
 
-.selected-text {
-    flex-grow: 1;
-    color: #4a5568;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* 📋 頁面標題 */
+.page-header-modern {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-md);
+  border-left: 5px solid var(--primary);
 }
 
-.selected-text.has-selection {
-    color: #2d3748;
-    font-weight: 500;
+.breadcrumb-nav {
+  margin-bottom: 1rem;
 }
 
-.dropdown-icon {
-    color: #a0aec0;
-    font-size: 14px;
-    transition: transform 0.3s ease;
+.breadcrumb-item {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
 }
 
-.multi-select-display.active .dropdown-icon {
-    transform: rotate(180deg);
-    color: #667eea;
+.breadcrumb-item:hover {
+  color: var(--primary);
 }
 
-.multi-select-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 2px solid #667eea;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    z-index: 1000;
-    max-height: 300px;
-    overflow: hidden;
-    display: none;
-    animation: dropdownShow 0.3s ease;
+.page-title-modern {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.multi-select-dropdown.show {
-    display: block;
+.page-title-modern i {
+  color: var(--primary);
 }
 
-@keyframes dropdownShow {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.doctor-preview-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
-.dropdown-search {
-    position: relative;
-    padding: 12px;
-    border-bottom: 1px solid #e2e8f0;
+.doctor-avatar {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
 }
 
-.dropdown-search input {
-    width: 100%;
-    padding: 8px 35px 8px 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.3s ease;
+.doctor-info h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
-.dropdown-search input:focus {
-    border-color: #667eea;
+.doctor-info p {
+  margin: 0 0 0.5rem;
+  opacity: 0.9;
+  font-size: 0.875rem;
 }
 
-.dropdown-search i {
-    position: absolute;
-    right: 22px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #a0aec0;
-    font-size: 14px;
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-.dropdown-options {
-    max-height: 180px;
-    overflow-y: auto;
-    padding: 8px 0;
-}
-
-.dropdown-options::-webkit-scrollbar {
-    width: 6px;
-}
-
-.dropdown-options::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.dropdown-options::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-}
-
-.option-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    margin: 0;
-    border: none;
-    font-size: 14px;
-}
-
-.option-item:hover {
-    background-color: #f0f4ff;
-}
-
-.option-item input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
-.option-item .checkmark {
-    height: 16px;
-    width: 16px;
-    background-color: #fff;
-    border: 2px solid #cbd5e0;
-    border-radius: 3px;
-    margin-right: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.option-item input:checked ~ .checkmark {
-    background-color: #667eea;
-    border-color: #667eea;
-}
-
-.option-item .checkmark:after {
-    content: "";
-    display: none;
-    width: 4px;
-    height: 8px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.option-item input:checked ~ .checkmark:after {
-    display: block;
-}
-
-/* 其他專科選項樣式 */
-.other-spec-item {
-    border-top: 1px solid #e8ecff;
-    margin-top: 4px;
-    padding-top: 12px !important;
-    background: linear-gradient(135deg, rgba(240, 147, 251, 0.05) 0%, rgba(245, 87, 108, 0.05) 100%);
-}
-
-.other-checkmark {
-    border-color: #f093fb !important;
-}
-
-.other-spec-item input:checked ~ .other-checkmark {
-    background-color: #f093fb;
-    border-color: #f093fb;
-}
-
-.other-checkmark:after {
-    content: "";
-    display: none;
-    width: 4px;
-    height: 8px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.other-spec-item input:checked ~ .other-checkmark:after {
-    display: block;
-}
-
-/* 其他專科輸入區域 */
-.other-input-section {
-    padding: 12px;
-    border-top: 1px solid #e8ecff;
-    background: linear-gradient(135deg, rgba(240, 147, 251, 0.03) 0%, rgba(245, 87, 108, 0.03) 100%);
-    animation: slideDown 0.3s ease;
-}
-
-.other-input {
-    width: 100%;
-    border: 2px solid #f093fb;
-    border-radius: 6px;
-    padding: 10px 12px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    background: white;
-}
-
-.other-input:focus {
-    border-color: #e91e63;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
-}
-
-.other-input::placeholder {
-    color: #a0aec0;
-    font-style: italic;
-}
-
-/* 已選擇標籤樣式 */
-.selected-tags {
-    margin-top: 12px;
-    padding: 12px;
-    background: #f8f9ff;
-    border: 2px solid #e8ecff;
-    border-radius: 8px;
-    min-height: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-
-.selected-tags.empty {
-    display: none !important;
-}
-
-.spec-tag {
-    display: inline-flex;
-    align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    gap: 6px;
-    animation: tagFadeIn 0.3s ease;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
-}
-
-.spec-tag:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-}
-
-.spec-tag .remove-tag {
-    cursor: pointer;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    transition: all 0.2s ease;
-    margin-left: 4px;
-}
-
-.spec-tag .remove-tag:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
-}
-
-.spec-tag.other-tag {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.tags-count {
-    font-size: 12px;
-    color: #718096;
-    font-weight: 500;
-    padding: 4px 8px;
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: 12px;
-    margin-left: auto;
-}
-
-@keyframes tagFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* 表單區塊樣式改進 */
+/* 📝 表單區塊 */
 .form-section {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    border: 1px solid #f0f0f0;
-    transition: all 0.3s ease;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  transition: box-shadow 0.3s;
 }
 
 .form-section:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    border-color: #e8ecff;
+  box-shadow: var(--shadow-md);
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--bg-light);
 }
 
 .section-header h2 {
-    color: #2d3748;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .section-header h2 i {
-    color: #667eea;
-    font-size: 22px;
+  color: var(--primary);
+  font-size: 1.5rem;
 }
 
 .section-header p {
-    color: #718096;
-    font-size: 14px;
-    margin: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
-/* 表單網格改進 */
+/* 📊 表單網格 */
 .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .form-group.full-width {
-    grid-column: 1 / -1;
+  grid-column: 1 / -1;
 }
 
 .form-group label {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 14px;
-    margin-bottom: 8px;
-    display: block;
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  display: block;
 }
 
-.form-group label.required:after {
-    content: " *";
-    color: #e53e3e;
+.form-group label.required::after {
+  content: " *";
+  color: var(--danger);
 }
 
 .form-control {
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    background: #fafafa;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background: white;
 }
 
 .form-control:focus {
-    border-color: #667eea;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    outline: none;
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-control:disabled {
+  background: var(--bg-light);
+  cursor: not-allowed;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
 }
 
 .form-text {
-    font-size: 12px;
-    color: #718096;
-    margin-top: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .form-text i {
-    color: #a0aec0;
+  color: var(--primary);
+  opacity: 0.6;
 }
 
-/* 按鈕樣式改進 */
-.form-actions {
-    background: #f7fafc;
-    padding: 24px 32px;
-    margin: 0 -32px -32px -32px;
-    border-top: 1px solid #e2e8f0;
-    border-radius: 0 0 16px 16px;
+/* 🎯 專科領域多選 - 簡化版 */
+.multi-select-wrapper {
+  position: relative;
 }
 
-.action-buttons {
-    display: flex;
-    gap: 16px;
-    justify-content: flex-end;
-    align-items: center;
+.multi-select-display {
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  user-select: none;
 }
 
-.btn-outline-modern {
-    background: white;
-    color: #718096;
-    border: 2px solid #e2e8f0;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    font-size: 14px;
+.multi-select-display:hover {
+  border-color: var(--primary);
 }
 
-.btn-outline-modern:hover {
-    background: #f7fafc;
-    color: #4a5568;
-    border-color: #cbd5e0;
-    text-decoration: none;
+.multi-select-display.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.btn-primary-modern {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    font-size: 14px;
+.selected-text {
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
-.btn-primary-modern:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+.selected-text.has-selection {
+  color: var(--text-dark);
+  font-weight: 500;
 }
 
-/* 驗證狀態樣式 */
-.verification-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-top: 8px;
+.dropdown-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  pointer-events: none;
 }
 
-.verification-status.verified {
-    background: #c6f6d5;
-    color: #22543d;
+.multi-select-display.active .dropdown-icon {
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--primary);
 }
 
-.verification-status.unverified {
-    background: #fed7d7;
-    color: #742a2a;
+.multi-select-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid var(--primary);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  max-height: 350px;
+  overflow: hidden;
+  display: none;
 }
 
-/* 切換開關樣式 */
+.multi-select-dropdown.show {
+  display: block;
+  animation: dropdownSlide 0.2s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-search {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-light);
+}
+
+.dropdown-search input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.dropdown-search input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.dropdown-options {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.option-item:hover {
+  background: var(--bg-light);
+}
+
+.option-item input[type="checkbox"] {
+  margin: 0 0.75rem 0 0;
+  cursor: pointer;
+}
+
+.option-item span:last-child {
+  font-size: 0.875rem;
+  color: var(--text-dark);
+}
+
+.other-input-section {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-light);
+}
+
+.other-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.other-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 📌 已選擇標籤 */
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-light);
+  border-radius: 0.5rem;
+  min-height: 40px;
+}
+
+.selected-tags.empty {
+  display: none;
+}
+
+.spec-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.spec-tag .remove-tag {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  font-size: 0.875rem;
+  transition: background 0.2s;
+}
+
+.spec-tag .remove-tag:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.spec-tag.other-tag {
+  background: var(--secondary);
+}
+
+/* 🔄 切換開關 */
 .toggle-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    margin: 0;
-    position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
 }
 
 .toggle-label input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .toggle-slider {
-    position: relative;
-    width: 50px;
-    height: 24px;
-    background: #cbd5e0;
-    border-radius: 24px;
-    margin-right: 12px;
-    transition: all 0.3s ease;
-    display: inline-block;
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: #cbd5e0;
+  border-radius: 24px;
+  margin-right: 0.75rem;
+  transition: background 0.2s;
+  flex-shrink: 0;
 }
 
-.toggle-slider:before {
-    content: "";
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    top: 2px;
-    left: 2px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.toggle-label input[type="checkbox"]:checked + .toggle-slider {
-    background: #667eea;
+.toggle-label input:checked + .toggle-slider {
+  background: var(--primary);
 }
 
-.toggle-label input[type="checkbox"]:checked + .toggle-slider:before {
-    transform: translateX(26px);
+.toggle-label input:checked + .toggle-slider::before {
+  transform: translateX(24px);
 }
 
 .setting-text {
-    font-weight: 600;
-    color: #2d3748;
-    user-select: none;
+  font-weight: 500;
+  color: var(--text-dark);
+  font-size: 0.875rem;
 }
 
-/* 響應式設計 */
+/* ℹ️ 權限說明 */
+.permission-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-light);
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--primary);
+}
+
+.permission-info h6 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  font-size: 0.8125rem;
+}
+
+.info-item strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+
+.info-item ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+}
+
+.info-item li {
+  margin-bottom: 0.25rem;
+}
+
+/* 🎬 驗證狀態 */
+.verification-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.verification-status.verified {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.verification-status.unverified {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+/* 📊 字數統計 */
+.char-counter {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.375rem;
+}
+
+/* 🔘 按鈕 */
+.form-actions {
+  background: var(--bg-light);
+  padding: 1.5rem 2rem;
+  margin: 0 -2rem -2rem;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 1rem 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btn-outline-modern {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: var(--text-muted);
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.btn-outline-modern:hover {
+  background: var(--bg-light);
+  border-color: var(--text-muted);
+  text-decoration: none;
+  color: var(--text-dark);
+}
+
+.btn-primary-modern {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.35);
+}
+
+.btn-primary-modern:active {
+  transform: translateY(0);
+}
+
+/* 📱 響應式 */
 @media (max-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    
-    .form-section {
-        padding: 24px 20px;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .btn-outline-modern,
-    .btn-primary-modern {
-        justify-content: center;
-    }
+  .dashboard-container {
+    padding: 0 1rem;
+    margin: 1rem auto;
+  }
+
+  .page-header-modern,
+  .form-section {
+    padding: 1.5rem 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn-outline-modern,
+  .btn-primary-modern {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .doctor-preview-card {
+    flex-direction: column;
+    text-align: center;
+  }
 }
 
-/* 載入動畫 */
+/* 🎭 載入動畫 */
 .form-section {
-    animation: slideInUp 0.6s ease-out;
+  animation: fadeInUp 0.4s ease;
 }
 
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
-    <!-- 頁面標題區域 -->
-    <div class="page-header-modern">
-        <div class="breadcrumb-nav">
-            <a href="{% url 'manage_doctors' %}" class="breadcrumb-item">
-                <i class="fas fa-arrow-left"></i> 返回醫師管理
-            </a>
-        </div>
-        
-        <h1 class="page-title-modern">
-            <i class="fas fa-user-edit"></i>
-            {% if doctor.id %}編輯醫師資料{% else %}新增醫師{% endif %}
-        </h1>
-        
-        {% if doctor.id %}
-        <div class="doctor-preview-card">
-            <div class="doctor-avatar">
-                <i class="fas fa-user-md"></i>
-            </div>
-            <div class="doctor-info">
-                <h3>{{ doctor.user.get_full_name|default:doctor.user.username }}</h3>
-                <p>{{ doctor.role_display }} | {{ doctor.specialization|default:"尚未設定專科" }}</p>
-                {% if doctor.license_verified_with_moa %}
-                <div class="verification-badge">
-                    <i class="fas fa-shield-alt"></i> 已驗證獸醫師
-                </div>
-                {% endif %}
-            </div>
+  <!-- 頁面標題 -->
+  <div class="page-header-modern">
+    <div class="breadcrumb-nav">
+      <a href="{% url 'manage_doctors' %}" class="breadcrumb-item">
+        <i class="fas fa-arrow-left"></i> 返回醫師管理
+      </a>
+    </div>
+
+    <h1 class="page-title-modern">
+      <i class="fas fa-user-edit"></i>
+      {% if doctor.id %}編輯醫師資料{% else %}新增醫師{% endif %}
+    </h1>
+
+    {% if doctor.id %}
+    <div class="doctor-preview-card">
+      <div class="doctor-avatar">
+        <i class="fas fa-user-md"></i>
+      </div>
+      <div class="doctor-info">
+        <h3>{{ doctor.user.get_full_name|default:doctor.user.username }}</h3>
+        <p>{{ doctor.specialization|default:"尚未設定專科" }}</p>
+        {% if doctor.license_verified_with_moa %}
+        <div class="verification-badge">
+          <i class="fas fa-shield-alt"></i> 已驗證獸醫師
         </div>
         {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- 表單 -->
+  <form method="post" id="doctorForm">
+    {% csrf_token %}
+
+    <!-- 基本資料 -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2><i class="fas fa-user"></i> 基本資料</h2>
+        <p>請填寫醫師的基本個人資料</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="first_name" class="required">醫師姓名</label>
+          <input type="text" id="first_name" name="first_name" class="form-control"
+                 value="{{ doctor.user.first_name|default:'' }}" required placeholder="請輸入醫師姓名">
+          <div class="form-text">
+            <i class="fas fa-info-circle"></i> 請輸入醫師的真實姓名
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="required">電子信箱</label>
+          <input type="email" id="email" name="email" class="form-control"
+                 value="{{ doctor.user.email|default:'' }}" required placeholder="example@email.com">
+          <div class="form-text">
+            <i class="fas fa-envelope"></i> 用於登入系統及接收通知
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="phone_number">聯絡電話</label>
+          <input type="tel" id="phone_number" name="phone_number" class="form-control"
+                 value="{{ doctor.phone_number|default:'' }}" placeholder="0912345678">
+          <div class="form-text">
+            <i class="fas fa-phone"></i> 台灣手機號碼格式
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 表單內容區域 -->
-    <div class="edit-doctor-container">
-        <form method="post" enctype="multipart/form-data" id="doctorForm" class="doctor-form">
-            {% csrf_token %}
-            
-            <!-- 基本資料區塊 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-user"></i> 基本資料</h2>
-                    <p>請填寫醫師的基本個人資料</p>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="first_name" class="required">醫師姓名</label>
-                        <input type="text" id="first_name" name="first_name" class="form-control" 
-                               value="{{ doctor.user.first_name|default:'' }}" required>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle"></i>
-                            請輸入醫師的真實姓名
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email" class="required">電子信箱</label>
-                        <input type="email" id="email" name="email" class="form-control" 
-                               value="{{ doctor.user.email|default:'' }}" required>
-                        <div class="form-text">
-                            <i class="fas fa-envelope"></i>
-                            用於登入系統及接收通知
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="phone_number">聯絡電話</label>
-                        <input type="tel" id="phone_number" name="phone_number" class="form-control" 
-                               value="{{ doctor.phone_number|default:'' }}" placeholder="09xxxxxxxx">
-                        <div class="form-text">
-                            <i class="fas fa-phone"></i>
-                            台灣手機號碼格式
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- 專業資料 -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2><i class="fas fa-graduation-cap"></i> 專業資料</h2>
+        <p>請填寫醫師的專業背景與資格</p>
+      </div>
 
-            <!-- 專業資料區塊 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-graduation-cap"></i> 專業資料</h2>
-                    <p>請填寫醫師的專業背景與資格</p>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="vet_license_number">獸醫師執照號碼</label>
-                        <input type="text" id="vet_license_number" name="vet_license_number" class="form-control" 
-                               value="{{ doctor.vet_license_number|default:'' }}" 
-                               placeholder="例如：94府農畜字第13273號">
-                        <div class="form-text">
-                            <i class="fas fa-certificate"></i>
-                            填寫後需通過農委會驗證才能填寫醫療記錄
-                        </div>
-                        {% if doctor.vet_license_number and doctor.license_verified_with_moa %}
-                        <div class="verification-status verified">
-                            <i class="fas fa-check-circle"></i>
-                            已通過農委會驗證 ({{ doctor.verification_date|date:"Y/m/d" }})
-                            {% if doctor.moa_license_type %}
-                            <span class="license-type">{{ doctor.moa_license_type }}</span>
-                            {% endif %}
-                        </div>
-                        {% elif doctor.vet_license_number %}
-                        <div class="verification-status unverified">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            尚未驗證執照
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="years_of_experience">執業年資</label>
-                        <input type="number" id="years_of_experience" name="years_of_experience" 
-                               class="form-control" min="0" max="50"
-                               value="{{ doctor.years_of_experience|default:0 }}" placeholder="0">
-                        <div class="form-text">以年為單位</div>
-                    </div>
-                </div>
-            </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="vet_license_number">獸醫師執照號碼</label>
+          <input type="text" id="vet_license_number" name="vet_license_number" class="form-control"
+                 value="{{ doctor.vet_license_number|default:'' }}"
+                 placeholder="例如：94府農畜字第13273號">
+          <div class="form-text">
+            <i class="fas fa-certificate"></i> 填寫後需通過農委會驗證
+          </div>
+          {% if doctor.vet_license_number and doctor.license_verified_with_moa %}
+          <div class="verification-status verified">
+            <i class="fas fa-check-circle"></i> 已通過農委會驗證
+          </div>
+          {% elif doctor.vet_license_number %}
+          <div class="verification-status unverified">
+            <i class="fas fa-exclamation-triangle"></i> 尚未驗證執照
+          </div>
+          {% endif %}
+        </div>
 
-            <!-- 專長與簡介區塊 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-stethoscope"></i> 專長與簡介</h2>
-                    <p>請填寫醫師的專業專長與個人簡介</p>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="specialization_multi_select">專科領域 <span class="text-muted">(可複選)</span></label>
-                        <div class="multi-select-wrapper">
-                            <div class="multi-select-display" id="multi_select_display" onclick="toggleMultiSelectDropdown()">
-                                <span class="selected-text">請選擇專科領域</span>
-                                <i class="fas fa-chevron-down dropdown-icon"></i>
-                            </div>
-                            
-                            <!-- 已選擇的專科標籤顯示區域 -->
-                            <div class="selected-tags" id="selected_tags" style="display: none;">
-                                <!-- 標籤將由JavaScript動態生成 -->
-                            </div>
-                            <div class="multi-select-dropdown" id="multi_select_dropdown">
-                                <div class="dropdown-search">
-                                    <input type="text" id="spec_search" placeholder="搜尋預設專科..." onkeyup="filterSpecializations()">
-                                    <i class="fas fa-search"></i>
-                                </div>
-                                <div class="dropdown-options" id="dropdown_options">
-                                    <label class="option-item">
-                                        <input type="checkbox" value="一般獸醫學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>一般獸醫學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="內科學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>內科學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="外科學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>外科學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="皮膚科" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>皮膚科</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="心臟科" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>心臟科</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="腫瘤科" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>腫瘤科</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="眼科" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>眼科</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="骨科" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>骨科</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="神經科" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>神經科</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="急診醫學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>急診醫學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="特殊動物醫學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>特殊動物醫學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="禽鳥醫學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>禽鳥醫學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="水生動物醫學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>水生動物醫學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="麻醉學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>麻醉學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="放射學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>放射學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="病理學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>病理學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="藥理學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>藥理學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="營養學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>營養學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="行為學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>行為學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="繁殖學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>繁殖學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="預防醫學" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>預防醫學</span>
-                                    </label>
-                                    <label class="option-item">
-                                        <input type="checkbox" value="公共衛生" onchange="updateSelectedSpecs()">
-                                        <span class="checkmark"></span>
-                                        <span>公共衛生</span>
-                                    </label>
-                                    <label class="option-item other-spec-item">
-                                        <input type="checkbox" id="other_checkbox" value="other" onchange="toggleOtherInput()">
-                                        <span class="checkmark other-checkmark"></span>
-                                        <span>其他專科</span>
-                                    </label>
-                                </div>
-                                <div class="other-input-section" id="other_input_section" style="display: none;">
-                                    <input type="text" id="specialization_other" name="specialization_other" 
-                                           class="form-control other-input" placeholder="請填寫其他專科領域" 
-                                           oninput="updateSelectedSpecs()" 
-                                           onclick="event.stopPropagation()">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-text">
-                            <i class="fas fa-stethoscope"></i>
-                            請選擇醫師的專科領域（可複選），也可填寫其他專科
-                        </div>
-                        
-                        <!-- 隱藏欄位儲存最終的專科領域值 -->
-                        <input type="hidden" name="specialization" id="specialization" value="{{ doctor.specialization|default:'' }}">
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="bio">醫師簡介</label>
-                        <textarea id="bio" name="bio" class="form-control" rows="4" 
-                                  placeholder="請簡要介紹醫師的專業背景、治療理念或特色...">{{ doctor.bio|default:'' }}</textarea>
-                        <div class="char-counter">
-                            <span id="bioCounter">0</span>/500 字
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 系統設定區塊 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-cog"></i> 系統設定</h2>
-                    <p>設定醫師在系統中的權限與狀態</p>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="toggle-label">
-                            <input type="checkbox" name="is_active" {% if doctor.is_active %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                            <span class="setting-text">啟用醫師帳號</span>
-                        </label>
-                        <div class="form-text">停用後醫師將無法登入系統</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-label">
-                            <input type="checkbox" name="is_active_veterinarian" {% if doctor.is_active_veterinarian %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                            <span class="setting-text">獸醫師身份</span>
-                        </label>
-                        <div class="form-text">啟用獸醫師功能權限</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-label">
-                            <input type="checkbox" name="is_clinic_admin" {% if doctor.is_clinic_admin %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                            <span class="setting-text">診所管理員</span>
-                        </label>
-                        <div class="form-text">擁有診所管理權限</div>
-                    </div>
-                </div>
-                
-                <!-- 權限說明 -->
-                <div class="permission-info">
-                    <h6><i class="fas fa-info-circle"></i> 權限說明</h6>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <strong>獸醫師身份：</strong>
-                            <ul>
-                                <li>管理預約</li>
-                                <li>填寫醫療記錄（需執照驗證）</li>
-                                <li>查看相關診所數據</li>
-                            </ul>
-                        </div>
-                        <div class="info-item">
-                            <strong>診所管理員：</strong>
-                            <ul>
-                                <li>管理其他醫師</li>
-                                <li>管理所有預約</li>
-                                <li>查看完整診所數據</li>
-                                <li>系統設定管理</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 表單按鈕 -->
-            <div class="form-actions">
-                <div class="action-buttons">
-                    <a href="{% url 'manage_doctors' %}" class="btn-outline-modern">
-                        <i class="fas fa-arrow-left"></i> 返回列表
-                    </a>
-                    
-                    <button type="submit" class="btn-primary-modern" id="saveBtn">
-                        <i class="fas fa-save"></i> 
-                        {% if doctor.id %}儲存變更{% else %}新增醫師{% endif %}
-                    </button>
-                </div>
-            </div>
-        </form>
+        <div class="form-group">
+          <label for="years_of_experience">執業年資</label>
+          <input type="number" id="years_of_experience" name="years_of_experience"
+                 class="form-control" min="0" max="50"
+                 value="{{ doctor.years_of_experience|default:0 }}" placeholder="0">
+          <div class="form-text">以年為單位</div>
+        </div>
+      </div>
     </div>
+
+    <!-- 專長與簡介 -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2><i class="fas fa-stethoscope"></i> 專長與簡介</h2>
+        <p>請填寫醫師的專業專長與個人簡介</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="specialization_multi_select">專科領域 <span style="color: var(--text-muted); font-weight: normal;">(可複選)</span></label>
+          <div class="multi-select-wrapper">
+            <div class="multi-select-display" id="multi_select_display" onclick="toggleMultiSelectDropdown()">
+              <span class="selected-text">請選擇專科領域</span>
+              <i class="fas fa-chevron-down dropdown-icon"></i>
+            </div>
+
+            <div class="selected-tags" id="selected_tags" style="display: none;"></div>
+
+            <div class="multi-select-dropdown" id="multi_select_dropdown">
+              <div class="dropdown-search">
+                <input type="text" id="spec_search" placeholder="搜尋專科..." onkeyup="filterSpecializations()">
+              </div>
+              <div class="dropdown-options" id="dropdown_options">
+                <label class="option-item">
+                  <input type="checkbox" value="一般獸醫學" onchange="updateSelectedSpecs()">
+                  <span>一般獸醫學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="內科學" onchange="updateSelectedSpecs()">
+                  <span>內科學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="外科學" onchange="updateSelectedSpecs()">
+                  <span>外科學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="皮膚科" onchange="updateSelectedSpecs()">
+                  <span>皮膚科</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="心臟科" onchange="updateSelectedSpecs()">
+                  <span>心臟科</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="腫瘤科" onchange="updateSelectedSpecs()">
+                  <span>腫瘤科</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="眼科" onchange="updateSelectedSpecs()">
+                  <span>眼科</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="骨科" onchange="updateSelectedSpecs()">
+                  <span>骨科</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="神經科" onchange="updateSelectedSpecs()">
+                  <span>神經科</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="急診醫學" onchange="updateSelectedSpecs()">
+                  <span>急診醫學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="特殊動物醫學" onchange="updateSelectedSpecs()">
+                  <span>特殊動物醫學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="禽鳥醫學" onchange="updateSelectedSpecs()">
+                  <span>禽鳥醫學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="水生動物醫學" onchange="updateSelectedSpecs()">
+                  <span>水生動物醫學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="麻醉學" onchange="updateSelectedSpecs()">
+                  <span>麻醉學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="放射學" onchange="updateSelectedSpecs()">
+                  <span>放射學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="營養學" onchange="updateSelectedSpecs()">
+                  <span>營養學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="行為學" onchange="updateSelectedSpecs()">
+                  <span>行為學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" value="預防醫學" onchange="updateSelectedSpecs()">
+                  <span>預防醫學</span>
+                </label>
+                <label class="option-item">
+                  <input type="checkbox" id="other_checkbox" value="other" onchange="toggleOtherInput()">
+                  <span>其他專科</span>
+                </label>
+              </div>
+              <div class="other-input-section" id="other_input_section" style="display: none;">
+                <input type="text" id="specialization_other" class="other-input"
+                       placeholder="請填寫其他專科領域"
+                       oninput="updateSelectedSpecs()"
+                       onclick="event.stopPropagation()">
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="specialization" id="specialization" value="{{ doctor.specialization|default:'' }}">
+        </div>
+
+        <div class="form-group full-width">
+          <label for="bio">醫師簡介</label>
+          <textarea id="bio" name="bio" class="form-control" rows="4"
+                    placeholder="請簡要介紹醫師的專業背景、治療理念或特色...">{{ doctor.bio|default:'' }}</textarea>
+          <div class="char-counter">
+            <span id="bioCounter">0</span>/500 字
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系統設定 -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2><i class="fas fa-cog"></i> 系統設定</h2>
+        <p>設定醫師在系統中的權限與狀態</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="is_active" {% if doctor.is_active %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+            <span class="setting-text">啟用醫師帳號</span>
+          </label>
+          <div class="form-text">停用後醫師將無法登入系統</div>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="is_active_veterinarian" {% if doctor.is_active_veterinarian %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+            <span class="setting-text">獸醫師身份</span>
+          </label>
+          <div class="form-text">啟用獸醫師功能權限</div>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" name="is_clinic_admin" {% if doctor.is_clinic_admin %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+            <span class="setting-text">診所管理員</span>
+          </label>
+          <div class="form-text">擁有診所管理權限</div>
+        </div>
+      </div>
+
+      <div class="permission-info">
+        <h6><i class="fas fa-info-circle"></i> 權限說明</h6>
+        <div class="info-grid">
+          <div class="info-item">
+            <strong>獸醫師身份：</strong>
+            <ul>
+              <li>管理預約</li>
+              <li>填寫醫療記錄（需執照驗證）</li>
+              <li>查看診所數據</li>
+            </ul>
+          </div>
+          <div class="info-item">
+            <strong>診所管理員：</strong>
+            <ul>
+              <li>管理其他醫師</li>
+              <li>管理所有預約</li>
+              <li>系統設定管理</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 按鈕 -->
+    <div class="form-actions">
+      <div class="action-buttons">
+        <a href="{% url 'manage_doctors' %}" class="btn-outline-modern">
+          <i class="fas fa-times"></i> 取消
+        </a>
+        <button type="submit" class="btn-primary-modern">
+          <i class="fas fa-save"></i> {% if doctor.id %}儲存變更{% else %}新增醫師{% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/clinic/edit-doctor.js' %}"></script>
 <script>
-// 多選下拉選單邏輯
 let isDropdownOpen = false;
 
 function toggleMultiSelectDropdown() {
-    const display = document.getElementById('multi_select_display');
-    const dropdown = document.getElementById('multi_select_dropdown');
-    
-    isDropdownOpen = !isDropdownOpen;
-    
-    if (isDropdownOpen) {
-        display.classList.add('active');
-        dropdown.classList.add('show');
-        // 聚焦搜尋框
-        const searchInput = document.getElementById('spec_search');
-        setTimeout(() => searchInput.focus(), 100);
-    } else {
-        display.classList.remove('active');
-        dropdown.classList.remove('show');
-    }
+  const display = document.getElementById('multi_select_display');
+  const dropdown = document.getElementById('multi_select_dropdown');
+
+  isDropdownOpen = !isDropdownOpen;
+
+  if (isDropdownOpen) {
+    display.classList.add('active');
+    dropdown.classList.add('show');
+    setTimeout(() => document.getElementById('spec_search').focus(), 100);
+  } else {
+    display.classList.remove('active');
+    dropdown.classList.remove('show');
+  }
 }
 
-// 更新選中的專科顯示
 function updateSelectedSpecs() {
-    const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]:checked');
-    const otherInput = document.getElementById('specialization_other');
-    const selectedText = document.querySelector('.selected-text');
-    const selectedTags = document.getElementById('selected_tags');
-    const hiddenField = document.getElementById('specialization');
-    
-    // 收集選中的專科
-    const selectedSpecs = Array.from(checkboxes).map(cb => cb.value);
-    
-    // 加入其他專科（如果有填寫）
-    const otherSpec = otherInput.value.trim();
-    if (otherSpec) {
-        selectedSpecs.push(otherSpec);
-    }
-    
-    // 更新下拉顯示文字
-    if (selectedSpecs.length === 0) {
-        selectedText.textContent = '請選擇專科領域';
-        selectedText.classList.remove('has-selection');
-    } else if (selectedSpecs.length === 1) {
-        selectedText.textContent = selectedSpecs[0];
-        selectedText.classList.add('has-selection');
-    } else {
-        selectedText.textContent = `已選擇 ${selectedSpecs.length} 項專科`;
-        selectedText.classList.add('has-selection');
-    }
-    
-    // 更新標籤顯示
-    updateSpecTags(selectedSpecs, otherSpec);
-    
-    // 更新隱藏欄位
-    hiddenField.value = selectedSpecs.join('、');
-}
+  const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]:checked');
+  const otherInput = document.getElementById('specialization_other');
+  const selectedText = document.querySelector('.selected-text');
+  const selectedTags = document.getElementById('selected_tags');
+  const hiddenField = document.getElementById('specialization');
 
-// 更新專科標籤顯示
-function updateSpecTags(selectedSpecs, otherSpec) {
-    const selectedTags = document.getElementById('selected_tags');
-    
-    // 清空現有標籤
+  const selectedSpecs = Array.from(checkboxes).map(cb => cb.value).filter(v => v !== 'other');
+
+  const otherSpec = otherInput.value.trim();
+  if (otherSpec) {
+    selectedSpecs.push(otherSpec);
+  }
+
+  if (selectedSpecs.length === 0) {
+    selectedText.textContent = '請選擇專科領域';
+    selectedText.classList.remove('has-selection');
+    selectedTags.style.display = 'none';
+  } else {
+    selectedText.textContent = selectedSpecs.length === 1 ? selectedSpecs[0] : `已選擇 ${selectedSpecs.length} 項專科`;
+    selectedText.classList.add('has-selection');
+
     selectedTags.innerHTML = '';
-    
-    if (selectedSpecs.length === 0) {
-        selectedTags.style.display = 'none';
-        selectedTags.classList.add('empty');
-        return;
-    }
-    
-    selectedTags.style.display = 'flex';
-    selectedTags.classList.remove('empty');
-    
-    // 添加預設專科標籤
-    const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]:checked');
-    checkboxes.forEach(checkbox => {
-        const tag = createSpecTag(checkbox.value, false, checkbox);
-        selectedTags.appendChild(tag);
+    selectedSpecs.forEach(spec => {
+      const tag = document.createElement('span');
+      tag.className = spec === otherSpec ? 'spec-tag other-tag' : 'spec-tag';
+      tag.innerHTML = `<span>${spec}</span><span class="remove-tag" onclick="removeSpec('${spec}')">×</span>`;
+      selectedTags.appendChild(tag);
     });
-    
-    // 添加其他專科標籤
-    if (otherSpec) {
-        const tag = createSpecTag(otherSpec, true);
-        selectedTags.appendChild(tag);
-    }
-    
-    // 添加計數標籤
-    if (selectedSpecs.length > 3) {
-        const countTag = document.createElement('span');
-        countTag.className = 'tags-count';
-        countTag.textContent = `總計 ${selectedSpecs.length} 項`;
-        selectedTags.appendChild(countTag);
-    }
+    selectedTags.style.display = 'flex';
+  }
+
+  hiddenField.value = selectedSpecs.join('、');
 }
 
-// 創建專科標籤
-function createSpecTag(specName, isOther, checkbox = null) {
-    const tag = document.createElement('span');
-    tag.className = `spec-tag${isOther ? ' other-tag' : ''}`;
-    
-    const text = document.createElement('span');
-    text.textContent = specName;
-    tag.appendChild(text);
-    
-    const removeBtn = document.createElement('span');
-    removeBtn.className = 'remove-tag';
-    removeBtn.innerHTML = '×';
-    removeBtn.title = '移除此專科';
-    removeBtn.onclick = function(e) {
-        e.stopPropagation();
-        removeSpecTag(specName, isOther, checkbox);
-    };
-    tag.appendChild(removeBtn);
-    
-    return tag;
+function removeSpec(specName) {
+  const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    if (cb.value === specName) cb.checked = false;
+  });
+
+  const otherInput = document.getElementById('specialization_other');
+  if (otherInput.value.trim() === specName) {
+    otherInput.value = '';
+    document.getElementById('other_checkbox').checked = false;
+    document.getElementById('other_input_section').style.display = 'none';
+  }
+
+  updateSelectedSpecs();
 }
 
-// 移除專科標籤
-function removeSpecTag(specName, isOther, checkbox) {
-    if (isOther) {
-        // 清空其他專科輸入框並取消勾選其他checkbox
+function toggleOtherInput() {
+  const otherCheckbox = document.getElementById('other_checkbox');
+  const otherInputSection = document.getElementById('other_input_section');
+  const otherInput = document.getElementById('specialization_other');
+
+  if (otherCheckbox.checked) {
+    otherInputSection.style.display = 'block';
+    setTimeout(() => otherInput.focus(), 100);
+  } else {
+    otherInputSection.style.display = 'none';
+    otherInput.value = '';
+    updateSelectedSpecs();
+  }
+}
+
+function filterSpecializations() {
+  const searchTerm = document.getElementById('spec_search').value.toLowerCase();
+  const options = document.querySelectorAll('#dropdown_options .option-item');
+
+  options.forEach(option => {
+    const text = option.textContent.toLowerCase();
+    option.style.display = text.includes(searchTerm) || option.querySelector('input').value === 'other' ? 'flex' : 'none';
+  });
+}
+
+function initializeSpecializationDisplay() {
+  const hiddenField = document.getElementById('specialization');
+  const currentSpecs = hiddenField.value;
+
+  if (currentSpecs) {
+    const specList = currentSpecs.split('、').map(s => s.trim()).filter(Boolean);
+    const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]');
+
+    specList.forEach(spec => {
+      let found = false;
+      checkboxes.forEach(cb => {
+        if (cb.value === spec) {
+          cb.checked = true;
+          found = true;
+        }
+      });
+
+      if (!found) {
+        const otherCheckbox = document.getElementById('other_checkbox');
         const otherInput = document.getElementById('specialization_other');
         const otherInputSection = document.getElementById('other_input_section');
-        const otherCheckbox = document.getElementById('other_checkbox');
-        
-        otherInput.value = '';
-        otherInputSection.style.display = 'none';
-        otherCheckbox.checked = false;
-    } else if (checkbox) {
-        // 取消勾選對應的checkbox
-        checkbox.checked = false;
-    }
-    
-    // 更新顯示
-    updateSelectedSpecs();
-}
 
-// 搜尋過濾功能
-function filterSpecializations() {
-    const searchInput = document.getElementById('spec_search');
-    const options = document.querySelectorAll('#dropdown_options .option-item:not(.other-spec-item)');
-    const otherSpecItem = document.querySelector('.other-spec-item');
-    const otherInputSection = document.getElementById('other_input_section');
-    const searchTerm = searchInput.value.toLowerCase();
-    
-    // 只過濾預設專科選項，不包括「其他專科」選項
-    options.forEach(option => {
-        const text = option.textContent.toLowerCase();
-        if (text.includes(searchTerm)) {
-            option.style.display = 'flex';
-        } else {
-            option.style.display = 'none';
-        }
+        otherCheckbox.checked = true;
+        otherInputSection.style.display = 'block';
+        otherInput.value = otherInput.value ? otherInput.value + '、' + spec : spec;
+      }
     });
-    
-    // 確保「其他專科」選項和輸入區域始終顯示
-    if (otherSpecItem) {
-        otherSpecItem.style.display = 'flex';
-    }
-    if (otherInputSection && document.getElementById('other_checkbox').checked) {
-        otherInputSection.style.display = 'block';
-    }
-}
 
-// 初始化專科領域顯示
-function initializeSpecializationDisplay() {
-    const hiddenField = document.getElementById('specialization');
-    const currentSpecs = hiddenField.value;
-    
-    if (currentSpecs) {
-        // 分割現有專科
-        const specList = currentSpecs.split('、').map(s => s.trim()).filter(Boolean);
-        
-        specList.forEach(spec => {
-            // 查找對應的checkbox
-            const checkboxes = document.querySelectorAll('#dropdown_options input[type="checkbox"]');
-            let found = false;
-            
-            checkboxes.forEach(checkbox => {
-                if (checkbox.value === spec) {
-                    checkbox.checked = true;
-                    found = true;
-                }
-            });
-            
-            // 如果沒找到對應的checkbox，放到其他欄位
-            if (!found) {
-                const otherInput = document.getElementById('specialization_other');
-                const otherInputSection = document.getElementById('other_input_section');
-                const otherCheckbox = document.getElementById('other_checkbox');
-                const currentOther = otherInput.value.trim();
-                
-                // 勾選其他專科checkbox並顯示輸入區域
-                otherCheckbox.checked = true;
-                otherInputSection.style.display = 'block';
-                
-                if (currentOther) {
-                    otherInput.value = currentOther + '、' + spec;
-                } else {
-                    otherInput.value = spec;
-                }
-            }
-        });
-        
-        // 更新顯示
-        updateSelectedSpecs();
-    }
-}
-
-// 切換其他專科輸入框顯示
-function toggleOtherInput() {
-    const otherCheckbox = document.getElementById('other_checkbox');
-    const otherInputSection = document.getElementById('other_input_section');
-    const otherInput = document.getElementById('specialization_other');
-    
-    if (otherCheckbox.checked) {
-        // 顯示輸入區域
-        otherInputSection.style.display = 'block';
-        setTimeout(() => otherInput.focus(), 100);
-    } else {
-        // 隱藏輸入區域並清空內容
-        otherInputSection.style.display = 'none';
-        otherInput.value = '';
-    }
-    
-    // 更新選中狀態
     updateSelectedSpecs();
+  }
 }
 
-// 點擊外部關閉下拉選單
-document.addEventListener('click', function(event) {
-    const wrapper = document.querySelector('.multi-select-wrapper');
-    if (wrapper && !wrapper.contains(event.target) && isDropdownOpen) {
-        toggleMultiSelectDropdown();
+function initCharCounter() {
+  const bioTextarea = document.getElementById('bio');
+  const counterElement = document.getElementById('bioCounter');
+
+  if (bioTextarea && counterElement) {
+    function updateCounter() {
+      const count = bioTextarea.value.length;
+      counterElement.textContent = count;
+      counterElement.style.color = count > 450 ? '#f56565' : count > 300 ? '#ed8936' : '#718096';
     }
+
+    bioTextarea.addEventListener('input', updateCounter);
+    updateCounter();
+  }
+}
+
+document.addEventListener('click', function(event) {
+  const wrapper = document.querySelector('.multi-select-wrapper');
+  if (wrapper && !wrapper.contains(event.target) && isDropdownOpen) {
+    toggleMultiSelectDropdown();
+  }
 });
 
-// 字數統計功能
-function initCharCounters() {
-    const bioTextarea = document.getElementById('bio');
-    const counterElement = document.getElementById('bioCounter');
-    
-    if (bioTextarea && counterElement) {
-        function updateCounter() {
-            const count = bioTextarea.value.length;
-            counterElement.textContent = count;
-            
-            // 根據字數改變顏色
-            if (count > 450) {
-                counterElement.style.color = '#e53e3e';
-            } else if (count > 300) {
-                counterElement.style.color = '#d69e2e';
-            } else {
-                counterElement.style.color = '#718096';
-            }
-        }
-        
-        bioTextarea.addEventListener('input', updateCounter);
-        updateCounter(); // 初始化
-    }
-}
-
-// 表單驗證
-function initFormValidation() {
-    const form = document.getElementById('doctorForm');
-    const requiredFields = form.querySelectorAll('input[required], textarea[required]');
-    
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-        
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.style.borderColor = '#e53e3e';
-                isValid = false;
-                
-                // 移除錯誤樣式（在輸入時）
-                field.addEventListener('input', function() {
-                    field.style.borderColor = '';
-                }, { once: true });
-            }
-        });
-        
-        if (!isValid) {
-            e.preventDefault();
-            alert('請填寫所有必填欄位');
-            return false;
-        }
-        
-        // 更新專科領域
-        updateSpecializationField();
-    });
-}
-
-// 頁面載入完成後初始化
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🏥 診所醫師編輯頁面載入');
-    
-    // 初始化各項功能
-    initializeSpecializationDisplay();
-    initCharCounters();
-    initFormValidation();
-    
-    // 阻止搜尋框的事件冒泡
-    const searchInput = document.getElementById('spec_search');
-    if (searchInput) {
-        searchInput.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-    
-    // 阻止下拉選單內部點擊關閉
-    const dropdown = document.getElementById('multi_select_dropdown');
-    if (dropdown) {
-        dropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-    
-    // 綁定其他專科輸入框事件
-    const otherInput = document.getElementById('specialization_other');
-    if (otherInput) {
-        // 阻止點擊事件冒泡
-        otherInput.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-        
-        // 監聽輸入變化
-        otherInput.addEventListener('input', function(e) {
-            updateSelectedSpecs();
-        });
-        
-        // 支援Enter鍵
-        otherInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                updateSelectedSpecs();
-            }
-        });
-    }
-    
-    console.log('✅ 醫師編輯頁面初始化完成');
+  initializeSpecializationDisplay();
+  initCharCounter();
+
+  const dropdown = document.getElementById('multi_select_dropdown');
+  if (dropdown) {
+    dropdown.addEventListener('click', e => e.stopPropagation());
+  }
+
+  const otherInput = document.getElementById('specialization_other');
+  if (otherInput) {
+    otherInput.addEventListener('click', e => e.stopPropagation());
+  }
 });
 </script>
 {% endblock %}
