@@ -8149,6 +8149,12 @@ def monthly_calendar(request):
                 # 找到當天的排班
                 daily_schedules = []
                 for schedule in schedules:
+                    # 檢查當前日期是否在排班的開始和結束日期範圍內
+                    if day_date < schedule.start_date:
+                        continue
+                    if schedule.end_date and day_date > schedule.end_date:
+                        continue
+
                     if weekday in schedule.weekdays:
                         daily_slots = schedule.daily_time_slots.get(str(weekday), [])
                         for slot in daily_slots:
