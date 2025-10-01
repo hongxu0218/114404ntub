@@ -4,720 +4,433 @@
 {% block title %}診療歷史{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
-<link rel="stylesheet" href="{% static 'css/vet_pages/medical-history.css' %}">
 <style>
-/* 專業醫療色彩系統 */
+/* 🎨 簡潔專業醫療風格 - 優化版 */
 :root {
-  /* 主色調 - 醫療藍 */
-  --medical-primary: #0369a1;
-  --medical-primary-light: #0284c7;
-  --medical-primary-dark: #075985;
-  --medical-primary-ultra-light: #eff6ff;
-
-  /* 輔助色彩 */
-  --medical-secondary: #059669;
-  --medical-accent: #7c3aed;
-  --medical-warning: #d97706;
-  --medical-danger: #dc2626;
-  --medical-success: #059669;
-
-  /* 文字色彩 */
-  --medical-text-primary: #1e293b;
-  --medical-text-secondary: #475569;
-  --medical-text-muted: #64748b;
-
-  /* 背景色彩 */
-  --medical-bg-primary: #ffffff;
-  --medical-bg-secondary: #f8fafc;
-  --medical-bg-card: #ffffff;
-
-  /* 邊框色彩 */
-  --medical-border-light: #e2e8f0;
-  --medical-border-medium: #cbd5e1;
-  --medical-border-focus: #0369a1;
-
-  /* 陰影 */
-  --medical-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --medical-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --medical-shadow-card: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --primary: #0369a1;
+  --primary-light: #0284c7;
+  --success: #059669;
+  --warning: #d97706;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --bg-light: #f8fafc;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
-/* 專業醫療風格覆寫 */
 body {
-  background: #ffffff;
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1e293b;
+  background: #fff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-dark);
 }
 
-.medical-history-container {
-  background: transparent;
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0 20px;
+.medical-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
 }
 
-/* 專業醫療標題 - 優化版 */
+/* 📊 頁面標題 */
 .page-header {
-  background: #ffffff;
-  color: #1e293b;
-  padding: 2.5rem;
-  border-radius: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: linear-gradient(90deg, #059669, #047857, #0369a1, #7c3aed);
-}
-
-.page-header::after {
-  content: '🏥';
-  position: absolute;
-  top: 1rem;
-  right: 2rem;
-  font-size: 4rem;
-  opacity: 0.15;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-title {
-  color: #1e293b;
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  position: relative;
-  z-index: 1;
+  gap: 0.75rem;
 }
 
-.page-title::before {
-  content: '📋';
-  font-size: 2.5rem;
-  margin-right: 0.5rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
-
-.page-subtitle {
-  color: #64748b;
-  font-size: 1.1rem;
-  margin: 0;
-}
-
-.back-button {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  backdrop-filter: blur(10px);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
+.back-btn {
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-muted);
   text-decoration: none;
-  transition: all 0.2s ease;
-  position: relative;
-  z-index: 1;
-  display: flex;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.back-button:hover {
-  background: #e2e8f0;
-  color: #1e293b;
+.back-btn:hover {
+  background: var(--border);
+  color: var(--text-dark);
   text-decoration: none;
-  transform: translateX(-3px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* 醫療統計卡片 - 增強版 */
+/* 📈 統計卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .stat-card {
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  border-radius: 1rem;
-  background: #ffffff;
-  border-left-width: 5px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 0;
-  background: linear-gradient(135deg, rgba(3, 105, 161, 0.05), rgba(5, 150, 105, 0.05));
-  transition: width 0.3s ease;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.stat-card:hover::before {
-  width: 100%;
+.stat-card h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 0.25rem;
 }
 
-.stat-card:nth-child(1) {
-  border-left-color: #0369a1;
+.stat-card p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-.stat-card:nth-child(1) .stat-icon::before {
-  content: '📊';
-}
-
-.stat-card:nth-child(2) {
-  border-left-color: #059669;
-}
-
-.stat-card:nth-child(2) .stat-icon::before {
-  content: '📅';
-}
-
-.stat-card:nth-child(3) {
-  border-left-color: #7c3aed;
-}
-
-.stat-card:nth-child(3) .stat-icon::before {
-  content: '🐾';
-}
-
-.stat-card:nth-child(4) {
-  border-left-color: #dc2626;
-}
-
-.stat-card:nth-child(4) .stat-icon::before {
-  content: '📈';
-}
-
-.stat-icon {
-  font-size: 0;
-  width: 3.5rem;
-  height: 3.5rem;
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-
-.stat-icon::before {
-  font-size: 1.75rem;
-  color: white;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-}
-
-.stat-card:hover .stat-icon {
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
-
-/* 醫療篩選區域 - 增強版 */
+/* 🔍 篩選區域 - 簡化版 */
 .filter-section {
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  background: #ffffff;
-  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
   padding: 1.5rem;
-  margin-bottom: 2rem;
-  position: relative;
-  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
 }
 
-.filter-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0369a1, #059669, #7c3aed);
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  align-items: end;
 }
 
 .filter-group label {
-  color: var(--medical-text-primary);
+  display: block;
   font-weight: 600;
   font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--text-dark);
   margin-bottom: 0.5rem;
-  display: block;
 }
 
 .form-control {
-  border-color: var(--medical-border-medium);
-  transition: all 0.2s ease;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
 }
 
 .form-control:focus {
-  border-color: var(--medical-border-focus);
-  box-shadow: 0 0 0 3px var(--medical-primary-ultra-light);
+  outline: none;
+  border-color: var(--primary);
 }
 
-.btn-medical {
-  background: var(--medical-primary);
-  border-color: var(--medical-primary);
-  color: white;
+.btn-search {
+  padding: 0.5rem 1.5rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
 }
 
-.btn-medical:hover {
-  background: var(--medical-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--medical-shadow-md);
+.btn-search:hover {
+  background: var(--primary-light);
 }
 
-/* 醫療時間線 - 專業版 */
-.timeline-container {
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  background: #ffffff;
-  border-radius: 1.5rem;
-  padding: 2rem;
-  position: relative;
+.quick-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.quick-filter-btn {
+  padding: 0.375rem 0.75rem;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-filter-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* 📋 記錄列表 - 簡潔版 */
+.records-container {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 
-.timeline-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #0369a1, #059669, #7c3aed, #dc2626);
-}
-
-.timeline-container::after {
-  content: '📋';
-  position: absolute;
-  top: 1rem;
-  right: 2rem;
-  font-size: 3rem;
-  opacity: 0.1;
-}
-
-.timeline-date {
-  border-color: #0369a1;
-  background: #ffffff;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  position: relative;
-  z-index: 1;
-}
-
-.timeline-content {
-  background: #f8fafc;
-  border-left-color: #0369a1;
-  border-left-width: 5px;
-  border-radius: 0 1rem 1rem 0;
-  position: relative;
-  margin-left: 1rem;
+.record-item {
+  border-bottom: 1px solid var(--border);
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: background 0.2s;
 }
 
-.timeline-content::before {
-  content: '';
-  position: absolute;
-  left: -6px;
-  top: 1rem;
-  width: 12px;
-  height: 12px;
-  background: #0369a1;
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px #ffffff, 0 0 0 6px #0369a1;
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-item:hover {
+  background: var(--bg-light);
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.pet-info {
+  flex: 1;
 }
 
 .pet-name {
-  color: #075985;
-  font-weight: 800;
   font-size: 1.25rem;
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 0.25rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.pet-name::before {
-  content: '🐾';
-  font-size: 1rem;
+.record-meta {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.record-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-light);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.record-body {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .record-section {
-  margin-bottom: 1.5rem;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.6);
-  padding: 1rem;
-  backdrop-filter: blur(10px);
+  background: var(--bg-light);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--primary);
 }
 
 .record-section h4 {
-  color: var(--medical-text-primary);
-  position: relative;
-  padding-left: 2rem;
-  margin-bottom: 1rem;
-  font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.record-section h4::before {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 1.5rem;
-  background: linear-gradient(135deg, var(--medical-primary), var(--medical-primary-light));
-  border-radius: 3px;
-  content: '';
-  box-shadow: 0 2px 4px rgba(3, 105, 161, 0.3);
-}
-
-.record-section:nth-child(1) h4::before {
-  background: linear-gradient(135deg, #d97706, #f59e0b);
-}
-
-.record-section:nth-child(2) h4::before {
-  background: linear-gradient(135deg, #059669, #10b981);
-}
-
-.record-section:nth-child(3) h4::before {
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
-}
-
-.record-section:nth-child(4) h4::before {
-  background: linear-gradient(135deg, #0369a1, #0284c7);
-}
-
 .record-section p {
-  background: var(--medical-bg-card);
-  border-color: var(--medical-border-light);
-  color: var(--medical-text-secondary);
-}
-
-/* 醫療記錄內容樣式 - 增強版 */
-.symptoms-content,
-.diagnosis-content,
-.treatment-content,
-.notes-content {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  position: relative;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.symptoms-content:hover,
-.diagnosis-content:hover,
-.treatment-content:hover,
-.notes-content:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-  border-color: #0369a1;
-}
-
-.diagnosis-content {
-  border-left: 4px solid #059669;
-  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
-}
-
-.treatment-content {
-  border-left: 4px solid #7c3aed;
-  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
-}
-
-.notes-content {
-  border-left: 4px solid #0369a1;
-  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
-}
-
-.no-data {
-  color: var(--medical-text-muted);
-  font-style: italic;
   margin: 0;
-}
-
-/* 結構化醫療記錄樣式 */
-.structured-notes {
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-.medical-record-formatted {
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--text-dark);
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
-.medical-record-formatted p {
-  margin: 0.75rem 0;
-  padding: 0.75rem;
-  background: var(--medical-bg-secondary);
-  border-radius: 6px;
-  border-left: 3px solid var(--medical-primary-light);
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+.record-section.diagnosis {
+  border-left-color: var(--success);
 }
 
-.medical-record-formatted p:hover {
-  background: var(--medical-primary-ultra-light);
-  border-left-color: var(--medical-primary);
+.record-section.treatment {
+  border-left-color: var(--warning);
 }
 
-/* 特殊醫療項目格式化 */
-.medical-record-formatted p:first-child {
-  border-left-color: var(--medical-primary);
+.record-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 0.875rem;
   font-weight: 500;
+  transition: background 0.2s;
 }
 
-/* 為不同類型的醫療記錄添加特定樣式 */
-.medical-record-formatted p.chief-complaint {
-  border-left-color: #059669;
+.btn-view:hover {
+  background: var(--primary-light);
+  text-decoration: none;
+  color: #fff;
 }
 
-.medical-record-formatted p.physical-exam {
-  border-left-color: #0891b2;
+/* 📄 分頁 */
+.pagination-nav {
+  margin-top: 2rem;
 }
 
-.medical-record-formatted p.weight-record {
-  border-left-color: #7c3aed;
-}
-
-.medical-record-formatted p.temperature-record {
-  border-left-color: #dc2626;
-}
-
-.medical-record-formatted p.symptoms-record {
-  border-left-color: #d97706;
-}
-
-.medical-record-formatted p.prescription-record {
-  border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.05);
-}
-
-.medical-record-formatted p.diagnosis-assessment {
-  border-left-color: #2563eb;
-  background: rgba(37, 99, 235, 0.05);
-}
-
-.medical-record-formatted p.follow-up-plan {
-  border-left-color: #7c2d12;
-  background: rgba(124, 45, 18, 0.05);
-}
-
-/* 一般記錄樣式 */
-.general-notes {
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-.general-notes p {
-  margin-bottom: 0.75rem;
-  padding: 0.75rem;
-  background: var(--medical-bg-secondary);
-  border-radius: 6px;
-  border-left: 3px solid var(--medical-accent);
-}
-
-.general-notes p:last-child {
-  margin-bottom: 0;
-}
-
-/* 症狀項目樣式 - 水平排列 */
-.symptoms-content {
+.pagination {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-start;
+  justify-content: center;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.symptom-item {
-  background: var(--medical-bg-secondary);
-  border: 1px solid var(--medical-border-light);
-  border-left: 3px solid var(--medical-warning);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-  color: var(--medical-text-primary);
+.page-item {
   display: inline-block;
-  white-space: nowrap;
-  transition: all 0.2s ease;
 }
 
-.symptom-item:hover {
-  background: var(--medical-primary-ultra-light);
-  border-left-color: var(--medical-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--medical-shadow-sm);
-}
-
-.symptom-item::before {
-  content: "• ";
-  color: var(--medical-warning);
-  font-weight: bold;
-}
-
-/* 確保在小屏幕上症狀仍能正常顯示 */
-@media (max-width: 768px) {
-  .symptoms-content {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .symptom-item {
-    white-space: normal;
-    word-break: break-word;
-  }
-}
-
-/* 醫療按鈕樣式 */
-.btn-primary {
-  background: var(--medical-primary);
-  border-color: var(--medical-primary);
-}
-
-.btn-primary:hover {
-  background: var(--medical-primary-dark);
-  box-shadow: var(--medical-shadow-card);
-}
-
-.btn-outline {
-  border-color: var(--medical-border-medium);
-  color: var(--medical-text-secondary);
-}
-
-.btn-outline:hover {
-  border-color: var(--medical-primary);
-  color: var(--medical-primary);
-  background: var(--medical-primary-ultra-light);
-}
-
-/* 醫療分頁 */
 .page-link {
-  border-color: var(--medical-border-medium);
-  color: var(--medical-text-secondary);
+  display: inline-block;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--text-dark);
+  text-decoration: none;
+  transition: all 0.2s;
+  font-size: 0.875rem;
 }
 
 .page-link:hover {
-  border-color: var(--medical-primary);
-  color: var(--medical-primary);
-  background: var(--medical-primary-ultra-light);
+  background: var(--bg-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  text-decoration: none;
 }
 
 .page-item.active .page-link {
-  background: var(--medical-primary);
-  border-color: var(--medical-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 
-/* 醫療空狀態 */
+/* 🚫 空狀態 */
 .empty-state {
-  background: var(--medical-bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--medical-border-light);
-  margin: 2rem 0;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
 }
 
 .empty-icon {
-  background: var(--medical-primary-ultra-light);
-  color: var(--medical-primary);
-  width: 5rem;
-  height: 5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 2.5rem;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
 }
 
-/* 專業響應式優化 */
+.empty-state h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-dark);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+  text-decoration: none;
+}
+
+/* 📱 響應式 */
 @media (max-width: 768px) {
-  .medical-history-container {
-    padding: 0 15px;
+  .medical-container {
+    padding: 1rem;
   }
 
   .page-header {
-    padding: 2rem 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .page-title {
-    font-size: 2rem;
     flex-direction: column;
-    text-align: center;
-    gap: 0.5rem;
-  }
-
-  .page-header::after {
-    display: none;
+    gap: 1rem;
+    align-items: stretch;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-
-  .stat-card {
-    padding: 1rem;
-  }
-
-  .stat-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  .stat-icon::before {
-    font-size: 1.25rem;
   }
 
   .filter-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
   }
 
-  .quick-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .timeline-container {
-    padding: 1rem;
-  }
-
-  .timeline-content {
-    margin-left: 0.5rem;
-    padding: 1rem;
-  }
-
-  .record-actions {
+  .record-header {
     flex-direction: column;
-    gap: 0.75rem;
+  }
+
+  .record-meta {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 
@@ -726,256 +439,207 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .stat-content h3 {
+  .page-title {
     font-size: 1.5rem;
   }
 
-  .timeline-date {
-    padding: 0.5rem;
+  .quick-filters {
+    flex-direction: column;
   }
 
-  .pet-name {
-    font-size: 1.1rem;
+  .quick-filter-btn {
+    width: 100%;
   }
+}
+
+/* 🚀 效能優化：減少重繪 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.record-item,
+.stat-card,
+.filter-section {
+  will-change: transform;
+  backface-visibility: hidden;
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="medical-history-container">
-  <!-- 頁面標題區域 -->
+<div class="medical-container">
+  <!-- 頁面標題 -->
   <header class="page-header">
-    <h1 class="page-title">診療歷史</h1>
-    <a href="{% url 'vet_home' %}" class="back-button" aria-label="返回獸醫師工作台">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-      </svg>
-      返回工作台
+    <h1 class="page-title">
+      📋 診療歷史
+    </h1>
+    <a href="{% url 'vet_home' %}" class="back-btn">
+      ← 返回工作台
     </a>
   </header>
 
   <!-- 統計概覽 -->
-  <section class="stats-overview">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📋</div>
-        <div class="stat-content">
-          <h3>{{ total_records }}</h3>
-          <p>總診療記錄</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📅</div>
-        <div class="stat-content">
-          <h3>{{ this_month_records }}</h3>
-          <p>本月記錄</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🐾</div>
-        <div class="stat-content">
-          <h3>{{ unique_pets }}</h3>
-          <p>診療寵物數</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">⭐</div>
-        <div class="stat-content">
-          <h3>{{ avg_records_per_day|floatformat:1 }}</h3>
-          <p>日均診療數</p>
-        </div>
-      </div>
+  <section class="stats-grid">
+    <div class="stat-card">
+      <h3>{{ total_records }}</h3>
+      <p>總診療記錄</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{ this_month_records }}</h3>
+      <p>本月記錄</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{ unique_pets }}</h3>
+      <p>診療寵物數</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{ avg_records_per_day|floatformat:1 }}</h3>
+      <p>日均診療數</p>
     </div>
   </section>
 
-  <!-- 篩選和搜尋區域 -->
+  <!-- 篩選區域 -->
   <section class="filter-section">
     <form method="get" class="filter-form">
       <div class="filter-grid">
-        <!-- 日期範圍 -->
         <div class="filter-group">
           <label for="date_from">起始日期</label>
-          <input type="date" id="date_from" name="date_from" 
-                 value="{{ request.GET.date_from }}" class="form-control">
+          <input type="date" id="date_from" name="date_from"
+                 value="{{ date_from }}" class="form-control">
         </div>
-        
+
         <div class="filter-group">
           <label for="date_to">結束日期</label>
-          <input type="date" id="date_to" name="date_to" 
-                 value="{{ request.GET.date_to }}" class="form-control">
+          <input type="date" id="date_to" name="date_to"
+                 value="{{ date_to }}" class="form-control">
         </div>
-        
-        <!-- 搜尋關鍵字 -->
+
         <div class="filter-group">
-          <label for="search">搜尋內容</label>
-          <input type="text" id="search" name="q" 
-                 placeholder="寵物名稱、飼主、診斷..." 
-                 value="{{ request.GET.q }}" class="form-control">
+          <label for="search">搜尋</label>
+          <input type="text" id="search" name="q"
+                 placeholder="寵物名稱、飼主、診斷..."
+                 value="{{ search_query }}" class="form-control">
         </div>
-        
-        <!-- 快速篩選按鈕 -->
+
         <div class="filter-group">
           <label>快速篩選</label>
           <div class="quick-filters">
             <button type="button" class="quick-filter-btn" data-period="today">今日</button>
             <button type="button" class="quick-filter-btn" data-period="week">本週</button>
             <button type="button" class="quick-filter-btn" data-period="month">本月</button>
-            <button type="submit" class="btn btn-primary">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-              </svg>
-              搜尋
-            </button>
+            <button type="submit" class="btn-search">搜尋</button>
           </div>
         </div>
       </div>
     </form>
   </section>
 
-  <!-- 診療記錄時間線 -->
-  <main class="timeline-container">
+  <!-- 記錄列表 -->
+  <main class="records-container">
     {% if medical_records %}
-      <div class="timeline">
-        {% for record in medical_records %}
-          <article class="timeline-item">
-            <div class="timeline-marker">
-              <div class="timeline-date">
-                <span class="day">{{ record.visit_date|date:'d' }}</span>
-                <span class="month">{{ record.visit_date|date:'M' }}</span>
+      {% for record in medical_records %}
+        <article class="record-item">
+          <div class="record-header">
+            <div class="pet-info">
+              <h3 class="pet-name">
+                🐾 {{ record.pet.name }}
+              </h3>
+              <div class="record-meta">
+                <span>飼主：{{ record.pet.owner.get_full_name|default:record.pet.owner.username }}</span>
               </div>
             </div>
-            
-            <div class="timeline-content">
-              <div class="record-header">
-                <h3 class="pet-name">{{ record.pet.name }}</h3>
-                <div class="record-meta">
-                  <span class="owner-name">{{ record.pet.owner.get_full_name }}</span>
-                  <span class="record-time">{{ record.visit_date|date:'Y年m月d日' }}</span>
-                </div>
-              </div>
-              
-              <div class="record-body">
-                <div class="record-section">
-                  <h4>症狀</h4>
-                  <div class="symptoms-content" data-notes="{{ record.notes|escape }}">
-                    <p class="no-data">無特殊症狀記錄</p>
-                  </div>
-                </div>
-
-                <div class="record-section">
-                  <h4>診斷結果</h4>
-                  <div class="diagnosis-content">
-                    {{ record.diagnosis|linebreaks }}
-                  </div>
-                </div>
-
-                {% if record.treatment %}
-                <div class="record-section">
-                  <h4>治療方案</h4>
-                  <div class="treatment-content">
-                    {{ record.treatment|linebreaks }}
-                  </div>
-                </div>
-                {% endif %}
-
-                {% if record.notes %}
-                <div class="record-section">
-                  <h4>詳細記錄</h4>
-                  <div class="notes-content">
-                    {% if "主訴" in record.notes or "理學檢查" in record.notes or "💊" in record.notes %}
-                      <!-- 結構化醫療記錄 -->
-                      <div class="structured-notes">
-                        <div class="medical-record-formatted" data-notes="{{ record.notes|escape }}">
-                          {{ record.notes|linebreaks }}
-                        </div>
-                      </div>
-                    {% else %}
-                      <!-- 一般文字記錄 -->
-                      <div class="general-notes">
-                        {{ record.notes|linebreaks }}
-                      </div>
-                    {% endif %}
-                  </div>
-                </div>
-                {% endif %}
-              </div>
-              
-              <div class="record-actions">
-                <a href="{% url 'pet_detail' record.pet.id %}" class="btn btn-outline">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-                  </svg>
-                  查看寵物詳情
-                </a>
-                <a href="{% url 'edit_medical_record' record.pet.id record.id %}" class="btn btn-primary">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708L10.5 8.207l-3-3L12.146.146zM11.207 9.5L7 13.707V10.5a.5.5 0 0 1 .5-.5h3.707z"/>
-                    <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
-                  </svg>
-                  編輯記錄
-                </a>
-              </div>
+            <div class="record-date">
+              📅 {{ record.visit_date|date:'Y-m-d' }}
             </div>
-          </article>
-        {% endfor %}
-      </div>
-      
-      <!-- 分頁導航 -->
+          </div>
+
+          <div class="record-body">
+            {% if record.diagnosis %}
+            <div class="record-section diagnosis">
+              <h4>診斷結果</h4>
+              <p>{{ record.diagnosis|truncatewords:50 }}</p>
+            </div>
+            {% endif %}
+
+            {% if record.treatment %}
+            <div class="record-section treatment">
+              <h4>治療方案</h4>
+              <p>{{ record.treatment|truncatewords:50 }}</p>
+            </div>
+            {% endif %}
+
+            {% if record.notes %}
+            <div class="record-section">
+              <h4>詳細記錄</h4>
+              <p>{{ record.notes|truncatewords:50 }}</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="record-actions">
+            <a href="{% url 'pet_detail' record.pet.id %}" class="btn-view">
+              👁️ 查看完整病歷
+            </a>
+          </div>
+        </article>
+      {% endfor %}
+
+      <!-- 分頁 -->
       {% if is_paginated %}
-      <nav class="pagination-nav" aria-label="診療記錄分頁">
+      <nav class="pagination-nav">
         <ul class="pagination">
           {% if page_obj.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
-                第一頁
+              <a class="page-link" href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                首頁
               </a>
             </li>
             <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
-                上一頁
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                ‹ 上一頁
               </a>
             </li>
           {% endif %}
-          
+
           <li class="page-item active">
-            <span class="page-link">第 {{ page_obj.number }} 頁，共 {{ page_obj.paginator.num_pages }} 頁</span>
+            <span class="page-link">第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 頁</span>
           </li>
-          
+
           {% if page_obj.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
-                下一頁
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                下一頁 ›
               </a>
             </li>
             <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
-                最後頁
+              <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                末頁
               </a>
             </li>
           {% endif %}
         </ul>
       </nav>
       {% endif %}
-      
+
     {% else %}
       <!-- 空狀態 -->
       <div class="empty-state">
         <div class="empty-icon">📋</div>
         <h3>沒有找到診療記錄</h3>
         <p>
-          {% if request.GET.q or request.GET.date_from or request.GET.date_to %}
-            沒有符合篩選條件的記錄，請嘗試調整搜尋條件
+          {% if search_query or date_from or date_to %}
+            沒有符合篩選條件的記錄
           {% else %}
             您尚未建立任何診療記錄
           {% endif %}
         </p>
         <div class="empty-actions">
-          <a href="{% url 'vet_appointments' %}" class="btn btn-primary">
-            查看今日預約
+          <a href="{% url 'vet_appointments' %}" class="btn-search">
+            查看預約
           </a>
-          {% if request.GET.q or request.GET.date_from or request.GET.date_to %}
-          <a href="{% url 'vet_medical_history' %}" class="btn btn-secondary">
+          {% if search_query or date_from or date_to %}
+          <a href="{% url 'vet_medical_history' %}" class="btn-secondary">
             清除篩選
           </a>
           {% endif %}
@@ -984,226 +648,53 @@ body {
     {% endif %}
   </main>
 </div>
-
-<!-- 無障礙提示 -->
-<div class="visually-hidden" aria-live="polite" id="status-announcer"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// 🚀 優化版 JavaScript - 減少 DOM 操作
 document.addEventListener('DOMContentLoaded', function() {
-    // 快速篩選按鈕功能
-    const quickFilterButtons = document.querySelectorAll('.quick-filter-btn');
-    const dateFromInput = document.getElementById('date_from');
-    const dateToInput = document.getElementById('date_to');
+    // 快速篩選
+    const quickBtns = document.querySelectorAll('.quick-filter-btn');
+    const dateFrom = document.getElementById('date_from');
+    const dateTo = document.getElementById('date_to');
+    const filterForm = document.querySelector('.filter-form');
 
-    quickFilterButtons.forEach(button => {
-        button.addEventListener('click', function() {
+    quickBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
             const period = this.dataset.period;
             const today = new Date();
-            let fromDate, toDate;
+            let from, to = today;
 
             switch(period) {
                 case 'today':
-                    fromDate = toDate = today;
+                    from = today;
                     break;
                 case 'week':
-                    fromDate = new Date(today);
-                    fromDate.setDate(today.getDate() - 7);
-                    toDate = today;
+                    from = new Date(today);
+                    from.setDate(today.getDate() - 7);
                     break;
                 case 'month':
-                    fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                    toDate = today;
+                    from = new Date(today.getFullYear(), today.getMonth(), 1);
                     break;
             }
 
-            dateFromInput.value = fromDate.toISOString().split('T')[0];
-            dateToInput.value = toDate.toISOString().split('T')[0];
-
-            // 自動提交表單
-            document.querySelector('.filter-form').submit();
+            dateFrom.value = from.toISOString().split('T')[0];
+            dateTo.value = to.toISOString().split('T')[0];
+            filterForm.submit();
         });
     });
 
     // 表單驗證
-    const filterForm = document.querySelector('.filter-form');
     if (filterForm) {
         filterForm.addEventListener('submit', function(e) {
-            const dateFrom = dateFromInput.value;
-            const dateTo = dateToInput.value;
-
-            if (dateFrom && dateTo && dateFrom > dateTo) {
+            if (dateFrom.value && dateTo.value && dateFrom.value > dateTo.value) {
                 e.preventDefault();
                 alert('起始日期不能晚於結束日期');
-                return;
             }
         });
     }
-
-    // 醫療術語翻譯對照表
-    const medicalTranslations = {
-        'bid': '每日兩次',
-        'tid': '每日三次',
-        'qid': '每日四次',
-        'qd': '每日一次',
-        'q12h': '每12小時一次',
-        'q8h': '每8小時一次',
-        'q6h': '每6小時一次',
-        'topical': '外用',
-        'oral': '口服',
-        'iv': '靜脈注射',
-        'im': '肌肉注射',
-        'sc': '皮下注射',
-        'po': '口服',
-        'prn': '需要時使用'
-    };
-
-    // 常見藥品名稱列表（用於過濾）
-    const commonDrugNames = [
-        '舒寵驅癢劑', 'SERGEANT`S NO-ITCH', 'NO-ITCH',
-        '抗生素', '消炎藥', '止痛藥', '類固醇',
-        'Rimadyl', 'Metacam', 'Cephalexin', 'Amoxicillin',
-        '頭孢菌素', '阿莫西林', '美達卡', '利馬達',
-        '驅蟲藥', '疫苗', '營養品', '保健品'
-    ];
-
-    // 檢查是否為藥品名稱
-    function isDrugName(text) {
-        text = text.toLowerCase().trim();
-        return commonDrugNames.some(drugName =>
-            text.includes(drugName.toLowerCase()) ||
-            drugName.toLowerCase().includes(text)
-        );
-    }
-
-    // 提取並顯示症狀
-    function extractAndDisplaySymptoms() {
-        const symptomsContainers = document.querySelectorAll('.symptoms-content');
-
-        symptomsContainers.forEach(function(container) {
-            const notes = container.getAttribute('data-notes');
-            if (!notes) return;
-
-            const lines = notes.split('\n');
-            const symptoms = [];
-
-            let inSymptomsSection = false;
-            for (let line of lines) {
-                line = line.trim();
-
-                // 檢測症狀區段開始
-                if (line.includes('🏥 症狀:') || line.includes('症狀:')) {
-                    inSymptomsSection = true;
-                    continue;
-                }
-
-                // 檢測症狀區段結束
-                if (inSymptomsSection && (
-                    line.includes('💊') ||
-                    line.includes('處方藥品') ||
-                    line.includes('📊') ||
-                    line.includes('⚕️') ||
-                    line.includes('📅')
-                )) {
-                    break;
-                }
-
-                if (inSymptomsSection && line.startsWith('•')) {
-                    // 移除嚴重程度信息和括號
-                    let symptom = line.replace(/\(嚴重程度:\s*[^)]+\)/g, '').trim();
-                    symptom = symptom.replace(/嚴重程度:\s*[^\n]*/g, '').trim();
-                    symptom = symptom.replace(/^\s*•\s*/, '').trim(); // 移除開頭的 •
-
-                    // 檢查是否為有效症狀且不是藥品名稱
-                    if (symptom &&
-                        symptom !== '•' &&
-                        symptom.length > 1 &&
-                        !isDrugName(symptom) &&
-                        !symptom.includes('劑量:') &&
-                        !symptom.includes('頻率:') &&
-                        !symptom.includes('給藥方式:') &&
-                        !symptom.includes('療程:') &&
-                        !symptom.includes('用藥指示:')
-                    ) {
-                        symptoms.push(symptom);
-                    }
-                }
-            }
-
-            // 清空容器並添加症狀
-            if (symptoms.length > 0) {
-                container.innerHTML = '';
-                symptoms.forEach(function(symptom) {
-                    const symptomDiv = document.createElement('div');
-                    symptomDiv.className = 'symptom-item';
-                    symptomDiv.textContent = symptom;
-                    container.appendChild(symptomDiv);
-                });
-            }
-        });
-    }
-
-    // 處理詳細記錄格式化
-    function formatDetailedRecords() {
-        const detailedRecords = document.querySelectorAll('.medical-record-formatted');
-
-        detailedRecords.forEach(function(container) {
-            const notes = container.getAttribute('data-notes');
-            if (!notes) return;
-
-            const paragraphs = container.querySelectorAll('p');
-
-            paragraphs.forEach(function(p) {
-                let text = p.textContent;
-
-                // 移除症狀區段（因為已經在症狀部分單獨顯示）
-                if (text.includes('🏥 症狀:') || (text.includes('症狀') && text.includes('•'))) {
-                    p.style.display = 'none';
-                    return;
-                }
-
-                // 隱藏包含症狀項目的段落
-                if (text.includes('• ') && text.includes('嚴重程度:')) {
-                    p.style.display = 'none';
-                    return;
-                }
-
-                // 翻譯醫療術語
-                for (let [english, chinese] of Object.entries(medicalTranslations)) {
-                    const regex = new RegExp('\\b' + english + '\\b', 'gi');
-                    text = text.replace(regex, chinese);
-                }
-
-                // 移除嚴重程度信息
-                text = text.replace(/\(嚴重程度:\s*[^)]+\)/g, '');
-                text = text.replace(/嚴重程度:\s*[^\n]*/g, '');
-
-                p.textContent = text;
-
-                // 添加樣式類別
-                if (text.includes('主訴') || text.includes('📋')) {
-                    p.classList.add('chief-complaint');
-                } else if (text.includes('理學檢查') || text.includes('🔍')) {
-                    p.classList.add('physical-exam');
-                } else if (text.includes('體重') || text.includes('📊')) {
-                    p.classList.add('weight-record');
-                } else if (text.includes('體溫') || text.includes('🌡️')) {
-                    p.classList.add('temperature-record');
-                } else if (text.includes('處方藥品') || text.includes('💊')) {
-                    p.classList.add('prescription-record');
-                } else if (text.includes('診斷評估') || text.includes('⚕️')) {
-                    p.classList.add('diagnosis-assessment');
-                } else if (text.includes('追蹤計畫') || text.includes('📅')) {
-                    p.classList.add('follow-up-plan');
-                }
-            });
-        });
-    }
-
-    // 執行所有格式化
-    extractAndDisplaySymptoms();
-    formatDetailedRecords();
 });
 </script>
 {% endblock %}
