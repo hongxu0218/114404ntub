@@ -304,12 +304,18 @@ def api_handoff_request(request: HttpRequest):
     body(JSON): { "name": "可選，預設匿名", "contact": "可選", "last_question": "可選", "channel": "web" }
     回傳: { "ok": true, "ticket_id": 123, "reused": true/false }
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        data = json.loads(request.body.decode("utf-8")) if request.body else {}
-    except Exception:
-        data = {}
+        session_key = _ensure_session_key(request)
+
+        try:
+            data = json.loads(request.body.decode("utf-8")) if request.body else {}
+        except Exception:
+            data = {}
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error in api_handoff_request initialization: {e}")
+        return _json_error(f"Internal server error: {str(e)}", status=500)
 
     name = (data.get("name") or "").strip() or "匿名"
     contact = (data.get("contact") or "").strip()
@@ -386,28 +392,37 @@ def api_handoff_user_end(request: HttpRequest):
     body(JSON): {"ticket_id": <int>}
     回傳: {"ok": true}
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return _json_error("invalid json", status=400)
+        session_key = _ensure_session_key(request)
 
-    ticket_id = payload.get("ticket_id")
-    if not ticket_id:
-        return _json_error("ticket_id required", status=400)
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except Exception:
+            return _json_error("invalid json", status=400)
 
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
+        ticket_id = payload.get("ticket_id")
+        if not ticket_id:
+            return _json_error("ticket_id required", status=400)
 
-    if t.session_key != session_key:
-        return _json_error("session mismatch", status=403)
+        try:
+            t = HandoffTicket.objects.get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            return _json_error("ticket not found", status=404)
 
-    if not t.is_open:
-        return JsonResponse({"ok": True})  # 已經結案了
+        if t.session_key != session_key:
+            return _json_error("session mismatch", status=403)
 
-    # 結案並留下用戶主動結束的訊息
-    t.is_open = False
-    t.save(update_fields=["is_open"])
+        if not t.is_open:
+            return JsonResponse({"ok": True})  # 已經結案了
+
+        # 結案並留下用戶主動結束的訊息
+        t.is_open = False
+        t.save(update_fields=["is_open"])
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error in api_handoff_user_end: {e}")
+        return _json_error(f"Internal server error: {str(e)}", status=500)
 
     HandoffMessage.objects.create(
         ticket=t,
@@ -441,27 +456,36 @@ def api_handoff_user_send(request: HttpRequest):
     body(JSON): {"ticket_id": <int>, "message": "text"}
     回傳: {"ok": true}
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return _json_error("invalid json", status=400)
+        session_key = _ensure_session_key(request)
 
-    ticket_id = payload.get("ticket_id")
-    text = (payload.get("message") or "").strip()
-    if not ticket_id or not text:
-        return _json_error("ticket_id and message required", status=400)
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+        except Exception:
+            return _json_error("invalid json", status=400)
 
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
+        ticket_id = payload.get("ticket_id")
+        text = (payload.get("message") or "").strip()
+        if not ticket_id or not text:
+            return _json_error("ticket_id and message required", status=400)
 
-    if t.session_key != session_key:
-        return _json_error("session mismatch", status=403)
+        try:
+            t = HandoffTicket.objects.get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            return _json_error("ticket not found", status=404)
 
-    if not t.is_open:
-        return _json_error("ticket closed", status=409)
+        if t.session_key != session_key:
+            return _json_error("session mismatch", status=403)
 
-    HandoffMessage.objects.create(ticket=t, sender="user", text=text)
+        if not t.is_open:
+            return _json_error("ticket closed", status=409)
+
+        HandoffMessage.objects.create(ticket=t, sender="user", text=text)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error in api_handoff_user_send: {e}")
+        return _json_error(f"Internal server error: {str(e)}", status=500)
 
     # 通知所有員工有新的用戶訊息（即使失敗也不影響訊息發送）
     try:
@@ -488,22 +512,32 @@ def api_handoff_poll(request: HttpRequest):
     GET: ticket_id, since(最後已讀訊息 id)
     回傳: {"ok": true, "messages":[{"id":..,"sender":"agent","text":"..."},...], "last_id": <int>}
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        ticket_id = int(request.GET.get("ticket_id") or 0)
-    except (TypeError, ValueError):
-        return _json_error("ticket_id required", status=400)
-    since = int(request.GET.get("since") or 0)
+        session_key = _ensure_session_key(request)
 
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-    if t.session_key != session_key:
-        return _json_error("session mismatch", status=403)
+        try:
+            ticket_id = int(request.GET.get("ticket_id") or 0)
+        except (TypeError, ValueError):
+            return _json_error("ticket_id required", status=400)
+        since = int(request.GET.get("since") or 0)
 
-    qs = t.messages.filter(id__gt=since).order_by("id").only("id", "sender", "text", "created_at")
-    msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
-    last_id = msgs[-1]["id"] if msgs else since
-    return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id, "is_open": t.is_open})
+        try:
+            t = HandoffTicket.objects.get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            return _json_error("ticket not found", status=404)
+
+        if t.session_key != session_key:
+            return _json_error("session mismatch", status=403)
+
+        qs = t.messages.filter(id__gt=since).order_by("id").only("id", "sender", "text", "created_at")
+        msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
+        last_id = msgs[-1]["id"] if msgs else since
+        return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id, "is_open": t.is_open})
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error in api_handoff_poll: {e}")
+        return _json_error(f"Internal server error: {str(e)}", status=500)
 
 
 # 員工輪詢：取 ticket 的新訊息（since 之後）
