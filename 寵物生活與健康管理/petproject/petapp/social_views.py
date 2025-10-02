@@ -121,27 +121,34 @@ def social_home(request):
     page_number = request.GET.get('page', 1)
     page_posts = paginator.get_page(page_number)
 
-    # 獲取追蹤列表
-    following_list = []
+    # 獲取推薦關注的用戶（不是已經追蹤的用戶）
+    recommended_users = []
     if request.user.is_authenticated:
         try:
-            following_list = Follow.objects.filter(follower=request.user).select_related('following')[:10]
-            # 確保每個被追蹤的用戶都有 UserProfile
-            for follow in following_list:
-                if not hasattr(follow.following, 'social_profile'):
-                    UserProfile.objects.get_or_create(user=follow.following)
+            # 獲取當前用戶已追蹤的用戶ID列表
+            following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+
+            # 推薦：排除自己和已追蹤的用戶，按粉絲數排序
+            recommended_users = User.objects.exclude(
+                id__in=list(following_ids) + [request.user.id]
+            ).select_related('social_profile').order_by('-social_profile__followers_count')[:10]
+
+            # 確保每個推薦用戶都有 UserProfile
+            for user in recommended_users:
+                if not hasattr(user, 'social_profile'):
+                    UserProfile.objects.get_or_create(user=user)
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"Error loading following list: {str(e)}", exc_info=True)
-            following_list = []
+            logger.error(f"Error loading recommended users: {str(e)}", exc_info=True)
+            recommended_users = []
 
     # 獲取熱門話題
     trending_topics = get_trending_topics()
 
     context = {
         'posts': page_posts,
-        'following_list': following_list,
+        'recommended_users': recommended_users,
         'trending_topics': trending_topics,
     }
     return render(request, 'social/home.html', context)

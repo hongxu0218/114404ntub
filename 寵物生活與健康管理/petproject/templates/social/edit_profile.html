@@ -320,14 +320,16 @@
                     <label class="form-label">
                         <i class="bi bi-image me-2"></i>個人橫幅
                     </label>
-                    {% if profile.banner %}
-                        <img src="{{ profile.banner.url }}" alt="橫幅預覽" class="preview-banner" id="bannerPreview">
-                    {% else %}
-                        <div class="preview-banner" id="bannerPreview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem;">
-                            <i class="bi bi-image me-2"></i>
-                            尚未設定橫幅圖片
-                        </div>
-                    {% endif %}
+                    <div id="bannerPreviewContainer">
+                        {% if profile.banner %}
+                            <img src="{{ profile.banner.url }}" alt="橫幅預覽" class="preview-banner" id="bannerPreview">
+                        {% else %}
+                            <div class="preview-banner" id="bannerPreview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem;">
+                                <i class="bi bi-image me-2"></i>
+                                尚未設定橫幅圖片
+                            </div>
+                        {% endif %}
+                    </div>
                     <div class="upload-area" onclick="document.getElementById('bannerInput').click()">
                         <div class="upload-icon">
                             <i class="bi bi-images"></i>
@@ -456,11 +458,16 @@ document.getElementById('bannerInput').addEventListener('change', function(e) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const preview = document.getElementById('bannerPreview');
-            preview.style.background = 'none';
-            preview.innerHTML = '';
-            preview.src = e.target.result;
-            preview.style.backgroundImage = 'none';
+            const container = document.getElementById('bannerPreviewContainer');
+            // 創建新的 img 元素替換舊的預覽
+            const newImg = document.createElement('img');
+            newImg.src = e.target.result;
+            newImg.alt = '橫幅預覽';
+            newImg.className = 'preview-banner';
+            newImg.id = 'bannerPreview';
+            // 替換容器內容
+            container.innerHTML = '';
+            container.appendChild(newImg);
         };
         reader.readAsDataURL(file);
     }

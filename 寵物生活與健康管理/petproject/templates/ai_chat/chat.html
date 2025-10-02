@@ -403,8 +403,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // 發送按鈕點擊事件
     sendBtn.addEventListener('click', sendMessage);
 
-    // 轉人工客服按鈕點擊事件
-    handoffBtn.addEventListener('click', requestHandoff);
+    // 轉人工客服按鈕點擊事件（檢查按鈕是否存在）
+    if (handoffBtn) {
+        handoffBtn.addEventListener('click', requestHandoff);
+    }
 
     // 大轉人工客服按鈕點擊事件
     const permanentHandoffBtn = document.getElementById('permanent-handoff-btn');
@@ -661,8 +663,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function requestHandoff() {
-        // 禁用按鈕
-        handoffBtn.disabled = true;
+        // 禁用所有轉接按鈕，避免重複點擊
+        const allHandoffBtns = document.querySelectorAll('.btn-handoff, .handoff-btn-large, .handoff-link-btn');
+        allHandoffBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        });
 
         // 獲取當前輸入的問題作為last_question
         const currentQuestion = messageInput.value.trim();
@@ -679,14 +686,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 channel: 'web'
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('網路請求失敗: ' + response.status);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.ok) {
                 // 清空輸入框
                 messageInput.value = '';
 
                 // 顯示轉接成功訊息
-                addMessage('已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
+                addMessage('✅ 已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
 
                 // 可以選擇跳轉到人工客服頁面或保持在當前頁面
                 setTimeout(() => {
@@ -697,15 +709,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 1000);
             } else {
-                addMessage('轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
+                addMessage('❌ 轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
+                // 重新啟用按鈕
+                enableHandoffButtons();
             }
         })
         .catch(error => {
-            addMessage('轉接人工客服時發生錯誤，請稍後再試。', 'ai');
+            addMessage('❌ 轉接人工客服時發生錯誤，請稍後再試。', 'ai');
             console.error('Handoff error:', error);
-        })
-        .finally(() => {
-            handoffBtn.disabled = false;
+            // 重新啟用按鈕
+            enableHandoffButtons();
+        });
+    }
+
+    // 重新啟用轉接按鈕的輔助函數
+    function enableHandoffButtons() {
+        const allHandoffBtns = document.querySelectorAll('.btn-handoff, .handoff-btn-large, .handoff-link-btn');
+        allHandoffBtns.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         });
     }
 });

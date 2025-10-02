@@ -1964,8 +1964,15 @@
                     channel: 'web'
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Handoff response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Handoff response data:', data);
                 if (data.ok) {
                     // 清空輸入框
                     chatbotText.value = '';
@@ -2236,8 +2243,15 @@
                     message: message
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Handoff send response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Handoff send response data:', data);
                 if (!data.ok) {
                     addMessage('system', '❌ 發送訊息失敗，請稍後再試。');
                 }

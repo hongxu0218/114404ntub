@@ -538,38 +538,18 @@ function toggleFollow(username) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            if (data.following) {
-                btn.className = 'profile-btn btn-following';
-                btn.innerHTML = `
-                    <span class="follow-text">
-                        <i class="bi bi-check-circle"></i>
-                        已追蹤
-                    </span>
-                `;
-            } else {
-                btn.className = 'profile-btn btn-follow';
-                btn.innerHTML = `
-                    <i class="bi bi-person-plus"></i>
-                    追蹤
-                `;
-            }
-
-            // 更新粉絲數
-            const followersCount = document.querySelector('.stat-card:nth-child(2) .stat-number');
-            if (followersCount) {
-                followersCount.textContent = data.followers_count;
-            }
+            // 重新載入頁面以更新所有統計數據
+            window.location.reload();
         } else {
             alert('操作失敗：' + data.error);
             btn.innerHTML = originalContent;
+            btn.disabled = false;
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('操作失敗，請稍後再試');
         btn.innerHTML = originalContent;
-    })
-    .finally(() => {
         btn.disabled = false;
     });
 }

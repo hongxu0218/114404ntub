@@ -1,493 +1,615 @@
-# petapp/views_handoff.py
+# petapp/views_handoff_new.py
+"""
+人工客服系統 - 重新設計版本
+所有 API 都有完整的錯誤處理和日誌記錄
+"""
 import json
+import logging
+import uuid
 from typing import Optional
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.models import User
+from django.db.models import Max
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Max
+from django.views.decorators.http import require_POST, require_http_methods
 
 from .models import HandoffTicket, HandoffMessage, Notification
-from django.contrib.auth.models import User
+
+logger = logging.getLogger(__name__)
 
 
-# ----------------------------
-# 共用小工具
-# ----------------------------
-def _ensure_session_key(request: HttpRequest) -> str:
-    """確保匿名使用者也有 session_key 可追蹤"""
-    if not request.session.session_key:
-        request.session.save()
-    return request.session.session_key
+# ======================
+# 輔助函數
+# ======================
+
+def get_session_key(request: HttpRequest) -> str:
+    """獲取或創建 session key"""
+    try:
+        # 嘗試訪問 session，這會自動創建 session
+        if not hasattr(request, 'session'):
+            temp_key = f"temp_{uuid.uuid4().hex[:20]}"
+            logger.error(f"No session middleware, using temporary key: {temp_key}")
+            return temp_key
+
+        # 確保 session 被創建（通過修改來觸發保存）
+        if not request.session.session_key:
+            request.session['_handoff_init'] = True
+            request.session.modified = True
+
+        # 再次獲取 session_key
+        session_key = request.session.session_key
+
+        # 如果還是沒有，使用臨時 key
+        if not session_key:
+            session_key = f"temp_{uuid.uuid4().hex[:20]}"
+            logger.warning(f"Session key not created, using temporary: {session_key}")
+
+        return session_key
+    except Exception as e:
+        # 如果 session 完全失敗，使用臨時 key
+        temp_key = f"temp_{uuid.uuid4().hex[:20]}"
+        logger.exception(f"Session error: {e}, using temporary key: {temp_key}")
+        return temp_key
 
 
-def _json_error(message: str, status: int = 400) -> JsonResponse:
-    return JsonResponse({"ok": False, "error": message}, status=status)
+def json_response(success: bool = True, data: dict = None, error: str = None, status: int = 200) -> JsonResponse:
+    """統一的 JSON 響應格式"""
+    response_data = {"ok": success}
+    if data:
+        response_data.update(data)
+    if error:
+        response_data["error"] = error
+    return JsonResponse(response_data, status=status)
 
 
-# ----------------------------
-# Staff Console（職員端）
-# ----------------------------
-@staff_member_required(login_url="account_login")
-def handoff_console(request: HttpRequest, ticket_id: Optional[int] = None):
-    """
-    客服控台頁：左邊工單清單，右邊顯示選取工單的聊天室。
-    對應樣板：templates/ai_chat/staff_handoff.html
-    """
-    tickets = HandoffTicket.objects.all().only("id", "session_key", "is_open", "created_at")
-
-    current = None
-    if ticket_id:
-        current = HandoffTicket.objects.prefetch_related("messages").get(id=ticket_id)
-
-    return render(
-        request,
-        "ai_chat/staff_handoff.html",
-        {"tickets": tickets, "current": current},
-    )
-
-
-@staff_member_required(login_url="account_login")
-@require_POST
-def handoff_agent_reply(request: HttpRequest, ticket_id: int):
-    """
-    職員在控台回覆訊息。
-    - 接受 JSON: {"message": "..."} 或 form POST: message=...
-    - 回傳: {"ok": true}
-    - 第一次回覆前會自動新增一則 system 訊息通知「已接單」
-    """
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-    if not t.is_open:
-        return _json_error("工單已結案，無法回覆。", status=409)
-
-    # 取文字
-    if request.content_type and "application/json" in request.content_type.lower():
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-            msg_text = (payload.get("message") or "").strip()
-        except Exception:
-            msg_text = ""
-    else:
-        msg_text = (request.POST.get("message") or "").strip()
-
-    if not msg_text:
-        return _json_error("message 欄位必填。", status=400)
-
-    # --- 第一次回覆前，自動補「已接單」system 訊息（只發一次） ---
-    if not HandoffMessage.objects.filter(
-        ticket=t, sender="system", text__icontains="接手您的工單"
-    ).exists():
-        # 若 model 有 assigned_to / accepted_at 欄位則順手標記
-        changed = False
-        if hasattr(t, "assigned_to") and getattr(t, "assigned_to_id", None) != request.user.id:
-            t.assigned_to = request.user
-            changed = True
-        if hasattr(t, "accepted_at") and getattr(t, "accepted_at", None) is None:
-            t.accepted_at = timezone.now()
-            changed = True
-        if changed:
-            try:
-                t.save()
-            except Exception:
-                pass
-
-        agent_name = (
-            getattr(request.user, "get_full_name", lambda: "")()
-            or getattr(request.user, "username", None)
-            or "客服"
-        )
-        HandoffMessage.objects.create(
-            ticket=t,
-            sender="system",
-            text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
-        )
-
-        # 通知用戶有客服接手了工單（如果工單有關聯的用戶）
-        if hasattr(t, 'user') and t.user:
-            Notification.objects.create(
-                user=t.user,
-                title="客服已接手您的工單",
-                message=f"客服 {agent_name} 已接手您的工單 #{t.id}，稍候將與您聯繫",
-                notification_type="handoff_message"
-            )
-    # ------------------------------------------------------------
-
-    HandoffMessage.objects.create(
-        ticket=t,
-        sender="agent",  # 你的 model 定義使用小寫字串
-        text=msg_text,
-    )
-
-    # 通知用戶有新的客服回覆（如果工單有關聯的用戶）
-    if hasattr(t, 'user') and t.user:
+def safe_create_notification(user: User, title: str, message: str, notification_type: str) -> bool:
+    """安全創建通知，失敗不影響主流程"""
+    try:
         Notification.objects.create(
-            user=t.user,
-            title="客服已回覆",
-            message=f"您的客服工單 #{t.id} 有新回覆",
-            notification_type="handoff_message"
+            user=user,
+            title=title,
+            message=message,
+            notification_type=notification_type
         )
-
-    return JsonResponse({"ok": True})
-
-
-@staff_member_required(login_url="account_login")
-@require_POST
-def handoff_agent_close(request: HttpRequest, ticket_id: int):
-    """
-    結案：將工單設為 is_open=False，並留下系統訊息。
-    成功後導回該工單頁面。
-    """
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-    if not t.is_open:
-        return redirect("handoff_console_ticket", ticket_id=t.id)
-
-    t.is_open = False
-    t.save(update_fields=["is_open"])  # 你的 model 沒有 updated_at，就只存 is_open
-
-    HandoffMessage.objects.create(
-        ticket=t,
-        sender="system",
-        text="🔒 工單已結案，感謝您的諮詢！如有其他問題，請重新發起人工客服。",
-    )
-
-    # 通知用戶工單已結案（如果工單有關聯的用戶）
-    if hasattr(t, 'user') and t.user:
-        Notification.objects.create(
-            user=t.user,
-            title="客服工單已結束",
-            message=f"您的客服工單 #{t.id} 已由客服結案",
-            notification_type="handoff_closed"
-        )
-
-    return redirect("handoff_console_ticket", ticket_id=t.id)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to create notification for user {user.id}: {e}")
+        return False
 
 
-@staff_member_required(login_url="account_login")
-@require_POST
-def handoff_agent_accept(request: HttpRequest, ticket_id: int):
-    """
-    （可選）手動「接單」：座席點擊接單按鈕即發出 system 訊息告知使用者。
-    成功後導回該工單頁面。
-    """
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-    if not t.is_open:
-        return redirect("handoff_console_ticket", ticket_id=t.id)
+# ======================
+# 用戶端 API
+# ======================
 
-    # 若 model 有欄位就同步標記
-    changed = False
-    if hasattr(t, "assigned_to") and getattr(t, "assigned_to_id", None) != request.user.id:
-        t.assigned_to = request.user
-        changed = True
-    if hasattr(t, "accepted_at") and getattr(t, "accepted_at", None) is None:
-        t.accepted_at = timezone.now()
-        changed = True
-    if changed:
-        try:
-            t.save()
-        except Exception:
-            pass
-
-    # 避免重覆發同一則通知
-    if not HandoffMessage.objects.filter(
-        ticket=t, sender="system", text__icontains="接手您的工單"
-    ).exists():
-        agent_name = (
-            getattr(request.user, "get_full_name", lambda: "")()
-            or getattr(request.user, "username", None)
-            or "客服"
-        )
-        HandoffMessage.objects.create(
-            ticket=t,
-            sender="system",
-            text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。",
-        )
-
-        # 通知用戶有客服接手了工單（如果工單有關聯的用戶）
-        if hasattr(t, 'user') and t.user:
-            Notification.objects.create(
-                user=t.user,
-                title="客服已接手您的工單",
-                message=f"客服 {agent_name} 已接手您的工單 #{t.id}，稍候將與您聯繫",
-                notification_type="handoff_message"
-            )
-
-    return redirect("handoff_console_ticket", ticket_id=t.id)
-
-
-# ----------------------------
-# Staff：工單清單輪詢（左側欄即時更新）
-# ----------------------------
-@staff_member_required(login_url="account_login")
-def handoff_staff_tickets_poll(request: HttpRequest):
-    """
-    供控台左側工單清單即時更新：
-    回傳三組分區：unclaimed / open / closed，各含精簡欄位。
-    未接手 = 未結案 且 尚無 agent 訊息（或未發出「接手您的工單」系統訊息，或沒有 assigned_to）
-    """
-    tickets = list(HandoffTicket.objects.all().only("id", "session_key", "is_open", "created_at"))
-
-    if not tickets:
-        return JsonResponse({"ok": True, "unclaimed": [], "open": [], "closed": []})
-
-    t_ids = [t.id for t in tickets]
-
-    # 有沒有座席回覆過
-    agent_tids = set(
-        HandoffMessage.objects.filter(ticket_id__in=t_ids, sender="agent")
-        .values_list("ticket_id", flat=True)
-        .distinct()
-    )
-    # 有沒有系統「已接手」通知
-    accept_tids = set(
-        HandoffMessage.objects.filter(ticket_id__in=t_ids, sender="system", text__icontains="接手您的工單")
-        .values_list("ticket_id", flat=True)
-        .distinct()
-    )
-    # 每個 ticket 最後訊息 id（給前端做變更偵測用）
-    last_ids = {
-        row["ticket_id"]: row["last_id"]
-        for row in HandoffMessage.objects.filter(ticket_id__in=t_ids)
-        .values("ticket_id")
-        .annotate(last_id=Max("id"))
-    }
-
-    # 分組
-    unclaimed, opened, closed = [], [], []
-    for t in sorted(tickets, key=lambda x: x.created_at, reverse=True):
-        # 若 model 有 assigned_to，可直接視為已接手
-        has_assigned_field = hasattr(t, "assigned_to_id")
-        assigned_flag = bool(getattr(t, "assigned_to_id", None)) if has_assigned_field else False
-
-        assigned = assigned_flag or (t.id in agent_tids) or (t.id in accept_tids)
-        item = {
-            "id": t.id,
-            "session_key": t.session_key,
-            "is_open": t.is_open,
-            "assigned": bool(assigned),
-            "created_at": t.created_at.isoformat(),
-            "last_msg_id": last_ids.get(t.id, 0),
-        }
-        if not t.is_open:
-            closed.append(item)
-        elif not assigned:
-            unclaimed.append(item)
-        else:
-            opened.append(item)
-
-    return JsonResponse({"ok": True, "unclaimed": unclaimed, "open": opened, "closed": closed})
-
-
-# ----------------------------
-# User-facing APIs（使用者端）
-# ----------------------------
 @csrf_exempt
 @require_POST
 def api_handoff_request(request: HttpRequest):
     """
-    使用者按「轉人工客服」時呼叫。
-    規則：若同一 session 有「未結案」工單，沿用；否則新建。
-    body(JSON): { "name": "可選，預設匿名", "contact": "可選", "last_question": "可選", "channel": "web" }
-    回傳: { "ok": true, "ticket_id": 123, "reused": true/false }
+    用戶發起人工客服請求
+    POST /api/handoff/request/
+    Body: {"name": "用戶名", "contact": "聯絡方式", "last_question": "問題", "channel": "web"}
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        data = json.loads(request.body.decode("utf-8")) if request.body else {}
-    except Exception:
-        data = {}
+        # 獲取 session key
+        session_key = get_session_key(request)
+        logger.info(f"Handoff request from session: {session_key}")
 
-    name = (data.get("name") or "").strip() or "匿名"
-    contact = (data.get("contact") or "").strip()
-    last_question = (data.get("last_question") or "").strip()
-    channel = (data.get("channel") or "web").strip() or "web"
+        # 解析請求數據
+        try:
+            data = json.loads(request.body.decode('utf-8')) if request.body else {}
+        except json.JSONDecodeError as e:
+            logger.warning(f"Invalid JSON in request: {e}")
+            data = {}
 
-    # 先找「同一 session 的未結案工單」
-    t = (
-        HandoffTicket.objects.filter(session_key=session_key, is_open=True)
-        .order_by("-created_at")
-        .first()
-    )
+        name = (data.get("name") or "").strip() or "匿名"
+        contact = (data.get("contact") or "").strip()
+        last_question = (data.get("last_question") or "").strip()
+        channel = (data.get("channel") or "web").strip()
 
-    if t:
-        fields = []
-        # 你的 model 有 name/contact/channel，就直接更新；沒「last_question」欄位，改用訊息紀錄
-        if t.name != name:
-            t.name = name
-            fields.append("name")
-        if contact and t.contact != contact:
-            t.contact = contact
-            fields.append("contact")
-        if t.channel != channel:
-            t.channel = channel
-            fields.append("channel")
-        if fields:
-            t.save(update_fields=fields)
+        # 檢查是否已有未結案工單
+        existing_ticket = HandoffTicket.objects.filter(
+            session_key=session_key,
+            is_open=True
+        ).order_by('-created_at').first()
 
-        # 若有新的最後問題，用訊息附加（避免覆蓋舊資料）
+        if existing_ticket:
+            # 重用現有工單
+            logger.info(f"Reusing ticket #{existing_ticket.id}")
+
+            # 更新資訊
+            updated = False
+            if existing_ticket.name != name:
+                existing_ticket.name = name
+                updated = True
+            if contact and existing_ticket.contact != contact:
+                existing_ticket.contact = contact
+                updated = True
+            if updated:
+                existing_ticket.save()
+
+            # 添加新問題
+            if last_question:
+                HandoffMessage.objects.create(
+                    ticket=existing_ticket,
+                    sender="user",
+                    text=last_question
+                )
+
+            return json_response(success=True, data={
+                "ticket_id": existing_ticket.id,
+                "reused": True
+            })
+
+        # 創建新工單
+        ticket = HandoffTicket.objects.create(
+            session_key=session_key,
+            name=name,
+            contact=contact,
+            channel=channel,
+            is_open=True
+        )
+        logger.info(f"Created new ticket #{ticket.id}")
+
+        # 添加初始訊息
         if last_question:
-            HandoffMessage.objects.create(ticket=t, sender="user", text=last_question)
+            HandoffMessage.objects.create(
+                ticket=ticket,
+                sender="user",
+                text=last_question
+            )
 
-        return JsonResponse({"ok": True, "ticket_id": t.id, "reused": True})
-
-    # 找不到才新建
-    t = HandoffTicket.objects.create(
-        session_key=session_key,
-        name=name,
-        contact=contact,
-        channel=channel,
-        is_open=True,
-        created_at=timezone.now(),  # auto_now_add 仍會生效；顯式給也不影響
-    )
-
-    # 若有最後問題，把它當作首則使用者訊息；再補一則系統提示
-    if last_question:
-        HandoffMessage.objects.create(ticket=t, sender="user", text=last_question)
-    HandoffMessage.objects.create(ticket=t, sender="system", text="已建立人工客服工單，請稍候")
-
-    # 創建新工單通知給所有員工
-    staff_users = User.objects.filter(is_staff=True)
-    for staff_user in staff_users:
-        Notification.objects.create(
-            user=staff_user,
-            title="新的人工客服請求",
-            message=f"用戶 {name} 發起了新的客服工單 (#{t.id})",
-            notification_type="handoff_request"
+        HandoffMessage.objects.create(
+            ticket=ticket,
+            sender="system",
+            text="已建立人工客服工單，請稍候"
         )
 
-    return JsonResponse({"ok": True, "ticket_id": t.id, "reused": False})
+        # 通知員工（失敗不影響工單創建）
+        staff_users = User.objects.filter(is_staff=True)
+        for staff_user in staff_users:
+            safe_create_notification(
+                user=staff_user,
+                title="新的人工客服請求",
+                message=f"用戶 {name} 發起了新的客服工單 (#{ticket.id})",
+                notification_type="handoff_request"
+            )
 
+        return json_response(success=True, data={
+            "ticket_id": ticket.id,
+            "reused": False
+        })
 
-@csrf_exempt
-@require_POST
-def api_handoff_user_end(request: HttpRequest):
-    """
-    使用者主動結束人工客服會話。
-    body(JSON): {"ticket_id": <int>}
-    回傳: {"ok": true}
-    """
-    session_key = _ensure_session_key(request)
-
-    try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return _json_error("invalid json", status=400)
-
-    ticket_id = payload.get("ticket_id")
-    if not ticket_id:
-        return _json_error("ticket_id required", status=400)
-
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-
-    if t.session_key != session_key:
-        return _json_error("session mismatch", status=403)
-
-    if not t.is_open:
-        return JsonResponse({"ok": True})  # 已經結案了
-
-    # 結案並留下用戶主動結束的訊息
-    t.is_open = False
-    t.save(update_fields=["is_open"])
-
-    HandoffMessage.objects.create(
-        ticket=t,
-        sender="system",
-        text="🔚 用戶主動結束對話",
-    )
-
-    # 通知所有員工用戶主動結束了工單
-    staff_users = User.objects.filter(is_staff=True)
-    for staff_user in staff_users:
-        Notification.objects.create(
-            user=staff_user,
-            title="客服工單已結束",
-            message=f"用戶主動結束了工單 #{t.id}",
-            notification_type="handoff_closed"
+    except Exception as e:
+        logger.exception(f"Error in api_handoff_request: {e}")
+        return json_response(
+            success=False,
+            error=f"系統錯誤: {str(e)}",
+            status=500
         )
-
-    return JsonResponse({"ok": True})
 
 
 @csrf_exempt
 @require_POST
 def api_handoff_user_send(request: HttpRequest):
     """
-    使用者在人工客服聊天室發訊息。
-    body(JSON): {"ticket_id": <int>, "message": "text"}
-    回傳: {"ok": true}
+    用戶發送訊息
+    POST /api/handoff/user/send/
+    Body: {"ticket_id": 123, "message": "訊息內容"}
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return _json_error("invalid json", status=400)
+        session_key = get_session_key(request)
 
-    ticket_id = payload.get("ticket_id")
-    text = (payload.get("message") or "").strip()
-    if not ticket_id or not text:
-        return _json_error("ticket_id and message required", status=400)
+        # 解析請求
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return json_response(success=False, error="無效的 JSON 格式", status=400)
 
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
+        ticket_id = data.get("ticket_id")
+        message = (data.get("message") or "").strip()
 
-    if t.session_key != session_key:
-        return _json_error("session mismatch", status=403)
+        if not ticket_id or not message:
+            return json_response(success=False, error="缺少必要參數", status=400)
 
-    if not t.is_open:
-        return _json_error("ticket closed", status=409)
+        # 獲取工單
+        try:
+            ticket = HandoffTicket.objects.get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            return json_response(success=False, error="工單不存在", status=404)
 
-    HandoffMessage.objects.create(ticket=t, sender="user", text=text)
+        # 驗證 session
+        if ticket.session_key != session_key:
+            return json_response(success=False, error="無權操作此工單", status=403)
 
-    # 通知所有員工有新的用戶訊息
-    staff_users = User.objects.filter(is_staff=True)
-    for staff_user in staff_users:
-        Notification.objects.create(
-            user=staff_user,
-            title="客服工單有新訊息",
-            message=f"工單 #{t.id} 收到用戶新訊息",
-            notification_type="handoff_message"
+        # 檢查工單狀態
+        if not ticket.is_open:
+            return json_response(success=False, error="工單已關閉", status=409)
+
+        # 創建訊息
+        HandoffMessage.objects.create(
+            ticket=ticket,
+            sender="user",
+            text=message
+        )
+        logger.info(f"User message added to ticket #{ticket_id}")
+
+        # 通知員工（失敗不影響訊息發送）
+        staff_users = User.objects.filter(is_staff=True)
+        for staff_user in staff_users:
+            safe_create_notification(
+                user=staff_user,
+                title="客服工單有新訊息",
+                message=f"工單 #{ticket.id} 收到用戶新訊息",
+                notification_type="handoff_message"
+            )
+
+        return json_response(success=True)
+
+    except Exception as e:
+        logger.exception(f"Error in api_handoff_user_send: {e}")
+        return json_response(
+            success=False,
+            error=f"系統錯誤: {str(e)}",
+            status=500
         )
 
-    return JsonResponse({"ok": True})
+
+@csrf_exempt
+@require_POST
+def api_handoff_user_end(request: HttpRequest):
+    """
+    用戶結束對話
+    POST /api/handoff/user/end/
+    Body: {"ticket_id": 123}
+    """
+    try:
+        session_key = get_session_key(request)
+
+        # 解析請求
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return json_response(success=False, error="無效的 JSON 格式", status=400)
+
+        ticket_id = data.get("ticket_id")
+
+        if not ticket_id:
+            return json_response(success=False, error="缺少 ticket_id", status=400)
+
+        # 獲取工單
+        try:
+            ticket = HandoffTicket.objects.get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            return json_response(success=False, error="工單不存在", status=404)
+
+        # 驗證 session
+        if ticket.session_key != session_key:
+            return json_response(success=False, error="無權操作此工單", status=403)
+
+        # 如果已關閉，直接返回成功
+        if not ticket.is_open:
+            return json_response(success=True)
+
+        # 關閉工單
+        ticket.is_open = False
+        ticket.save(update_fields=['is_open'])
+        logger.info(f"User ended ticket #{ticket_id}")
+
+        # 添加系統訊息
+        HandoffMessage.objects.create(
+            ticket=ticket,
+            sender="system",
+            text="🔚 用戶主動結束對話"
+        )
+
+        # 通知員工（失敗不影響結束操作）
+        staff_users = User.objects.filter(is_staff=True)
+        for staff_user in staff_users:
+            safe_create_notification(
+                user=staff_user,
+                title="客服工單已結束",
+                message=f"用戶主動結束了工單 #{ticket.id}",
+                notification_type="handoff_closed"
+            )
+
+        return json_response(success=True)
+
+    except Exception as e:
+        logger.exception(f"Error in api_handoff_user_end: {e}")
+        return json_response(
+            success=False,
+            error=f"系統錯誤: {str(e)}",
+            status=500
+        )
 
 
 @csrf_exempt
 def api_handoff_poll(request: HttpRequest):
     """
-    使用者輪詢取得座席/系統訊息。
-    GET: ticket_id, since(最後已讀訊息 id)
-    回傳: {"ok": true, "messages":[{"id":..,"sender":"agent","text":"..."},...], "last_id": <int>}
+    用戶輪詢新訊息
+    GET /api/handoff/poll/?ticket_id=123&since=0
     """
-    session_key = _ensure_session_key(request)
-
     try:
-        ticket_id = int(request.GET.get("ticket_id") or 0)
-    except (TypeError, ValueError):
-        return _json_error("ticket_id required", status=400)
-    since = int(request.GET.get("since") or 0)
+        session_key = get_session_key(request)
 
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-    if t.session_key != session_key:
-        return _json_error("session mismatch", status=403)
+        # 獲取參數
+        try:
+            ticket_id = int(request.GET.get("ticket_id", 0))
+            since = int(request.GET.get("since", 0))
+        except (TypeError, ValueError):
+            return json_response(success=False, error="無效的參數", status=400)
 
-    qs = t.messages.filter(id__gt=since).order_by("id").only("id", "sender", "text", "created_at")
-    msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
-    last_id = msgs[-1]["id"] if msgs else since
-    return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id, "is_open": t.is_open})
+        if not ticket_id:
+            return json_response(success=False, error="缺少 ticket_id", status=400)
+
+        # 獲取工單
+        try:
+            ticket = HandoffTicket.objects.get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            return json_response(success=False, error="工單不存在", status=404)
+
+        # 驗證 session
+        if ticket.session_key != session_key:
+            return json_response(success=False, error="無權操作此工單", status=403)
+
+        # 獲取新訊息
+        messages = ticket.messages.filter(id__gt=since).order_by('id')
+        messages_data = [
+            {
+                "id": msg.id,
+                "sender": msg.sender,
+                "text": msg.text,
+                "ts": msg.created_at.isoformat()
+            }
+            for msg in messages
+        ]
+
+        last_id = messages_data[-1]["id"] if messages_data else since
+
+        return json_response(success=True, data={
+            "messages": messages_data,
+            "last_id": last_id,
+            "is_open": ticket.is_open
+        })
+
+    except Exception as e:
+        logger.exception(f"Error in api_handoff_poll: {e}")
+        return json_response(
+            success=False,
+            error=f"系統錯誤: {str(e)}",
+            status=500
+        )
 
 
-# 員工輪詢：取 ticket 的新訊息（since 之後）
+# ======================
+# 員工端視圖
+# ======================
+
+@staff_member_required(login_url="account_login")
+def handoff_console(request: HttpRequest, ticket_id: Optional[int] = None):
+    """客服控台"""
+    tickets = HandoffTicket.objects.all().order_by('-is_open', '-created_at')
+
+    current = None
+    if ticket_id:
+        try:
+            current = HandoffTicket.objects.prefetch_related('messages').get(id=ticket_id)
+        except HandoffTicket.DoesNotExist:
+            pass
+
+    return render(request, 'ai_chat/staff_handoff.html', {
+        'tickets': tickets,
+        'current': current
+    })
+
+
+@staff_member_required(login_url="account_login")
+@require_POST
+def handoff_agent_reply(request: HttpRequest, ticket_id: int):
+    """客服回覆"""
+    try:
+        ticket = get_object_or_404(HandoffTicket, id=ticket_id)
+
+        if not ticket.is_open:
+            return json_response(success=False, error="工單已關閉", status=409)
+
+        # 獲取訊息
+        if request.content_type and 'application/json' in request.content_type:
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+                message = (data.get("message") or "").strip()
+            except json.JSONDecodeError:
+                message = ""
+        else:
+            message = (request.POST.get("message") or "").strip()
+
+        if not message:
+            return json_response(success=False, error="訊息不能為空", status=400)
+
+        # 第一次回覆時添加接單訊息
+        if not HandoffMessage.objects.filter(
+            ticket=ticket,
+            sender="system",
+            text__icontains="接手您的工單"
+        ).exists():
+            agent_name = request.user.get_full_name() or request.user.username or "客服"
+            HandoffMessage.objects.create(
+                ticket=ticket,
+                sender="system",
+                text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。"
+            )
+
+        # 創建回覆
+        HandoffMessage.objects.create(
+            ticket=ticket,
+            sender="agent",
+            text=message
+        )
+
+        return json_response(success=True)
+
+    except Exception as e:
+        logger.exception(f"Error in handoff_agent_reply: {e}")
+        return json_response(success=False, error=f"系統錯誤: {str(e)}", status=500)
+
+
+@staff_member_required(login_url="account_login")
+@require_POST
+def handoff_agent_close(request: HttpRequest, ticket_id: int):
+    """客服關閉工單"""
+    try:
+        ticket = get_object_or_404(HandoffTicket, id=ticket_id)
+
+        if not ticket.is_open:
+            return redirect('handoff_console_ticket', ticket_id=ticket.id)
+
+        ticket.is_open = False
+        ticket.save(update_fields=['is_open'])
+
+        HandoffMessage.objects.create(
+            ticket=ticket,
+            sender="system",
+            text="🔒 工單已結案，感謝您的諮詢！如有其他問題，請重新發起人工客服。"
+        )
+
+        return redirect('handoff_console_ticket', ticket_id=ticket.id)
+
+    except Exception as e:
+        logger.exception(f"Error in handoff_agent_close: {e}")
+        return redirect('handoff_console')
+
+
+@staff_member_required(login_url="account_login")
+@require_POST
+def handoff_agent_accept(request: HttpRequest, ticket_id: int):
+    """客服接單"""
+    try:
+        ticket = get_object_or_404(HandoffTicket, id=ticket_id)
+
+        if not ticket.is_open:
+            return redirect('handoff_console_ticket', ticket_id=ticket.id)
+
+        # 避免重複接單訊息
+        if not HandoffMessage.objects.filter(
+            ticket=ticket,
+            sender="system",
+            text__icontains="接手您的工單"
+        ).exists():
+            agent_name = request.user.get_full_name() or request.user.username or "客服"
+            HandoffMessage.objects.create(
+                ticket=ticket,
+                sender="system",
+                text=f"🎧 已有客服（{agent_name}）接手您的工單，稍候將與您聯繫。"
+            )
+
+        return redirect('handoff_console_ticket', ticket_id=ticket.id)
+
+    except Exception as e:
+        logger.exception(f"Error in handoff_agent_accept: {e}")
+        return redirect('handoff_console')
+
+
+@staff_member_required(login_url="account_login")
+def handoff_staff_tickets_poll(request: HttpRequest):
+    """員工端工單列表輪詢"""
+    try:
+        tickets = list(HandoffTicket.objects.all().order_by('-is_open', '-created_at'))
+
+        if not tickets:
+            return json_response(success=True, data={
+                "unclaimed": [],
+                "open": [],
+                "closed": []
+            })
+
+        # 檢查是否有客服回覆
+        ticket_ids = [t.id for t in tickets]
+        agent_ticket_ids = set(
+            HandoffMessage.objects.filter(
+                ticket_id__in=ticket_ids,
+                sender="agent"
+            ).values_list("ticket_id", flat=True).distinct()
+        )
+
+        accept_ticket_ids = set(
+            HandoffMessage.objects.filter(
+                ticket_id__in=ticket_ids,
+                sender="system",
+                text__icontains="接手您的工單"
+            ).values_list("ticket_id", flat=True).distinct()
+        )
+
+        # 最後訊息 ID
+        last_msg_ids = {
+            row["ticket_id"]: row["last_id"]
+            for row in HandoffMessage.objects.filter(
+                ticket_id__in=ticket_ids
+            ).values("ticket_id").annotate(last_id=Max("id"))
+        }
+
+        # 分組
+        unclaimed, opened, closed = [], [], []
+
+        for ticket in tickets:
+            assigned = (ticket.id in agent_ticket_ids) or (ticket.id in accept_ticket_ids)
+
+            item = {
+                "id": ticket.id,
+                "session_key": ticket.session_key,
+                "is_open": ticket.is_open,
+                "assigned": assigned,
+                "created_at": ticket.created_at.isoformat(),
+                "last_msg_id": last_msg_ids.get(ticket.id, 0)
+            }
+
+            if not ticket.is_open:
+                closed.append(item)
+            elif not assigned:
+                unclaimed.append(item)
+            else:
+                opened.append(item)
+
+        return json_response(success=True, data={
+            "unclaimed": unclaimed,
+            "open": opened,
+            "closed": closed
+        })
+
+    except Exception as e:
+        logger.exception(f"Error in handoff_staff_tickets_poll: {e}")
+        return json_response(success=False, error=f"系統錯誤: {str(e)}", status=500)
+
+
 @staff_member_required(login_url="account_login")
 def handoff_staff_poll(request: HttpRequest, ticket_id: int):
+    """員工端訊息輪詢"""
     try:
-        since = int(request.GET.get("since") or 0)
-    except (TypeError, ValueError):
-        since = 0
+        since = int(request.GET.get("since", 0))
 
-    t = get_object_or_404(HandoffTicket, id=ticket_id)
-    qs = t.messages.filter(id__gt=since).order_by("id").only("id", "sender", "text", "created_at")
-    msgs = [{"id": m.id, "sender": m.sender, "text": m.text, "ts": m.created_at.isoformat()} for m in qs]
-    last_id = msgs[-1]["id"] if msgs else since
-    return JsonResponse({"ok": True, "messages": msgs, "last_id": last_id})
+        ticket = get_object_or_404(HandoffTicket, id=ticket_id)
+
+        messages = ticket.messages.filter(id__gt=since).order_by('id')
+        messages_data = [
+            {
+                "id": msg.id,
+                "sender": msg.sender,
+                "text": msg.text,
+                "ts": msg.created_at.isoformat()
+            }
+            for msg in messages
+        ]
+
+        last_id = messages_data[-1]["id"] if messages_data else since
+
+        return json_response(success=True, data={
+            "messages": messages_data,
+            "last_id": last_id
+        })
+
+    except Exception as e:
+        logger.exception(f"Error in handoff_staff_poll: {e}")
+        return json_response(success=False, error=f"系統錯誤: {str(e)}", status=500)

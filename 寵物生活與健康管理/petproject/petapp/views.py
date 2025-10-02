@@ -4107,68 +4107,82 @@ def create_medical_record(request, pet_id=None):
 @login_required
 @require_verified_vet
 def vet_medical_history(request):
-    """獸醫師診療歷史頁面"""
+    """獸醫師診療歷史頁面 - 優化版"""
     try:
         vet_profile = request.user.vet_profile
-        
-        # 獲取基本查詢集
-        medical_records = MedicalRecord.objects.filter(
+
+        # 優化：使用 select_related 和 only 減少資料庫查詢
+        base_queryset = MedicalRecord.objects.filter(
             attending_vet=vet_profile
-        ).select_related('pet__owner', 'attending_vet').order_by('-visit_date')
-        
+        ).select_related(
+            'pet__owner',
+            'attending_vet__user',
+            'attending_vet__clinic'
+        ).only(
+            'id', 'visit_date', 'diagnosis', 'treatment', 'notes',
+            'pet__id', 'pet__name', 'pet__owner__id',
+            'pet__owner__first_name', 'pet__owner__last_name',
+            'pet__owner__username',
+            'attending_vet__id'
+        )
+
         # 處理搜尋篩選
         search_query = request.GET.get('q', '').strip()
         if search_query:
-            medical_records = medical_records.filter(
+            base_queryset = base_queryset.filter(
                 Q(pet__name__icontains=search_query) |
                 Q(pet__owner__first_name__icontains=search_query) |
                 Q(pet__owner__last_name__icontains=search_query) |
-                Q(symptoms__icontains=search_query) |
-                Q(diagnosis__icontains=search_query) |
-                Q(treatment__icontains=search_query) |
-                Q(notes__icontains=search_query)
+                Q(diagnosis__icontains=search_query)
             )
-        
+
         # 處理日期篩選
         date_from = request.GET.get('date_from')
         date_to = request.GET.get('date_to')
-        
+
         if date_from:
             try:
-                date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
-                medical_records = medical_records.filter(visit_date__gte=date_from)
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                base_queryset = base_queryset.filter(visit_date__gte=date_from_obj)
             except ValueError:
                 pass
-        
+
         if date_to:
             try:
-                date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
-                medical_records = medical_records.filter(visit_date__lte=date_to)
+                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+                base_queryset = base_queryset.filter(visit_date__lte=date_to_obj)
             except ValueError:
                 pass
-        
-        # 統計數據
-        all_records = MedicalRecord.objects.filter(attending_vet=vet_profile)
-        total_records = all_records.count()
-        
-        # 本月記錄數
+
+        # 排序
+        medical_records = base_queryset.order_by('-visit_date')
+
+        # 優化：使用 aggregate 進行統計查詢
+        from django.db.models import Count
         today = timezone.now().date()
         first_day_of_month = today.replace(day=1)
-        this_month_records = all_records.filter(visit_date__gte=first_day_of_month).count()
-        
-        # 診療寵物數（去重）
-        unique_pets = all_records.values('pet').distinct().count()
-        
-        # 日均診療數（最近30天）
         thirty_days_ago = today - timedelta(days=30)
-        recent_records = all_records.filter(visit_date__gte=thirty_days_ago).count()
-        avg_records_per_day = recent_records / 30 if recent_records > 0 else 0
-        
-        # 分頁處理
-        paginator = Paginator(medical_records, 10)  # 每頁10筆
+
+        # 一次性獲取統計數據
+        stats = MedicalRecord.objects.filter(
+            attending_vet=vet_profile
+        ).aggregate(
+            total=Count('id'),
+            this_month=Count('id', filter=Q(visit_date__gte=first_day_of_month)),
+            recent_30_days=Count('id', filter=Q(visit_date__gte=thirty_days_ago)),
+            unique_pets=Count('pet', distinct=True)
+        )
+
+        total_records = stats['total']
+        this_month_records = stats['this_month']
+        unique_pets = stats['unique_pets']
+        avg_records_per_day = stats['recent_30_days'] / 30 if stats['recent_30_days'] > 0 else 0
+
+        # 分頁處理 - 每頁增加到 20 筆減少翻頁次數
+        paginator = Paginator(medical_records, 20)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        
+
         return render(request, 'vet_pages/medical_history.html', {
             'medical_records': page_obj,
             'page_obj': page_obj,
@@ -4181,7 +4195,7 @@ def vet_medical_history(request):
             'date_from': request.GET.get('date_from', ''),
             'date_to': request.GET.get('date_to', ''),
         })
-        
+
     except Exception as e:
         messages.error(request, f'載入診療歷史失敗:{str(e)}')
         return redirect('vet_home')
@@ -8135,6 +8149,12 @@ def monthly_calendar(request):
                 # 找到當天的排班
                 daily_schedules = []
                 for schedule in schedules:
+                    # 檢查當前日期是否在排班的開始和結束日期範圍內
+                    if day_date < schedule.start_date:
+                        continue
+                    if schedule.end_date and day_date > schedule.end_date:
+                        continue
+
                     if weekday in schedule.weekdays:
                         daily_slots = schedule.daily_time_slots.get(str(weekday), [])
                         for slot in daily_slots:
@@ -8865,9 +8885,12 @@ def login_redirect(request):
     try:
         user = request.user
 
-        # 檢查是否為後台管理員（超級用戶）
-        if user.is_superuser or user.is_staff:
-            return redirect('/')  # 後台管理員到首頁 http://127.0.0.1:8000/
+        # 檢查是否為後台管理員（超級用戶或 staff）
+        # 後台管理員不需要 Profile，直接導向後台或首頁
+        if user.is_superuser:
+            return redirect('/admin/')  # 超級用戶到後台管理
+        elif user.is_staff:
+            return redirect('/')  # 一般 staff 到首頁
 
         # 檢查是否有 VetDoctor 資料
         if hasattr(user, 'vet_profile') and user.vet_profile:

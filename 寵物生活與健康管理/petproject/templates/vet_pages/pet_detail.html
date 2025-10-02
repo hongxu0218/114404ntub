@@ -1179,16 +1179,26 @@
                             <div class="clinical-info-grid">
                                 <div class="info-card">
                                     <span class="label">驅蟲藥物</span>
-                                    <span class="value">{{ record.medicine_name }}</span>
+                                    <span class="value">{{ record.name|default:"未填寫" }}</span>
                                 </div>
                                 <div class="info-card">
                                     <span class="label">施藥獸醫</span>
                                     <span class="value">{% if record.vet and record.vet.user %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
                                 </div>
+                                <div class="info-card">
+                                    <span class="label">施藥地點</span>
+                                    <span class="value">{{ record.location|default:"未記錄" }}</span>
+                                </div>
                                 {% if record.next_due_date %}
                                 <div class="info-card">
                                     <span class="label">下次施藥</span>
                                     <span class="value">{{ record.next_due_date|date:"Y年m月d日" }}</span>
+                                </div>
+                                {% endif %}
+                                {% if record.protection_period_months %}
+                                <div class="info-card">
+                                    <span class="label">保護效期</span>
+                                    <span class="value">{{ record.protection_period_months }}個月</span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -1454,7 +1464,7 @@
                             <div class="clinical-info-grid">
                                 <div class="info-card">
                                     <span class="label">驅蟲藥物</span>
-                                    <span class="value">{{ record.drug_name|default:"未填寫" }}</span>
+                                    <span class="value">{{ record.name|default:"未填寫" }}</span>
                                 </div>
                                 <div class="info-card">
                                     <span class="label">🩺施藥獸醫</span>
