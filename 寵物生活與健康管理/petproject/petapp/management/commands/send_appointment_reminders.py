@@ -2,44 +2,26 @@
 
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
-from django.core.mail import send_mail
 from petapp.models import VetAppointment
+from petapp.email_service import AppointmentEmailService
 from datetime import timedelta
-from django.conf import settings
 
 class Command(BaseCommand):
     help = 'Send email reminders to owners one day before appointments'
 
     def handle(self, *args, **kwargs):
         tomorrow = now().date() + timedelta(days=1)
-        appointments = VetAppointment.objects.filter(date=tomorrow)
+        appointments = VetAppointment.objects.filter(
+            slot__date=tomorrow,
+            status__in=['confirmed', 'pending']  # 只提醒已確認或待確認的預約
+        ).select_related('owner', 'pet', 'slot__clinic', 'slot__doctor__user')
 
+        success_count = 0
         for appt in appointments:
-            owner = appt.owner
-            pet = appt.pet
-            vet = appt.vet
+            # 使用新的郵件服務發送提醒
+            if AppointmentEmailService.send_appointment_reminder_to_owner(appt):
+                success_count += 1
 
-            subject = f"【毛日好】提醒您明日看診：{pet.name}"
-            message = f"""親愛的 {owner.last_name or ''}{owner.first_name or owner.username}，您好：
-
-這是您預約的提醒通知：
-
-寵物：{pet.name}  
-日期：{appt.date}  
-時間：{appt.time.strftime('%H:%M')}  
-診所：{vet.clinic_name or '（未填寫）'}
-
-請準時到診，如需取消請盡早操作，謝謝您！
-
-— 毛日好（Paw&Day）系統
-"""
-
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [owner.email],
-                fail_silently=False
-            )
-
-        self.stdout.write(self.style.SUCCESS(f"已寄出 {appointments.count()} 封提醒信件"))
+        self.stdout.write(
+            self.style.SUCCESS(f"已成功發送 {success_count}/{appointments.count()} 封提醒郵件")
+        )
