@@ -1,0 +1,499 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+:root {
+    --primary: #06b6d4;
+    --secondary: #0891b2;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+}
+
+body { background: #f8fafc; }
+#content { padding: 40px; }
+
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.page-header p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+/* 統計卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid var(--card-color, var(--primary));
+}
+
+.stat-label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 5px;
+}
+
+/* 工具列 */
+.filter-bar {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 0 0 320px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.search-box input::placeholder {
+    color: #9ca3af;
+}
+
+.search-box input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.filter-tags {
+    flex: 1 1 auto;
+    min-width: 400px;
+    margin-left: 50px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-tag {
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.filter-tag:hover, .filter-tag.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.add-btn {
+    flex: 0 0 auto;
+    padding: 12px 28px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-btn:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* 診所卡片網格 */
+.clinics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 25px;
+}
+
+.clinic-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.clinic-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.clinic-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.clinic-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.clinic-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.clinic-info h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.clinic-address {
+    color: #374151;
+    font-size: 14px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.clinic-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.clinic-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-unverified {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.clinic-actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    text-align: center;
+    font-size: 14px;
+}
+
+.btn-edit {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.btn-edit:hover {
+    background: #1e40af;
+    color: white;
+}
+
+.btn-delete {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.btn-delete:hover {
+    background: #991b1b;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #6b7280;
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .clinics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">首頁</a>
+    &rsaquo; 診所管理
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "admin/includes/quick_nav.html" with active_page="clinic" %}
+
+<div class="page-header">
+    <h1>
+        <span>🏥</span>
+        診所管理
+    </h1>
+    <p>管理與審核動物醫院診所資訊</p>
+</div>
+
+<!-- 統計概覽 -->
+<div class="stats-grid">
+    <div class="stat-card" style="--card-color: #06b6d4;">
+        <div class="stat-label">總診所數</div>
+        <div class="stat-value">{{ cl.result_count|default:0 }}</div>
+    </div>
+    <div class="stat-card" style="--card-color: #10b981;">
+        <div class="stat-label">已驗證</div>
+        <div class="stat-value">{{ verified_count|default:0 }}</div>
+    </div>
+    <div class="stat-card" style="--card-color: #f59e0b;">
+        <div class="stat-label">待驗證</div>
+        <div class="stat-value">{{ unverified_count|default:0 }}</div>
+    </div>
+    <div class="stat-card" style="--card-color: #ec4899;">
+        <div class="stat-label">本週新增</div>
+        <div class="stat-value">{{ new_week|default:0 }}</div>
+    </div>
+</div>
+
+<!-- 搜尋與篩選 -->
+<div class="filter-bar">
+    <div class="search-box">
+        <input type="text" id="clinicSearch" placeholder="搜尋診所名稱或地址...">
+    </div>
+    <div class="filter-tags">
+        <div class="filter-tag active" data-filter="all">全部</div>
+        <div class="filter-tag" data-filter="verified">已驗證</div>
+        <div class="filter-tag" data-filter="unverified">待驗證</div>
+    </div>
+    <a href="{% url 'admin:petapp_vetclinic_add' %}" class="add-btn">
+        ➕ 新增診所
+    </a>
+</div>
+
+<!-- 診所卡片網格 -->
+<div class="clinics-grid" id="clinicsGrid">
+    {% for clinic in cl.result_list %}
+    <div class="clinic-card" data-name="{{ clinic.clinic_name }}" data-address="{{ clinic.clinic_address }}"
+         data-verified="{{ clinic.is_verified }}">
+        <div class="clinic-header">
+            <div class="clinic-icon">🏥</div>
+            <div class="clinic-info">
+                <h3>{{ clinic.clinic_name }}</h3>
+                <div class="clinic-address">{{ clinic.clinic_address|truncatechars:40 }}</div>
+            </div>
+        </div>
+
+        <div class="clinic-details">
+            <div class="detail-item">
+                <div class="detail-label">電話</div>
+                <div class="detail-value">{{ clinic.clinic_phone|default:"未設定" }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">負責獸醫</div>
+                <div class="detail-value">{{ clinic.moa_responsible_vet|default:"未設定" }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">縣市</div>
+                <div class="detail-value">{{ clinic.moa_county|default:"未設定" }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">執照字號</div>
+                <div class="detail-value">{{ clinic.license_number|truncatechars:15 }}</div>
+            </div>
+        </div>
+
+        <div class="clinic-badges">
+            {% if clinic.is_verified %}
+            <span class="badge badge-verified">✅ 已驗證</span>
+            {% else %}
+            <span class="badge badge-unverified">⏳ 待驗證</span>
+            {% endif %}
+        </div>
+
+        <div class="clinic-actions">
+            <a href="{% url 'admin:petapp_vetclinic_change' clinic.id %}" class="action-btn btn-edit">編輯</a>
+            <a href="{% url 'admin:petapp_vetclinic_delete' clinic.id %}" class="action-btn btn-delete">刪除</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🏥</div>
+        <h3>暫無診所</h3>
+        <p>系統中還沒有任何診所資料</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// 搜尋功能
+document.getElementById('clinicSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.clinic-card');
+
+    cards.forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        const address = card.dataset.address.toLowerCase();
+
+        if (name.includes(searchTerm) || address.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// 篩選功能
+document.querySelectorAll('.filter-tag').forEach(tag => {
+    tag.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+
+        const filter = this.dataset.filter;
+        const cards = document.querySelectorAll('.clinic-card');
+
+        cards.forEach(card => {
+            let show = false;
+
+            if (filter === 'all') {
+                show = true;
+            } else if (filter === 'verified') {
+                show = card.dataset.verified === 'True';
+            } else if (filter === 'unverified') {
+                show = card.dataset.verified === 'False';
+            }
+
+            card.style.display = show ? 'block' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

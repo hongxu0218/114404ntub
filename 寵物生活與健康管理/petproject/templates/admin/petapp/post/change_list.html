@@ -1,0 +1,1179 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+    --primary: #ec4899;
+    --secondary: #db2777;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+}
+
+body { background: #f8fafc; }
+#content { padding: 40px; }
+
+/* Toast 通知 */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    display: none;
+}
+
+.toast.success { border-left: 5px solid var(--success); }
+.toast.error { border-left: 5px solid var(--danger); }
+
+@keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.page-header p { margin: 10px 0 0 0; opacity: 0.9; }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid var(--card-color);
+}
+
+.stat-label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 5px;
+}
+
+.filter-bar {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-box { flex: 0 0 320px; }
+
+.search-box input {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.search-box input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.filter-tags {
+    flex: 1 1 auto;
+    min-width: 400px;
+    margin-left: 50px;
+    display: flex;
+    gap: 10px;
+}
+
+.filter-tag {
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.filter-tag:hover, .filter-tag.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* 批量操作工具列 */
+.bulk-actions {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    padding: 20px 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bulk-info {
+    font-size: 16px;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.bulk-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.bulk-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+}
+
+.bulk-approve {
+    background: var(--success);
+    color: white;
+}
+
+.bulk-approve:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+.bulk-delete {
+    background: var(--danger);
+    color: white;
+}
+
+.bulk-delete:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+}
+
+.bulk-clear {
+    background: #6b7280;
+    color: white;
+}
+
+.bulk-clear:hover {
+    background: #4b5563;
+}
+
+.posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 25px;
+}
+
+.post-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+    position: relative;
+    cursor: pointer;
+}
+
+.post-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.post-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.post-card.selected {
+    border: 3px solid var(--primary);
+    background: #fdf2f8;
+}
+
+.post-card .select-checkbox {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    z-index: 10;
+}
+
+.post-card.selected .select-checkbox {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.post-card.selected .select-checkbox::after {
+    content: '✓';
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.post-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.post-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    font-weight: 700;
+}
+
+.post-info h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.post-time {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.post-content {
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.post-stats {
+    display: flex;
+    gap: 20px;
+    padding: 15px 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.post-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-general { background: #dbeafe; color: #1e40af; }
+.badge-health { background: #d1fae5; color: #065f46; }
+.badge-daily { background: #fef3c7; color: #92400e; }
+.badge-adoption { background: #fce7f3; color: #9f1239; }
+.badge-reported { background: #fee2e2; color: #991b1b; }
+.badge-sensitive { background: #fef3c7; color: #92400e; }
+
+/* 媒體預覽 */
+.post-media {
+    margin: 15px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    max-height: 200px;
+    position: relative;
+}
+
+.post-media img,
+.post-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    padding: 10px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.media-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+/* 風險指示器 */
+.risk-indicator {
+    position: absolute;
+    top: 50px;
+    left: 15px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    z-index: 5;
+}
+
+.risk-high {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #dc2626;
+}
+
+.risk-medium {
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #f59e0b;
+}
+
+.risk-low {
+    background: #d1fae5;
+    color: #065f46;
+    border: 2px solid #10b981;
+}
+
+.post-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    font-size: 14px;
+}
+
+.btn-view {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.btn-view:hover {
+    background: #1e40af;
+    color: white;
+}
+
+.btn-delete {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.btn-delete:hover {
+    background: #991b1b;
+    color: white;
+}
+
+/* 排序選單 */
+.sort-select {
+    padding: 12px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.sort-select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.sort-select:hover {
+    border-color: var(--primary);
+}
+
+/* 篩選計數標籤 */
+.filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 8px;
+    color: #1f2937;
+}
+
+.filter-tag.active .filter-count {
+    background: rgba(0,0,0,0.2);
+    color: #1f2937;
+}
+
+/* 圖表切換按鈕 */
+.chart-toggle-btn {
+    padding: 10px 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.chart-toggle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.chart-toggle-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .posts-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">首頁</a>
+    &rsaquo; 內容審核
+</div>
+{% endblock %}
+
+{% block content %}
+{% include "admin/includes/quick_nav.html" with active_page="post" %}
+
+<div class="page-header">
+    <h1>
+        <span>💬</span>
+        內容審核
+    </h1>
+    <p>管理與審核平台社群貼文內容</p>
+</div>
+
+<!-- 社群數據總覽 -->
+<div class="stats-grid">
+    <div class="stat-card" style="--card-color: #ec4899;">
+        <div class="stat-label">總貼文數</div>
+        <div class="stat-value">{{ cl.result_count|default:0 }}</div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">📊 平台總數</div>
+    </div>
+    <div class="stat-card" style="--card-color: #ef4444;">
+        <div class="stat-label">總按讚數</div>
+        <div class="stat-value">{{ total_likes|default:0 }}</div>
+        <div style="font-size: 12px; color: {% if likes_growth >= 0 %}#10b981{% else %}#ef4444{% endif %}; margin-top: 5px; font-weight: 600;">
+            {% if likes_growth >= 0 %}↗{% else %}↘{% endif %} {{ likes_growth|default:0 }}% 本週
+        </div>
+    </div>
+    <div class="stat-card" style="--card-color: #3b82f6;">
+        <div class="stat-label">總留言數</div>
+        <div class="stat-value">{{ total_comments|default:0 }}</div>
+        <div style="font-size: 12px; color: {% if comments_growth >= 0 %}#10b981{% else %}#ef4444{% endif %}; margin-top: 5px; font-weight: 600;">
+            {% if comments_growth >= 0 %}↗{% else %}↘{% endif %} {{ comments_growth|default:0 }}% 本週
+        </div>
+    </div>
+    <div class="stat-card" style="--card-color: #10b981;">
+        <div class="stat-label">總分享數</div>
+        <div class="stat-value">{{ total_shares|default:0 }}</div>
+        <div style="font-size: 12px; color: {% if shares_growth >= 0 %}#10b981{% else %}#ef4444{% endif %}; margin-top: 5px; font-weight: 600;">
+            {% if shares_growth >= 0 %}↗{% else %}↘{% endif %} {{ shares_growth|default:0 }}% 本週
+        </div>
+    </div>
+    <div class="stat-card" style="--card-color: #f59e0b;">
+        <div class="stat-label">平均互動</div>
+        <div class="stat-value">{{ avg_engagement|default:0 }}</div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">💬 每篇平均</div>
+    </div>
+</div>
+
+<!-- 趨勢圖表區域 -->
+<div style="background: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #111827;">📈 社群數據趨勢（過去30天）</h2>
+        <div style="display: flex; gap: 10px;">
+            <button class="chart-toggle-btn active" data-chart="engagement">互動數據</button>
+            <button class="chart-toggle-btn" data-chart="posts">發文數量</button>
+        </div>
+    </div>
+
+    <!-- 互動數據圖表 -->
+    <div id="engagementChartContainer">
+        <canvas id="engagementChart" width="800" height="350"></canvas>
+    </div>
+
+    <!-- 發文數量圖表 -->
+    <div id="postsChartContainer" style="display: none;">
+        <canvas id="postsChart" width="800" height="350"></canvas>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-box">
+        <input type="text" id="postSearch" placeholder="搜尋貼文內容或作者...">
+    </div>
+    <div class="filter-tags">
+        <div class="filter-tag active" data-filter="all">全部內容</div>
+        <div class="filter-tag" data-filter="text">
+            <span style="margin-right: 5px;">📝</span>純文字
+            <span class="filter-count" id="textCount">0</span>
+        </div>
+        <div class="filter-tag" data-filter="image">
+            <span style="margin-right: 5px;">🖼️</span>含圖片
+            <span class="filter-count" id="imageCount">0</span>
+        </div>
+        <div class="filter-tag" data-filter="video">
+            <span style="margin-right: 5px;">🎥</span>含影片
+            <span class="filter-count" id="videoCount">0</span>
+        </div>
+    </div>
+    <select id="sortSelect" class="sort-select">
+        <option value="newest">最新發布</option>
+        <option value="oldest">最早發布</option>
+        <option value="most-liked">最多按讚</option>
+        <option value="most-commented">最多留言</option>
+        <option value="most-viewed">最多瀏覽</option>
+    </select>
+</div>
+
+<!-- 批量操作工具列 -->
+<div class="bulk-actions" id="bulkActions">
+    <div class="bulk-info">
+        已選擇 <strong id="selectedCount">0</strong> 則貼文
+    </div>
+    <div class="bulk-buttons">
+        <button class="bulk-btn bulk-approve">✅ 批量審核通過</button>
+        <button class="bulk-btn bulk-delete">🗑️ 批量刪除</button>
+        <button class="bulk-btn bulk-clear">🔄 清除選擇</button>
+    </div>
+</div>
+
+<div class="posts-grid" id="postsGrid">
+    {% for post in cl.result_list %}
+    <div class="post-card" data-content="{{ post.content }}" data-author="{{ post.user.username }}"
+         data-type="{{ post.post_type }}" data-post-id="{{ post.id }}"
+         data-media-type="{% if post.media_files.exists %}{% with first_media=post.media_files.first %}{% if 'video' in first_media.file.url or first_media.media_type == 'video' %}video{% else %}image{% endif %}{% endwith %}{% else %}text{% endif %}"
+         data-reported="false" data-risk="low">
+        <div class="select-checkbox"></div>
+
+        <!-- 風險指示器 -->
+        {% if post.content|length > 500 or post.media_files.count > 5 %}
+        <div class="risk-indicator risk-medium">⚠️ 中風險</div>
+        {% endif %}
+
+        <div class="post-header">
+            <div class="post-avatar">
+                {{ post.user.username|slice:":1"|upper }}
+            </div>
+            <div class="post-info">
+                <h3>{{ post.user.username }}</h3>
+                <div class="post-time">{{ post.created_at|date:"Y-m-d H:i" }}</div>
+            </div>
+        </div>
+
+        <div class="post-content">
+            {{ post.content|truncatewords:30 }}
+        </div>
+
+        <!-- 媒體預覽 -->
+        {% if post.media_files.exists %}
+        <div class="post-media">
+            {% with first_media=post.media_files.first %}
+                {% if first_media.media_type == 'image' %}
+                    <img src="{{ first_media.file.url }}" alt="貼文圖片">
+                {% elif first_media.media_type == 'video' %}
+                    <video src="{{ first_media.file.url }}" controls></video>
+                {% endif %}
+                {% if post.media_files.count > 1 %}
+                <div class="media-overlay">
+                    +{{ post.media_files.count|add:"-1" }} 個媒體檔案
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+        {% endif %}
+
+        <div class="post-stats">
+            <div class="stat-item">
+                ❤️ {{ post.likes_count|default:0 }}
+            </div>
+            <div class="stat-item">
+                💬 {{ post.comments_count|default:0 }}
+            </div>
+            <div class="stat-item">
+                🔄 {{ post.shares_count|default:0 }}
+            </div>
+        </div>
+
+        <div class="post-badges">
+            {% if post.post_type == 'general' %}
+            <span class="badge badge-general">📝 一般分享</span>
+            {% elif post.post_type == 'health' %}
+            <span class="badge badge-health">🏥 健康知識</span>
+            {% elif post.post_type == 'daily' %}
+            <span class="badge badge-daily">📅 每日紀錄</span>
+            {% elif post.post_type == 'adoption' %}
+            <span class="badge badge-adoption">🏠 領養資訊</span>
+            {% endif %}
+
+            {% if post.media_files.exists %}
+                {% if post.media_files.first.media_type == 'image' %}
+                <span class="badge" style="background: #dbeafe; color: #1e40af;">🖼️ 圖片 x{{ post.media_files.count }}</span>
+                {% elif post.media_files.first.media_type == 'video' %}
+                <span class="badge" style="background: #fce7f3; color: #9f1239;">🎥 影片 x{{ post.media_files.count }}</span>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="post-actions">
+            <a href="{% url 'admin:petapp_post_change' post.id %}" class="action-btn btn-view">查看</a>
+            <a href="{% url 'admin:petapp_post_delete' post.id %}" class="action-btn btn-delete">刪除</a>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 80px; background: white; border-radius: 16px;">
+        <div style="font-size: 64px; margin-bottom: 20px;">💬</div>
+        <h3>暫無貼文</h3>
+        <p>系統中還沒有任何貼文</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// 全域變數
+let selectedPosts = new Set();
+
+// 顯示 Toast 通知
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">${type === 'success' ? '✅' : '❌'}</span>
+            <span style="font-weight: 600;">${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    toast.style.display = 'block';
+
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// 更新批量操作工具列
+function updateBulkActions() {
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    selectedCount.textContent = selectedPosts.size;
+    bulkActions.style.display = selectedPosts.size > 0 ? 'flex' : 'none';
+}
+
+// 切換卡片選擇
+function toggleCardSelection(card) {
+    const postId = card.dataset.postId;
+    if (selectedPosts.has(postId)) {
+        selectedPosts.delete(postId);
+        card.classList.remove('selected');
+    } else {
+        selectedPosts.add(postId);
+        card.classList.add('selected');
+    }
+    updateBulkActions();
+}
+
+// 卡片點擊事件
+document.querySelectorAll('.post-card').forEach(card => {
+    const checkbox = card.querySelector('.select-checkbox');
+
+    checkbox.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleCardSelection(card);
+    });
+
+    card.addEventListener('click', function(e) {
+        if (e.target.closest('.action-btn')) {
+            return;
+        }
+        toggleCardSelection(card);
+    });
+});
+
+// 清除選擇
+document.querySelector('.bulk-clear')?.addEventListener('click', function() {
+    selectedPosts.clear();
+    document.querySelectorAll('.post-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    updateBulkActions();
+});
+
+// 批量審核通過
+document.querySelector('.bulk-approve')?.addEventListener('click', function() {
+    if (selectedPosts.size === 0) {
+        showToast('請先選擇要審核的貼文', 'error');
+        return;
+    }
+
+    if (confirm(`確定要審核通過 ${selectedPosts.size} 則貼文嗎？`)) {
+        showToast(`已審核通過 ${selectedPosts.size} 則貼文`, 'success');
+
+        // 清除選擇
+        selectedPosts.clear();
+        document.querySelectorAll('.post-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        updateBulkActions();
+    }
+});
+
+// 批量刪除
+document.querySelector('.bulk-delete')?.addEventListener('click', function() {
+    if (selectedPosts.size === 0) {
+        showToast('請先選擇要刪除的貼文', 'error');
+        return;
+    }
+
+    if (confirm(`⚠️ 確定要刪除 ${selectedPosts.size} 則貼文嗎？此操作無法復原！`)) {
+        const postIds = Array.from(selectedPosts);
+
+        // 移除卡片（模擬刪除）
+        postIds.forEach(postId => {
+            const card = document.querySelector(`[data-post-id="${postId}"]`);
+            if (card) {
+                card.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => card.remove(), 300);
+            }
+        });
+
+        showToast(`已刪除 ${selectedPosts.size} 則貼文`, 'success');
+
+        selectedPosts.clear();
+        updateBulkActions();
+    }
+});
+
+// 搜尋功能
+document.getElementById('postSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.post-card');
+    cards.forEach(card => {
+        const content = card.dataset.content.toLowerCase();
+        const author = card.dataset.author.toLowerCase();
+        card.style.display = (content.includes(searchTerm) || author.includes(searchTerm)) ? 'block' : 'none';
+    });
+});
+
+// 篩選功能
+document.querySelectorAll('.filter-tag').forEach(tag => {
+    tag.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        const cards = document.querySelectorAll('.post-card');
+
+        cards.forEach(card => {
+            let show = false;
+
+            if (filter === 'all') {
+                show = true;
+            } else if (filter === 'text') {
+                show = card.dataset.mediaType === 'text';
+            } else if (filter === 'image') {
+                show = card.dataset.mediaType === 'image';
+            } else if (filter === 'video') {
+                show = card.dataset.mediaType === 'video';
+            } else if (filter === 'reported') {
+                show = card.dataset.reported === 'true';
+            } else if (filter === 'high-risk') {
+                show = card.dataset.risk === 'high' || card.dataset.risk === 'medium';
+            }
+
+            card.style.display = show ? 'block' : 'none';
+        });
+    });
+});
+
+// 快捷鍵支持
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + A 全選
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        const visibleCards = Array.from(document.querySelectorAll('.post-card'))
+            .filter(card => card.style.display !== 'none');
+
+        if (selectedPosts.size === visibleCards.length) {
+            // 全部已選，取消全選
+            selectedPosts.clear();
+            visibleCards.forEach(card => card.classList.remove('selected'));
+        } else {
+            // 全選
+            visibleCards.forEach(card => {
+                selectedPosts.add(card.dataset.postId);
+                card.classList.add('selected');
+            });
+        }
+        updateBulkActions();
+    }
+
+    // Escape 取消選擇
+    if (e.key === 'Escape') {
+        selectedPosts.clear();
+        document.querySelectorAll('.post-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        updateBulkActions();
+    }
+});
+
+// 計算並顯示篩選器計數
+function updateFilterCounts() {
+    const cards = document.querySelectorAll('.post-card');
+    let textCount = 0, imageCount = 0, videoCount = 0;
+
+    cards.forEach(card => {
+        const mediaType = card.dataset.mediaType;
+        if (mediaType === 'text') textCount++;
+        else if (mediaType === 'image') imageCount++;
+        else if (mediaType === 'video') videoCount++;
+    });
+
+    document.getElementById('textCount').textContent = textCount;
+    document.getElementById('imageCount').textContent = imageCount;
+    document.getElementById('videoCount').textContent = videoCount;
+}
+
+// 排序功能
+document.getElementById('sortSelect')?.addEventListener('change', function() {
+    const sortValue = this.value;
+    const grid = document.getElementById('postsGrid');
+    const cards = Array.from(document.querySelectorAll('.post-card'));
+
+    cards.sort((a, b) => {
+        if (sortValue === 'newest') {
+            return b.querySelector('.post-time').textContent.localeCompare(a.querySelector('.post-time').textContent);
+        } else if (sortValue === 'oldest') {
+            return a.querySelector('.post-time').textContent.localeCompare(b.querySelector('.post-time').textContent);
+        } else if (sortValue === 'most-liked') {
+            const aLikes = parseInt(a.querySelector('.stat-item').textContent.trim().split(' ')[1]) || 0;
+            const bLikes = parseInt(b.querySelector('.stat-item').textContent.trim().split(' ')[1]) || 0;
+            return bLikes - aLikes;
+        } else if (sortValue === 'most-commented') {
+            const aComments = parseInt(a.querySelectorAll('.stat-item')[1]?.textContent.trim().split(' ')[1]) || 0;
+            const bComments = parseInt(b.querySelectorAll('.stat-item')[1]?.textContent.trim().split(' ')[1]) || 0;
+            return bComments - aComments;
+        } else if (sortValue === 'most-viewed') {
+            const aViews = parseInt(a.querySelectorAll('.stat-item')[2]?.textContent.trim().split(' ')[1]) || 0;
+            const bViews = parseInt(b.querySelectorAll('.stat-item')[2]?.textContent.trim().split(' ')[1]) || 0;
+            return bViews - aViews;
+        }
+        return 0;
+    });
+
+    cards.forEach(card => grid.appendChild(card));
+});
+
+// 初始化計數
+updateFilterCounts();
+
+// ==================== 圖表初始化 ====================
+let engagementChart = null;
+let postsChart = null;
+
+// 準備數據
+const chartDates = {{ chart_dates|safe }};
+const chartLikes = {{ chart_likes|safe }};
+const chartComments = {{ chart_comments|safe }};
+const chartShares = {{ chart_shares|safe }};
+const chartPosts = {{ chart_posts|safe }};
+
+// 格式化日期標籤（只顯示月/日）
+const formattedDates = chartDates.map(date => {
+    const d = new Date(date);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+});
+
+// 互動數據圖表
+const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+engagementChart = new Chart(engagementCtx, {
+    type: 'line',
+    data: {
+        labels: formattedDates,
+        datasets: [
+            {
+                label: '按讚數',
+                data: chartLikes,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            },
+            {
+                label: '留言數',
+                data: chartComments,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            },
+            {
+                label: '分享數',
+                data: chartShares,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }
+        ]
+    },
+    options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        animation: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    font: { size: 13, weight: '600' },
+                    padding: 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                titleFont: { size: 14, weight: '700' },
+                bodyFont: { size: 13 },
+                cornerRadius: 8,
+                animation: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    font: { size: 12 }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: { size: 11 },
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        }
+    }
+});
+
+// 發文數量圖表
+const postsCtx = document.getElementById('postsChart').getContext('2d');
+postsChart = new Chart(postsCtx, {
+    type: 'bar',
+    data: {
+        labels: formattedDates,
+        datasets: [
+            {
+                label: '發文數量',
+                data: chartPosts,
+                backgroundColor: 'rgba(236, 72, 153, 0.8)',
+                borderColor: '#ec4899',
+                borderWidth: 2,
+                borderRadius: 6,
+                hoverBackgroundColor: '#ec4899'
+            }
+        ]
+    },
+    options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    font: { size: 13, weight: '600' },
+                    padding: 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                titleFont: { size: 14, weight: '700' },
+                bodyFont: { size: 13 },
+                cornerRadius: 8,
+                animation: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    font: { size: 12 },
+                    stepSize: 1
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: { size: 11 },
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        }
+    }
+});
+
+// 圖表切換功能
+document.querySelectorAll('.chart-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // 更新按鈕狀態
+        document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        // 切換圖表顯示
+        const chartType = this.dataset.chart;
+        if (chartType === 'engagement') {
+            document.getElementById('engagementChartContainer').style.display = 'block';
+            document.getElementById('postsChartContainer').style.display = 'none';
+        } else if (chartType === 'posts') {
+            document.getElementById('engagementChartContainer').style.display = 'none';
+            document.getElementById('postsChartContainer').style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %}
