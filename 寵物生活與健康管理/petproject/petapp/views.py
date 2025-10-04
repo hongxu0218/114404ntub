@@ -1951,7 +1951,12 @@ def create_appointment(request, pet_id):
                     contact_phone=contact_phone,
                     status='pending'  # 新預約預設為待確認
                 )
-                
+
+                # 發送郵件通知
+                from .email_service import AppointmentEmailService
+                AppointmentEmailService.send_appointment_created_to_owner(appointment)
+                AppointmentEmailService.send_appointment_created_to_vet(appointment)
+
                 messages.success(request, f'預約申請已送出！診所將盡快與您聯絡確認。預約編號:{appointment.id}')
                 return redirect('my_appointments')
                 
@@ -2572,8 +2577,13 @@ def cancel_appointment(request, appointment_id):
     if request.method == 'POST':
         cancel_reason = request.POST.get('cancel_reason', '')
         appointment.status = 'cancelled'
-        appointment.cancel_reason = cancel_reason
+        appointment.cancel_reason = cancel_reason or '飼主主動取消'
         appointment.save()
+
+        # 使用新的郵件服務發送取消通知
+        from .email_service import AppointmentEmailService
+        AppointmentEmailService.send_appointment_cancelled_to_owner(appointment, cancel_reason, 'owner')
+        AppointmentEmailService.send_appointment_cancelled_to_vet(appointment, cancel_reason, 'owner')
 
         # 在成功訊息中包含取消原因
         if cancel_reason:
@@ -3479,6 +3489,10 @@ def vet_cancel_appointment(request, appointment_id):
             appointment.status = 'cancelled'
             appointment.cancel_reason = final_reason
             appointment.save()
+
+            # 使用新的郵件服務發送取消通知
+            from .email_service import AppointmentEmailService
+            AppointmentEmailService.send_appointment_cancelled_to_owner(appointment, final_reason, 'vet')
 
             messages.success(request, f'預約已取消：{appointment.pet.name} - {final_reason}')
 
@@ -4397,10 +4411,13 @@ def confirm_appointment(request, appointment_id):
         if request.method == 'POST':
             appointment.status = 'confirmed'
             appointment.save()
-            
-            # 發送確認通知（可選）
+
+            # 使用新的郵件服務發送確認通知
+            from .email_service import AppointmentEmailService
+            AppointmentEmailService.send_appointment_confirmed_to_owner(appointment)
+
             messages.success(request, f'預約 {appointment.id} 已確認')
-            
+
         return redirect('clinic_appointments')
         
     except Exception as e:
@@ -4447,6 +4464,10 @@ def clinic_cancel_appointment(request, appointment_id):
             appointment.status = 'cancelled'
             appointment.cancel_reason = final_reason
             appointment.save()
+
+            # 使用新的郵件服務發送取消通知
+            from .email_service import AppointmentEmailService
+            AppointmentEmailService.send_appointment_cancelled_to_owner(appointment, final_reason, 'vet')
 
             messages.success(request, f'預約 {appointment.id} 已取消 - {final_reason}')
 
