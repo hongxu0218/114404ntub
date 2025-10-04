@@ -2763,3 +2763,37 @@ class Notification(models.Model):
         if not self.target_url:
             self.target_url = self.get_target_url()
         super().save(*args, **kwargs)
+
+
+# 網站訪問記錄已改用 Cache 實作，不再使用資料庫 Model
+# 如需使用資料庫版本，請取消以下註解：
+#
+# class SiteVisit(models.Model):
+#     """網站訪問記錄 - 追蹤所有訪客（包含未登入用戶）"""
+#
+#     # 訪客識別
+#     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='用戶')
+#     session_key = models.CharField(max_length=100, db_index=True, verbose_name='Session Key')
+#     ip_address = models.GenericIPAddressField(verbose_name='IP位址')
+#
+#     # 訪問資訊
+#     path = models.CharField(max_length=500, verbose_name='訪問路徑')
+#     referrer = models.CharField(max_length=500, blank=True, verbose_name='來源URL')
+#     user_agent = models.CharField(max_length=500, verbose_name='User Agent')
+#
+#     # 時間戳記
+#     visited_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='訪問時間')
+#
+#     class Meta:
+#         ordering = ['-visited_at']
+#         verbose_name = '網站訪問記錄'
+#         verbose_name_plural = '網站訪問記錄'
+#         indexes = [
+#             models.Index(fields=['-visited_at']),
+#             models.Index(fields=['session_key', '-visited_at']),
+#             models.Index(fields=['ip_address', '-visited_at']),
+#         ]
+#
+#     def __str__(self):
+#         username = self.user.username if self.user else '訪客'
+#         return f"{username} - {self.path} - {self.visited_at.strftime('%Y-%m-%d %H:%M:%S')}"

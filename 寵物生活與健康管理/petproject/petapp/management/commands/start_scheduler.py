@@ -20,6 +20,14 @@ def send_appointment_reminders_job():
     except Exception as e:
         logger.error(f"預約提醒任務執行失敗: {e}")
 
+def cleanup_expired_appointments_job():
+    """定時任務：清理過期預約"""
+    try:
+        call_command('cleanup_expired_appointments', '--days-back=1', '--mark-as=cancelled')
+        logger.info("過期預約清理任務執行成功")
+    except Exception as e:
+        logger.error(f"過期預約清理任務執行失敗: {e}")
+
 @util.close_old_connections
 def delete_old_job_executions(max_age=604_800):
     """刪除超過一週的任務執行記錄"""
@@ -41,6 +49,16 @@ class Command(BaseCommand):
             replace_existing=True,
         )
         logger.info("已添加預約提醒任務：每天上午9:00執行")
+
+        # 每天凌晨 1:00 清理過期預約
+        scheduler.add_job(
+            cleanup_expired_appointments_job,
+            trigger=CronTrigger(hour=1, minute=0),  # 每天凌晨1點
+            id="cleanup_expired_appointments",
+            max_instances=1,
+            replace_existing=True,
+        )
+        logger.info("已添加過期預約清理任務：每天凌晨1:00執行")
 
         # 每週清理舊的任務執行記錄
         scheduler.add_job(

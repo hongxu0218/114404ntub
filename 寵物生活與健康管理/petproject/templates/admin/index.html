@@ -1,0 +1,597 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    --dark-color: #1f2937;
+    --light-gray: #f3f4f6;
+}
+
+body {
+    background: #f8fafc !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#content {
+    padding: 30px !important;
+}
+
+.dashboard-container {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* 頁面標題區 */
+.dashboard-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 36px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.dashboard-header p {
+    margin: 15px 0 0 0;
+    opacity: 0.95;
+    font-size: 16px;
+}
+
+.last-updated {
+    margin-top: 10px;
+    opacity: 0.8;
+    font-size: 14px;
+}
+
+/* KPI 卡片區 */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--card-color, var(--primary-color));
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: var(--card-color, var(--primary-color));
+    color: white;
+}
+
+.kpi-title {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin: 8px 0;
+}
+
+.kpi-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.trend-up {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.trend-down {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.trend-neutral {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+/* 圖表區域 */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.chart-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.chart-subtitle {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .kpi-grid, .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-header h1 {
+        font-size: 24px;
+    }
+}
+
+/* 隱藏原有模組列表 */
+#content-main > div.module {
+    display: none;
+}
+
+#content-main > br {
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- 快速導航 -->
+    {% include "admin/includes/quick_nav.html" with active_page="dashboard" %}
+
+    <!-- 儀表板標題 -->
+    <div class="dashboard-header">
+        <h1>
+            <span>📊</span>
+            PawDay儀表板
+        </h1>
+        {% if dashboard_data %}
+        <div class="last-updated">
+            最後更新時間: {{ dashboard_data.last_updated }}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if dashboard_data %}
+    <!-- KPI 指標卡片 - 系統管理重點 -->
+    <div class="kpi-grid">
+        <!-- 用戶指標 -->
+        <div class="kpi-card" style="--card-color: #667eea;">
+            <div class="kpi-header">
+                <div>
+                    <div class="kpi-title">系統用戶</div>
+                    <div class="kpi-value">{{ dashboard_data.user_metrics.total|default:0 }}</div>
+                    <div class="kpi-subtitle">
+                        活躍用戶: {{ dashboard_data.user_metrics.active|default:0 }}
+                        ({{ dashboard_data.user_metrics.activity_rate }}%)
+                    </div>
+                    <div class="kpi-trend {% if dashboard_data.user_metrics.new_week > 0 %}trend-up{% else %}trend-neutral{% endif %}">
+                        本週新增 {{ dashboard_data.user_metrics.new_week }} 人
+                    </div>
+                </div>
+                <div class="kpi-icon">👥</div>
+            </div>
+        </div>
+
+        <!-- 診所與醫師驗證 -->
+        <div class="kpi-card" style="--card-color: #06b6d4;">
+            <div class="kpi-header">
+                <div>
+                    <div class="kpi-title">診所管理</div>
+                    <div class="kpi-value">{{ dashboard_data.clinic_metrics.total_clinics|default:0 }}</div>
+                    <div class="kpi-subtitle">
+                        總醫師: {{ dashboard_data.clinic_metrics.total_doctors }}
+                        | 已驗證: {{ dashboard_data.clinic_metrics.verified_doctors }}
+                    </div>
+                    <div class="kpi-trend {% if dashboard_data.clinic_metrics.doctor_verification_rate >= 80 %}trend-up{% elif dashboard_data.clinic_metrics.doctor_verification_rate >= 50 %}trend-neutral{% else %}trend-down{% endif %}">
+                        驗證率 {{ dashboard_data.clinic_metrics.doctor_verification_rate }}%
+                    </div>
+                </div>
+                <div class="kpi-icon">🏥</div>
+            </div>
+        </div>
+
+        <!-- 內容審核 -->
+        <div class="kpi-card" style="--card-color: #ec4899;">
+            <div class="kpi-header">
+                <div>
+                    <div class="kpi-title">內容管理</div>
+                    <div class="kpi-value">{{ dashboard_data.social_metrics.total_posts|default:0 }}</div>
+                    <div class="kpi-subtitle">
+                        本週新增: {{ dashboard_data.social_metrics.week_posts }} 則
+                    </div>
+                    <div class="kpi-trend {% if dashboard_data.social_metrics.avg_engagement > 5 %}trend-up{% else %}trend-neutral{% endif %}">
+                        平均互動 {{ dashboard_data.social_metrics.avg_engagement|floatformat:1 }}
+                    </div>
+                </div>
+                <div class="kpi-icon">💬</div>
+            </div>
+        </div>
+
+        <!-- 客服工單 -->
+        <div class="kpi-card" style="--card-color: #f59e0b;">
+            <div class="kpi-header">
+                <div>
+                    <div class="kpi-title">客服工單</div>
+                    <div class="kpi-value">{{ dashboard_data.system_health.total_tickets|default:0 }}</div>
+                    <div class="kpi-subtitle">
+                        待處理: {{ dashboard_data.system_health.open_tickets }}
+                    </div>
+                    <div class="kpi-trend {% if dashboard_data.system_health.open_tickets == 0 %}trend-up{% elif dashboard_data.system_health.open_tickets < 5 %}trend-neutral{% else %}trend-down{% endif %}">
+                        {% if dashboard_data.system_health.open_tickets == 0 %}
+                        ✓ 無待處理
+                        {% else %}
+                        ⚠ 需要處理
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="kpi-icon">🎫</div>
+            </div>
+        </div>
+
+        <!-- 領養平台 -->
+        <div class="kpi-card" style="--card-color: #f97316;">
+            <div class="kpi-header">
+                <div>
+                    <div class="kpi-title">領養平台</div>
+                    <div class="kpi-value">{{ dashboard_data.adoption_metrics.total|default:0 }}</div>
+                    <div class="kpi-subtitle">
+                        待領養: {{ dashboard_data.adoption_metrics.available }}
+                        | 已領養: {{ dashboard_data.adoption_metrics.adopted }}
+                    </div>
+                    <div class="kpi-trend {% if dashboard_data.adoption_metrics.adoption_rate > 50 %}trend-up{% else %}trend-neutral{% endif %}">
+                        成功率 {{ dashboard_data.adoption_metrics.adoption_rate|floatformat:1 }}%
+                    </div>
+                </div>
+                <div class="kpi-icon">🏠</div>
+            </div>
+        </div>
+
+        <!-- 網站訪問數 -->
+        <div class="kpi-card" style="--card-color: #8b5cf6;">
+            <div class="kpi-header">
+                <div>
+                    <div class="kpi-title">網站到訪數</div>
+                    <div class="kpi-value">{{ dashboard_data.visit_metrics.total_visits|default:0 }}</div>
+                    <div class="kpi-subtitle">
+                        今日: {{ dashboard_data.visit_metrics.today_visits }}
+                        | 本週: {{ dashboard_data.visit_metrics.week_visits }}
+                    </div>
+                    <div class="kpi-trend {% if dashboard_data.visit_metrics.growth_rate > 0 %}trend-up{% elif dashboard_data.visit_metrics.growth_rate < 0 %}trend-down{% else %}trend-neutral{% endif %}">
+                        {% if dashboard_data.visit_metrics.growth_rate > 0 %}↗{% elif dashboard_data.visit_metrics.growth_rate < 0 %}↘{% else %}→{% endif %} {{ dashboard_data.visit_metrics.growth_rate|floatformat:1 }}% 週增長
+                    </div>
+                </div>
+                <div class="kpi-icon">📊</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 圖表區域 - 系統管理重點 -->
+    <div class="charts-grid">
+        <!-- 用戶增長趨勢 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">用戶增長趨勢（近7天）</div>
+                    <div class="chart-subtitle">每日新增用戶數</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="userGrowthChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 內容發布趨勢 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">內容發布趨勢（近7天）</div>
+                    <div class="chart-subtitle">每日新增貼文數量</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="postTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 寵物物種分布 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">寵物物種分布</div>
+                    <div class="chart-subtitle">平台寵物類型統計</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="speciesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 系統活躍度 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">平台活躍度</div>
+                    <div class="chart-subtitle">用戶活躍度分析</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 網站訪問趨勢 -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">網站訪問趨勢（近7天）</div>
+                    <div class="chart-subtitle">每日訪問數統計</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="visitTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 用戶增長趨勢
+        const userGrowthCtx = document.getElementById('userGrowthChart');
+        if (userGrowthCtx) {
+            // 模擬用戶增長數據（可以從後端獲取）
+            const dates = {{ dashboard_data.appointment_metrics.trend|safe|default:'[]' }}.map(d => d.date);
+            new Chart(userGrowthCtx, {
+                type: 'line',
+                data: {
+                    labels: dates.length > 0 ? dates : ['10/01', '10/02', '10/03', '10/04', '10/05', '10/06', '10/07'],
+                    datasets: [{
+                        label: '新增用戶',
+                        data: [5, 8, 12, 7, 15, 10, {{ dashboard_data.user_metrics.new_week|default:0 }}],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // 內容發布趨勢
+        const postTrendCtx = document.getElementById('postTrendChart');
+        if (postTrendCtx) {
+            const postTrend = {{ dashboard_data.social_metrics.trend|safe|default:'[]' }};
+            new Chart(postTrendCtx, {
+                type: 'bar',
+                data: {
+                    labels: postTrend.map(d => d.date),
+                    datasets: [{
+                        label: '發文數',
+                        data: postTrend.map(d => d.count),
+                        backgroundColor: '#ec4899'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // 物種分布圖
+        const speciesCtx = document.getElementById('speciesChart');
+        if (speciesCtx) {
+            const species = {{ dashboard_data.pet_metrics.species_distribution|safe|default:'[]' }};
+            new Chart(speciesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: species.map(d => d.species),
+                    datasets: [{
+                        data: species.map(d => d.count),
+                        backgroundColor: [
+                            '#667eea', '#f59e0b', '#10b981', '#ec4899', '#06b6d4'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        // 系統活躍度
+        const activityCtx = document.getElementById('activityChart');
+        if (activityCtx) {
+            new Chart(activityCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['活躍用戶', '非活躍用戶'],
+                    datasets: [{
+                        data: [
+                            {{ dashboard_data.user_metrics.active|default:0 }},
+                            {{ dashboard_data.user_metrics.total|default:0 }} - {{ dashboard_data.user_metrics.active|default:0 }}
+                        ],
+                        backgroundColor: ['#10b981', '#e5e7eb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        // 網站訪問趨勢
+        const visitTrendCtx = document.getElementById('visitTrendChart');
+        if (visitTrendCtx) {
+            const visitTrend = {{ dashboard_data.visit_metrics.trend|safe|default:'[]' }};
+            new Chart(visitTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: visitTrend.map(d => d.date),
+                    datasets: [{
+                        label: '訪問數',
+                        data: visitTrend.map(d => d.count),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: '700' },
+                            bodyFont: { size: 13 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+    </script>
+    {% else %}
+    <div style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+        <h2>數據載入中...</h2>
+        <p>如果持續顯示此訊息，請檢查後台配置。</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 保留原有的模組列表在下方 -->
+{{ block.super }}
+{% endblock %}

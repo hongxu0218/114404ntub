@@ -24,6 +24,10 @@ python-dotenv==1.1.1
 # 資料庫
 PyMySQL==1.1.1
 
+# Redis 快取
+redis==6.4.0
+django-redis==6.0.0
+
 # 圖像處理
 Pillow==11.2.1
 
@@ -42,3 +46,6 @@ uvicorn==0.36.0
 # 實用工具
 colorama==0.4.6
 tqdm==4.67.1
+
+# 定時任務
+django-apscheduler==0.6.2

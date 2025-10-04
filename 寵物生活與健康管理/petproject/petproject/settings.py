@@ -24,14 +24,14 @@ CSRF_TRUSTED_ORIGINS_STR = config('CSRF_TRUSTED_ORIGINS', default='http://127.0.
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
 
 # 🚨 HTTPS 生產環境安全設定 (開發時停用)
-if False:  # 暫時停用所有 HTTPS 設定
+if not DEBUG:  # 生產環境啟用 HTTPS 設定
     # 確保 ALLOWED_HOSTS 不為空
     if not ALLOWED_HOSTS:
         ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pawday114404.duckdns.org']
 
     # HTTPS 安全設定（Caddy 自動處理 SSL）
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Caddy 代理設定
-    # SECURE_SSL_REDIRECT = True   # 強制 HTTPS 重定向 (開發時註解)
+    SECURE_SSL_REDIRECT = True   # 強制 HTTPS 重定向
     SECURE_HSTS_SECONDS = 31536000  # HSTS 一年
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -105,6 +105,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',   # 防止點擊劫持攻擊
 
     'allauth.account.middleware.AccountMiddleware',     # allauth 專用中介軟體
+    'petapp.middleware.VisitTrackingMiddleware',        # 網站訪問追蹤
 ]
 
 
@@ -147,10 +148,22 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),        # MySQL 預設 port
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+            'connect_timeout': 10,
         },
+        'CONN_MAX_AGE': 600,  # 連線池,保持連線10分鐘
     }
 }
 
+
+# ===== Cache 快取設定 (用於到訪數等功能) =====
+# 使用資料庫快取（適用於虛擬機環境，不需要 Docker/Redis）
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',  # 快取資料表名稱
+    }
+}
 
 
 # ===== allauth 設定與自訂表單指定 =====
@@ -212,7 +225,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 
 # 顯示信件主旨與寄件網址設定
 ACCOUNT_EMAIL_SUBJECT_TEMPLATE = "password_reset_subject.txt"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  # HTTPS 部署
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if not DEBUG else "http"  # 生產環境使用 HTTPS
 
 # 註冊成功後立即導向登入頁（GET 請求立即登入）
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -223,7 +236,6 @@ SOCIALACCOUNT_ADAPTER = 'petapp.adapter.MySocialAccountAdapter'
 
 # 禁用 allauth 的重複登入訊息
 SOCIALACCOUNT_STORE_TOKENS = False
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  # HTTPS 部署設定
 SOCIALACCOUNT_LOGIN_ON_GET = True  # 已存在，但確保設定
 
 # 禁用 allauth 的預設登入成功訊息
@@ -249,6 +261,9 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 ADMIN_EMAIL = config('ADMIN_EMAIL')
 
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# 網站 URL（用於郵件通知中的連結）
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
 
 

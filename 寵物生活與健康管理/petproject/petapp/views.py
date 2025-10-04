@@ -1951,7 +1951,12 @@ def create_appointment(request, pet_id):
                     contact_phone=contact_phone,
                     status='pending'  # 新預約預設為待確認
                 )
-                
+
+                # 發送郵件通知
+                from .email_service import AppointmentEmailService
+                AppointmentEmailService.send_appointment_created_to_owner(appointment)
+                AppointmentEmailService.send_appointment_created_to_vet(appointment)
+
                 messages.success(request, f'預約申請已送出！診所將盡快與您聯絡確認。預約編號:{appointment.id}')
                 return redirect('my_appointments')
                 
@@ -2289,48 +2294,6 @@ def add_minutes_to_time(time_obj, minutes):
     temp_datetime += timedelta(minutes=minutes)
     return temp_datetime.time()
 
-@login_required
-def create_appointment_old(request, pet_id):
-    """建立預約 - 舊版本（保留作為備用）"""
-    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
-    
-    if request.method == 'POST':
-        form = AppointmentBookingForm(request.POST)
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    # 獲取表單數據
-                    clinic = form.cleaned_data['clinic']
-                    doctor = form.cleaned_data.get('doctor')
-                    appointment_date = form.cleaned_data['appointment_date']
-                    time_slot = form.cleaned_data['time_slot']
-                    reason = form.cleaned_data.get('reason', '')
-                    notes = form.cleaned_data.get('notes', '')
-                    contact_phone = form.cleaned_data.get('contact_phone', '')
-                    
-                    # 創建預約記錄
-                    appointment = VetAppointment.objects.create(
-                        pet=pet,
-                        owner=request.user,
-                        slot=time_slot,
-                        reason=reason,
-                        notes=notes,
-                        contact_phone=contact_phone,
-                        status='confirmed'
-                    )
-                    
-                    messages.success(request, '預約建立成功！')
-                    return redirect('appointment_success', appointment_id=appointment.id)
-            except Exception as e:
-                messages.error(request, f'預約失敗:{str(e)}')
-    else:
-        form = AppointmentBookingForm()
-    
-    return render(request, 'appointments/create_appointment.html', {
-        'form': form,
-        'pet': pet
-    })
-
 def search_clinics(request):
     """AJAX搜索診所 - 支援新的預約系統"""
     try:
@@ -2431,20 +2394,6 @@ def load_doctors(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
-
-@login_required
-def appointment_success(request, appointment_id):
-    """預約成功頁面"""
-    appointment = get_object_or_404(VetAppointment, id=appointment_id)
-    
-    # 檢查權限
-    if appointment.owner != request.user:
-        messages.error(request, '無權限查看此預約')
-        return redirect('home')
-    
-    return render(request, 'appointments/appointment_success.html', {
-        'appointment': appointment
-    })
 
 @login_required
 @require_owner
@@ -2572,8 +2521,13 @@ def cancel_appointment(request, appointment_id):
     if request.method == 'POST':
         cancel_reason = request.POST.get('cancel_reason', '')
         appointment.status = 'cancelled'
-        appointment.cancel_reason = cancel_reason
+        appointment.cancel_reason = cancel_reason or '飼主主動取消'
         appointment.save()
+
+        # 使用新的郵件服務發送取消通知
+        from .email_service import AppointmentEmailService
+        AppointmentEmailService.send_appointment_cancelled_to_owner(appointment, cancel_reason, 'owner')
+        AppointmentEmailService.send_appointment_cancelled_to_vet(appointment, cancel_reason, 'owner')
 
         # 在成功訊息中包含取消原因
         if cancel_reason:
@@ -2752,7 +2706,7 @@ def verify_vet_license(request):
     else:
         form = LicenseVerificationForm,()
     
-    return render(request, 'vet/verify_license.html', {'form': form})
+    return render(request, 'clinic/verify_license.html', {'form': form})
 
 @login_required
 @require_clinic_management
@@ -3479,6 +3433,10 @@ def vet_cancel_appointment(request, appointment_id):
             appointment.status = 'cancelled'
             appointment.cancel_reason = final_reason
             appointment.save()
+
+            # 使用新的郵件服務發送取消通知
+            from .email_service import AppointmentEmailService
+            AppointmentEmailService.send_appointment_cancelled_to_owner(appointment, final_reason, 'vet')
 
             messages.success(request, f'預約已取消：{appointment.pet.name} - {final_reason}')
 
@@ -4397,10 +4355,13 @@ def confirm_appointment(request, appointment_id):
         if request.method == 'POST':
             appointment.status = 'confirmed'
             appointment.save()
-            
-            # 發送確認通知（可選）
+
+            # 使用新的郵件服務發送確認通知
+            from .email_service import AppointmentEmailService
+            AppointmentEmailService.send_appointment_confirmed_to_owner(appointment)
+
             messages.success(request, f'預約 {appointment.id} 已確認')
-            
+
         return redirect('clinic_appointments')
         
     except Exception as e:
@@ -4447,6 +4408,10 @@ def clinic_cancel_appointment(request, appointment_id):
             appointment.status = 'cancelled'
             appointment.cancel_reason = final_reason
             appointment.save()
+
+            # 使用新的郵件服務發送取消通知
+            from .email_service import AppointmentEmailService
+            AppointmentEmailService.send_appointment_cancelled_to_owner(appointment, final_reason, 'vet')
 
             messages.success(request, f'預約 {appointment.id} 已取消 - {final_reason}')
 

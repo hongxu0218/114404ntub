@@ -183,18 +183,22 @@
 // 專業月曆互動功能
 document.addEventListener('DOMContentLoaded', function() {
     console.log('月檢視排班頁面已載入');
-    
+
     // 日期點擊事件
-    const calendarDays = document.querySelectorAll('.calendar-day');
+    const calendarDays = document.querySelectorAll('.month-day-cell.active');
     calendarDays.forEach(day => {
         day.addEventListener('click', function() {
             const date = this.dataset.date;
-            const dayNumber = this.querySelector('.day-number').textContent;
-            
+
+            if (!date) {
+                console.log('無效的日期');
+                return;
+            }
+
             console.log('點擊日期:', date);
-            
-            // 檢查是否有排班
-            const schedules = this.querySelectorAll('.schedule-item');
+
+            // 檢查是否有排班 - 查找 mini-schedule-card
+            const schedules = this.querySelectorAll('.mini-schedule-card');
             if (schedules.length > 0) {
                 // 已有排班，顯示詳情或編輯
                 console.log('查看排班詳情');
@@ -218,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // 排班項目點擊事件
-    document.querySelectorAll('.schedule-item').forEach(item => {
+    document.querySelectorAll('.mini-schedule-card').forEach(item => {
         item.addEventListener('click', function(e) {
             e.stopPropagation(); // 阻止事件冒泡
             console.log('查看排班詳情');

@@ -1,0 +1,474 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+:root {
+    --primary: #f97316;
+    --secondary: #ea580c;
+    --user-msg: #e0f2fe;
+    --agent-msg: #fef3c7;
+    --system-msg: #f3f4f6;
+}
+
+body { background: #f8fafc; }
+
+.ticket-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.ticket-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ticket-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.meta-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px 16px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.meta-label {
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.meta-value {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-open {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-closed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.conversation-container {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+.conversation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.conversation-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.message-count {
+    background: var(--primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.messages-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.message {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.avatar-user {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.avatar-agent {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.avatar-system {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.message-content {
+    flex: 1;
+    max-width: 70%;
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.message-sender {
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.message-time {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.message.user .message-bubble {
+    background: var(--user-msg);
+    color: #0c4a6e;
+    border: 1px solid #bae6fd;
+}
+
+.message.agent .message-bubble {
+    background: var(--agent-msg);
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.message.system .message-bubble {
+    background: var(--system-msg);
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    font-style: italic;
+}
+
+.message.agent {
+    flex-direction: row-reverse;
+}
+
+.message.agent .message-content {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+}
+
+.message.agent .message-header {
+    flex-direction: row-reverse;
+}
+
+.empty-conversation {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9ca3af;
+}
+
+.empty-conversation-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* 滾動條樣式 */
+.messages-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.messages-list::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+.messages-list::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* 表單區域樣式優化 */
+.form-row {
+    margin-bottom: 20px;
+}
+
+.submit-row {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 統計卡片 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    border-left: 4px solid var(--card-color);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sender-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-user {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-agent {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.badge-system {
+    background: #e5e7eb;
+    color: #374151;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ticket-header">
+    <h1>
+        <span>🎫</span>
+        客服工單 #{{ original.id }}
+    </h1>
+    <div class="ticket-meta">
+        <div class="meta-item">
+            <div class="meta-label">客戶姓名</div>
+            <div class="meta-value">{{ original.name|default:"匿名用戶" }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">聯絡方式</div>
+            <div class="meta-value">{{ original.contact|default:"未提供" }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">來源渠道</div>
+            <div class="meta-value">
+                {% if original.channel == 'web' %}🌐 網頁
+                {% elif original.channel == 'line' %}💬 Line
+                {% else %}📱 {{ original.channel }}{% endif %}
+            </div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">工單狀態</div>
+            <div class="meta-value">
+                {% if original.is_open %}
+                <span class="status-badge status-open">📋 處理中</span>
+                {% else %}
+                <span class="status-badge status-closed">✅ 已完成</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">建立時間</div>
+            <div class="meta-value">{{ original.created_at|date:"Y-m-d H:i" }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Session Key</div>
+            <div class="meta-value" style="font-size: 13px; word-break: break-all;">{{ original.session_key|truncatechars:16 }}</div>
+        </div>
+    </div>
+</div>
+
+{% if original %}
+<div class="stats-grid">
+    <div class="stat-card" style="--card-color: #3b82f6;">
+        <div class="stat-label">總訊息數</div>
+        <div class="stat-value">{{ original.messages.count }}</div>
+    </div>
+    <div class="stat-card" style="--card-color: #10b981;">
+        <div class="stat-label">客戶訊息</div>
+        <div class="stat-value" id="userCount">0</div>
+    </div>
+    <div class="stat-card" style="--card-color: #f97316;">
+        <div class="stat-label">客服回覆</div>
+        <div class="stat-value" id="agentCount">0</div>
+    </div>
+    <div class="stat-card" style="--card-color: #6b7280;">
+        <div class="stat-label">系統訊息</div>
+        <div class="stat-value" id="systemCount">0</div>
+    </div>
+</div>
+
+<div class="conversation-container">
+    <div class="conversation-header">
+        <div class="conversation-title">
+            <span>💬</span>
+            完整對話記錄
+        </div>
+        <span class="message-count">{{ original.messages.count }} 則訊息</span>
+    </div>
+
+    <div class="messages-list" id="messagesList">
+        {% if original.messages.exists %}
+            {% for message in original.messages.all %}
+            <div class="message {{ message.sender }}">
+                <div class="message-avatar avatar-{{ message.sender }}">
+                    {% if message.sender == 'user' %}👤
+                    {% elif message.sender == 'agent' %}👨‍💼
+                    {% else %}🤖{% endif %}
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-sender">
+                            {% if message.sender == 'user' %}
+                                {{ original.name|default:"客戶" }}
+                            {% elif message.sender == 'agent' %}
+                                客服人員
+                            {% else %}
+                                系統
+                            {% endif %}
+                        </span>
+                        <span class="sender-badge badge-{{ message.sender }}">{{ message.sender }}</span>
+                        <span class="message-time">{{ message.created_at|date:"m/d H:i:s" }}</span>
+                    </div>
+                    <div class="message-bubble">
+                        {{ message.text }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-conversation">
+                <div class="empty-conversation-icon">💬</div>
+                <h3>暫無對話記錄</h3>
+                <p>此工單尚未有任何訊息</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{{ block.super }}
+
+<script>
+// 自動滾動到最新訊息 & 計算訊息統計
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesList = document.getElementById('messagesList');
+    if (messagesList) {
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    // 計算各類型訊息數量
+    const messages = document.querySelectorAll('.message');
+    let userCount = 0;
+    let agentCount = 0;
+    let systemCount = 0;
+
+    messages.forEach(msg => {
+        if (msg.classList.contains('user')) {
+            userCount++;
+        } else if (msg.classList.contains('agent')) {
+            agentCount++;
+        } else if (msg.classList.contains('system')) {
+            systemCount++;
+        }
+    });
+
+    // 更新統計數字
+    const userCountEl = document.getElementById('userCount');
+    const agentCountEl = document.getElementById('agentCount');
+    const systemCountEl = document.getElementById('systemCount');
+
+    if (userCountEl) userCountEl.textContent = userCount;
+    if (agentCountEl) agentCountEl.textContent = agentCount;
+    if (systemCountEl) systemCountEl.textContent = systemCount;
+});
+</script>
+{% endblock %}
