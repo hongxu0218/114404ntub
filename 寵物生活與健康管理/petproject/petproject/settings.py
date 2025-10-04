@@ -157,22 +157,13 @@ DATABASES = {
 
 
 # ===== Cache 快取設定 (用於到訪數等功能) =====
-if DEBUG:
-    # 開發環境：使用記憶體快取
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
-        }
+# 使用資料庫快取（適用於虛擬機環境，不需要 Docker/Redis）
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',  # 快取資料表名稱
     }
-else:
-    # 生產環境：使用資料庫快取（持久化）
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-            'LOCATION': 'cache_table',  # cache 資料表名稱
-        }
-    }
+}
 
 
 # ===== allauth 設定與自訂表單指定 =====
