@@ -309,34 +309,34 @@ class DashboardAnalytics:
         }
 
     def get_visit_metrics(self):
-        """網站訪問統計（基於 Cache）"""
+        """網站訪問統計（基於 Cache，使用 IP 地址去重）"""
         from django.core.cache import cache
 
-        # 總訪問數
+        # 總訪問數（累計獨立訪客數）
         total_visits = cache.get('visits_total', 0)
 
-        # 今日訪問數（去重 session）
-        today_sessions_key = f'visits_sessions_{self.today}'
-        today_sessions = cache.get(today_sessions_key, set())
-        today_visits = len(today_sessions)
+        # 今日訪問數（去重 IP）
+        today_ips_key = f'visits_ips_{self.today}'
+        today_ips = cache.get(today_ips_key, set())
+        today_visits = len(today_ips)
 
-        # 本週訪問數（去重 session，計算過去7天）
-        week_sessions = set()
+        # 本週訪問數（去重 IP，計算過去7天）
+        week_ips = set()
         for i in range(7):
             date = self.today - timedelta(days=i)
-            date_sessions_key = f'visits_sessions_{date}'
-            date_sessions = cache.get(date_sessions_key, set())
-            week_sessions.update(date_sessions)
-        week_visits = len(week_sessions)
+            date_ips_key = f'visits_ips_{date}'
+            date_ips = cache.get(date_ips_key, set())
+            week_ips.update(date_ips)
+        week_visits = len(week_ips)
 
         # 上週訪問數（7-14天前）
-        last_week_sessions = set()
+        last_week_ips = set()
         for i in range(7, 14):
             date = self.today - timedelta(days=i)
-            date_sessions_key = f'visits_sessions_{date}'
-            date_sessions = cache.get(date_sessions_key, set())
-            last_week_sessions.update(date_sessions)
-        last_week_visits = len(last_week_sessions)
+            date_ips_key = f'visits_ips_{date}'
+            date_ips = cache.get(date_ips_key, set())
+            last_week_ips.update(date_ips)
+        last_week_visits = len(last_week_ips)
 
         # 計算週增長率
         growth_rate = 0
@@ -349,11 +349,11 @@ class DashboardAnalytics:
         visit_trend = []
         for i in range(7):
             date = self.today - timedelta(days=6-i)
-            date_sessions_key = f'visits_sessions_{date}'
-            date_sessions = cache.get(date_sessions_key, set())
+            date_ips_key = f'visits_ips_{date}'
+            date_ips = cache.get(date_ips_key, set())
             visit_trend.append({
                 'date': date.strftime('%m/%d'),
-                'count': len(date_sessions)
+                'count': len(date_ips)
             })
 
         # 平均日訪問量
