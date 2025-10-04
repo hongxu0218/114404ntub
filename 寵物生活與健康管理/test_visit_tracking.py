@@ -45,9 +45,13 @@ def test_visit_tracking():
 
         # 標記 IP
         now = timezone.now()
-        seconds_until_midnight = (
-            datetime.combine(today + timedelta(days=1), datetime.min.time()) - now
-        ).total_seconds()
+        from datetime import time
+        import pytz
+        taipei_tz = pytz.timezone('Asia/Taipei')
+        midnight = taipei_tz.localize(
+            datetime.combine(today + timedelta(days=1), time.min)
+        )
+        seconds_until_midnight = (midnight - now).total_seconds()
         cache.set(ip_key, True, int(seconds_until_midnight))
         print(f"   - 已設定快取，過期時間: {int(seconds_until_midnight)} 秒")
 
