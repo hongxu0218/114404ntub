@@ -136,7 +136,6 @@ urlpatterns = [
     
     # ============ 飼主預約系統 ============
     path('appointments/create/<int:pet_id>/', views.create_appointment, name='create_appointment'),
-    path('appointments/success/<int:appointment_id>/', views.appointment_success, name='appointment_success'),
     path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
     path('appointments/my/', views.my_appointments, name='my_appointments'),
     

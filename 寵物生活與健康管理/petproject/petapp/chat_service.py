@@ -41,7 +41,7 @@ def init_vector_search():
 
         # 初始化嵌入模型
         from sentence_transformers import SentenceTransformer
-        _embedder = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")  
+        _embedder = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")  # 自動配置  
 
         print(f"[AI客服] 初始化成功，資料庫共有 {_collection.count()} 筆資料")
         return True
