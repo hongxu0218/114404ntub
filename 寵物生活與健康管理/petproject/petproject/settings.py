@@ -156,6 +156,24 @@ DATABASES = {
 }
 
 
+# ===== Cache 快取設定 (用於到訪數等功能) =====
+if DEBUG:
+    # 開發環境：使用記憶體快取
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
+else:
+    # 生產環境：使用資料庫快取（持久化）
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'cache_table',  # cache 資料表名稱
+        }
+    }
+
 
 # ===== allauth 設定與自訂表單指定 =====
 # 指定註冊時使用自訂表單（CustomSignupForm）
@@ -252,6 +270,9 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 ADMIN_EMAIL = config('ADMIN_EMAIL')
 
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# 網站 URL（用於郵件通知中的連結）
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
 
 
