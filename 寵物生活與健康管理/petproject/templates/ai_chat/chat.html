@@ -380,9 +380,9 @@
 
 <script>
 // 全域變數 - 供 HTML onclick 使用
-let handoffTicketId = null;
-let lastMessageId = 0;
-let pollInterval = null;
+window.handoffTicketId = null;
+window.lastMessageId = 0;
+window.pollInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.getElementById('chat-messages');
@@ -457,9 +457,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sendBtn.disabled = true;
 
         // 如果已經轉人工客服,則發送到人工客服API
-        if (handoffTicketId) {
+        // 使用 window 明確訪問全域變數
+        if (window.handoffTicketId) {
+            console.log('[DEBUG] Sending to handoff API, ticket:', window.handoffTicketId);
             window.sendHandoffMessage(message);
         } else {
+            console.log('[DEBUG] Sending to AI API');
             // 使用流式API發送到後端以提高回覆速度
             streamChatRequest(message);
         }
@@ -691,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                ticket_id: handoffTicketId,
+                ticket_id: window.handoffTicketId,
                 message: message
             })
         })
@@ -714,17 +717,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.startPolling = function() {
-        if (pollInterval) {
-            clearInterval(pollInterval);
+        if (window.pollInterval) {
+            clearInterval(window.pollInterval);
         }
 
-        pollInterval = setInterval(() => {
-            if (!handoffTicketId) {
-                clearInterval(pollInterval);
+        window.pollInterval = setInterval(() => {
+            if (!window.handoffTicketId) {
+                clearInterval(window.pollInterval);
                 return;
             }
 
-            fetch(`/api/handoff/poll/?ticket_id=${handoffTicketId}&since=${lastMessageId}`)
+            fetch(`/api/handoff/poll/?ticket_id=${window.handoffTicketId}&since=${window.lastMessageId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.ok && data.messages && data.messages.length > 0) {
@@ -734,13 +737,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 window.addMessage(msg.text, msg.sender);
                             }
                         });
-                        lastMessageId = data.last_id;
+                        window.lastMessageId = data.last_id;
                     }
 
                     // 檢查工單是否已關閉
                     if (data.is_open === false) {
-                        clearInterval(pollInterval);
-                        handoffTicketId = null;
+                        clearInterval(window.pollInterval);
+                        window.handoffTicketId = null;
                         window.addMessage('人工客服對話已結束，您可以繼續使用AI客服。', 'ai');
                         const aiStatus = document.getElementById('ai-status');
                         if (aiStatus) {
@@ -790,8 +793,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 messageInput.value = '';
 
                 // 設定人工客服狀態
-                handoffTicketId = data.ticket_id;
-                lastMessageId = 0;
+                window.handoffTicketId = data.ticket_id;
+                window.lastMessageId = 0;
+
+                console.log('[DEBUG] Handoff ticket created:', window.handoffTicketId);
 
                 // 顯示轉接成功訊息
                 window.addMessage('✅ 已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
