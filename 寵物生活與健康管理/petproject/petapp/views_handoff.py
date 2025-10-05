@@ -70,7 +70,7 @@ def safe_create_notification(user: User, title: str, message: str, notification_
     """安全創建通知，失敗不影響主流程"""
     try:
         Notification.objects.create(
-            user=user,
+            recipient=user,  # 修正: 使用 recipient 而非 user
             title=title,
             message=message,
             notification_type=notification_type
