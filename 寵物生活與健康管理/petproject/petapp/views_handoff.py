@@ -395,15 +395,26 @@ def handoff_console(request: HttpRequest, ticket_id: Optional[int] = None):
     tickets = HandoffTicket.objects.all().order_by('-is_open', '-created_at')
 
     current = None
+    current_assigned = False
     if ticket_id:
         try:
             current = HandoffTicket.objects.prefetch_related('messages').get(id=ticket_id)
+            # 檢查是否已被接手
+            current_assigned = HandoffMessage.objects.filter(
+                ticket=current,
+                sender__in=["agent", "system"],
+                text__icontains="接手您的工單"
+            ).exists() or HandoffMessage.objects.filter(
+                ticket=current,
+                sender="agent"
+            ).exists()
         except HandoffTicket.DoesNotExist:
             pass
 
     return render(request, 'ai_chat/staff_handoff.html', {
         'tickets': tickets,
-        'current': current
+        'current': current,
+        'current_assigned': current_assigned
     })
 
 
