@@ -379,6 +379,11 @@
 </div>
 
 <script>
+// 全域變數 - 供 HTML onclick 使用
+let handoffTicketId = null;
+let lastMessageId = 0;
+let pollInterval = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.getElementById('chat-messages');
     const messageInput = document.getElementById('message-input');
@@ -386,11 +391,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const handoffBtn = document.getElementById('handoff-btn');
     const typingIndicator = document.getElementById('typing-indicator');
     const aiStatus = document.getElementById('ai-status');
-
-    // 人工客服狀態
-    let handoffTicketId = null;
-    let lastMessageId = 0;
-    let pollInterval = null;
 
     // 檢查AI服務狀態
     checkAIStatus();
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 如果已經轉人工客服,則發送到人工客服API
         if (handoffTicketId) {
-            sendHandoffMessage(message);
+            window.sendHandoffMessage(message);
         } else {
             // 使用流式API發送到後端以提高回覆速度
             streamChatRequest(message);
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 
-    function sendHandoffMessage(message) {
+    window.sendHandoffMessage = function(message) {
         fetch('/api/handoff/user/send/', {
             method: 'POST',
             headers: {
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function startPolling() {
+    window.startPolling = function() {
         if (pollInterval) {
             clearInterval(pollInterval);
         }
@@ -730,7 +730,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         clearInterval(pollInterval);
                         handoffTicketId = null;
                         addMessage('人工客服對話已結束，您可以繼續使用AI客服。', 'ai');
-                        aiStatus.innerHTML = '<span class="status-online">● AI 服務已就緒</span>';
+                        const aiStatus = document.getElementById('ai-status');
+                        if (aiStatus) {
+                            aiStatus.innerHTML = '<span class="status-online">● AI 服務已就緒</span>';
+                        }
                     }
                 })
                 .catch(error => {
@@ -739,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000); // 每2秒輪詢一次
     }
 
-    function requestHandoff() {
+    window.requestHandoff = function() {
         // 禁用所有轉接按鈕，避免重複點擊
         const allHandoffBtns = document.querySelectorAll('.btn-handoff, .handoff-btn-large, .handoff-link-btn');
         allHandoffBtns.forEach(btn => {
@@ -782,26 +785,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 addMessage('✅ 已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
 
                 // 開始輪詢人工客服回覆
-                startPolling();
+                window.startPolling();
 
                 // 更新狀態提示
-                aiStatus.innerHTML = '<span class="status-online">● 已連接人工客服</span>';
+                const aiStatus = document.getElementById('ai-status');
+                if (aiStatus) {
+                    aiStatus.innerHTML = '<span class="status-online">● 已連接人工客服</span>';
+                }
             } else {
                 addMessage('❌ 轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
                 // 重新啟用按鈕
-                enableHandoffButtons();
+                window.enableHandoffButtons();
             }
         })
         .catch(error => {
             addMessage('❌ 轉接人工客服時發生錯誤，請稍後再試。', 'ai');
             console.error('Handoff error:', error);
             // 重新啟用按鈕
-            enableHandoffButtons();
+            window.enableHandoffButtons();
         });
     }
 
     // 重新啟用轉接按鈕的輔助函數
-    function enableHandoffButtons() {
+    window.enableHandoffButtons = function() {
         const allHandoffBtns = document.querySelectorAll('.btn-handoff, .handoff-btn-large, .handoff-link-btn');
         allHandoffBtns.forEach(btn => {
             btn.disabled = false;
