@@ -12,21 +12,31 @@ from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
 
+@util.close_old_connections
 def send_appointment_reminders_job():
     """定時任務：發送預約提醒"""
     try:
+        logger.info("開始執行預約提醒任務...")
         call_command('send_appointment_reminders')
         logger.info("預約提醒任務執行成功")
     except Exception as e:
-        logger.error(f"預約提醒任務執行失敗: {e}")
+        logger.error(f"預約提醒任務執行失敗: {e}", exc_info=True)
+        # 確保資料庫連線被關閉
+        from django.db import connection
+        connection.close()
 
+@util.close_old_connections
 def cleanup_expired_appointments_job():
     """定時任務：清理過期預約"""
     try:
+        logger.info("開始執行過期預約清理任務...")
         call_command('cleanup_expired_appointments', '--days-back=1', '--mark-as=cancelled')
         logger.info("過期預約清理任務執行成功")
     except Exception as e:
-        logger.error(f"過期預約清理任務執行失敗: {e}")
+        logger.error(f"過期預約清理任務執行失敗: {e}", exc_info=True)
+        # 確保資料庫連線被關閉
+        from django.db import connection
+        connection.close()
 
 @util.close_old_connections
 def delete_old_job_executions(max_age=604_800):
