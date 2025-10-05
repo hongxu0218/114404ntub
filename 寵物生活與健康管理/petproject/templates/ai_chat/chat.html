@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!message) return;
 
         // 顯示用戶訊息
-        addMessage(message, 'user');
+        window.addMessage(message, 'user');
         messageInput.value = '';
 
         // 顯示輸入中指示器
@@ -465,7 +465,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function addMessage(content, sender) {
+    window.addMessage = function(content, sender) {
+        const messagesContainer = document.getElementById('chat-messages');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        if (!messagesContainer) {
+            console.error('Messages container not found');
+            return;
+        }
+
         const messageDiv = document.createElement('div');
         // 修復CSS類別
         const isServiceMessage = ['bot', 'ai', 'agent', 'system'].includes(sender);
@@ -507,18 +515,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // 檢查是否包含轉人工客服的提示並添加按鈕
         if (sender === 'ai' && content.includes('轉人工客服')) {
             if (content.includes('【轉人工客服】')) {
-                content = content.replace(/【轉人工客服】/g, '<button class="handoff-link-btn" onclick="requestHandoff()">【轉人工客服】</button>');
+                content = content.replace(/【轉人工客服】/g, '<button class="handoff-link-btn" onclick="window.requestHandoff()">【轉人工客服】</button>');
             } else if (content.includes('[轉人工客服]')) {
-                content = content.replace(/\[轉人工客服\]/g, '<button class="handoff-link-btn" onclick="requestHandoff()">[轉人工客服]</button>');
+                content = content.replace(/\[轉人工客服\]/g, '<button class="handoff-link-btn" onclick="window.requestHandoff()">[轉人工客服]</button>');
             } else {
-                content += '<br><button class="handoff-link-btn" onclick="requestHandoff()" style="margin-top: 10px;">點擊轉人工客服</button>';
+                content += '<br><button class="handoff-link-btn" onclick="window.requestHandoff()" style="margin-top: 10px;">點擊轉人工客服</button>';
             }
         }
 
         messageContent.innerHTML = content.replace(/\n/g, '<br>');
         messageDiv.appendChild(avatar);
         messageDiv.appendChild(messageContent);
-        messagesContainer.insertBefore(messageDiv, typingIndicator);
+        if (typingIndicator) {
+            messagesContainer.insertBefore(messageDiv, typingIndicator);
+        } else {
+            messagesContainer.appendChild(messageDiv);
+        }
 
         // 使用 requestAnimationFrame 優化滾動
         requestAnimationFrame(() => {
@@ -588,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else if (data.type === 'error') {
                                 hideTypingIndicator();
                                 sendBtn.disabled = false;
-                                addMessage('抱歉，' + (data.message || '系統發生錯誤，請稍後再試。'), 'ai');
+                                window.addMessage('抱歉，' + (data.message || '系統發生錯誤，請稍後再試。'), 'ai');
                                 return;
                             } else if (data.type === 'done') {
                                 hideTypingIndicator();
@@ -609,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             hideTypingIndicator();
             sendBtn.disabled = false;
-            addMessage('抱歉，系統發生錯誤，請稍後再試。', 'ai');
+            window.addMessage('抱歉，系統發生錯誤，請稍後再試。', 'ai');
             console.error('Stream error:', error);
         });
     }
@@ -689,14 +701,14 @@ document.addEventListener('DOMContentLoaded', function() {
             sendBtn.disabled = false;
 
             if (!data.ok) {
-                addMessage('❌ 訊息發送失敗：' + (data.error || '未知錯誤'), 'ai');
+                window.addMessage('❌ 訊息發送失敗：' + (data.error || '未知錯誤'), 'ai');
             }
             // 訊息已發送，等待客服回覆（透過輪詢機制）
         })
         .catch(error => {
             hideTypingIndicator();
             sendBtn.disabled = false;
-            addMessage('❌ 訊息發送失敗，請稍後再試。', 'ai');
+            window.addMessage('❌ 訊息發送失敗，請稍後再試。', 'ai');
             console.error('Send handoff message error:', error);
         });
     }
@@ -719,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data.messages.forEach(msg => {
                             // 只顯示客服和系統訊息，不顯示自己的訊息
                             if (msg.sender !== 'user') {
-                                addMessage(msg.text, msg.sender);
+                                window.addMessage(msg.text, msg.sender);
                             }
                         });
                         lastMessageId = data.last_id;
@@ -729,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.is_open === false) {
                         clearInterval(pollInterval);
                         handoffTicketId = null;
-                        addMessage('人工客服對話已結束，您可以繼續使用AI客服。', 'ai');
+                        window.addMessage('人工客服對話已結束，您可以繼續使用AI客服。', 'ai');
                         const aiStatus = document.getElementById('ai-status');
                         if (aiStatus) {
                             aiStatus.innerHTML = '<span class="status-online">● AI 服務已就緒</span>';
@@ -782,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 lastMessageId = 0;
 
                 // 顯示轉接成功訊息
-                addMessage('✅ 已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
+                window.addMessage('✅ 已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
 
                 // 開始輪詢人工客服回覆
                 window.startPolling();
@@ -793,13 +805,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     aiStatus.innerHTML = '<span class="status-online">● 已連接人工客服</span>';
                 }
             } else {
-                addMessage('❌ 轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
+                window.addMessage('❌ 轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
                 // 重新啟用按鈕
                 window.enableHandoffButtons();
             }
         })
         .catch(error => {
-            addMessage('❌ 轉接人工客服時發生錯誤，請稍後再試。', 'ai');
+            window.addMessage('❌ 轉接人工客服時發生錯誤，請稍後再試。', 'ai');
             console.error('Handoff error:', error);
             // 重新啟用按鈕
             window.enableHandoffButtons();
