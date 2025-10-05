@@ -86,8 +86,8 @@
 
   .tickets-header {
     display: flex;
-    align-items: center;
-    justify-content: between;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 20px;
   }
 
@@ -96,6 +96,51 @@
     color: var(--text-primary);
     font-weight: 600;
     font-size: 1.1rem;
+  }
+
+  /* 搜尋框 */
+  .search-box {
+    position: relative;
+    width: 100%;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 10px 36px 10px 12px;
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .search-box input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  }
+
+  .search-box .clear-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .search-box .clear-btn:hover {
+    background: var(--border-light);
+    color: var(--text-primary);
+  }
+
+  .search-box.has-text .clear-btn {
+    display: block;
   }
 
   /* 分頁切換優化 */
@@ -491,6 +536,35 @@
     background: var(--light);
   }
 
+  /* 快捷回覆區域 */
+  .quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .quick-reply-btn {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .quick-reply-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+
   .reply-form {
     display: flex;
     gap: 12px;
@@ -614,6 +688,95 @@
     #send {
       align-self: stretch;
     }
+
+    /* 手機端單欄佈局 */
+    .handoff-wrap {
+      position: relative;
+    }
+
+    .tickets-panel {
+      display: block;
+      max-height: none;
+    }
+
+    .chat-panel {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      z-index: 10;
+      max-height: none;
+      height: auto;
+    }
+
+    .tickets-panel.mobile-hidden {
+      display: none;
+    }
+
+    .chat-panel.mobile-active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 返回按鈕顯示 */
+    .back-to-list {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .back-to-list:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  /* 新訊息動畫 */
+  @keyframes pulse-border {
+    0%, 100% {
+      border-color: var(--border-light);
+      box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+    }
+    50% {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2);
+    }
+  }
+
+  @keyframes badge-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  .ticket.has-new-message {
+    animation: pulse-border 2s infinite;
+  }
+
+  .ticket.has-new-message::before {
+    background: var(--primary);
+  }
+
+  .new-message-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    animation: badge-bounce 1s ease-in-out 3;
+    margin-left: 8px;
+    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
   }
 </style>
 {% endblock %}
@@ -636,6 +799,10 @@
     <div class="tickets-panel" id="tickets-pane" data-current-id="{{ current.id|default:'' }}">
       <div class="tickets-header">
         <h5>📋 工單列表</h5>
+        <div class="search-box" id="search-box">
+          <input type="text" id="ticket-search" placeholder="🔍 搜尋工單編號或會話ID..." autocomplete="off">
+          <button class="clear-btn" id="clear-search">✕</button>
+        </div>
       </div>
 
       <div class="seg" role="tablist" aria-label="工單分類">
@@ -658,6 +825,11 @@
       {% if current %}
         <!-- 聊天室標題 -->
         <div class="chat-header">
+          <!-- 手機端返回按鈕 -->
+          <button class="back-to-list btn btn-sm btn-outline-light" id="back-to-list" style="display: none;">
+            <i class="bi bi-arrow-left"></i> 返回列表
+          </button>
+
           <div class="chat-title-section">
             <div class="chat-title">
               <h5>💬 工單 #{{ current.id }}</h5>
@@ -669,10 +841,12 @@
             </div>
             <div class="chat-actions">
               {% if current.is_open %}
-                <form method="post" action="{% url 'handoff_agent_accept' current.id %}" style="display: inline;">
-                  {% csrf_token %}
-                  <button class="btn btn-primary" type="submit">🤝 接手工單</button>
-                </form>
+                {% if not current_assigned %}
+                  <form method="post" action="{% url 'handoff_agent_accept' current.id %}" style="display: inline;" id="accept-form">
+                    {% csrf_token %}
+                    <button class="btn btn-primary" type="submit" id="accept-btn">🤝 接手工單</button>
+                  </form>
+                {% endif %}
                 <form method="post" action="{% url 'handoff_agent_close' current.id %}" style="display: inline;">
                   {% csrf_token %}
                   <button class="btn btn-outline-secondary" type="submit">🔒 結案</button>
@@ -712,6 +886,25 @@
         <!-- 回復區域 -->
         {% if current.is_open %}
         <div class="chat-footer">
+          <!-- 快捷回覆 -->
+          <div class="quick-replies">
+            <button class="quick-reply-btn" data-text="您好！有什麼可以幫助您的嗎？">
+              👋 問候
+            </button>
+            <button class="quick-reply-btn" data-text="我們已經收到您的訊息，正在為您處理中...">
+              ⏳ 處理中
+            </button>
+            <button class="quick-reply-btn" data-text="感謝您的耐心等候！">
+              🙏 感謝
+            </button>
+            <button class="quick-reply-btn" data-text="已為您解決問題！如有其他需要請隨時聯繫。">
+              ✅ 已解決
+            </button>
+            <button class="quick-reply-btn" data-text="請您稍等，我們正在查詢相關資訊...">
+              🔍 查詢中
+            </button>
+          </div>
+
           <div class="reply-form">
             <textarea id="reply" placeholder="💬 輸入回覆內容..."></textarea>
             <button id="send">📤 送出</button>
@@ -751,6 +944,15 @@
   let lastData = { unclaimed:[], open:[], closed:[] };
   const digests = { unclaimed:'', open:'', closed:'' };
 
+  // 新訊息追蹤
+  const lastSeenMessageIds = JSON.parse(localStorage.getItem('lastSeenMessageIds') || '{}');
+
+  // 搜尋功能
+  let searchQuery = '';
+  const searchInput = document.getElementById('ticket-search');
+  const searchBox = document.getElementById('search-box');
+  const clearSearchBtn = document.getElementById('clear-search');
+
   function applyTabUI() {
     seg.querySelectorAll('.seg-btn').forEach(b=>{
       const active = b.dataset.filter === currentFilter;
@@ -777,10 +979,17 @@
       hour: '2-digit', minute: '2-digit'
     });
 
+    // 檢查是否有新訊息 (只在未接手狀態顯示)
+    const lastSeen = lastSeenMessageIds[t.id] || 0;
+    const hasNew = status === 'unclaimed' && t.last_msg_id && t.last_msg_id > lastSeen && t.id !== currentId;
+
     return `
-      <div class="ticket ${status}${active}" onclick="location.href='${href}'">
+      <div class="ticket ${status}${active}${hasNew ? ' has-new-message' : ''}" onclick="handleTicketClick(${t.id}, '${href}')">
         <div class="ticket-header">
-          <div class="ticket-id">#${t.id}</div>
+          <div class="ticket-id">
+            #${t.id}
+            ${hasNew ? `<span class="new-message-badge">NEW</span>` : ''}
+          </div>
           <div class="ticket-status ${config.class}">${config.icon} ${config.label}</div>
         </div>
         <div class="ticket-session">會話: ${t.session_key}</div>
@@ -797,14 +1006,29 @@
     cOpen.textContent      = (data.open||[]).length;
     cClosed.textContent    = (data.closed||[]).length;
 
-    const group = data[currentFilter] || [];
+    let group = data[currentFilter] || [];
+
+    // 搜尋過濾
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      group = group.filter(t => {
+        const idMatch = String(t.id).includes(query);
+        const sessionMatch = (t.session_key || '').toLowerCase().includes(query);
+        return idMatch || sessionMatch;
+      });
+    }
+
     const snap  = digest(group);
     if (!force && snap === digests[currentFilter]) return; // 沒變就不重繪
     digests[currentFilter] = snap;
 
-    listEl.innerHTML = group.length
-      ? group.map(t => itemHTML(t, currentFilter)).join('')
-      : `<div class="text-muted small py-2">此分類目前沒有工單</div>`;
+    if (group.length === 0 && searchQuery.trim()) {
+      listEl.innerHTML = `<div class="text-muted small py-2">找不到符合「${searchQuery}」的工單</div>`;
+    } else {
+      listEl.innerHTML = group.length
+        ? group.map(t => itemHTML(t, currentFilter)).join('')
+        : `<div class="text-muted small py-2">此分類目前沒有工單</div>`;
+    }
   }
 
   // 事件委派：點到任何 .seg-btn 都會切換
@@ -835,17 +1059,89 @@
     }catch(e){ console.warn('tickets poll failed', e); }
   }
 
+  // 搜尋輸入處理
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      searchQuery = this.value.trim();
+      if (searchQuery) {
+        searchBox.classList.add('has-text');
+      } else {
+        searchBox.classList.remove('has-text');
+      }
+      renderActiveList(lastData, true);
+    });
+  }
+
+  // 清除搜尋
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', function() {
+      searchQuery = '';
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      searchBox.classList.remove('has-text');
+      renderActiveList(lastData, true);
+    });
+  }
+
+  // 手機端工單點擊處理
+  window.handleTicketClick = function(ticketId, href) {
+    // 標記此工單的訊息已讀
+    const allTickets = [...lastData.unclaimed, ...lastData.open, ...lastData.closed];
+    const ticket = allTickets.find(t => t.id === ticketId);
+    if (ticket && ticket.last_msg_id) {
+      lastSeenMessageIds[ticketId] = ticket.last_msg_id;
+      localStorage.setItem('lastSeenMessageIds', JSON.stringify(lastSeenMessageIds));
+    }
+
+    // 手機端: 切換顯示
+    if (window.innerWidth <= 768) {
+      const ticketsPanel = document.querySelector('.tickets-panel');
+      const chatPanel = document.querySelector('.chat-panel');
+      if (ticketsPanel) ticketsPanel.classList.add('mobile-hidden');
+      if (chatPanel) chatPanel.classList.add('mobile-active');
+    }
+
+    // 導航到工單頁面
+    location.href = href;
+  };
+
   // 初始化
   applyTabUI();
   renderActiveList(lastData, true);                        // 先畫空狀態
   poll();
   setInterval(poll, 3000);
+
+  // 當前工單標記已讀
+  if (currentId > 0) {
+    const allTickets = [...lastData.unclaimed, ...lastData.open, ...lastData.closed];
+    const current = allTickets.find(t => t.id === currentId);
+    if (current && current.last_msg_id) {
+      lastSeenMessageIds[currentId] = current.last_msg_id;
+      localStorage.setItem('lastSeenMessageIds', JSON.stringify(lastSeenMessageIds));
+    }
+  }
+})();
+
+/* ====== 手機端返回按鈕處理 ====== */
+(function() {
+  const backBtn = document.getElementById('back-to-list');
+  if (!backBtn) return;
+
+  backBtn.addEventListener('click', function() {
+    if (window.innerWidth <= 768) {
+      const ticketsPanel = document.querySelector('.tickets-panel');
+      const chatPanel = document.querySelector('.chat-panel');
+      if (ticketsPanel) ticketsPanel.classList.remove('mobile-hidden');
+      if (chatPanel) chatPanel.classList.remove('mobile-active');
+    }
+  });
 })();
 </script>
 
 {% if current %}
 <script>
-/* ====== 右側訊息：暫存泡泡 → 輪詢升級（避免重複） ====== */
+/* ====== 右側訊息:暫存泡泡 → 輪詢升級(避免重複) + 更新已讀標記 ====== */
 (function () {
   const log      = document.getElementById('chatlog');
   const sendBtn  = document.getElementById('send');
@@ -978,12 +1274,31 @@
         if (m.id != null) lastId = Math.max(lastId, m.id);
       }
       if (stick) stickBottom();
+
+      // 更新已讀標記
+      if (lastId > 0) {
+        const ticketId = {{ current.id }};
+        const lastSeenMessageIds = JSON.parse(localStorage.getItem('lastSeenMessageIds') || '{}');
+        lastSeenMessageIds[ticketId] = lastId;
+        localStorage.setItem('lastSeenMessageIds', JSON.stringify(lastSeenMessageIds));
+      }
     }catch(e){ console.warn('handoff poll failed', e); }
   }
 
   sendBtn.addEventListener('click', handleSend);
   textarea.addEventListener('keydown', (ev)=>{
     if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); handleSend(); }
+  });
+
+  // 快捷回覆功能
+  document.querySelectorAll('.quick-reply-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const text = this.dataset.text;
+      if (text) {
+        textarea.value = text;
+        textarea.focus();
+      }
+    });
   });
 
   setInterval(poll, POLL_MS);
