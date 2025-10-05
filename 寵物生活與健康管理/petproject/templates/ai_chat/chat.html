@@ -387,6 +387,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const typingIndicator = document.getElementById('typing-indicator');
     const aiStatus = document.getElementById('ai-status');
 
+    // 人工客服狀態
+    let handoffTicketId = null;
+    let lastMessageId = 0;
+    let pollInterval = null;
+
     // 檢查AI服務狀態
     checkAIStatus();
 
@@ -451,8 +456,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // 禁用發送按鈕
         sendBtn.disabled = true;
 
-        // 使用流式API發送到後端以提高回覆速度
-        streamChatRequest(message);
+        // 如果已經轉人工客服,則發送到人工客服API
+        if (handoffTicketId) {
+            sendHandoffMessage(message);
+        } else {
+            // 使用流式API發送到後端以提高回覆速度
+            streamChatRequest(message);
+        }
     }
 
     function addMessage(content, sender) {
@@ -662,6 +672,73 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 
+    function sendHandoffMessage(message) {
+        fetch('/api/handoff/user/send/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ticket_id: handoffTicketId,
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            sendBtn.disabled = false;
+
+            if (!data.ok) {
+                addMessage('❌ 訊息發送失敗：' + (data.error || '未知錯誤'), 'ai');
+            }
+            // 訊息已發送，等待客服回覆（透過輪詢機制）
+        })
+        .catch(error => {
+            hideTypingIndicator();
+            sendBtn.disabled = false;
+            addMessage('❌ 訊息發送失敗，請稍後再試。', 'ai');
+            console.error('Send handoff message error:', error);
+        });
+    }
+
+    function startPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+        }
+
+        pollInterval = setInterval(() => {
+            if (!handoffTicketId) {
+                clearInterval(pollInterval);
+                return;
+            }
+
+            fetch(`/api/handoff/poll/?ticket_id=${handoffTicketId}&since=${lastMessageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            // 只顯示客服和系統訊息，不顯示自己的訊息
+                            if (msg.sender !== 'user') {
+                                addMessage(msg.text, msg.sender);
+                            }
+                        });
+                        lastMessageId = data.last_id;
+                    }
+
+                    // 檢查工單是否已關閉
+                    if (data.is_open === false) {
+                        clearInterval(pollInterval);
+                        handoffTicketId = null;
+                        addMessage('人工客服對話已結束，您可以繼續使用AI客服。', 'ai');
+                        aiStatus.innerHTML = '<span class="status-online">● AI 服務已就緒</span>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Polling error:', error);
+                });
+        }, 2000); // 每2秒輪詢一次
+    }
+
     function requestHandoff() {
         // 禁用所有轉接按鈕，避免重複點擊
         const allHandoffBtns = document.querySelectorAll('.btn-handoff, .handoff-btn-large, .handoff-link-btn');
@@ -697,17 +774,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 清空輸入框
                 messageInput.value = '';
 
+                // 設定人工客服狀態
+                handoffTicketId = data.ticket_id;
+                lastMessageId = 0;
+
                 // 顯示轉接成功訊息
                 addMessage('✅ 已為您轉接人工客服，工單編號：' + data.ticket_id + '。人工客服將盡快回覆您！', 'ai');
 
-                // 可以選擇跳轉到人工客服頁面或保持在當前頁面
-                setTimeout(() => {
-                    if (confirm('已成功轉接人工客服！是否前往人工客服聊天室？')) {
-                        // 這裡可以跳轉到人工客服聊天頁面（如果有的話）
-                        // window.location.href = '/handoff-chat/' + data.ticket_id + '/';
-                        alert('人工客服將透過系統回覆您的問題，請稍候。');
-                    }
-                }, 1000);
+                // 開始輪詢人工客服回覆
+                startPolling();
+
+                // 更新狀態提示
+                aiStatus.innerHTML = '<span class="status-online">● 已連接人工客服</span>';
             } else {
                 addMessage('❌ 轉接人工客服失敗：' + (data.error || '未知錯誤'), 'ai');
                 // 重新啟用按鈕
