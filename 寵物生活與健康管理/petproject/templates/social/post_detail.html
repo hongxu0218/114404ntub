@@ -2,8 +2,6 @@
 {% load static %}
 {% load tz %}
 
-{% csrf_token %}
-
 {% block title %}貼文詳情 - 毛日好社群{% endblock %}
 
 {% block social_extra_css %}
@@ -257,7 +255,29 @@ window.addEventListener('load', function() {
         loadingSpinner.style.display = 'none';
     }
 });
+
+// 獲取 CSRF token 的通用函數
+function getCsrfToken() {
+    // 嘗試從多個來源獲取 CSRF token
+    const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (tokenInput) {
+        return tokenInput.value;
+    }
+
+    // 從 cookie 中獲取 CSRF token
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='));
+    if (cookieValue) {
+        return cookieValue.split('=')[1];
+    }
+
+    return '{{ csrf_token }}';
+}
 </script>
+
+<!-- 全域 CSRF Token -->
+{% csrf_token %}
 
 <div class="main-content">
     <a href="{% url 'social:home' %}" class="back-btn">
@@ -314,7 +334,7 @@ window.addEventListener('load', function() {
         <div class="post-actions">
             <div class="d-flex gap-3">
                 <button class="action-btn like-btn {% if user_liked %}liked{% endif %}"
-                        data-post-id="{{ post.id }}" onclick="toggleLike(this)">
+                        data-post-id="{{ post.id }}" onclick="togglePostLike(this)">
                     <i class="bi bi-heart{% if user_liked %}-fill{% endif %}"></i>
                     <span class="likes-count">{{ post.likes_count }}</span>
                 </button>
@@ -590,20 +610,27 @@ window.addEventListener('load', function() {
 </div>
 
 <script>
-function toggleLike(btn) {
-    const postId = btn.dataset.postId;
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
+function togglePostLike(btn) {
+    // 使用 getAttribute 確保能獲取到 data-post-id
+    const postId = btn.getAttribute('data-post-id');
+
+    console.log('Toggle like for post:', postId); // 調試用
+
+    if (!postId) {
+        console.error('No post ID found');
+        return;
+    }
 
     fetch(`/social/post/${postId}/like/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         }
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Like response:', data); // 調試用
         if (data.success) {
             const icon = btn.querySelector('i');
             const count = btn.querySelector('.likes-count');
@@ -619,10 +646,14 @@ function toggleLike(btn) {
             }
 
             count.textContent = data.likes_count;
+        } else {
+            console.error('Like failed:', data.error);
+            alert('按讚失敗:' + (data.error || '未知錯誤'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        alert('按讚失敗,請重試');
     });
 }
 
@@ -636,13 +667,11 @@ function submitComment() {
     }
 
     const postId = '{{ post.id }}';
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
 
     fetch(`/social/post/${postId}/comment/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -669,13 +698,11 @@ function submitComment() {
 
 function toggleCommentLike(btn) {
     const commentId = btn.dataset.commentId;
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
 
     fetch(`/social/comment/${commentId}/like/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         }
     })
@@ -736,13 +763,10 @@ function sharePost(btn) {
 }
 
 function updateShareCount(btn, postId) {
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
-
     fetch(`/social/post/${postId}/share/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         }
     })
@@ -780,13 +804,11 @@ function showRepostModal(postId, originalAuthor, currentCount) {
 
 function executeRepost() {
     const comment = document.getElementById('repostComment').value.trim();
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
 
     fetch(`/social/post/${currentRepostPostId}/repost/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -909,13 +931,10 @@ function submitReply(commentId) {
         return;
     }
 
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
-
     fetch(`/social/comment/${commentId}/reply/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -977,17 +996,14 @@ function shareComment(commentId) {
 
 // 刪除貼文詳情頁面的貼文
 function deletePostDetail(postId) {
-    if (!confirm('確定要刪除這篇貼文嗎？此操作無法復原，將會返回社群首頁。')) {
+    if (!confirm('確定要刪除這篇貼文嗎？此操作無法復原,將會返回社群首頁。')) {
         return;
     }
-
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
 
     fetch(`/social/post/${postId}/delete/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
         }
     })
     .then(response => response.json())
@@ -1030,13 +1046,10 @@ function deleteComment(btn) {
         return;
     }
 
-    const csrfToken = document.querySelector('#commentForm [name=csrfmiddlewaretoken]') ||
-                     document.querySelector('[name=csrfmiddlewaretoken]');
-
     fetch(`/social/comment/${commentId}/delete/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': csrfToken ? csrfToken.value : '{{ csrf_token }}',
+            'X-CSRFToken': getCsrfToken(),
             'Content-Type': 'application/json',
         }
     })

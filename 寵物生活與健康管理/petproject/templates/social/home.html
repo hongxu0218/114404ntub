@@ -1095,9 +1095,10 @@
                                 <div class="post-time">{{ post.created_at|localtime|timesince }}前</div>
                             </div>
                             {% if user.is_authenticated and post.user != user %}
-                                <button class="mini-follow-btn" onclick="quickFollow('{{ post.user.username }}', this, event)"
-                                        title="快速追蹤">
-                                    <i class="bi bi-person-plus"></i>
+                                <button class="mini-follow-btn {% if post.is_following_author %}following{% endif %}"
+                                        onclick="quickFollow('{{ post.user.username }}', this, event)"
+                                        title="{% if post.is_following_author %}已追蹤{% else %}快速追蹤{% endif %}">
+                                    <i class="bi {% if post.is_following_author %}bi-check{% else %}bi-person-plus{% endif %}"></i>
                                 </button>
                             {% endif %}
                         </div>
@@ -2656,6 +2657,78 @@ function deleteComment(commentId, postId, event) {
     }
 }
 
+// 追蹤/取消追蹤功能
+function toggleFollow(username, buttonElement) {
+    event.preventDefault(); // 防止觸發父元素的點擊事件
+
+    fetch(`/social/follow/${username}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.following) {
+                // 已追蹤 - 更新按鈕為「已追蹤」
+                buttonElement.innerHTML = '<i class="bi bi-person-check"></i> 已追蹤';
+                buttonElement.classList.remove('btn-outline-primary');
+                buttonElement.classList.add('btn-primary');
+            } else {
+                // 取消追蹤 - 移除該用戶項目
+                const userItem = buttonElement.closest('[data-user-item]');
+                if (userItem) {
+                    userItem.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    userItem.style.opacity = '0';
+                    userItem.style.transform = 'translateX(-20px)';
+                    setTimeout(() => {
+                        userItem.remove();
+
+                        // 檢查是否還有推薦用戶
+                        const sidebar = document.querySelector('.sidebar');
+                        const remainingUsers = sidebar.querySelectorAll('[data-user-item]');
+                        if (remainingUsers.length === 0) {
+                            // 如果沒有推薦用戶了，顯示空狀態訊息
+                            const recommendSection = sidebar.querySelector('h3:last-of-type').nextElementSibling;
+                            if (recommendSection && recommendSection.querySelector('[data-user-item]')) {
+                                const parent = recommendSection.parentElement;
+                                recommendSection.innerHTML = `
+                                    <div class="text-center text-muted" style="padding: 1rem;">
+                                        <i class="bi bi-person-plus" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                                        <p>目前沒有推薦用戶<br>或您已追蹤所有用戶</p>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }, 300);
+                }
+            }
+
+            // 同時更新搜尋結果中的按鈕（如果存在）
+            const searchButton = document.querySelector(`#searchResults [data-username="${username}"]`);
+            if (searchButton) {
+                if (data.following) {
+                    searchButton.innerHTML = '<i class="bi bi-person-check"></i> 已追蹤';
+                    searchButton.classList.remove('btn-outline-primary');
+                    searchButton.classList.add('btn-primary');
+                } else {
+                    searchButton.innerHTML = '<i class="bi bi-person-plus"></i> 追蹤';
+                    searchButton.classList.remove('btn-primary');
+                    searchButton.classList.add('btn-outline-primary');
+                }
+            }
+        } else {
+            alert('操作失敗：' + (data.error || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('操作失敗，請重試');
+    });
+}
+
 // 搜尋用戶功能
 function searchUsers() {
     const query = document.getElementById('userSearchInput').value.trim();
@@ -2669,22 +2742,56 @@ function searchUsers() {
     // 顯示載入狀態
     resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #666;"><i class="bi bi-arrow-repeat rotating"></i> 搜尋中...</div>';
 
-    // 模擬搜尋API請求（這裡您可以實作真實的搜尋功能）
-    setTimeout(() => {
-        // 暫時的模擬搜尋結果
-        if (query.length > 0) {
-            resultsContainer.innerHTML = `
-                <div class="search-result-item" onclick="window.location.href='/social/profile/${query}/'">
-                    <img src="{% static 'images/default_pet.jpg' %}" alt="${query}" class="search-result-avatar">
-                    <div class="search-result-info">
-                        <h5 class="search-result-name">${query}</h5>
-                    </div>
-                </div>
-            `;
-        } else {
-            resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">找不到相關用戶</div>';
+    // 實際的搜尋 API 請求
+    fetch(`/social/search/users/?q=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
         }
-    }, 500);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.users.length > 0) {
+                resultsContainer.innerHTML = data.users.map(user => `
+                    <div class="search-result-item" style="display: flex; align-items: center; justify-content: space-between; padding: 0.8rem; border-bottom: 1px solid #eee;">
+                        <a href="/social/profile/${user.username}/" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: inherit; flex: 1;">
+                            <img src="${user.avatar_url || '{% static "images/default_pet.jpg" %}'}"
+                                 alt="${user.username}"
+                                 class="search-result-avatar"
+                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #FFE4E1;">
+                            <div class="search-result-info">
+                                <h5 class="search-result-name" style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #8B4513;">${user.display_name}</h5>
+                                <small class="text-muted">@${user.username} · ${user.followers_count} 位粉絲</small>
+                            </div>
+                        </a>
+                        ${user.is_following ?
+                            `<button class="btn btn-sm btn-primary follow-btn"
+                                    data-username="${user.username}"
+                                    onclick="toggleFollow('${user.username}', this)"
+                                    style="border-radius: 20px; padding: 0.3rem 1rem; font-size: 0.85rem;">
+                                <i class="bi bi-person-check"></i> 已追蹤
+                            </button>` :
+                            `<button class="btn btn-sm btn-outline-primary follow-btn"
+                                    data-username="${user.username}"
+                                    onclick="toggleFollow('${user.username}', this)"
+                                    style="border-radius: 20px; padding: 0.3rem 1rem; font-size: 0.85rem;">
+                                <i class="bi bi-person-plus"></i> 追蹤
+                            </button>`
+                        }
+                    </div>
+                `).join('');
+            } else {
+                resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #999;">找不到相關用戶</div>';
+            }
+        } else {
+            resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #dc3545;">搜尋失敗，請重試</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        resultsContainer.innerHTML = '<div style="text-align: center; padding: 1rem; color: #dc3545;">搜尋失敗，請重試</div>';
+    });
 }
 
 // Enter 鍵搜尋
