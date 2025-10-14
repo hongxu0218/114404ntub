@@ -32,4 +32,5 @@ urlpatterns = [
 
     # 搜尋
     path('search/', social_views.search_posts, name='search_posts'),
+    path('search/users/', social_views.search_users, name='search_users'),
 ]

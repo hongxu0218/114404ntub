@@ -109,11 +109,12 @@ def social_home(request):
         )
 
     # 如果用戶已登入，優先顯示追蹤用戶的貼文
+    following_user_ids = []
     if request.user.is_authenticated:
-        following_users = Follow.objects.filter(follower=request.user).values_list('following', flat=True)
-        if following_users:
-            following_posts = posts.filter(user__in=following_users)
-            other_posts = posts.exclude(user__in=following_users)
+        following_user_ids = list(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+        if following_user_ids:
+            following_posts = posts.filter(user__in=following_user_ids)
+            other_posts = posts.exclude(user__in=following_user_ids)
             posts = list(following_posts) + list(other_posts)
 
     # 分頁
@@ -121,22 +122,29 @@ def social_home(request):
     page_number = request.GET.get('page', 1)
     page_posts = paginator.get_page(page_number)
 
+    # 為每個貼文添加追蹤狀態
+    if request.user.is_authenticated:
+        for post in page_posts:
+            post.is_following_author = post.user.id in following_user_ids
+
     # 獲取推薦關注的用戶（不是已經追蹤的用戶）
     recommended_users = []
     if request.user.is_authenticated:
         try:
             # 獲取當前用戶已追蹤的用戶ID列表
-            following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+            following_ids = list(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
 
             # 推薦：排除自己和已追蹤的用戶，按粉絲數排序
             recommended_users = User.objects.exclude(
-                id__in=list(following_ids) + [request.user.id]
+                id__in=following_ids + [request.user.id]
             ).select_related('social_profile').order_by('-social_profile__followers_count')[:10]
 
             # 確保每個推薦用戶都有 UserProfile
             for user in recommended_users:
                 if not hasattr(user, 'social_profile'):
                     UserProfile.objects.get_or_create(user=user)
+                # 添加追蹤狀態屬性（應該都是 False，因為我們已經排除了）
+                user.is_following = False
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -785,3 +793,53 @@ def get_comment_location(request, comment_id):
         return JsonResponse({'error': '留言不存在'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def search_users(request):
+    """搜尋用戶"""
+    query = request.GET.get('q', '').strip()
+
+    if not query:
+        return JsonResponse({'success': True, 'users': []})
+
+    try:
+        # 搜尋用戶名或顯示名稱包含查詢字串的用戶（排除自己）
+        users = User.objects.filter(
+            Q(username__icontains=query) | Q(social_profile__display_name__icontains=query)
+        ).exclude(
+            id=request.user.id
+        ).select_related('social_profile').distinct()[:10]
+
+        # 獲取當前用戶已追蹤的用戶ID列表
+        following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+
+        users_data = []
+        for user in users:
+            # 確保用戶有 UserProfile
+            if not hasattr(user, 'social_profile'):
+                UserProfile.objects.get_or_create(user=user)
+
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'display_name': user.social_profile.display_name if hasattr(user, 'social_profile') and user.social_profile.display_name else user.username,
+                'avatar_url': user.social_profile.avatar.url if hasattr(user, 'social_profile') and user.social_profile.avatar else None,
+                'followers_count': user.social_profile.followers_count if hasattr(user, 'social_profile') else 0,
+                'is_following': user.id in following_ids
+            })
+
+        return JsonResponse({
+            'success': True,
+            'users': users_data
+        })
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"search_users error: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
