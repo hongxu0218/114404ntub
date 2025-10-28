@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 # ====== 配置參數 ======
 # AI 服務配置
 OLLAMA_CHAT_URL = os.getenv("OLLAMA_CHAT_URL", "http://127.0.0.1:11434/api/chat")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b-instruct")  # 改用更輕量的模型
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b-instruct")  # 統一使用 1.5b 模型（輕量快速）
 OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "120"))  # 虛擬機環境增加至120秒
 AI_SERVICE_MODE = os.getenv("AI_SERVICE_MODE", "ollama")  # 新增：auto/ollama/fallback/hybrid
 

@@ -4,8 +4,12 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import (
     UserProfile, Notification, Follow, Like, Comment, CommentLike,
-    Post, VetAppointment
+    Post, VetAppointment, VaccineRecord, DewormRecord
 )
+from .google_calendar_service import GoogleCalendarService
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=User)
@@ -111,6 +115,18 @@ def create_appointment_notification(sender, instance, created, **kwargs):
                         title='新預約',
                         message=f'{instance.owner.username} 預約了 {instance.pet.name} - {instance.slot.date.strftime("%Y/%m/%d")} {instance.slot.start_time}'
                     )
+
+            # 自動新增至飼主的 Google Calendar
+            if hasattr(instance.owner, 'profile') and instance.owner.profile.google_calendar_enabled:
+                try:
+                    event_id = GoogleCalendarService.create_appointment_event(instance.owner, instance)
+                    if event_id:
+                        instance.google_calendar_event_id = event_id
+                        instance.save(update_fields=['google_calendar_event_id'])
+                        logger.info(f"已將預約新增至 Google Calendar: {event_id}")
+                except Exception as e:
+                    logger.error(f"新增預約至 Google Calendar 失敗: {e}")
+
         except Exception as e:
             print(f"預約通知創建錯誤: {e}")
     else:
@@ -130,6 +146,16 @@ def create_appointment_notification(sender, instance, created, **kwargs):
                     title='預約已取消',
                     message=f'您的預約已被取消：{instance.pet.name} - {instance.slot.date.strftime("%Y/%m/%d")} {instance.slot.start_time}'
                 )
+
+                # 如果預約取消，也刪除 Google Calendar 事件
+                if instance.google_calendar_event_id and hasattr(instance.owner, 'profile'):
+                    try:
+                        service = GoogleCalendarService(instance.owner)
+                        service.delete_event(instance.google_calendar_event_id)
+                        logger.info(f"已從 Google Calendar 刪除預約事件: {instance.google_calendar_event_id}")
+                    except Exception as e:
+                        logger.error(f"刪除 Google Calendar 事件失敗: {e}")
+
             elif instance.status == 'completed':
                 Notification.objects.create(
                     recipient=instance.owner,
@@ -139,3 +165,41 @@ def create_appointment_notification(sender, instance, created, **kwargs):
                 )
         except Exception as e:
             print(f"預約狀態更新通知錯誤: {e}")
+
+
+@receiver(post_save, sender=VaccineRecord)
+def create_vaccine_calendar_event(sender, instance, created, **kwargs):
+    """當疫苗記錄建立時，自動新增至 Google Calendar"""
+    if created:
+        try:
+            # 取得寵物飼主
+            owner = instance.pet.owner
+
+            # 檢查飼主是否啟用 Google Calendar 同步
+            if hasattr(owner, 'profile') and owner.profile.google_calendar_enabled:
+                event_id = GoogleCalendarService.create_vaccine_event(owner, instance)
+                if event_id:
+                    instance.google_calendar_event_id = event_id
+                    instance.save(update_fields=['google_calendar_event_id'])
+                    logger.info(f"已將疫苗記錄新增至 Google Calendar: {event_id}")
+        except Exception as e:
+            logger.error(f"新增疫苗記錄至 Google Calendar 失敗: {e}")
+
+
+@receiver(post_save, sender=DewormRecord)
+def create_deworm_calendar_event(sender, instance, created, **kwargs):
+    """當驅蟲記錄建立時，自動新增至 Google Calendar"""
+    if created:
+        try:
+            # 取得寵物飼主
+            owner = instance.pet.owner
+
+            # 檢查飼主是否啟用 Google Calendar 同步
+            if hasattr(owner, 'profile') and owner.profile.google_calendar_enabled:
+                event_id = GoogleCalendarService.create_deworm_event(owner, instance)
+                if event_id:
+                    instance.google_calendar_event_id = event_id
+                    instance.save(update_fields=['google_calendar_event_id'])
+                    logger.info(f"已將驅蟲記錄新增至 Google Calendar: {event_id}")
+        except Exception as e:
+            logger.error(f"新增驅蟲記錄至 Google Calendar 失敗: {e}")
