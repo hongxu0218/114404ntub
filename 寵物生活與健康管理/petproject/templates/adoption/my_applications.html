@@ -1,0 +1,647 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}我的領養申請{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="my-applications-container">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="header-icon">
+                        <i class="bi bi-file-earmark-text-fill"></i>
+                    </div>
+                    <div>
+                        <h1>我的領養申請</h1>
+                        <p class="lead mb-0">查看您提出的所有領養申請記錄</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if applications %}
+        <div class="applications-grid">
+            {% for application in applications %}
+            <div class="application-item status-{{ application.status }}">
+                <!-- 狀態標籤 -->
+                <div class="status-ribbon status-{{ application.status }}">
+                    {{ application.get_status_display }}
+                </div>
+
+                <!-- 寵物圖片 -->
+                <div class="pet-image-container">
+                    {% if application.pet.adopt_picture1 %}
+                    <img src="{{ application.pet.adopt_picture1.url }}" alt="{{ application.pet.name }}" class="pet-image">
+                    {% else %}
+                    <div class="pet-image-placeholder">
+                        <i class="bi bi-image"></i>
+                    </div>
+                    {% endif %}
+                    <div class="pet-overlay">
+                        <div class="pet-name">{{ application.pet.name }}</div>
+                    </div>
+                </div>
+
+                <!-- 申請內容 -->
+                <div class="application-content">
+                    <!-- 寵物資訊 -->
+                    <div class="pet-info-section">
+                        <div class="info-row">
+                            <div class="info-badge">
+                                <i class="bi bi-tag-fill"></i>
+                                <span>{{ application.pet.breed }}</span>
+                            </div>
+                            <div class="info-badge">
+                                <i class="bi bi-gender-ambiguous"></i>
+                                <span>{{ application.pet.get_gender_display }}</span>
+                            </div>
+                        </div>
+                        <div class="owner-info">
+                            <i class="bi bi-person-circle"></i>
+                            <span>原飼主：{{ application.owner.username }}</span>
+                        </div>
+                    </div>
+
+                    <!-- 時間資訊 -->
+                    <div class="time-info-section">
+                        <div class="time-item">
+                            <i class="bi bi-calendar-plus"></i>
+                            <div>
+                                <div class="time-label">申請時間</div>
+                                <div class="time-value">{{ application.created_at|date:"Y/m/d H:i" }}</div>
+                            </div>
+                        </div>
+                        {% if application.reviewed_at %}
+                        <div class="time-item">
+                            <i class="bi bi-calendar-check"></i>
+                            <div>
+                                <div class="time-label">審核時間</div>
+                                <div class="time-value">{{ application.reviewed_at|date:"Y/m/d H:i" }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 狀態訊息 -->
+                    {% if application.status == 'accepted' %}
+                    <div class="status-alert success-alert">
+                        <div class="alert-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div>
+                            <div class="alert-title">申請已接受</div>
+                            <div class="alert-text">恭喜！請繼續完成轉交流程</div>
+                        </div>
+                    </div>
+                    {% elif application.status == 'rejected' %}
+                    <div class="status-alert danger-alert">
+                        <div class="alert-icon">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </div>
+                        <div>
+                            <div class="alert-title">申請已拒絕</div>
+                            <div class="alert-text">{{ application.reject_reason|default:"原飼主未說明原因" }}</div>
+                        </div>
+                    </div>
+                    {% elif application.status == 'reviewing' %}
+                    <div class="status-alert warning-alert">
+                        <div class="alert-icon">
+                            <i class="bi bi-eye-fill"></i>
+                        </div>
+                        <div>
+                            <div class="alert-title">審核中</div>
+                            <div class="alert-text">原飼主正在審核您的申請</div>
+                        </div>
+                    </div>
+                    {% elif application.status == 'pending' %}
+                    <div class="status-alert info-alert">
+                        <div class="alert-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <div class="alert-title">待審核</div>
+                            <div class="alert-text">等待原飼主審核中</div>
+                        </div>
+                    </div>
+                    {% elif application.status == 'cancelled' %}
+                    <div class="status-alert secondary-alert">
+                        <div class="alert-icon">
+                            <i class="bi bi-slash-circle-fill"></i>
+                        </div>
+                        <div>
+                            <div class="alert-title">已取消</div>
+                            <div class="alert-text">您已取消此申請</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 操作按鈕 -->
+                    <div class="action-buttons">
+                        <a href="{% url 'adoption_application_detail' application.id %}" class="btn btn-detail">
+                            <i class="bi bi-file-earmark-text"></i> 查看詳情
+                        </a>
+                        {% if application.status == 'pending' or application.status == 'reviewing' %}
+                        <a href="{% url 'cancel_adoption_application' application.id %}" class="btn btn-cancel">
+                            <i class="bi bi-x-circle"></i> 取消申請
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- 申請編號 -->
+                    <div class="application-id">
+                        <i class="bi bi-hash"></i>
+                        <span>申請編號 {{ application.id }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-file-earmark-x"></i>
+            </div>
+            <h3>您還沒有提出任何領養申請</h3>
+            <p>前往領養專區尋找您喜歡的寵物，開始您的領養之旅吧！</p>
+            <a href="{% url 'adoption' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-heart-fill"></i> 前往領養專區
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #ffb703;
+    --primary-dark: #f9a602;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --warning-color: #ffc107;
+    --secondary-color: #6c757d;
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.my-applications-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.header-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.page-header .lead {
+    font-size: 1rem;
+    opacity: 0.95;
+}
+
+/* 申請網格 */
+.applications-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2rem;
+}
+
+/* 申請項目 */
+.application-item {
+    background: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid #e9ecef;
+}
+
+.application-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.application-item.status-pending {
+    border-top: 5px solid var(--warning-color);
+}
+
+.application-item.status-reviewing {
+    border-top: 5px solid var(--info-color);
+}
+
+.application-item.status-accepted {
+    border-top: 5px solid var(--success-color);
+}
+
+.application-item.status-rejected {
+    border-top: 5px solid var(--danger-color);
+}
+
+.application-item.status-cancelled {
+    border-top: 5px solid var(--secondary-color);
+}
+
+/* 狀態標籤 */
+.status-ribbon {
+    position: absolute;
+    top: 15px;
+    right: -35px;
+    z-index: 10;
+    padding: 0.5rem 3rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transform: rotate(45deg);
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.status-ribbon.status-pending {
+    background: var(--warning-color);
+    color: #000;
+}
+
+.status-ribbon.status-reviewing {
+    background: var(--info-color);
+    color: white;
+}
+
+.status-ribbon.status-accepted {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-ribbon.status-rejected {
+    background: var(--danger-color);
+    color: white;
+}
+
+.status-ribbon.status-cancelled {
+    background: var(--secondary-color);
+    color: white;
+}
+
+/* 寵物圖片 */
+.pet-image-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+}
+
+.pet-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.application-item:hover .pet-image {
+    transform: scale(1.05);
+}
+
+.pet-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #adb5bd;
+    font-size: 4rem;
+}
+
+.pet-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 1.5rem 1rem 1rem;
+}
+
+.pet-name {
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* 申請內容 */
+.application-content {
+    padding: 1.5rem;
+}
+
+/* 寵物資訊區 */
+.pet-info-section {
+    margin-bottom: 1.25rem;
+}
+
+.info-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.info-badge {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.info-badge i {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.owner-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.owner-info i {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+/* 時間資訊區 */
+.time-info-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.time-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.time-item i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.time-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.time-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* 狀態警告 */
+.status-alert {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.alert-icon {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.alert-title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.alert-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.success-alert {
+    background: #d4edda;
+    color: #155724;
+}
+
+.success-alert .alert-icon {
+    color: #28a745;
+}
+
+.danger-alert {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.danger-alert .alert-icon {
+    color: #dc3545;
+}
+
+.warning-alert {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.warning-alert .alert-icon {
+    color: #ffc107;
+}
+
+.info-alert {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.info-alert .alert-icon {
+    color: #17a2b8;
+}
+
+.secondary-alert {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.secondary-alert .alert-icon {
+    color: #6c757d;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.action-buttons .btn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 0.95rem;
+}
+
+.btn-detail {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+}
+
+.btn-detail:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.btn-cancel {
+    background: linear-gradient(135deg, var(--danger-color), #c82333);
+    color: white;
+}
+
+.btn-cancel:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+/* 申請編號 */
+.application-id {
+    text-align: center;
+    padding-top: 0.75rem;
+    border-top: 2px dashed #dee2e6;
+    color: #6c757d;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.application-id i {
+    color: var(--primary-color);
+}
+
+/* 空狀態 */
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.empty-icon {
+    font-size: 6rem;
+    color: #dee2e6;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    font-size: 1.15rem;
+    margin-bottom: 2.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state .btn {
+    padding: 1rem 2.5rem;
+    font-size: 1.15rem;
+    box-shadow: var(--shadow-md);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .applications-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .pet-image-container {
+        height: 200px;
+    }
+
+    .pet-name {
+        font-size: 1.5rem;
+    }
+
+    .time-info-section {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+
+    .status-ribbon {
+        font-size: 0.75rem;
+        padding: 0.4rem 2.5rem;
+    }
+}
+
+/* 平滑滾動 */
+html {
+    scroll-behavior: smooth;
+}
+</style>
+{% endblock %}

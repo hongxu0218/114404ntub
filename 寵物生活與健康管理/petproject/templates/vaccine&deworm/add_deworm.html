@@ -1,291 +1,452 @@
-{% extends 'vet_pages/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}新增驅蟲記錄 - {{ pet.name }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
+{% block content %}
+<div class="container my-5">
+    <div class="deworm-form-container">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="header-icon">
+                        <i class="bi bi-bug-fill"></i>
+                    </div>
+                    <div>
+                        <h1>新增驅蟲記錄</h1>
+                        <p class="lead mb-0">為 <strong>{{ pet.name }}</strong> 建立驅蟲治療記錄</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 寵物資訊卡 -->
+        <div class="pet-info-card">
+            <div class="pet-avatar-section">
+                <div class="pet-avatar-circle">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </div>
+                <div class="pet-details">
+                    <h3>{{ pet.name }}</h3>
+                    <div class="pet-meta">
+                        <span class="meta-item">
+                            <i class="bi bi-tag-fill"></i>
+                            {{ pet.species }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-award-fill"></i>
+                            {{ pet.breed }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-calendar-fill"></i>
+                            {{ pet.age }}歲
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-person-fill"></i>
+                            {{ pet.owner.get_full_name|default:pet.owner.username }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表單卡片 -->
+        <div class="form-card">
+            <div class="form-header-section">
+                <div class="form-icon">
+                    <i class="bi bi-shield-fill-exclamation"></i>
+                </div>
+                <div>
+                    <h2>驅蟲治療資訊</h2>
+                    <p>完整記錄驅蟲資訊，建立完善的預防醫學檔案</p>
+                </div>
+            </div>
+
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+
+                <!-- 驅蟲藥名稱 -->
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">
+                        <i class="bi bi-capsule-pill"></i>
+                        {{ form.name.label }}
+                        <span class="required">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="error-message">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="help-text">
+                        <i class="bi bi-info-circle"></i>
+                        例如：心絲蟲預防藥、全能狗、滴劑驅蟲藥
+                    </div>
+                </div>
+
+                <!-- 治療日期與地點 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">
+                            <i class="bi bi-calendar-event"></i>
+                            {{ form.date.label }}
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="error-message">{{ form.date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            治療日期
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.location.id_for_label }}" class="form-label">
+                            <i class="bi bi-hospital"></i>
+                            {{ form.location.label }}
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div class="error-message">{{ form.location.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            治療地點（選填）
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="form-actions">
+                    <a href="{% url 'health_rec' %}?pet_id={{ pet.id }}" class="btn btn-cancel">
+                        <i class="bi bi-x-circle"></i>
+                        取消
+                    </a>
+                    <button type="submit" class="btn btn-submit">
+                        <i class="bi bi-save"></i>
+                        儲存驅蟲記錄
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
 :root {
-    --primary-color: #2563eb;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-900: #111827;
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-body {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    min-height: 100vh;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --primary-color: #ffb703;
+    --primary-dark: #f9a602;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --deworm-color: #ff8c00;
+    --deworm-dark: #e67700;
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
 }
 
 .deworm-form-container {
     max-width: 800px;
     margin: 0 auto;
-    padding: 24px;
 }
 
-.form-header {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--deworm-color) 0%, var(--deworm-dark) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
     box-shadow: var(--shadow-lg);
-    border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
-.pet-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-
-.pet-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--warning-color), #fbbf24);
+.header-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    color: white;
+    font-size: 2rem;
 }
 
-.form-card {
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.page-header .lead {
+    font-size: 1rem;
+    opacity: 0.95;
+}
+
+/* 寵物資訊卡 */
+.pet-info-card {
     background: white;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid #f8f9fa;
 }
 
-.form-title {
+.pet-avatar-section {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 1.25rem;
+}
+
+.pet-avatar-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--deworm-color), var(--deworm-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-md);
+}
+
+.pet-details h3 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--gray-900);
+    color: #212529;
+    margin: 0 0 0.5rem 0;
 }
 
-.form-section {
-    margin-bottom: 24px;
+.pet-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
-.section-title {
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background: #f8f9fa;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.meta-item i {
+    color: var(--deworm-color);
+}
+
+/* 表單卡片 */
+.form-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.form-header-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem;
+    border-bottom: 3px solid var(--deworm-color);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 1.25rem;
+}
+
+.form-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--deworm-color), var(--deworm-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.form-header-section h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 0.25rem 0;
+}
+
+.form-header-section p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* 現代表單 */
+.modern-form {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.75rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.form-label i {
+    color: var(--deworm-color);
     font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--gray-700);
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--gray-100);
 }
 
-.form-field {
-    margin-bottom: 16px;
+.required {
+    color: var(--danger-color);
+    font-weight: 700;
 }
 
-.form-field label {
-    display: block;
-    font-weight: 600;
-    color: var(--gray-700);
-    margin-bottom: 6px;
-}
-
-.form-field input,
-.form-field textarea,
-.form-field select {
+.input-wrapper input,
+.input-wrapper select,
+.input-wrapper textarea {
     width: 100%;
-    padding: 12px 16px;
-    border: 2px solid var(--gray-200);
+    padding: 0.75rem 1rem;
+    border: 2px solid #dee2e6;
     border-radius: 8px;
-    font-size: 14px;
-    transition: all 0.2s;
+    font-size: 1rem;
+    transition: all 0.3s ease;
     background: white;
 }
 
-.form-field input:focus,
-.form-field textarea:focus,
-.form-field select:focus {
-    border-color: var(--warning-color);
+.input-wrapper input:focus,
+.input-wrapper select:focus,
+.input-wrapper textarea:focus {
+    border-color: var(--deworm-color);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.15);
 }
 
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.action-buttons {
+.help-text {
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    padding-top: 24px;
-    border-top: 1px solid var(--gray-200);
-}
-
-.btn {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
 }
 
-.btn-primary {
-    background: var(--warning-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #d97706;
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: var(--gray-100);
-    color: var(--gray-700);
-    border: 1px solid var(--gray-200);
-}
-
-.btn-secondary:hover {
-    background: var(--gray-200);
-}
-
-.alert {
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    border: 1px solid;
-}
-
-.alert-success {
-    background: #f0fdf4;
-    color: #166534;
-    border-color: #bbf7d0;
-}
-
-.alert-error {
-    background: #fef2f2;
-    color: #991b1b;
-    border-color: #fecaca;
-}
-
-.info-box {
-    background: #fffbeb;
-    border: 1px solid #fed7aa;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 16px;
-    color: #92400e;
+.help-text i {
+    color: var(--info-color);
     font-size: 0.9rem;
 }
 
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+/* 操作按鈕 */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e9ecef;
+}
+
+.form-actions .btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--deworm-color), var(--deworm-dark));
+    color: white;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, var(--deworm-dark), #cc6600);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 響應式設計 */
 @media (max-width: 768px) {
-    .form-grid {
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-row {
         grid-template-columns: 1fr;
     }
 
-    .deworm-form-container {
-        padding: 16px;
+    .pet-avatar-section {
+        flex-direction: column;
+        text-align: center;
     }
 
-    .action-buttons {
+    .pet-meta {
+        justify-content: center;
+    }
+
+    .form-actions {
         flex-direction: column;
     }
+
+    .form-header-section {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* 平滑滾動 */
+html {
+    scroll-behavior: smooth;
 }
 </style>
-{% endblock %}
-
-{% block content %}
-<div class="deworm-form-container">
-    <!-- 表單標題 -->
-    <div class="form-header">
-        <div class="pet-info">
-            <div class="pet-avatar">
-                🪲
-            </div>
-            <div>
-                <h1 style="margin: 0; font-size: 1.8rem; color: var(--gray-900);">新增驅蟲記錄</h1>
-                <p style="margin: 4px 0 0 0; color: var(--gray-600);">
-                    為 <strong>{{ pet.name }}</strong> 建立驅蟲治療記錄
-                </p>
-            </div>
-        </div>
-        <div style="background: var(--gray-50); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: var(--gray-600);">
-            <strong>寵物資訊：</strong>{{ pet.species }} • {{ pet.breed }} • {{ pet.age }}歲 •
-            飼主：{{ pet.owner.get_full_name|default:pet.owner.username }}
-        </div>
-    </div>
-
-    <!-- 驅蟲記錄表單 -->
-    <div class="form-card">
-        <div class="form-title">
-            <i class="fas fa-bug" style="color: var(--warning-color);"></i>
-            專業驅蟲記錄
-        </div>
-
-        <div class="info-box">
-            <i class="fas fa-info-circle"></i>
-            <strong>提醒：</strong>請確實記錄驅蟲資訊，以建立完整的預防醫學檔案，有助於後續的健康管理。
-        </div>
-
-        <form method="post">
-            {% csrf_token %}
-
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-pills" style="color: var(--primary-color);"></i>
-                    驅蟲資訊
-                </div>
-
-                <div class="form-field">
-                    {{ form.name.label_tag }}
-                    {{ form.name }}
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-field">
-                        {{ form.date.label_tag }}
-                        {{ form.date }}
-                    </div>
-                    <div class="form-field">
-                        {{ form.location.label_tag }}
-                        {{ form.location }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <a href="{% url 'pet_detail' pet.id %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    取消
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    儲存驅蟲記錄
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 {% endblock %}

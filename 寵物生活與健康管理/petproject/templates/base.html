@@ -775,7 +775,7 @@
   
   <!-- Meta 資訊 -->
   <meta name="author" content="毛日好 Paw&Day">
-  <meta name="keywords" content="寵物,健康管理,獸醫,預約,寵物醫院">
+  <meta name="keywords" content="寵物,健康管理">
   
   <!-- Open Graph 資訊 -->
   <meta property="og:title" content="{% block og_title %}{{ block.super }}毛孩幸福生活{% endblock %}">
@@ -792,11 +792,11 @@
 <body>
 
   <!-- 用戶資訊 (隱藏，供 JavaScript 使用) -->
-  <div class="d-none" 
+  <div class="d-none"
        data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
        {% if user.profile %}data-user-type="{{ user.profile.account_type }}"{% endif %}
-       {% if user.vet_profile %}data-user-profile="veterinarian"{% endif %}
-       {% if user.profile.account_type == 'clinic_admin' %}data-user-profile="clinic_admin"{% endif %}
+       {% comment %} {% if user.vet_profile %}data-user-profile="veterinarian"{% endif %} {% endcomment %}
+       {% comment %} {% if user.profile.account_type == 'clinic_admin' %}data-user-profile="clinic_admin"{% endif %} {% endcomment %}
        {% if user.profile.account_type == 'pet_owner' %}data-user-profile="pet_owner"{% endif %}>
   </div>
 
@@ -879,7 +879,8 @@
             </ul>
           </li>
 
-        <!-- 診所管理員菜單 -->
+        {% comment %}
+        <!-- 診所管理員菜單 - 已停用 -->
         {% elif user.profile.account_type == 'clinic_admin' %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -901,8 +902,9 @@
               </a></li>
             </ul>
           </li>
+        {% endcomment %}
           
-          <!-- 診所管理員同時是獸醫師時，統一使用下拉菜單 -->
+          {% comment %} <!-- 診所管理員同時是獸醫師時，統一使用下拉菜單 -->
           {% if user.vet_profile %}
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -928,9 +930,10 @@
                 <!-- 移除建立記錄，改由預約流程進入 -->
               </ul>
             </li>
-          {% endif %}
+          {% endif %} {% endcomment %}
 
-        <!-- 純獸醫師菜單 - 統一改為下拉菜單格式 -->
+        {% comment %}
+        <!-- 純獸醫師菜單 - 已停用 -->
         {% elif user.profile.account_type == 'vet' or user.vet_profile %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -963,6 +966,7 @@
               </a></li>
             </ul>
           </li>
+        {% endcomment %}
 
         <!-- 飼主菜單 -->
         {% elif user.profile.account_type == 'owner' %}
@@ -976,6 +980,8 @@
               <li><a class="dropdown-item" href="{% url 'pet_list' %}">
                 <i class="bi bi-heart-fill me-2"></i>毛孩總覽
               </a></li>
+              {% comment %}
+              <!-- 預約管理 - 已停用 -->
               <li><hr class="dropdown-divider"></li>
               <li><h6 class="dropdown-header">📅 預約管理</h6></li>
               <li><a class="dropdown-item" href="{% url 'my_appointments' %}">
@@ -984,6 +990,7 @@
               <li><a class="dropdown-item" href="{% url 'pet_list' %}">
                 <i class="bi bi-plus-circle me-2"></i>新增預約
               </a></li>
+              {% endcomment %}
             </ul>
           </li>
           
@@ -1053,6 +1060,12 @@
               </a></li>
               <li><a class="dropdown-item" href="{% url 'my_adoption' %}">
                 <i class="bi bi-list-ul me-2"></i>我的送養
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'owner_adoption_applications' %}">
+                <i class="bi bi-inbox me-2"></i>收到的申請
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'my_adoption_applications' %}">
+                <i class="bi bi-file-text me-2"></i>我的申請
               </a></li>
               <li><a class="dropdown-item" href="{% url 'my_adoption_transfers' %}">
                 <i class="bi bi-arrow-left-right me-2"></i>轉交請求
@@ -1134,11 +1147,11 @@
             <i class="bi bi-person-plus me-1" aria-hidden="true"></i>註冊
           </a>
         </li>
-        <li class="nav-item">
+        {% comment %} <li class="nav-item">
           <a class="nav-link" href="{% url 'clinic_registration' %}" aria-label="診所註冊">
             <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所註冊
           </a>
-        </li>
+        </li> {% endcomment %}
       {% endif %}
     </ul>
   </div>
@@ -1368,8 +1381,8 @@
   <!-- 在生產環境中插入 Google Analytics 代碼 -->
   {% endif %}
 
-  <!-- AI 客服浮動泡泡 (獸醫端不顯示) -->
-  {% if not user.vet_profile and user.profile.account_type != 'vet' %}
+  <!-- AI 客服浮動泡泡 -->
+  {% if user.is_authenticated and user.profile.account_type == 'owner' %}
   <div id="chatbot-button" title="AI 客服">💬</div>
 
   <!-- AI 客服對話框 -->

@@ -1,492 +1,446 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}新增生活記錄 - 毛日好 Paw&Day{% endblock %}
+{% block title %}新增生活記錄 - {{ pet.name }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/health/health_records.css' %}">
+{% block content %}
+<div class="container my-5">
+    <div class="daily-form-container">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="header-icon">
+                        <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div>
+                        <h1>新增生活記錄</h1>
+                        <p class="lead mb-0">記錄 <strong>{{ pet.name }}</strong> 的日常生活點滴</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 寵物資訊卡 -->
+        <div class="pet-info-card">
+            <div class="pet-avatar-section">
+                <div class="pet-avatar-circle">
+                    {% if pet.picture %}
+                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
+                    {% else %}
+                        <i class="bi bi-heart-fill"></i>
+                    {% endif %}
+                </div>
+                <div class="pet-details">
+                    <h3>{{ pet.name }}</h3>
+                    <div class="pet-meta">
+                        <span class="meta-item">
+                            <i class="bi bi-tag-fill"></i>
+                            {{ pet.species }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-award-fill"></i>
+                            {{ pet.breed|default:"可愛毛孩" }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-person-fill"></i>
+                            {{ pet.owner.get_full_name|default:pet.owner.username }}
+                        </span>
+                    </div>
+                </div>
+                {% if user_pets.count > 1 %}
+                <div class="pet-switcher">
+                    <button class="switcher-btn" onclick="toggleSwitcher()">
+                        <i class="bi bi-arrow-left-right"></i>
+                        切換寵物
+                        <span class="badge">{{ user_pets.count }}</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if user_pets.count > 1 %}
+            <div class="switcher-panel" id="switcherPanel" style="display: none;">
+                <div class="switcher-header">
+                    <h4><i class="bi bi-list-ul"></i> 我的寵物</h4>
+                    <button class="close-btn" onclick="toggleSwitcher()">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="pet-list">
+                    {% for user_pet in user_pets %}
+                    <div class="pet-item {% if user_pet.id == pet.id %}active{% endif %}" onclick="switchPet('{{ user_pet.id }}')">
+                        <div class="pet-item-avatar">
+                            {% if user_pet.picture %}
+                                <img src="{{ user_pet.picture.url }}" alt="{{ user_pet.name }}">
+                            {% else %}
+                                <i class="bi bi-heart"></i>
+                            {% endif %}
+                        </div>
+                        <div class="pet-item-info">
+                            <h5>{{ user_pet.name }}</h5>
+                            <p>{{ user_pet.species }} • {{ user_pet.breed|default:"可愛毛孩" }}</p>
+                        </div>
+                        {% if user_pet.id == pet.id %}
+                        <div class="current-badge">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 表單卡片 -->
+        <div class="form-card">
+            <div class="form-header-section">
+                <div class="form-icon">
+                    <i class="bi bi-pencil-square"></i>
+                </div>
+                <div>
+                    <h2>生活記錄詳情</h2>
+                    <p>記錄寵物的日常生活、健康狀態與特殊事件</p>
+                </div>
+            </div>
+
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+
+                <!-- 基本資訊 -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-calendar-day"></i>
+                        基本資訊
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-event"></i>
+                                日期
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                {{ form.date }}
+                                {% if form.date.errors %}
+                                    <div class="error-message">{{ form.date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="help-text">
+                                <i class="bi bi-info-circle"></i>
+                                記錄日期
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">
+                                <i class="bi bi-tags-fill"></i>
+                                記錄分類
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="error-message">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="help-text">
+                                <i class="bi bi-info-circle"></i>
+                                選擇記錄類型
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 記錄內容 -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-journal-text"></i>
+                        記錄內容
+                    </h3>
+
+                    <div class="form-group" id="content-group">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">
+                            <i class="bi bi-chat-left-text"></i>
+                            內容描述
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                                <div class="error-message">{{ form.content.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            詳細記錄觀察到的情況
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="temperature-group" style="display: none;">
+                        <label for="{{ form.temperature.id_for_label }}" class="form-label">
+                            <i class="bi bi-thermometer-half"></i>
+                            體溫 (°C)
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.temperature }}
+                            {% if form.temperature.errors %}
+                                <div class="error-message">{{ form.temperature.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            正常體溫範圍：狗 37.5-39.2°C，貓 38.1-39.2°C
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="weight-group" style="display: none;">
+                        <label for="{{ form.weight.id_for_label }}" class="form-label">
+                            <i class="bi bi-speedometer"></i>
+                            體重 (kg)
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.weight }}
+                            {% if form.weight.errors %}
+                                <div class="error-message">{{ form.weight.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            定期記錄體重有助於健康管理
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="medication-group" style="display: none;">
+                        <label for="{{ form.medication_dosage.id_for_label }}" class="form-label">
+                            <i class="bi bi-capsule"></i>
+                            藥物劑量
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.medication_dosage }}
+                            {% if form.medication_dosage.errors %}
+                                <div class="error-message">{{ form.medication_dosage.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            記錄用藥名稱與劑量
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="exercise-group" style="display: none;">
+                        <label for="{{ form.exercise_duration.id_for_label }}" class="form-label">
+                            <i class="bi bi-activity"></i>
+                            運動時長 (分鐘)
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.exercise_duration }}
+                            {% if form.exercise_duration.errors %}
+                                <div class="error-message">{{ form.exercise_duration.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            記錄運動或活動時間
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="form-actions">
+                    <a href="{% url 'health_rec' %}?tab=daily" class="btn btn-cancel">
+                        <i class="bi bi-x-circle"></i>
+                        取消
+                    </a>
+                    <button type="submit" class="btn btn-submit">
+                        <i class="bi bi-save"></i>
+                        保存記錄
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
-.add-daily-wrapper {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #fafafa 0%, #e8f5e8 100%);
-    padding: 2rem 0;
+:root {
+    --primary-color: #ffb703;
+    --primary-dark: #f9a602;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --daily-color: #20c997;
+    --daily-dark: #17a2b8;
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
 }
 
-.add-daily-container {
-    max-width: 800px;
+.daily-form-container {
+    max-width: 900px;
     margin: 0 auto;
-    padding: 0 1rem;
 }
 
-.add-daily-card {
-    background: white;
-    border-radius: 16px;
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--daily-color) 0%, var(--daily-dark) 100%);
+    color: white;
     padding: 2rem;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
-}
-
-.add-daily-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    border-radius: var(--border-radius);
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e0e0e0;
+    box-shadow: var(--shadow-lg);
 }
 
-.add-daily-icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #4caf50, #81c784);
+.header-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 1.8rem;
+    font-size: 2rem;
 }
 
-.add-daily-title h1 {
-    font-size: 1.8rem;
+.page-header h1 {
+    font-size: 2rem;
     font-weight: 700;
-    color: #212121;
-    margin: 0;
+    margin-bottom: 0.25rem;
 }
 
-.add-daily-subtitle {
-    color: #757575;
-    margin: 0.5rem 0 0 0;
+.page-header .lead {
     font-size: 1rem;
+    opacity: 0.95;
 }
 
-.add-daily-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-label {
-    font-weight: 600;
-    color: #212121;
-    font-size: 1rem;
-}
-
-.form-control {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    background: #fafafa;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #4caf50;
+/* 寵物資訊卡 */
+.pet-info-card {
     background: white;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.form-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-    padding-right: 40px;
-}
-
-.form-textarea {
-    min-height: 120px;
-    resize: vertical;
-    line-height: 1.6;
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.btn {
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    justify-content: center;
-}
-
-.btn-primary {
-    background: #4caf50;
-    color: white;
-    border: 2px solid #4caf50;
-    flex: 1;
-}
-
-.btn-primary:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
-}
-
-.btn-secondary {
-    background: white;
-    color: #757575;
-    border: 2px solid #e0e0e0;
-}
-
-.btn-secondary:hover {
-    background: #f5f5f5;
-    border-color: #4caf50;
-    color: #4caf50;
-}
-
-/* ===== 現代化寵物資訊卡片 ===== */
-.pet-card-container {
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-/* 主要寵物英雄卡片 */
-.pet-hero-card {
-    position: relative;
-    background: linear-gradient(135deg, #4caf50 0%, #81c784 50%, #66bb6a 100%);
-    border-radius: 20px;
-    overflow: hidden;
-    margin-bottom: 1rem;
-    box-shadow: 0 20px 40px rgba(76, 175, 80, 0.25);
-    min-height: 180px;
-    transition: all 0.3s ease;
-}
-
-.pet-hero-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 25px 50px rgba(76, 175, 80, 0.35);
-}
-
-.pet-hero-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, #4caf50 0%, #81c784 50%, #66bb6a 100%);
-}
-
-.hero-gradient-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
-}
-
-.floating-elements {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.floating-paw {
-    position: absolute;
-    font-size: 24px;
-    opacity: 0.1;
-    animation: float 6s ease-in-out infinite;
-}
-
-.paw-1 {
-    top: 20%;
-    right: 15%;
-    animation-delay: 0s;
-}
-
-.paw-2 {
-    top: 60%;
-    right: 80%;
-    animation-delay: 2s;
-}
-
-.paw-3 {
-    bottom: 20%;
-    right: 40%;
-    animation-delay: 4s;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(10deg); }
-}
-
-/* 英雄卡片內容 */
-.pet-hero-content {
-    position: relative;
-    z-index: 2;
+    border-radius: var(--border-radius);
     padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid #f8f9fa;
+}
+
+.pet-avatar-section {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
+}
+
+.pet-avatar-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--daily-color), var(--daily-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: white;
-}
-
-/* 主要頭像 */
-.pet-main-avatar {
-    position: relative;
+    font-size: 2rem;
     flex-shrink: 0;
-}
-
-.avatar-ring {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.avatar-ring::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #81c784, #66bb6a, #4caf50, #388e3c, #2e7d32);
-    z-index: -1;
-    animation: rotate 3s linear infinite;
-}
-
-@keyframes rotate {
-    100% { transform: rotate(360deg); }
-}
-
-.avatar-inner {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
+    box-shadow: var(--shadow-md);
     overflow: hidden;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-.avatar-inner img {
+.pet-avatar-circle img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.avatar-placeholder {
-    font-size: 2rem;
-    color: rgba(255,255,255,0.8);
-}
-
-.pet-status-badge {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.8rem;
-    border: 3px solid white;
-    animation: heartbeat 2s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-/* 主要資訊 */
-.pet-main-info {
+.pet-details {
     flex: 1;
-    min-width: 0;
 }
 
-.pet-main-name {
+.pet-details h3 {
     font-size: 1.5rem;
     font-weight: 700;
+    color: #212529;
     margin: 0 0 0.5rem 0;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.pet-main-details {
+.pet-meta {
     display: flex;
-    align-items: center;
-    gap: 1rem;
     flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
-.pet-species-badge {
+.meta-item {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    background: rgba(255,255,255,0.2);
-    padding: 0.4rem 0.8rem;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background: #f8f9fa;
     border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    backdrop-filter: blur(10px);
-}
-
-.pet-breed-text {
     font-size: 0.9rem;
-    opacity: 0.9;
-    font-style: italic;
+    font-weight: 500;
+    color: #495057;
 }
 
-/* 現代化切換按鈕 */
-.pet-switcher-modern {
+.meta-item i {
+    color: var(--daily-color);
+}
+
+/* 寵物切換器 */
+.pet-switcher {
     flex-shrink: 0;
 }
 
-.switcher-trigger {
+.switcher-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 15px;
-    padding: 1rem 1.2rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, var(--daily-color), var(--daily-dark));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    color: white;
     position: relative;
-    overflow: hidden;
 }
 
-.switcher-trigger:hover {
-    background: rgba(255,255,255,0.25);
+.switcher-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-md);
 }
 
-.switcher-trigger::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.switcher-trigger:hover::before {
-    left: 100%;
-}
-
-.trigger-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-}
-
-.trigger-text {
+.switcher-btn .badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
     font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
 }
 
-.trigger-count {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 700;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid white;
+.switcher-panel {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e9ecef;
 }
 
-/* 寵物選擇面板 */
-.pet-switcher-panel {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    border: 1px solid #e0e0e0;
-    overflow: hidden;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(20px) scale(0.95);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    max-height: 0;
-}
-
-.pet-switcher-panel.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-    max-height: 500px;
-}
-
-.panel-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #e0e0e0;
+.switcher-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1rem;
 }
 
-.panel-title {
+.switcher-header h4 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #495057;
     margin: 0;
+    font-size: 1.1rem;
+    color: #495057;
 }
 
-.panel-title i {
-    color: #4caf50;
-}
-
-.panel-close {
-    background: none;
+.close-btn {
+    background: #f8f9fa;
     border: none;
     width: 32px;
     height: 32px;
@@ -494,689 +448,354 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6c757d;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.panel-close:hover {
-    background: rgba(108, 117, 125, 0.1);
-    color: #495057;
+.close-btn:hover {
+    background: #e9ecef;
 }
 
-/* 寵物網格 */
-.pets-grid {
-    padding: 1rem;
+.pet-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1rem;
-    max-height: 300px;
-    overflow-y: auto;
 }
 
-.pet-option-card {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
+.pet-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
 }
 
-.pet-option-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #4caf50, #81c784);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
+.pet-item:hover {
+    border-color: var(--daily-color);
+    background: #f8f9fa;
 }
 
-.pet-option-card:hover::before {
-    transform: scaleX(1);
+.pet-item.active {
+    border-color: var(--daily-color);
+    background: linear-gradient(135deg, rgba(32, 201, 151, 0.05), rgba(23, 162, 184, 0.05));
 }
 
-.pet-option-card:hover {
-    border-color: #4caf50;
-    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.15);
-    transform: translateY(-2px);
-}
-
-.pet-option-card.current {
-    border-color: #4caf50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.05), rgba(129, 199, 132, 0.05));
-}
-
-.pet-option-card.current::before {
-    transform: scaleX(1);
-}
-
-.pet-option-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.pet-option-avatar {
-    position: relative;
-    flex-shrink: 0;
-}
-
-.option-avatar-ring {
-    width: 60px;
-    height: 60px;
+.pet-item-avatar {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    padding: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.option-avatar-ring img {
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.option-avatar-placeholder {
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4caf50, #81c784);
+    background: linear-gradient(135deg, var(--daily-color), var(--daily-dark));
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 1.5rem;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
-.current-indicator {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #28a745, #20c997);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.7rem;
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+.pet-item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.pet-option-content {
+.pet-item-info {
     flex: 1;
     min-width: 0;
 }
 
-.pet-option-name {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #495057;
+.pet-item-info h5 {
     margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
 }
 
-.pet-option-meta {
+.pet-item-info p {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #6c757d;
+}
+
+.current-badge {
+    color: var(--daily-color);
+    font-size: 1.25rem;
+}
+
+/* 表單卡片 */
+.form-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.form-header-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem;
+    border-bottom: 3px solid var(--daily-color);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1.25rem;
 }
 
-.meta-separator {
-    opacity: 0.5;
-}
-
-.pet-option-action {
+.form-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--daily-color), var(--daily-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
     flex-shrink: 0;
 }
 
-.action-current {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, #ffc107, #fd7e14);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.9rem;
-    animation: pulse 2s ease-in-out infinite;
+.form-header-section h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 0.25rem 0;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+.form-header-section p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 0.95rem;
 }
 
-.action-switch {
-    width: 32px;
-    height: 32px;
-    background: rgba(76, 175, 80, 0.1);
-    border-radius: 50%;
+/* 現代表單 */
+.modern-form {
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.section-title {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: #4caf50;
-    font-size: 0.8rem;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--daily-color);
+}
+
+.section-title i {
+    color: var(--daily-color);
+    font-size: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.75rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.form-label i {
+    color: var(--daily-color);
+    font-size: 1.1rem;
+}
+
+.required {
+    color: var(--danger-color);
+    font-weight: 700;
+}
+
+.input-wrapper input,
+.input-wrapper select,
+.input-wrapper textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
     transition: all 0.3s ease;
+    background: white;
 }
 
-.pet-option-card:hover .action-switch {
-    background: #4caf50;
+.input-wrapper textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.input-wrapper input:focus,
+.input-wrapper select:focus,
+.input-wrapper textarea:focus {
+    border-color: var(--daily-color);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(32, 201, 151, 0.15);
+}
+
+.help-text {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.help-text i {
+    color: var(--info-color);
+    font-size: 0.9rem;
+}
+
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+/* 操作按鈕 */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e9ecef;
+}
+
+.form-actions .btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: #6c757d;
     color: white;
-    transform: translateX(2px);
 }
 
+.btn-cancel:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--daily-color), var(--daily-dark));
+    color: white;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, var(--daily-dark), #138496);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 響應式設計 */
 @media (max-width: 768px) {
-    .add-daily-container {
-        padding: 0 0.5rem;
+    .page-header h1 {
+        font-size: 1.5rem;
     }
 
-    .add-daily-card {
-        padding: 1.5rem;
+    .form-row {
+        grid-template-columns: 1fr;
     }
 
-    .add-daily-header {
+    .pet-avatar-section {
         flex-direction: column;
         text-align: center;
+    }
+
+    .pet-meta {
+        justify-content: center;
     }
 
     .form-actions {
         flex-direction: column;
     }
 
-    /* 響應式現代化寵物卡片 */
-    .pet-hero-card {
-        min-height: 140px;
-    }
-
-    .pet-hero-content {
-        padding: 1rem;
-        gap: 1rem;
-    }
-
-    .avatar-ring {
-        width: 60px;
-        height: 60px;
-    }
-
-    .avatar-inner {
-        width: 52px;
-        height: 52px;
-    }
-
-    .pet-main-name {
-        font-size: 1.2rem;
-    }
-
-    .pet-main-details {
+    .form-header-section {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
+        text-align: center;
     }
 
-    .switcher-trigger {
-        padding: 0.8rem 1rem;
-        gap: 0.4rem;
+    .section-title {
+        font-size: 1.1rem;
     }
 
-    .trigger-text {
-        font-size: 0.75rem;
+    .modern-form {
+        padding: 1.5rem;
     }
 
-    .pets-grid {
+    .pet-list {
         grid-template-columns: 1fr;
-        gap: 0.75rem;
-        padding: 0.75rem;
     }
+}
 
-    .pet-option-card {
-        padding: 0.75rem;
-        gap: 0.75rem;
-    }
-
-    .option-avatar-ring {
-        width: 50px;
-        height: 50px;
-    }
-
-    .option-avatar-ring img,
-    .option-avatar-placeholder {
-        width: 44px;
-        height: 44px;
-    }
-
-    .pet-option-name {
-        font-size: 1rem;
-    }
-
-    .pet-option-meta {
-        font-size: 0.85rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-    }
-
-    .meta-separator {
-        display: none;
-    }
+/* 平滑滾動 */
+html {
+    scroll-behavior: smooth;
 }
 </style>
-{% endblock %}
-
-{% block content %}
-<div class="add-daily-wrapper">
-    <div class="add-daily-container">
-        <div class="add-daily-card">
-            <div class="add-daily-header">
-                <div class="add-daily-icon">
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="add-daily-title">
-                    <h1>新增生活記錄</h1>
-                    <p class="add-daily-subtitle">記錄 {{ pet.name }} 的日常生活點滴</p>
-                </div>
-            </div>
-
-            <!-- 現代化寵物資訊卡片 -->
-            <div class="pet-card-container">
-                <div class="pet-hero-card">
-                    <div class="pet-hero-background">
-                        <div class="hero-gradient-overlay"></div>
-                        <div class="floating-elements">
-                            <div class="floating-paw paw-1">🐾</div>
-                            <div class="floating-paw paw-2">🐾</div>
-                            <div class="floating-paw paw-3">🐾</div>
-                        </div>
-                    </div>
-
-                    <div class="pet-hero-content">
-                        <div class="pet-main-avatar">
-                            <div class="avatar-ring">
-                                <div class="avatar-inner">
-                                    {% if pet.picture %}
-                                        <img src="{{ pet.picture.url }}" alt="{{ pet.name }}">
-                                    {% else %}
-                                        <div class="avatar-placeholder">
-                                            <i class="fas fa-paw"></i>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="pet-status-badge">
-                                <i class="fas fa-heart"></i>
-                            </div>
-                        </div>
-
-                        <div class="pet-main-info">
-                            <h2 class="pet-main-name">{{ pet.name }}</h2>
-                            <div class="pet-main-details">
-                                <span class="pet-species-badge">
-                                    <i class="fas fa-tag"></i>
-                                    {{ pet.species }}
-                                </span>
-                                <span class="pet-breed-text">{{ pet.breed|default:"可愛毛孩" }}</span>
-                            </div>
-                        </div>
-
-                        {% if user_pets.count > 1 %}
-                        <div class="pet-switcher-modern">
-                            <button class="switcher-trigger" onclick="togglePetSwitcher()" id="switcherTrigger">
-                                <div class="trigger-icon">
-                                    <i class="fas fa-sync-alt"></i>
-                                </div>
-                                <span class="trigger-text">切換毛孩</span>
-                                <div class="trigger-count">{{ user_pets.count }}</div>
-                            </button>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                {% if user_pets.count > 1 %}
-                <!-- 寵物選擇面板 -->
-                <div class="pet-switcher-panel" id="petSwitcherPanel">
-                    <div class="panel-header">
-                        <h4 class="panel-title">
-                            <i class="fas fa-paw"></i>
-                            選擇毛孩
-                        </h4>
-                        <button class="panel-close" onclick="closePetSwitcher()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-
-                    <div class="pets-grid">
-                        {% for user_pet in user_pets %}
-                        <div class="pet-option-card {% if user_pet.id == current_pet_id %}current{% endif %}"
-                             onclick="switchToModernPet('{{ user_pet.id }}')">
-                            <div class="pet-option-avatar">
-                                <div class="option-avatar-ring">
-                                    {% if user_pet.picture %}
-                                        <img src="{{ user_pet.picture.url }}" alt="{{ user_pet.name }}">
-                                    {% else %}
-                                        <div class="option-avatar-placeholder">
-                                            <i class="fas fa-paw"></i>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                {% if user_pet.id == current_pet_id %}
-                                <div class="current-indicator">
-                                    <i class="fas fa-check"></i>
-                                </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="pet-option-content">
-                                <h5 class="pet-option-name">{{ user_pet.name }}</h5>
-                                <p class="pet-option-meta">
-                                    <span class="meta-species">{{ user_pet.species }}</span>
-                                    {% if user_pet.breed %}
-                                    <span class="meta-separator">•</span>
-                                    <span class="meta-breed">{{ user_pet.breed }}</span>
-                                    {% endif %}
-                                </p>
-                            </div>
-
-                            <div class="pet-option-action">
-                                {% if user_pet.id == current_pet_id %}
-                                    <div class="action-current">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                {% else %}
-                                    <div class="action-switch">
-                                        <i class="fas fa-arrow-right"></i>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-
-            <form method="post" class="add-daily-form">
-                {% csrf_token %}
-                
-                <div class="form-group">
-                    <label for="id_date" class="form-label">
-                        <i class="fas fa-calendar-alt"></i> 日期
-                    </label>
-                    {{ form.date }}
-                </div>
-
-                <div class="form-group">
-                    <label for="id_category" class="form-label">
-                        <i class="fas fa-tags"></i> 分類
-                    </label>
-                    {{ form.category }}
-                </div>
-
-                <div class="form-group" id="content-group">
-                    <label for="id_content" class="form-label">
-                        <i class="fas fa-edit"></i> 記錄內容
-                    </label>
-                    {{ form.content }}
-                </div>
-
-                <div class="form-group" id="temperature-group" style="display: none;">
-                    <label for="id_temperature" class="form-label">
-                        <i class="fas fa-thermometer-half"></i> 體溫 (°C)
-                    </label>
-                    {{ form.temperature }}
-                    <small class="form-text text-muted">正常體溫範圍：狗 37.5-39.2°C，貓 38.1-39.2°C</small>
-                </div>
-
-                <div class="form-group" id="weight-group" style="display: none;">
-                    <label for="id_weight" class="form-label">
-                        <i class="fas fa-weight"></i> 體重 (kg)
-                    </label>
-                    {{ form.weight }}
-                </div>
-
-                <div class="form-group" id="medication-group" style="display: none;">
-                    <label for="id_medication_dosage" class="form-label">
-                        <i class="fas fa-pills"></i> 藥物劑量
-                    </label>
-                    {{ form.medication_dosage }}
-                </div>
-
-                <div class="form-group" id="exercise-group" style="display: none;">
-                    <label for="id_exercise_duration" class="form-label">
-                        <i class="fas fa-running"></i> 運動時長 (分鐘)
-                    </label>
-                    {{ form.exercise_duration }}
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>
-                        保存記錄
-                    </button>
-                    <a href="{% url 'health_rec' %}?tab=daily" class="btn btn-secondary">
-                        <i class="fas fa-times"></i>
-                        取消
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script>
-// 現代化寵物切換器功能
-function togglePetSwitcher() {
-    const panel = document.getElementById('petSwitcherPanel');
-    const trigger = document.getElementById('switcherTrigger');
-
-    if (!panel) return;
-
-    const isShowing = panel.classList.contains('show');
-
-    if (isShowing) {
-        closePetSwitcher();
-    } else {
-        openPetSwitcher();
+// 寵物切換器控制
+function toggleSwitcher() {
+    const panel = document.getElementById('switcherPanel');
+    if (panel) {
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
 }
 
-function openPetSwitcher() {
-    const panel = document.getElementById('petSwitcherPanel');
-    const trigger = document.getElementById('switcherTrigger');
-
-    if (panel && trigger) {
-        panel.classList.add('show');
-        trigger.style.transform = 'scale(0.95)';
-
-        // 添加點擊外部關閉功能
-        setTimeout(() => {
-            document.addEventListener('click', closePetSwitcherOnClickOutside);
-        }, 100);
-    }
-}
-
-function closePetSwitcher() {
-    const panel = document.getElementById('petSwitcherPanel');
-    const trigger = document.getElementById('switcherTrigger');
-
-    if (panel && trigger) {
-        panel.classList.remove('show');
-        trigger.style.transform = 'scale(1)';
-
-        // 移除點擊外部關閉功能
-        document.removeEventListener('click', closePetSwitcherOnClickOutside);
-    }
-}
-
-function closePetSwitcherOnClickOutside(event) {
-    const panel = document.getElementById('petSwitcherPanel');
-    const trigger = document.getElementById('switcherTrigger');
-
-    if (panel && trigger &&
-        !panel.contains(event.target) &&
-        !trigger.contains(event.target)) {
-        closePetSwitcher();
-    }
-}
-
-// 現代化寵物切換功能
-function switchToModernPet(petId) {
-    if (petId && petId !== '{{ current_pet_id }}') {
-        // 檢查表單是否有未保存的數據
-        const form = document.querySelector('.add-daily-form');
-        const formData = new FormData(form);
-        let hasData = false;
-
-        // 檢查表單是否有輸入內容
-        for (let [key, value] of formData.entries()) {
-            if (key !== 'csrfmiddlewaretoken' && value && value.trim() !== '') {
-                hasData = true;
-                break;
-            }
-        }
-
-        if (hasData) {
-            const confirmed = confirm('表單中有未保存的數據，切換寵物將會遺失這些數據。是否繼續？');
-            if (!confirmed) {
-                return;
-            }
-        }
-
-        // 關閉面板
-        closePetSwitcher();
-
-        // 顯示載入動畫
-        showModernSwitchingLoader();
-
-        // 跳轉到新寵物頁面
-        setTimeout(() => {
-            window.location.href = `/pet/${petId}/add_daily_record/`;
-        }, 800);
-    }
-}
-
-// 顯示現代化切換載入動畫
-function showModernSwitchingLoader() {
-    const heroCard = document.querySelector('.pet-hero-card');
-    if (heroCard) {
-        heroCard.style.transform = 'scale(0.98)';
-        heroCard.style.opacity = '0.7';
-
-        // 添加載入覆蓋層
-        const loadingOverlay = document.createElement('div');
-        loadingOverlay.className = 'switching-overlay';
-        loadingOverlay.innerHTML = `
-            <div class="switching-content">
-                <div class="switching-spinner">
-                    <i class="fas fa-paw"></i>
-                </div>
-                <p class="switching-text">切換中...</p>
-            </div>
-        `;
-
-        heroCard.appendChild(loadingOverlay);
-
-        // 添加載入動畫樣式
-        const style = document.createElement('style');
-        style.textContent = `
-            .switching-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(76, 175, 80, 0.9);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10;
-                border-radius: 20px;
-            }
-
-            .switching-content {
-                text-align: center;
-                color: white;
-            }
-
-            .switching-spinner {
-                font-size: 2rem;
-                margin-bottom: 1rem;
-                animation: switching-bounce 1s ease-in-out infinite;
-            }
-
-            .switching-text {
-                font-size: 1rem;
-                font-weight: 600;
-                margin: 0;
-            }
-
-            @keyframes switching-bounce {
-                0%, 100% { transform: translateY(0) rotate(0deg); }
-                50% { transform: translateY(-10px) rotate(15deg); }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-}
-
-// 原始切換函數保留作為備用
+// 切換寵物
 function switchPet(petId) {
-    switchToModernPet(petId);
-}
-
-// 動態更新寵物資訊
-function updatePetInfo(petId) {
-    if (petId === '{{ current_pet_id }}') return;
-
-    // 透過AJAX獲取寵物資訊並更新顯示
-    fetch(`/api/pet/${petId}/info/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // 更新頭像
-                const avatar = document.querySelector('.pet-avatar');
-                if (data.pet.picture) {
-                    avatar.innerHTML = `<img src="${data.pet.picture}" alt="${data.pet.name}">`;
-                } else {
-                    avatar.innerHTML = '<i class="fas fa-paw"></i>';
-                }
-
-                // 更新詳細資訊
-                const details = document.querySelector('.pet-details h3');
-                details.textContent = data.pet.name;
-
-                const species = document.querySelector('.pet-details p');
-                species.textContent = `${data.pet.species} • ${data.pet.breed}`;
-
-                // 更新標題
-                const subtitle = document.querySelector('.add-daily-subtitle');
-                subtitle.textContent = `記錄 ${data.pet.name} 的日常生活點滴`;
-            }
-        })
-        .catch(error => {
-            console.error('獲取寵物資訊失敗:', error);
-            // 如果AJAX失敗，直接跳轉
+    if (petId && petId !== '{{ pet.id }}') {
+        const confirmed = confirm('切換寵物將會清空目前表單內容，是否繼續？');
+        if (confirmed) {
             window.location.href = `/pet/${petId}/add_daily_record/`;
-        });
+        }
+    }
 }
 
-// 動態顯示/隱藏字段的函數
+// 動態顯示/隱藏欄位
 function toggleFields(category) {
-    // 隱藏所有特殊字段
+    // 隱藏所有特殊欄位
     const groups = ['content-group', 'temperature-group', 'weight-group', 'medication-group', 'exercise-group'];
     groups.forEach(groupId => {
         const group = document.getElementById(groupId);
@@ -1184,135 +803,41 @@ function toggleFields(category) {
             group.style.display = 'none';
         }
     });
-    
-    const dateGroup = document.querySelector('.form-group:has(#id_date)') || 
-                      document.querySelector('[for="id_date"]')?.closest('.form-group');
-    
-    // 健康數據類：只需要數值和日期，用於趨勢分析
+
+    // 根據分類顯示相應欄位
     if (category === 'temperature') {
-        document.getElementById('temperature-group').style.display = 'flex';
-        if (dateGroup) dateGroup.style.display = 'flex';
-        setFormMode('data', '📊 體溫監測數據將用於健康趨勢分析');
+        document.getElementById('temperature-group').style.display = 'block';
     } else if (category === 'weight') {
-        document.getElementById('weight-group').style.display = 'flex';
-        if (dateGroup) dateGroup.style.display = 'flex';
-        setFormMode('data', '📊 體重記錄數據將用於成長趨勢分析');
+        document.getElementById('weight-group').style.display = 'block';
     } else if (category === 'exercise') {
-        document.getElementById('exercise-group').style.display = 'flex';
-        if (dateGroup) dateGroup.style.display = 'flex';
-        setFormMode('data', '📊 運動數據將用於運動習慣分析');
+        document.getElementById('exercise-group').style.display = 'block';
     } else if (category === 'medication') {
-        document.getElementById('medication-group').style.display = 'flex';
-        document.getElementById('content-group').style.display = 'flex';
-        if (dateGroup) dateGroup.style.display = 'none';
-        setFormMode('note', '💊 用藥記錄會自動使用今天日期，專注記錄藥物資訊');
-    } 
-    // 筆記類型記錄：自動設置今天日期，隱藏日期選擇
-    else if (['diet', 'allergen', 'mood', 'other'].includes(category)) {
-        document.getElementById('content-group').style.display = 'flex';
-        if (dateGroup) dateGroup.style.display = 'none';
-        setFormMode('note', '📝 生活筆記會自動使用今天日期，專注記錄內容觀察');
+        document.getElementById('medication-group').style.display = 'block';
+        document.getElementById('content-group').style.display = 'block';
     } else {
-        // 默認情況
-        document.getElementById('content-group').style.display = 'flex';
-        if (dateGroup) dateGroup.style.display = 'flex';
+        document.getElementById('content-group').style.display = 'block';
     }
 }
 
-function setFormMode(mode, hint) {
-    // 為筆記類型自動設置今天日期
-    if (mode === 'note') {
-        const dateInput = document.getElementById('id_date');
-        if (dateInput) {
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.value = today;
-        }
-    }
-    
-    // 顯示提示信息
-    showFormHint(hint);
-}
-
-function showFormHint(message) {
-    // 移除舊的提示
-    const oldHint = document.querySelector('.form-mode-hint');
-    if (oldHint) {
-        oldHint.remove();
-    }
-    
-    // 添加新提示
-    const categoryGroup = document.querySelector('.form-group:has(#id_category)');
-    if (categoryGroup) {
-        const hint = document.createElement('div');
-        hint.className = 'form-mode-hint';
-        hint.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
-        categoryGroup.appendChild(hint);
-    }
-}
-
+// 頁面載入時初始化
 document.addEventListener('DOMContentLoaded', function() {
-    // 為表單控件添加樣式類
-    const formControls = document.querySelectorAll('input, select, textarea');
-    formControls.forEach(control => {
-        control.classList.add('form-control');
-        
-        if (control.tagName === 'SELECT') {
-            control.classList.add('form-select');
-        }
-        
-        if (control.tagName === 'TEXTAREA') {
-            control.classList.add('form-textarea');
-        }
-    });
-
     // 設置默認日期為今天
     const dateInput = document.getElementById('id_date');
     if (dateInput && !dateInput.value) {
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
     }
-    
-    // 初始化字段顯示
+
+    // 監聽分類變更
     const categorySelect = document.getElementById('id_category');
     if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            toggleFields(this.value);
+        });
+
+        // 初始化顯示
         toggleFields(categorySelect.value);
     }
-    
-    // 添加小提示樣式
-    const style = document.createElement('style');
-    style.textContent = `
-        .form-text {
-            font-size: 0.875rem;
-            color: #6c757d;
-            margin-top: 0.25rem;
-        }
-        .text-muted {
-            color: #6c757d !important;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .form-mode-hint {
-            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-top: 8px;
-            font-size: 0.9rem;
-            color: #1565c0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .form-mode-hint i {
-            color: #42a5f5;
-        }
-    `;
-    document.head.appendChild(style);
 });
 </script>
 {% endblock %}

@@ -1153,6 +1153,24 @@
             </form>
           </div>
         </div>
+      {% elif adoption.is_publish and not adoption.is_adopted %}
+        <!-- 申請領養按鈕 (非飼主的已登入用戶) -->
+        <div class="action-section">
+          <h3 class="section-title">
+            <i class="bi bi-heart"></i>
+            領養申請
+          </h3>
+          <div class="action-buttons">
+            <a href="{% url 'apply_for_adoption' adoption.pk %}" class="btn btn-success btn-lg">
+              <i class="bi bi-hand-thumbs-up"></i>
+              申請領養此寵物
+            </a>
+          </div>
+          <div class="mt-3 text-muted" style="font-size: 0.9em;">
+            <i class="bi bi-info-circle"></i>
+            點擊後將填寫詳細的領養申請表單，請如實填寫相關資料。
+          </div>
+        </div>
       {% endif %}
     {% else %}
       <div class="action-section">

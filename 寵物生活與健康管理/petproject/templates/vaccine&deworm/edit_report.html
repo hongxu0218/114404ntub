@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}新增檢驗報告 - {{ pet.name }}{% endblock %}
+{% block title %}編輯檢驗報告 - {{ pet.name }}{% endblock %}
 
 {% block content %}
 <div class="container my-5">
@@ -14,8 +14,8 @@
                         <i class="bi bi-file-earmark-medical"></i>
                     </div>
                     <div>
-                        <h1>上傳檢驗報告</h1>
-                        <p class="lead mb-0">為 <strong>{{ pet.name }}</strong> 建立檢驗報告記錄</p>
+                        <h1>編輯檢驗報告</h1>
+                        <p class="lead mb-0">為 <strong>{{ pet.name }}</strong> 更新檢驗報告記錄</p>
                     </div>
                 </div>
             </div>
@@ -180,8 +180,8 @@
                         取消
                     </a>
                     <button type="submit" class="btn btn-submit">
-                        <i class="bi bi-upload"></i>
-                        上傳報告
+                        <i class="bi bi-save"></i>
+                        更新報告
                     </button>
                 </div>
             </form>

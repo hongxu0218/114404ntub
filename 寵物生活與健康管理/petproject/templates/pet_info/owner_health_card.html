@@ -63,12 +63,14 @@
             <i class="fas fa-chart-line"></i>
             健康記錄
         </a>
+        {% comment %}
         {% if insights.urgent_alerts_count > 0 or insights.warning_alerts_count > 0 %}
         <a href="{% url 'create_appointment' pet.id %}" class="health-btn urgent">
             <i class="fas fa-calendar-plus"></i>
             立即預約
         </a>
         {% endif %}
+        {% endcomment %}
     </div>
 </div>
 

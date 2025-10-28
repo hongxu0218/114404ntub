@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Google Calendar 設定 - 毛日好{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Google Calendar 整合設定
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h5>什麼是 Google Calendar 整合？</h5>
+                        <p class="text-muted">
+                            啟用 Google Calendar 整合後，系統將自動將以下重要事項同步至您的 Google Calendar：
+                        </p>
+                        <ul class="text-muted">
+                            <li>🏥 預約看診提醒</li>
+                            <li>💉 疫苗接種記錄與提醒</li>
+                            <li>🐛 驅蟲記錄與提醒</li>
+                        </ul>
+                        <p class="text-muted">
+                            <small>
+                                <i class="bi bi-shield-check me-1"></i>
+                                我們僅會存取您的 Google Calendar 事件管理權限，不會存取其他資料。
+                            </small>
+                        </p>
+                    </div>
+
+                    <hr>
+
+                    <div class="my-4">
+                        <h5>目前狀態</h5>
+
+                        {% if has_token and calendar_enabled %}
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                已連接至 Google Calendar
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'google_calendar_disconnect' %}" class="btn btn-outline-danger">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    中斷 Google Calendar 連接
+                                </a>
+                            </div>
+
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                尚未連接 Google Calendar
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'google_calendar_authorize' %}" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-google me-2"></i>
+                                    連接 Google Calendar
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <div class="my-4">
+                        <h5>常見問題</h5>
+
+                        <div class="accordion" id="faqAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                        如何授權 Google Calendar？
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        點擊「連接 Google Calendar」按鈕，系統會引導您至 Google 授權頁面。
+                                        請選擇您要使用的 Google 帳號，並允許毛日好存取您的 Google Calendar。
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                        會同步哪些資料？
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        系統會自動將您的預約、疫苗接種、驅蟲等重要事項新增至您的 Google Calendar，
+                                        並在事件前提供提醒通知。
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                        如何取消授權？
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        點擊「中斷 Google Calendar 連接」按鈕即可取消授權。
+                                        取消後，系統將不再同步新的事項至您的 Google Calendar，
+                                        但已同步的事項不會自動刪除。
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                        資料安全嗎？
+                                    </button>
+                                </h2>
+                                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        是的。我們使用 Google OAuth 2.0 標準授權流程，
+                                        僅會存取您的 Google Calendar 事件管理權限，
+                                        不會存取您的其他 Google 資料（如 Gmail、聯絡人等）。
+                                        您的授權憑證會以加密方式儲存。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            返回首頁
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

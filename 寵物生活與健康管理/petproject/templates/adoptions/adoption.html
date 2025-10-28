@@ -1152,10 +1152,16 @@
         <img src="{% static 'images/icon-adoption.png' %}" alt="領養圖示" class="title-icon">
         <h1>領養專區</h1>
       </div>
-      <a href="{% url 'my_adoption' %}" class="publish-btn">
-        <i class="bi bi-plus-circle-fill"></i>
-        我要刊登
-      </a>
+      <div style="display: flex; gap: 1rem;">
+        <a href="{% url 'applicant_profile_settings' %}" class="publish-btn" style="background: #6c757d;">
+          <i class="bi bi-person-gear"></i>
+          申請資料設定
+        </a>
+        <a href="{% url 'my_adoption' %}" class="publish-btn">
+          <i class="bi bi-plus-circle-fill"></i>
+          我要刊登
+        </a>
+      </div>
     </div>
   </div>
 

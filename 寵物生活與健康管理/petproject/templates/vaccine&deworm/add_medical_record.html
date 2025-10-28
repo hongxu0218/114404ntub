@@ -1,0 +1,637 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}新增看診記錄 - {{ pet.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="medical-form-container">
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="header-icon">
+                        <i class="bi bi-hospital-fill"></i>
+                    </div>
+                    <div>
+                        <h1>新增看診記錄</h1>
+                        <p class="lead mb-0">為 <strong>{{ pet.name }}</strong> 建立醫療記錄</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 寵物資訊卡 -->
+        <div class="pet-info-card">
+            <div class="pet-avatar-section">
+                <div class="pet-avatar-circle">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </div>
+                <div class="pet-details">
+                    <h3>{{ pet.name }}</h3>
+                    <div class="pet-meta">
+                        <span class="meta-item">
+                            <i class="bi bi-tag-fill"></i>
+                            {{ pet.species }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-award-fill"></i>
+                            {{ pet.breed }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-calendar-fill"></i>
+                            {{ pet.age }}歲
+                        </span>
+                        <span class="meta-item">
+                            <i class="bi bi-person-fill"></i>
+                            {{ pet.owner.get_full_name|default:pet.owner.username }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表單卡片 -->
+        <div class="form-card">
+            <div class="form-header-section">
+                <div class="form-icon">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+                <div>
+                    <h2>醫療記錄詳情</h2>
+                    <p>完整記錄看診資訊,建立完善的醫療健康檔案</p>
+                </div>
+            </div>
+
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+
+                <!-- 基本資訊 -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-info-circle-fill"></i>
+                        基本資訊
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.visit_date.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-event"></i>
+                                {{ form.visit_date.label }}
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                {{ form.visit_date }}
+                                {% if form.visit_date.errors %}
+                                    <div class="error-message">{{ form.visit_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="help-text">
+                                <i class="bi bi-info-circle"></i>
+                                選擇看診日期
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.clinic_location.id_for_label }}" class="form-label">
+                                <i class="bi bi-hospital"></i>
+                                {{ form.clinic_location.label }}
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                {{ form.clinic_location }}
+                                {% if form.clinic_location.errors %}
+                                    <div class="error-message">{{ form.clinic_location.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="help-text">
+                                <i class="bi bi-info-circle"></i>
+                                例：XX動物醫院
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 診斷與治療 -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-file-medical-fill"></i>
+                        診斷與治療
+                    </h3>
+
+                    <div class="form-group">
+                        <label for="{{ form.diagnosis.id_for_label }}" class="form-label">
+                            <i class="bi bi-clipboard-check"></i>
+                            {{ form.diagnosis.label }}
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.diagnosis }}
+                            {% if form.diagnosis.errors %}
+                                <div class="error-message">{{ form.diagnosis.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            獸醫師的診斷結果
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.treatment.id_for_label }}" class="form-label">
+                            <i class="bi bi-bandaid-fill"></i>
+                            {{ form.treatment.label }}
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.treatment }}
+                            {% if form.treatment.errors %}
+                                <div class="error-message">{{ form.treatment.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            治療方式或處方藥物
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <i class="bi bi-pencil-square"></i>
+                            {{ form.notes.label }}
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="error-message">{{ form.notes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            其他備註或醫囑（選填）
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 費用與追蹤 -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-cash-coin"></i>
+                        費用與追蹤
+                    </h3>
+
+                    <div class="form-group">
+                        <label for="{{ form.total_cost.id_for_label }}" class="form-label">
+                            <i class="bi bi-wallet2"></i>
+                            {{ form.total_cost.label }}
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.total_cost }}
+                            {% if form.total_cost.errors %}
+                                <div class="error-message">{{ form.total_cost.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            本次看診總費用（新台幣,選填）
+                        </div>
+                    </div>
+
+                    <div class="form-group checkbox-field">
+                        <label class="checkbox-label">
+                            {{ form.follow_up_required }}
+                            <span class="checkbox-text">
+                                <i class="bi bi-arrow-repeat"></i>
+                                {{ form.follow_up_required.label }}
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.follow_up_date.id_for_label }}" class="form-label">
+                            <i class="bi bi-calendar-check"></i>
+                            {{ form.follow_up_date.label }}
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.follow_up_date }}
+                            {% if form.follow_up_date.errors %}
+                                <div class="error-message">{{ form.follow_up_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="bi bi-info-circle"></i>
+                            如需追蹤,請選擇回診日期
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="form-actions">
+                    <a href="{% url 'health_rec' %}?tab=medical&pet={{ pet.id }}" class="btn btn-cancel">
+                        <i class="bi bi-x-circle"></i>
+                        取消
+                    </a>
+                    <button type="submit" class="btn btn-submit">
+                        <i class="bi bi-save"></i>
+                        儲存看診記錄
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #ffb703;
+    --primary-dark: #f9a602;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --medical-color: #8b5cf6;
+    --medical-dark: #7c3aed;
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.medical-form-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--medical-color) 0%, var(--medical-dark) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.header-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.page-header .lead {
+    font-size: 1rem;
+    opacity: 0.95;
+}
+
+/* 寵物資訊卡 */
+.pet-info-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid #f8f9fa;
+}
+
+.pet-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.pet-avatar-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--medical-color), var(--medical-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-md);
+}
+
+.pet-details h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 0.5rem 0;
+}
+
+.pet-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background: #f8f9fa;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.meta-item i {
+    color: var(--medical-color);
+}
+
+/* 表單卡片 */
+.form-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.form-header-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem;
+    border-bottom: 3px solid var(--medical-color);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.form-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--medical-color), var(--medical-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.form-header-section h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 0.25rem 0;
+}
+
+.form-header-section p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* 現代表單 */
+.modern-form {
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--medical-color);
+}
+
+.section-title i {
+    color: var(--medical-color);
+    font-size: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.75rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.form-label i {
+    color: var(--medical-color);
+    font-size: 1.1rem;
+}
+
+.required {
+    color: var(--danger-color);
+    font-weight: 700;
+}
+
+.input-wrapper input,
+.input-wrapper select,
+.input-wrapper textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.input-wrapper textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.input-wrapper input:focus,
+.input-wrapper select:focus,
+.input-wrapper textarea:focus {
+    border-color: var(--medical-color);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.15);
+}
+
+.help-text {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.help-text i {
+    color: var(--info-color);
+    font-size: 0.9rem;
+}
+
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+/* Checkbox 樣式 */
+.checkbox-field {
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    color: #212529;
+    cursor: pointer;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.checkbox-label:hover {
+    background: #e9ecef;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--medical-color);
+}
+
+.checkbox-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.checkbox-text i {
+    color: var(--medical-color);
+}
+
+/* 操作按鈕 */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e9ecef;
+}
+
+.form-actions .btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--medical-color), var(--medical-dark));
+    color: white;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, var(--medical-dark), #6d28d9);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .pet-avatar-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .pet-meta {
+        justify-content: center;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-header-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+
+    .modern-form {
+        padding: 1.5rem;
+    }
+}
+
+/* 平滑滾動 */
+html {
+    scroll-behavior: smooth;
+}
+</style>
+{% endblock %}
