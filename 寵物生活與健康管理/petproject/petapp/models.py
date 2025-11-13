@@ -925,17 +925,9 @@ class Profile(models.Model):
     
     @property
     def clinic(self):
-        """獲取關聯的診所"""
-        try:
-            if self.is_clinic_admin:
-                # 診所管理員：查找管理的診所
-                return VetClinic.objects.filter(clinic_admin=self.user).first()
-            else:
-                # 獸醫師：透過 VetDoctor 查找診所
-                doctor = VetDoctor.objects.filter(user=self.user).first()
-                return doctor.clinic if doctor else None
-        except:
-            return None
+        """獲取關聯的診所（診所功能已停用，始終返回 None）"""
+        # 診所功能已停用，VetDoctor 和診所管理已註解
+        return None
     
     def __str__(self):
         return f"{self.user.username} ({self.get_account_type_display()})"
@@ -2849,6 +2841,7 @@ class HandoffTicket(models.Model):
     channel = models.CharField(max_length=32, default='web')
     is_open = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    last_activity_at = models.DateTimeField(auto_now=True, verbose_name='最後活動時間')
 
     class Meta:
         ordering = ['-is_open', '-created_at']
@@ -2857,6 +2850,31 @@ class HandoffTicket(models.Model):
 
     def __str__(self):
         return f'#{self.id} {self.session_key} ({ "OPEN" if self.is_open else "CLOSED"})'
+
+    def is_idle_timeout(self, timeout_minutes=15):
+        """檢查是否超過閒置時間（預設 15 分鐘）"""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        if not self.is_open:
+            return False
+
+        idle_time = timezone.now() - self.last_activity_at
+        return idle_time > timedelta(minutes=timeout_minutes)
+
+    def auto_close_if_idle(self, timeout_minutes=15):
+        """如果閒置超時，自動關閉工單"""
+        if self.is_idle_timeout(timeout_minutes):
+            self.is_open = False
+            self.save()
+            # 發送系統訊息
+            HandoffMessage.objects.create(
+                ticket=self,
+                sender='system',
+                text=f'⏰ 由於 {timeout_minutes} 分鐘內無互動，系統已自動關閉此對話。'
+            )
+            return True
+        return False
 
 class HandoffMessage(models.Model):
     ticket = models.ForeignKey('HandoffTicket', on_delete=models.CASCADE, related_name='messages')

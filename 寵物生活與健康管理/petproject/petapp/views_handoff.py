@@ -235,6 +235,10 @@ def api_handoff_user_send(request: HttpRequest):
             sender="user",
             text=message
         )
+
+        # 更新最後活動時間（觸發 auto_now）
+        ticket.save(update_fields=['last_activity_at'])
+
         logger.info(f"User message added to ticket #{ticket_id}")
 
         # 通知員工（失敗不影響訊息發送）
@@ -356,6 +360,12 @@ def api_handoff_poll(request: HttpRequest):
         if ticket.session_key != session_key:
             return json_response(success=False, error="無權操作此工單", status=403)
 
+        # 檢查並自動關閉閒置超時的工單（15 分鐘）
+        if ticket.is_open:
+            ticket.auto_close_if_idle(timeout_minutes=15)
+            # 重新載入以獲取最新狀態
+            ticket.refresh_from_db()
+
         # 獲取新訊息
         messages = ticket.messages.filter(id__gt=since).order_by('id')
         messages_data = [
@@ -460,6 +470,9 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
             sender="agent",
             text=message
         )
+
+        # 更新最後活動時間（觸發 auto_now）
+        ticket.save(update_fields=['last_activity_at'])
 
         return json_response(success=True)
 

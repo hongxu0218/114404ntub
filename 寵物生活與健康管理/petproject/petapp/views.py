@@ -98,10 +98,10 @@ from .utils import (
     process_expired_appointments, get_expired_appointments_summary,
     get_temperature_data,
     get_weight_data,
-    time_overlap, 
-    detect_schedule_conflicts_for_clinic,
+    time_overlap,
+    # detect_schedule_conflicts_for_clinic,  # 已停用（診所功能已停用）
     calculate_schedule_coverage,
-    optimize_schedule_suggestions
+    # optimize_schedule_suggestions  # 已停用（診所功能已停用）
 )
 
 logger = logging.getLogger(__name__)
@@ -440,12 +440,18 @@ def home(request):
     """首頁"""
     import logging
     logger = logging.getLogger(__name__)
-    
+
+    # 超級管理員和後台管理員跳過額外資料檢查
+    if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+        logger.info("User is staff/superuser, skipping profile checks")
+        request.session.pop('google_needs_profile', None)  # 清除標記
+        return render(request, 'pages/index.html')
+
     # 檢查用戶是否需要補充 Google 註冊資料
     if request.user.is_authenticated and request.session.get('google_needs_profile'):
         logger.info("User authenticated with google_needs_profile flag, redirecting to extra signup")
         return redirect('/accounts/social/signup/extra/')
-    
+
     # 檢查已登入用戶是否沒有 Profile
     if request.user.is_authenticated:
         try:
@@ -456,7 +462,7 @@ def home(request):
             # 如果用戶沒有 Profile，可能是 Google 註冊用戶，重定向到補充資料頁面
             request.session['google_needs_profile'] = True
             return redirect('/accounts/social/signup/extra/')
-    
+
     return render(request, 'pages/index.html')
 
 def dashboard(request):
