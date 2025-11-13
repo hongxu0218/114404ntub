@@ -23,9 +23,9 @@
                         <button id="recordBtn" class="btn btn-danger btn-record shadow-lg"
                                 style="width: 180px; height: 180px; border-radius: 50%; position: relative;">
                             <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-microphone fa-4x mb-2"></i>
-                                <div class="fw-bold">按住錄音</div>
-                                <small class="text-white-50">放開即停止</small>
+                                <i id="recordIcon" class="fas fa-microphone fa-4x mb-2"></i>
+                                <div id="recordText" class="fw-bold">點擊開始錄音</div>
+                                <small id="recordHint" class="text-white-50">再點擊停止</small>
                             </div>
                             <div id="recordingIndicator" class="position-absolute top-0 end-0 me-3 mt-3" style="display: none;">
                                 <span class="badge bg-white text-danger">
@@ -234,7 +234,18 @@
 
 .btn-record:active {
     transform: scale(0.95);
+}
+
+.btn-record.btn-danger:active {
     box-shadow: 0 0 30px rgba(220, 53, 69, 0.6) !important;
+}
+
+.btn-record.btn-success {
+    box-shadow: 0 0 30px rgba(25, 135, 84, 0.6) !important;
+}
+
+.btn-record.btn-success:hover {
+    transform: scale(1.05);
 }
 
 .bg-gradient-primary {
@@ -295,34 +306,18 @@ async function initRecording() {
     }
 }
 
-// 按住開始錄音
-recordBtn.addEventListener('mousedown', async () => {
+// 點擊切換錄音狀態
+recordBtn.addEventListener('click', async () => {
     if (!mediaRecorder) {
         const success = await initRecording();
         if (!success) return;
     }
-    startRecording();
-});
 
-// 放開停止錄音
-recordBtn.addEventListener('mouseup', stopRecording);
-recordBtn.addEventListener('mouseleave', () => {
-    if (isRecording) stopRecording();
-});
-
-// 觸控支援
-recordBtn.addEventListener('touchstart', async (e) => {
-    e.preventDefault();
-    if (!mediaRecorder) {
-        const success = await initRecording();
-        if (!success) return;
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
     }
-    startRecording();
-});
-
-recordBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    stopRecording();
 });
 
 function startRecording() {
@@ -330,8 +325,14 @@ function startRecording() {
     mediaRecorder.start();
     isRecording = true;
 
-    recordBtn.classList.add('recording');
+    // 更新按鈕樣式和文字
+    recordBtn.classList.remove('btn-danger');
+    recordBtn.classList.add('btn-success', 'recording');
     recordingIndicator.style.display = 'block';
+
+    document.getElementById('recordIcon').className = 'fas fa-stop-circle fa-4x mb-2';
+    document.getElementById('recordText').textContent = '點擊停止錄音';
+    document.getElementById('recordHint').textContent = '正在錄音中...';
 
     showStatus('🎤 正在錄音...請說話', 'danger');
     result.classList.add('d-none');
@@ -342,8 +343,14 @@ function stopRecording() {
         mediaRecorder.stop();
         isRecording = false;
 
-        recordBtn.classList.remove('recording');
+        // 恢復按鈕樣式和文字
+        recordBtn.classList.remove('btn-success', 'recording');
+        recordBtn.classList.add('btn-danger');
         recordingIndicator.style.display = 'none';
+
+        document.getElementById('recordIcon').className = 'fas fa-microphone fa-4x mb-2';
+        document.getElementById('recordText').textContent = '點擊開始錄音';
+        document.getElementById('recordHint').textContent = '再點擊停止';
 
         showStatus('⏳ 正在處理您的語音...', 'warning');
     }
@@ -414,8 +421,15 @@ function getIntentDisplayName(intent) {
         'add_vaccine': '新增疫苗記錄',
         'add_deworm': '新增驅蟲記錄',
         'add_medical_record': '新增就診記錄',
+        'edit_pet': '編輯寵物',
+        'edit_daily_record': '編輯生活紀錄',
+        'edit_medical_record': '編輯就診記錄',
         'unknown': '無法識別'
     };
+    // 處理 null/undefined/空字串的情況
+    if (!intent || intent === 'null' || intent === 'undefined') {
+        return '無法識別';
+    }
     return intentMap[intent] || intent;
 }
 
