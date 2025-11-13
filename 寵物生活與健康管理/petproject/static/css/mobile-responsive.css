@@ -1,0 +1,601 @@
+/*
+ * 全局手機響應式設計樣式
+ * 確保所有頁面在手機上都能良好顯示
+ */
+
+/* ============================================
+   1. 基礎響應式設置
+   ============================================ */
+
+* {
+    box-sizing: border-box;
+}
+
+/* 防止水平滾動 */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* 響應式圖片 */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 響應式視頻 */
+video, iframe {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ============================================
+   2. 斷點定義
+   ============================================ */
+/*
+  移動裝置: 0-575px
+  平板直向: 576px-767px
+  平板橫向: 768px-991px
+  桌面: 992px-1199px
+  大桌面: 1200px+
+*/
+
+/* ============================================
+   3. 觸控友好的按鈕和連結
+   ============================================ */
+
+/* 最小觸控目標尺寸 44x44px (Apple HIG 建議) */
+@media (max-width: 767px) {
+    button,
+    .btn,
+    a.button,
+    input[type="submit"],
+    input[type="button"],
+    .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+    }
+
+    /* 增加連結間距 */
+    a {
+        padding: 8px 4px;
+        display: inline-block;
+    }
+
+    /* 表單控件 */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+        min-height: 44px;
+        font-size: 16px; /* 防止 iOS 自動縮放 */
+        padding: 12px;
+    }
+}
+
+/* ============================================
+   4. 導航欄響應式
+   ============================================ */
+
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: white;
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .navbar-nav {
+        padding: 0.5rem 0;
+    }
+
+    .navbar-nav .nav-link {
+        padding: 12px 16px;
+        margin: 4px 0;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:active {
+        background-color: #f8f9fa;
+    }
+}
+
+/* ============================================
+   5. 容器和網格響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* 強制單列佈局 */
+    .row.mobile-single-column > [class*="col-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* 卡片堆疊 */
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    /* 減少內距 */
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* ============================================
+   6. 表格響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    /* 表格水平滾動 */
+    .table-responsive-mobile {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 堆疊式表格（適合資料少的表格）*/
+    table.table-stack {
+        border: 0;
+    }
+
+    table.table-stack thead {
+        display: none;
+    }
+
+    table.table-stack tbody tr {
+        display: block;
+        margin-bottom: 1.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        background: white;
+    }
+
+    table.table-stack tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    table.table-stack tbody td:last-child {
+        border-bottom: none;
+    }
+
+    table.table-stack tbody td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: #6c757d;
+        margin-right: 1rem;
+    }
+}
+
+/* ============================================
+   7. 表單響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    /* 表單群組堆疊 */
+    .form-row,
+    .row.form-row {
+        flex-direction: column;
+    }
+
+    .form-row > [class*="col-"] {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* 表單按鈕全寬 */
+    .form-group button,
+    .form-group .btn,
+    .form-actions button,
+    .form-actions .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    /* 內聯表單變為堆疊 */
+    .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-inline .form-control,
+    .form-inline .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ============================================
+   8. 模態框響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .modal-header,
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* 模態框按鈕堆疊 */
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+}
+
+/* ============================================
+   9. 卡片網格響應式
+   ============================================ */
+
+@media (max-width: 575px) {
+    .card-columns {
+        column-count: 1;
+    }
+
+    .card-deck {
+        flex-direction: column;
+    }
+
+    .card-deck .card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+    .card-columns {
+        column-count: 1;
+    }
+}
+
+/* ============================================
+   10. 文字響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+    h4 { font-size: 1.1rem; }
+    h5 { font-size: 1rem; }
+    h6 { font-size: 0.9rem; }
+
+    p, li {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* 防止長文字溢出 */
+    .text-break-mobile {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+}
+
+/* ============================================
+   11. 間距響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    /* 減少大間距 */
+    .mt-5, .my-5 { margin-top: 2rem !important; }
+    .mb-5, .my-5 { margin-bottom: 2rem !important; }
+    .pt-5, .py-5 { padding-top: 2rem !important; }
+    .pb-5, .py-5 { padding-bottom: 2rem !important; }
+
+    /* 段落間距 */
+    section {
+        padding: 2rem 0;
+    }
+}
+
+/* ============================================
+   12. 隱藏/顯示工具類
+   ============================================ */
+
+/* 只在手機顯示 */
+.mobile-only {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .mobile-only {
+        display: block;
+    }
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   13. 浮動按鈕（如客服按鈕）
+   ============================================ */
+
+@media (max-width: 767px) {
+    .floating-button,
+    #chatbot-button {
+        bottom: 20px !important;
+        right: 20px !important;
+        width: 56px !important;
+        height: 56px !important;
+    }
+
+    /* 聊天框全螢幕 */
+    #chatbot-box {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        border-radius: 0 !important;
+    }
+}
+
+/* ============================================
+   14. 列表響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    .list-group-horizontal {
+        flex-direction: column;
+    }
+
+    .list-group-horizontal .list-group-item {
+        border-radius: 0;
+    }
+
+    .list-group-horizontal .list-group-item:first-child {
+        border-top-left-radius: 0.25rem;
+        border-top-right-radius: 0.25rem;
+    }
+
+    .list-group-horizontal .list-group-item:last-child {
+        border-bottom-left-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+    }
+}
+
+/* ============================================
+   15. 標籤頁響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 12px 20px;
+        min-width: auto;
+    }
+
+    .nav-tabs .nav-link.active {
+        border-bottom-color: #007bff;
+        background: transparent;
+    }
+}
+
+/* ============================================
+   16. 工具提示和彈出框
+   ============================================ */
+
+@media (max-width: 767px) {
+    .tooltip,
+    .popover {
+        font-size: 0.875rem;
+    }
+
+    .popover {
+        max-width: 90vw;
+    }
+}
+
+/* ============================================
+   17. 麵包屑導航
+   ============================================ */
+
+@media (max-width: 767px) {
+    .breadcrumb {
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+
+    .breadcrumb-item {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* ============================================
+   18. 下拉選單響應式
+   ============================================ */
+
+@media (max-width: 767px) {
+    .dropdown-menu {
+        min-width: 100%;
+        border-radius: 8px;
+    }
+
+    .dropdown-item {
+        padding: 12px 16px;
+    }
+}
+
+/* ============================================
+   19. 進度條和指示器
+   ============================================ */
+
+@media (max-width: 767px) {
+    .progress {
+        height: 1.5rem;
+    }
+
+    .spinner-border,
+    .spinner-grow {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* ============================================
+   20. 自訂滾動條（手機隱藏）
+   ============================================ */
+
+@media (max-width: 767px) {
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+    }
+}
+
+/* ============================================
+   21. 觸控反饋
+   ============================================ */
+
+@media (max-width: 767px) {
+    /* 按鈕觸控效果 */
+    button:active,
+    .btn:active,
+    a.button:active {
+        transform: scale(0.98);
+        opacity: 0.8;
+    }
+
+    /* 移除按鈕的懸停效果（觸控裝置不需要）*/
+    @media (hover: none) {
+        button:hover,
+        .btn:hover,
+        a.button:hover {
+            transform: none;
+        }
+    }
+}
+
+/* ============================================
+   22. 安全區域適配（iPhone X+ 劉海屏）
+   ============================================ */
+
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
+
+    .navbar-fixed-top {
+        padding-top: max(0px, env(safe-area-inset-top));
+    }
+
+    .navbar-fixed-bottom,
+    .fixed-bottom {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}
+
+/* ============================================
+   23. 橫向模式優化
+   ============================================ */
+
+@media (max-height: 500px) and (orientation: landscape) {
+    /* 減少垂直間距 */
+    .navbar {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    section {
+        padding: 1rem 0;
+    }
+
+    .modal-dialog {
+        margin: 0.25rem;
+    }
+
+    .modal-body {
+        max-height: 60vh;
+    }
+}
+
+/* ============================================
+   24. 打印樣式
+   ============================================ */
+
+@media print {
+    .no-print,
+    .navbar,
+    .sidebar,
+    #chatbot-button,
+    #chatbot-box,
+    .btn,
+    button {
+        display: none !important;
+    }
+
+    body {
+        font-size: 12pt;
+        color: black;
+        background: white;
+    }
+
+    a {
+        text-decoration: underline;
+        color: black;
+    }
+}

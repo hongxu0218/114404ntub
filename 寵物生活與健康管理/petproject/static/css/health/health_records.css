@@ -590,25 +590,26 @@
     box-shadow: var(--shadow-md);
 }
 
-/* ===== 記錄卡片 ===== */
+/* ===== 記錄卡片 - 全新設計 ===== */
 .health-records-grid {
     display: grid;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 
 .health-record-card {
-    background: var(--card-background);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+    border: none;
+    border-radius: 20px;
+    padding: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .health-record-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-    border-color: var(--health-primary);
+    box-shadow: 0 12px 40px rgba(76, 175, 80, 0.15);
+    transform: translateY(-8px) scale(1.01);
 }
 
 .health-record-card::before {
@@ -617,55 +618,162 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    background: var(--health-primary);
+    height: 6px;
+    background: linear-gradient(90deg, var(--health-primary), var(--health-secondary), #00b894);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.health-record-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.03) 0%, transparent 70%);
+    transition: all 0.6s ease;
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.health-record-card:hover::after {
+    opacity: 1;
+    top: -30%;
+    right: -30%;
 }
 
 .health-record-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
+    padding: 1.75rem 2rem 1.25rem 2rem;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(255,255,255,0) 100%);
+    border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+    position: relative;
+    z-index: 1;
 }
 
 .health-record-info h3 {
-    font-size: 1.2rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.health-record-info h3::before {
+    content: '';
+    width: 0;
+    height: 0;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(76, 175, 80, 0.1);
+    }
 }
 
 .health-record-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
     margin: 0;
+    background: rgba(76, 175, 80, 0.08);
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+}
+
+.health-record-date i {
+    color: var(--health-primary);
+    font-size: 1rem;
 }
 
 .health-record-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 10;
 }
 
 .health-action-btn {
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.1rem;
+    border: 2px solid transparent;
+    background: white;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    color: var(--text-secondary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    text-decoration: none;
 }
 
-.health-action-btn:hover {
-    background: var(--health-primary);
+.health-action-btn i {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+.health-action-btn.btn-edit {
+    color: #2196f3;
+    border-color: rgba(33, 150, 243, 0.2);
+}
+
+.health-action-btn.btn-edit:hover {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
     color: white;
-    border-color: var(--health-primary);
+    border-color: #2196f3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
+}
+
+.health-action-btn.btn-edit:hover i {
+    transform: rotate(15deg);
+}
+
+.health-action-btn.btn-delete {
+    color: #f44336;
+    border-color: rgba(244, 67, 54, 0.2);
+}
+
+.health-action-btn.btn-delete:hover {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+    border-color: #f44336;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.3);
+}
+
+.health-action-btn.btn-delete:hover i {
+    transform: scale(1.1);
+}
+
+.health-action-btn.btn-download {
+    color: #ff9800;
+    border-color: rgba(255, 152, 0, 0.2);
+}
+
+.health-action-btn.btn-download:hover {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    border-color: #ff9800;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
 }
 
 .health-record-content {
-    color: var(--text-primary);
-    line-height: 1.6;
+    padding: 1.5rem 2rem 2rem 2rem;
 }
 
 .health-record-meta {
@@ -1966,6 +2074,10 @@
     font-weight: 600;
 }
 
+.info-card.full-width {
+    grid-column: 1 / -1;
+}
+
 .drug-details {
     list-style: none;
     padding: 0;
@@ -2445,4 +2557,127 @@
     .health-records-grid {
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     }
+}
+/* ===== 醫療記錄Section全新設計 ===== */
+.medical-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 255, 254, 0.7) 100%);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid rgba(76, 175, 80, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.medical-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.02) 0%, transparent 70%);
+}
+
+.medical-section:hover {
+    border-color: rgba(76, 175, 80, 0.2);
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.08);
+}
+
+.section-header {
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg, var(--health-primary), var(--health-secondary), transparent) 1;
+}
+
+.section-title::before {
+    content: '';
+    width: 0;
+    height: 0;
+}
+
+.section-content {
+    position: relative;
+    z-index: 1;
+}
+
+.clinical-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafffe 100%);
+    border-radius: 14px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border: 2px solid rgba(76, 175, 80, 0.12);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--health-primary), var(--health-secondary));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(76, 175, 80, 0.3);
+    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.12);
+}
+
+.info-card:hover::before {
+    opacity: 1;
+}
+
+.info-card .label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-card .label::before {
+    content: '';
+    width: 0;
+    height: 0;
+}
+
+.info-card .value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+    word-break: break-word;
 }
