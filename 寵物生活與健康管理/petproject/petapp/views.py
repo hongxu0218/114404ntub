@@ -119,6 +119,16 @@ def safe_json_loads(json_string):
         return {}
 
 
+# ============ 診所功能占位視圖（避免反解錯誤）============
+def clinic_registration_disabled(request):
+    """占位頁：診所/獸醫相關功能停用時顯示資訊，避免 NoReverseMatch。"""
+    context = {
+        'page_title': '功能停用',
+        'error_message': '診所/獸醫相關功能已停用，僅提供飼主端功能。'
+    }
+    return render(request, 'pages/permission_denied.html', context, status=403)
+
+
 def check_time_period_conflicts(periods):
     """
     檢查時間段是否有衝突
@@ -478,7 +488,7 @@ def dashboard(request):
             if hasattr(request.user, 'vet_profile') and request.user.vet_profile.clinic:
                 return redirect('clinic_dashboard')
             else:
-                return redirect('clinic_registration')
+                return redirect('home')
     except:
         pass
     
@@ -632,7 +642,7 @@ def mark_from_signup_and_redirect(request):
                 return redirect('add_pet')
             elif profile.account_type in ['veterinarian', 'clinic_admin']:
                 messages.info(request, '歡迎！請先完成診所註冊。')
-                return redirect('clinic_registration')
+                return redirect('home')
         except Profile.DoesNotExist:
             # 如果沒有 profile，導向個人資料編輯頁面
             messages.info(request, '請先完成個人資料設定。')
@@ -812,7 +822,7 @@ def social_signup_extra(request):
                 if account_type == 'owner':
                     return redirect('pet_list')
                 elif account_type in ['veterinarian', 'clinic_admin']:
-                    return redirect('clinic_registration')
+                    return redirect('home')
                 else:
                     return redirect('home')
                     

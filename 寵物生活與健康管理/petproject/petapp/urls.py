@@ -31,6 +31,9 @@ urlpatterns = [
     # ============ 測試頁面 ============
     path('test/theme/', views.test_theme, name='test_theme'),
     
+    # ============ 診所註冊（停用）============
+    # path('clinic/register/', views.clinic_registration_disabled, name='clinic_registration'),
+    
     # ============ 診所註冊與管理系統 ============
     # path('clinic/register/', views.clinic_registration, name='clinic_registration'),
     # path('clinic/register/success/<int:clinic_id>/', views.clinic_registration_success, name='clinic_registration_success'),
@@ -147,13 +150,13 @@ urlpatterns = [
     path('api/drugs/search/', views.drug_search_api, name='drug_search_api'),
     
     # ============ 飼主預約系統 ============
-    path('appointments/create/<int:pet_id>/', views.create_appointment, name='create_appointment'),
-    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
-    path('appointments/my/', views.my_appointments, name='my_appointments'),
+    # path('appointments/create/<int:pet_id>/', views.create_appointment, name='create_appointment'),
+    # path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
+    # path('appointments/my/', views.my_appointments, name='my_appointments'),
     
     # AJAX路由
-    path('api/search-clinics/', views.search_clinics, name='search_clinics'),
-    path('api/load-doctors/', views.load_doctors, name='load_doctors'),
+    # path('api/search-clinics/', views.search_clinics, name='search_clinics'),
+    # path('api/load-doctors/', views.load_doctors, name='load_doctors'),
     
     # ============ 通知系統 API ============
     path('api/notifications/', views.get_notifications_api, name='get_notifications_api'),
