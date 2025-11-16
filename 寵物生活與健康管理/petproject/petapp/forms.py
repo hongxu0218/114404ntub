@@ -1364,8 +1364,57 @@ class PetForm(forms.ModelForm):
     
     def set_breed_choices(self, species):
         """根據種類設置品種選項"""
-        self.fields['breed'].choices = self.get_breed_choices_for_species(species)
+        choices = list(self.get_breed_choices_for_species(species))
 
+        # 動態加入提交值（避免「不是可用的選項」）
+        try:
+            submitted_breed = (self.data.get('breed') or '').strip() if self.data else ''
+            if submitted_breed and submitted_breed not in [v for v, _ in choices]:
+                choices.append((submitted_breed, submitted_breed))
+        except Exception:
+            pass
+
+        # 編輯舊資料：舊值不在選單時，預設選到「其他」，並把舊值帶入 breed_other
+        try:
+            if getattr(self, 'instance', None) and getattr(self.instance, 'pk', None):
+                current_breed = getattr(self.instance, 'breed', '')
+                values = [v for v, _ in choices]
+                if current_breed and current_breed not in values:
+                    if '其他' not in values:
+                        choices.append(('其他', '其他'))
+                    self.fields['breed'].initial = '其他'
+                    if not (self.data and self.data.get('breed_other')):
+                        self.fields['breed_other'].initial = current_breed
+        except Exception:
+            pass
+
+        self.fields['breed'].choices = choices
+
+        # 動態兼容舊資料/自訂品種：重新設定 choices 與 initial
+        try:
+            choices = list(self.get_breed_choices_for_species(species))
+        except Exception:
+            choices = []
+        try:
+            submitted_breed = (self.data.get('breed') or '').strip() if self.data else ''
+            if submitted_breed and submitted_breed not in [v for v, _ in choices]:
+                choices.append((submitted_breed, submitted_breed))
+        except Exception:
+            pass
+        try:
+            if getattr(self, 'instance', None) and getattr(self.instance, 'pk', None):
+                current_breed = getattr(self.instance, 'breed', '')
+                values = [v for v, _ in choices]
+                if current_breed and current_breed not in values:
+                    if '其他' not in values:
+                        choices.append(('其他', '其他'))
+                    self.fields['breed'].initial = '其他'
+                    if not (self.data and self.data.get('breed_other')):
+                        self.fields['breed_other'].initial = current_breed
+        except Exception:
+            pass
+        if choices:
+            self.fields['breed'].choices = choices
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')
         if weight is None or weight <= 0 or weight > 1000:
