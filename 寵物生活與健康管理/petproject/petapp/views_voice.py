@@ -12,7 +12,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 # 初始化語音服務
-voice_service = VoiceToDataService()
+voice_service = None
 
 
 def clean_number(value):
@@ -102,6 +102,13 @@ def voice_input_page(request):
 @require_http_methods(["POST"])
 def voice_create_handler(request):
     """處理語音建立請求的核心 API"""
+
+    global voice_service
+    if voice_service is None:
+        try:
+            voice_service = VoiceToDataService()
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'語音服務未就緒：{str(e)}', 'hint': '請確認 faster-whisper 已安裝且模型可用，或改用文字建立紀錄。'}, status=503)
 
     audio_file = request.FILES.get('audio')
 
