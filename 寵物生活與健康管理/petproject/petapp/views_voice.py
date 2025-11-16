@@ -4,7 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .models import Pet, DailyRecord, VaccineRecord, DewormRecord, MedicalRecord
-from .voice_service import VoiceToDataService
+# 延遲載入 VoiceToDataService，避免 GET /voice/ 時導致匯入 faster_whisper 失敗
+try:
+    from .voice_service import VoiceToDataService  # 可能因環境缺少 faster_whisper 而失敗
+except Exception:
+    VoiceToDataService = None
 import os
 import tempfile
 import re
