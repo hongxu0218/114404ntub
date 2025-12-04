@@ -86,7 +86,7 @@
     
     <div class="row g-4 justify-content-center">
       <!-- 第一個功能卡片 -->
-      <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="col-12 col-sm-6 col-lg-4">
         {% comment %}
         {% if user.is_authenticated and user.profile.account_type == 'veterinarian' %}
           <a href="{% url 'my_patients' %}" class="category-card">
@@ -104,8 +104,15 @@
         {% endcomment %}
       </div>
 
+      <div class="col-12 col-sm-6 col-lg-4">
+        <a href="{% url 'adoption' %}" class="category-card">
+          <img src="{% static 'images/icon-adoption.png' %}" class="category-icon" alt="寵物領養">
+          <div class="category-text">寵物領養</div>
+        </a>
+      </div>
+
       <!-- 第二個功能卡片 -->
-      <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="col-12 col-sm-6 col-lg-4">
         {% comment %}
         {% if user.is_authenticated and user.profile.account_type == 'veterinarian' %}
           <a href="{% url 'vet_appointments' %}" class="category-card">
@@ -124,12 +131,12 @@
       </div>
 
       <!-- 第三個功能卡片 -->
-      <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="col-12 col-sm-6 col-lg-4">
         <!-- 地圖和排班管理功能已移除 -->
       </div>
       
       <!-- 急診功能已移除 -->
-      <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="col-12 col-sm-6 col-lg-4">
         <!-- 功能卡片預留位置 -->
       </div>
     </div>
