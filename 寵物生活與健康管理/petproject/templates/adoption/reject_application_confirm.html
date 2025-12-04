@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}確認拒絕申請{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-times-circle"></i> 確認拒絕申請</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle"></i> 提醒：</strong>
+                        <p class="mb-0 mt-2">拒絕申請後，申請人會收到通知。建議您說明拒絕的原因，以維持良好的溝通。</p>
+                    </div>
+
+                    <h5 class="mt-4">申請資訊</h5>
+                    <hr>
+                    <p><strong>寵物：</strong>{{ application.pet.name }}</p>
+                    <p><strong>申請人：</strong>{{ application.applicant.username }}</p>
+                    <p><strong>申請時間：</strong>{{ application.created_at|date:"Y-m-d H:i" }}</p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="reject_reason" class="form-label">拒絕原因 <span class="text-danger">*</span></label>
+                            <textarea name="reject_reason" id="reject_reason" class="form-control" rows="4" required placeholder="請說明拒絕原因，這將會讓申請人看到..."></textarea>
+                            <div class="form-text">例如：已找到更合適的領養人、申請條件不符等</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="owner_notes" class="form-label">內部備註（選填，不會顯示給申請人）</label>
+                            <textarea name="owner_notes" id="owner_notes" class="form-control" rows="2" placeholder="您可以記錄一些內部備註..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-times"></i> 確認拒絕申請
+                            </button>
+                            <a href="{% url 'adoption_application_detail' application.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}語音建檔{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-gradient-primary text-white py-4">
+                    <h2 class="mb-0">
+                        <i class="fas fa-microphone-alt me-2"></i>
+                        語音自動建檔系統
+                    </h2>
+                    <p class="mb-0 mt-2 opacity-75">說出您想記錄的內容，系統會自動幫您建立資料</p>
+                </div>
+
+                <div class="card-body p-5">
+
+                    <!-- 錄音控制區 -->
+                    <div class="text-center mb-5">
+                        <button id="recordBtn" class="btn btn-danger btn-record shadow-lg"
+                                style="width: 180px; height: 180px; border-radius: 50%; position: relative;">
+                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
+                                <i id="recordIcon" class="fas fa-microphone fa-4x mb-2"></i>
+                                <div id="recordText" class="fw-bold">點擊開始錄音</div>
+                                <small id="recordHint" class="text-white-50">再點擊停止</small>
+                            </div>
+                            <div id="recordingIndicator" class="position-absolute top-0 end-0 me-3 mt-3" style="display: none;">
+                                <span class="badge bg-white text-danger">
+                                    <i class="fas fa-circle fa-beat"></i> 錄音中
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- 狀態顯示 -->
+                    <div id="status" class="alert d-none" role="alert"></div>
+
+                    <!-- 結果顯示 -->
+                    <div id="result" class="d-none">
+                        <div class="card bg-light border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    識別結果
+                                </h5>
+                                <hr>
+                                <div class="mb-3">
+                                    <strong><i class="fas fa-comment-dots text-primary"></i> 您說：</strong>
+                                    <p class="ms-4" id="transcribedText"></p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong><i class="fas fa-brain text-info"></i> 系統理解為：</strong>
+                                    <p class="ms-4" id="intentText"></p>
+                                </div>
+                                <div id="confirmSection" class="mt-4 text-center">
+                                    <button class="btn btn-success btn-lg me-2" id="confirmBtn">
+                                        <i class="fas fa-check"></i> 確認建立
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-lg" id="retryBtn">
+                                        <i class="fas fa-redo"></i> 重新錄音
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 範例說明 -->
+                    <div class="mt-5">
+                        <h5 class="text-muted mb-3">
+                            <i class="fas fa-lightbulb text-warning"></i>
+                            語音指令範例
+                        </h5>
+
+                        <div class="accordion" id="examplesAccordion">
+
+                            <!-- 新增寵物 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#example1">
+                                        <i class="fas fa-paw text-primary me-2"></i>
+                                        新增寵物
+                                    </button>
+                                </h2>
+                                <div id="example1" class="accordion-collapse collapse"
+                                     data-bs-parent="#examplesAccordion">
+                                    <div class="accordion-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "新增一隻狗，名字叫可樂，公的，柴犬，兩歲，5公斤"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "幫我登記貓咪小白，母的，已結紮"
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 生活記錄 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#example2">
+                                        <i class="fas fa-notes-medical text-success me-2"></i>
+                                        生活記錄
+                                    </button>
+                                </h2>
+                                <div id="example2" class="accordion-collapse collapse"
+                                     data-bs-parent="#examplesAccordion">
+                                    <div class="accordion-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "可樂今天體溫38.5度"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "今天體重5.2公斤"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "可樂散步了30分鐘"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "小白今天不太吃飯"
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 疫苗記錄 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#example3">
+                                        <i class="fas fa-syringe text-info me-2"></i>
+                                        疫苗記錄
+                                    </button>
+                                </h2>
+                                <div id="example3" class="accordion-collapse collapse"
+                                     data-bs-parent="#examplesAccordion">
+                                    <div class="accordion-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "可樂今天打了狂犬病疫苗，在愛心動物醫院"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "記錄疫苗：八合一，效期12個月"
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 驅蟲記錄 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#example4">
+                                        <i class="fas fa-pills text-warning me-2"></i>
+                                        驅蟲記錄
+                                    </button>
+                                </h2>
+                                <div id="example4" class="accordion-collapse collapse"
+                                     data-bs-parent="#examplesAccordion">
+                                    <div class="accordion-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "可樂今天做了心絲蟲預防，效期6個月"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "在愛心醫院做了驅蟲，用的是全能狗"
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 就診記錄 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#example5">
+                                        <i class="fas fa-hospital text-danger me-2"></i>
+                                        就診記錄
+                                    </button>
+                                </h2>
+                                <div id="example5" class="accordion-collapse collapse"
+                                     data-bs-parent="#examplesAccordion">
+                                    <div class="accordion-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "可樂今天看診，診斷是腸胃炎，開了消炎藥"
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-microphone text-danger me-2"></i>
+                                                "主訴是嘔吐拉肚子，在愛心醫院，費用1500元"
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-record {
+    transition: all 0.3s ease;
+}
+
+.btn-record:hover {
+    transform: scale(1.05);
+}
+
+.btn-record:active {
+    transform: scale(0.95);
+}
+
+.btn-record.btn-danger:active {
+    box-shadow: 0 0 30px rgba(220, 53, 69, 0.6) !important;
+}
+
+.btn-record.btn-success {
+    box-shadow: 0 0 30px rgba(25, 135, 84, 0.6) !important;
+}
+
+.btn-record.btn-success:hover {
+    transform: scale(1.05);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.fa-beat {
+    animation: pulse 1s infinite;
+}
+</style>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+const recordBtn = document.getElementById('recordBtn');
+const recordingIndicator = document.getElementById('recordingIndicator');
+const status = document.getElementById('status');
+const result = document.getElementById('result');
+
+// 初始化錄音功能
+async function initRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 44100
+            }
+        });
+
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm'
+        });
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            await sendAudioToServer(audioBlob);
+            audioChunks = [];
+        };
+
+        return true;
+    } catch (err) {
+        alert('❌ 無法存取麥克風：' + err.message + '\n\n請檢查瀏覽器權限設定');
+        return false;
+    }
+}
+
+// 點擊切換錄音狀態
+recordBtn.addEventListener('click', async () => {
+    if (!mediaRecorder) {
+        const success = await initRecording();
+        if (!success) return;
+    }
+
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+});
+
+function startRecording() {
+    audioChunks = [];
+    mediaRecorder.start();
+    isRecording = true;
+
+    // 更新按鈕樣式和文字
+    recordBtn.classList.remove('btn-danger');
+    recordBtn.classList.add('btn-success', 'recording');
+    recordingIndicator.style.display = 'block';
+
+    document.getElementById('recordIcon').className = 'fas fa-stop-circle fa-4x mb-2';
+    document.getElementById('recordText').textContent = '點擊停止錄音';
+    document.getElementById('recordHint').textContent = '正在錄音中...';
+
+    showStatus('🎤 正在錄音...請說話', 'danger');
+    result.classList.add('d-none');
+}
+
+function stopRecording() {
+    if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        isRecording = false;
+
+        // 恢復按鈕樣式和文字
+        recordBtn.classList.remove('btn-success', 'recording');
+        recordBtn.classList.add('btn-danger');
+        recordingIndicator.style.display = 'none';
+
+        document.getElementById('recordIcon').className = 'fas fa-microphone fa-4x mb-2';
+        document.getElementById('recordText').textContent = '點擊開始錄音';
+        document.getElementById('recordHint').textContent = '再點擊停止';
+
+        showStatus('⏳ 正在處理您的語音...', 'warning');
+    }
+}
+
+async function sendAudioToServer(audioBlob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'voice.webm');
+
+    try {
+        const response = await fetch('{% url "voice_create_handler" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showStatus('✅ ' + data.message, 'success');
+
+            document.getElementById('transcribedText').textContent = data.transcribed_text;
+            document.getElementById('intentText').textContent = getIntentDisplayName(data.intent);
+            result.classList.remove('d-none');
+
+            // 3秒後自動跳轉
+            setTimeout(() => {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                }
+            }, 3000);
+
+        } else if (data.need_confirmation) {
+            showStatus('❓ ' + data.message, 'info');
+
+            document.getElementById('transcribedText').textContent = data.transcribed_text;
+            document.getElementById('intentText').innerHTML =
+                getIntentDisplayName(data.intent) +
+                '<br><small class="text-muted">信心度: ' +
+                Math.round(data.confidence * 100) + '%</small>' +
+                '<br><pre class="mt-2 p-2 bg-light border rounded">' +
+                JSON.stringify(data.parsed_data, null, 2) +
+                '</pre>';
+
+            result.classList.remove('d-none');
+
+        } else {
+            showStatus('❌ ' + (data.message || data.error || '處理失敗'), 'danger');
+        }
+
+    } catch (err) {
+        showStatus('❌ 網路錯誤：' + err.message, 'danger');
+    }
+}
+
+function showStatus(message, type) {
+    status.textContent = message;
+    status.className = `alert alert-${type}`;
+    status.classList.remove('d-none');
+}
+
+function getIntentDisplayName(intent) {
+    const intentMap = {
+        'add_pet': '新增寵物',
+        'add_daily_record': '新增生活紀錄',
+        'add_vaccine': '新增疫苗記錄',
+        'add_deworm': '新增驅蟲記錄',
+        'add_medical_record': '新增就診記錄',
+        'edit_pet': '編輯寵物',
+        'edit_daily_record': '編輯生活紀錄',
+        'edit_medical_record': '編輯就診記錄',
+        'unknown': '無法識別'
+    };
+    // 處理 null/undefined/空字串的情況
+    if (!intent || intent === 'null' || intent === 'undefined') {
+        return '無法識別';
+    }
+    return intentMap[intent] || intent;
+}
+
+// 重新錄音
+document.getElementById('retryBtn')?.addEventListener('click', () => {
+    result.classList.add('d-none');
+    status.classList.add('d-none');
+});
+</script>
+{% endblock %}

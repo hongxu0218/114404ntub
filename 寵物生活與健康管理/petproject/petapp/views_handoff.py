@@ -70,7 +70,7 @@ def safe_create_notification(user: User, title: str, message: str, notification_
     """安全創建通知，失敗不影響主流程"""
     try:
         Notification.objects.create(
-            user=user,
+            recipient=user,  # 修正: 使用 recipient 而非 user
             title=title,
             message=message,
             notification_type=notification_type
@@ -235,6 +235,10 @@ def api_handoff_user_send(request: HttpRequest):
             sender="user",
             text=message
         )
+
+        # 更新最後活動時間（觸發 auto_now）
+        ticket.save(update_fields=['last_activity_at'])
+
         logger.info(f"User message added to ticket #{ticket_id}")
 
         # 通知員工（失敗不影響訊息發送）
@@ -356,6 +360,12 @@ def api_handoff_poll(request: HttpRequest):
         if ticket.session_key != session_key:
             return json_response(success=False, error="無權操作此工單", status=403)
 
+        # 檢查並自動關閉閒置超時的工單（15 分鐘）
+        if ticket.is_open:
+            ticket.auto_close_if_idle(timeout_minutes=15)
+            # 重新載入以獲取最新狀態
+            ticket.refresh_from_db()
+
         # 獲取新訊息
         messages = ticket.messages.filter(id__gt=since).order_by('id')
         messages_data = [
@@ -395,15 +405,26 @@ def handoff_console(request: HttpRequest, ticket_id: Optional[int] = None):
     tickets = HandoffTicket.objects.all().order_by('-is_open', '-created_at')
 
     current = None
+    current_assigned = False
     if ticket_id:
         try:
             current = HandoffTicket.objects.prefetch_related('messages').get(id=ticket_id)
+            # 檢查是否已被接手
+            current_assigned = HandoffMessage.objects.filter(
+                ticket=current,
+                sender__in=["agent", "system"],
+                text__icontains="接手您的工單"
+            ).exists() or HandoffMessage.objects.filter(
+                ticket=current,
+                sender="agent"
+            ).exists()
         except HandoffTicket.DoesNotExist:
             pass
 
     return render(request, 'ai_chat/staff_handoff.html', {
         'tickets': tickets,
-        'current': current
+        'current': current,
+        'current_assigned': current_assigned
     })
 
 
@@ -449,6 +470,9 @@ def handoff_agent_reply(request: HttpRequest, ticket_id: int):
             sender="agent",
             text=message
         )
+
+        # 更新最後活動時間（觸發 auto_now）
+        ticket.save(update_fields=['last_activity_at'])
 
         return json_response(success=True)
 

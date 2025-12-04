@@ -186,20 +186,35 @@
                     {% endif %}
                 </h2>
                 
-                {% if pets.first %}
-                    {% if current_tab == 'daily' %}
-                    <a href="{% url 'add_daily_record' pets.first.id %}" class="health-add-btn">
+                {% if selected_pet or all_pets.first %}
+                    {% with target_pet=selected_pet|default:all_pets.first %}
+                    {% if current_tab == 'medical' or not current_tab %}
+                    <a href="{% url 'add_medical_record' target_pet.id %}" class="health-add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>新增看診記錄</span>
+                    </a>
+                    {% elif current_tab == 'vaccine' %}
+                    <a href="{% url 'add_vaccine' target_pet.id %}" class="health-add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>新增疫苗記錄</span>
+                    </a>
+                    {% elif current_tab == 'deworm' %}
+                    <a href="{% url 'add_deworm' target_pet.id %}" class="health-add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>新增驅蟲記錄</span>
+                    </a>
+                    {% elif current_tab == 'report' %}
+                    <a href="{% url 'add_report' target_pet.id %}" class="health-add-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>上傳檢驗報告</span>
+                    </a>
+                    {% elif current_tab == 'daily' %}
+                    <a href="{% url 'add_daily_record' target_pet.id %}" class="health-add-btn">
                         <i class="fas fa-plus"></i>
                         <span>新增生活記錄</span>
                     </a>
-                    {% else %}
-                    <div class="health-actions">
-                        <a href="{% url 'add_daily_record' pets.first.id %}" class="health-add-btn secondary" title="隨時記錄寵物生活點滴">
-                            <i class="fas fa-plus-circle"></i>
-                            <span>新增生活記錄</span>
-                        </a>
-                    </div>
                     {% endif %}
+                    {% endwith %}
                 {% endif %}
             </div>
 
@@ -216,9 +231,17 @@
                                     </p>
                                 </div>
                                 <div class="health-record-actions">
-                                    <div class="health-action-btn disabled" title="完整診療記錄">
-                                        <i class="fas fa-file-medical"></i>
-                                    </div>
+                                    <a href="{% url 'edit_medical_record' record.pet.id record.id %}" class="health-action-btn btn-edit" title="編輯">
+                                        <i class="fas fa-edit"></i>
+                                        <span>編輯</span>
+                                    </a>
+                                    <form method="post" action="{% url 'delete_medical_record' record.id %}" class="no-loading" style="display: inline;" onsubmit="return confirm('確定要刪除此看診記錄嗎？');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="health-action-btn btn-delete" title="刪除">
+                                            <i class="fas fa-trash"></i>
+                                            <span>刪除</span>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
 
@@ -231,20 +254,20 @@
                                     <div class="section-content">
                                         <div class="clinical-info-grid">
                                             <div class="info-card">
-                                                <span class="label">🩺看診獸醫</span>
-                                                <span class="value">{% if record.attending_vet and record.attending_vet.user %}{{ record.attending_vet.user.get_full_name|default:record.attending_vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                                <span class="label">📍看診地點</span>
+                                                <span class="value">{{ record.clinic_location }}</span>
                                             </div>
                                             <div class="info-card">
-                                                <span class="label">看診地點</span>
-                                                <span class="value">{% if record.attending_vet and record.attending_vet.clinic %}{{ record.attending_vet.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                                <span class="label">📅看診日期</span>
+                                                <span class="value">{{ record.visit_date|date:"Y年m月d日" }}</span>
                                             </div>
                                             <div class="info-card">
-                                                <span class="label">看診日期</span>
-                                                <span class="value">{{ record.visit_date|date:"Y年m月d日" }} {{ record.created_at|date:"H:i" }}</span>
+                                                <span class="label">⏰記錄時間</span>
+                                                <span class="value">{{ record.created_at|date:"Y/m/d H:i" }}</span>
                                             </div>
                                             {% if record.total_cost %}
                                             <div class="info-card">
-                                                <span class="label">診療費用</span>
+                                                <span class="label">💰診療費用</span>
                                                 <span class="value highlight">NT$ {{ record.total_cost }}</span>
                                             </div>
                                             {% endif %}
@@ -252,39 +275,27 @@
                                     </div>
                                 </div>
 
-                                <!-- 診斷資訊 -->
+                                <!-- 診斷與治療資訊 -->
                                 <div class="medical-section">
                                     <div class="section-header">
-                                        <h4 class="section-title">🔬診斷資訊</h4>
+                                        <h4 class="section-title">🔬診斷與治療</h4>
                                     </div>
                                     <div class="section-content">
                                         <div class="clinical-info-grid">
-                                            <div class="info-card">
-                                                <span class="label">飼主主訴</span>
-                                                <span class="value">{{ record.chief_complaint|default:"未填寫" }}</span>
+                                            <div class="info-card full-width">
+                                                <span class="label">診斷結果</span>
+                                                <span class="value">{{ record.diagnosis }}</span>
                                             </div>
-                                            {% if record.medical_details.symptoms %}
-                                            <div class="info-card">
-                                                <span class="label">症狀</span>
-                                                <span class="value">
-                                                    {% for symptom in record.medical_details.symptoms %}
-                                                        {{ symptom.name }}{% if not forloop.last %}, {% endif %}
-                                                    {% endfor %}
-                                                </span>
+                                            <div class="info-card full-width">
+                                                <span class="label">治療內容</span>
+                                                <span class="value">{{ record.treatment }}</span>
+                                            </div>
+                                            {% if record.notes %}
+                                            <div class="info-card full-width">
+                                                <span class="label">備註與醫囑</span>
+                                                <span class="value">{{ record.notes }}</span>
                                             </div>
                                             {% endif %}
-                                            <div class="info-card">
-                                                <span class="label">理學檢查</span>
-                                                <span class="value">{{ record.physical_examination|default:"未填寫" }}</span>
-                                            </div>
-                                            <div class="info-card">
-                                                <span class="label">診斷結果</span>
-                                                <span class="value">{{ record.diagnosis|default:"未填寫" }}</span>
-                                            </div>
-                                            <div class="info-card">
-                                                <span class="label">治療計畫</span>
-                                                <span class="value">{{ record.treatment_plan|default:"未填寫" }}</span>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -464,17 +475,6 @@
                                 </div>
                                 {% endif %}
                             </div>
-
-                            <div class="health-record-meta">
-                                <div class="health-meta-item">
-                                    <i class="fas fa-user-md"></i>
-                                    <span>{{ record.attending_vet.user.get_full_name|default:"未指定獸醫師" }}</span>
-                                </div>
-                                <div class="health-meta-item">
-                                    <i class="fas fa-clock"></i>
-                                    <span>{{ record.created_at|date:"m月d日 H:i" }}</span>
-                                </div>
-                            </div>
                         </div>
                 {% endfor %}
 
@@ -505,6 +505,19 @@
                                 {{ record.date|date:"Y年m月d日" }}
                             </p>
                         </div>
+                        <div class="health-record-actions">
+                            <a href="{% url 'edit_vaccine' record.pet.id record.id %}" class="health-action-btn btn-edit" title="編輯">
+                                <i class="fas fa-edit"></i>
+                                <span>編輯</span>
+                            </a>
+                            <form method="post" action="{% url 'delete_vaccine' record.id %}" class="no-loading" style="display: inline;" onsubmit="return confirm('確定要刪除此疫苗記錄嗎？');">
+                                {% csrf_token %}
+                                <button type="submit" class="health-action-btn btn-delete" title="刪除">
+                                    <i class="fas fa-trash"></i>
+                                    <span>刪除</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     <div class="health-record-content">
                         <div class="medical-section">
@@ -520,10 +533,6 @@
                                     <div class="info-card">
                                         <span class="label">施打地點</span>
                                         <span class="value">{{ record.location|default:"未記錄" }}</span>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">施打獸醫</span>
-                                        <span class="value">{% if record.vet %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
                                     </div>
                                     <div class="info-card">
                                         <span class="label">施打日期</span>
@@ -568,6 +577,19 @@
                                 {{ record.date|date:"Y年m月d日" }}
                             </p>
                         </div>
+                        <div class="health-record-actions">
+                            <a href="{% url 'edit_deworm' record.pet.id record.id %}" class="health-action-btn btn-edit" title="編輯">
+                                <i class="fas fa-edit"></i>
+                                <span>編輯</span>
+                            </a>
+                            <form method="post" action="{% url 'delete_deworm' record.id %}" class="no-loading" style="display: inline;" onsubmit="return confirm('確定要刪除此驅蟲記錄嗎？');">
+                                {% csrf_token %}
+                                <button type="submit" class="health-action-btn btn-delete" title="刪除">
+                                    <i class="fas fa-trash"></i>
+                                    <span>刪除</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     <div class="health-record-content">
                         <div class="medical-section">
@@ -577,16 +599,12 @@
                             <div class="section-content">
                                 <div class="clinical-info-grid">
                                     <div class="info-card">
-                                        <span class="label">驅蟲品牌</span>
+                                        <span class="label">驅蟲藥名稱</span>
                                         <span class="value">{{ record.name }}</span>
                                     </div>
                                     <div class="info-card">
                                         <span class="label">施藥地點</span>
                                         <span class="value">{{ record.location|default:"未記錄" }}</span>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">施藥獸醫</span>
-                                        <span class="value">{% if record.vet %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
                                     </div>
                                     <div class="info-card">
                                         <span class="label">施藥日期</span>
@@ -628,12 +646,23 @@
                             </p>
                         </div>
                         <div class="health-record-actions">
+                            <a href="{% url 'edit_report' record.pet.id record.id %}" class="health-action-btn btn-edit" title="編輯">
+                                <i class="fas fa-edit"></i>
+                                <span>編輯</span>
+                            </a>
                             {% if record.pdf %}
                             <a href="{{ record.pdf.url }}" class="health-action-btn btn-download" title="下載報告" target="_blank">
                                 <i class="fas fa-download"></i>
                                 <span>下載</span>
                             </a>
                             {% endif %}
+                            <form method="post" action="{% url 'delete_report' record.id %}" class="no-loading" style="display: inline;" onsubmit="return confirm('確定要刪除此檢驗報告嗎？');">
+                                {% csrf_token %}
+                                <button type="submit" class="health-action-btn btn-delete" title="刪除">
+                                    <i class="fas fa-trash"></i>
+                                    <span>刪除</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                     <div class="health-record-content">
@@ -648,12 +677,16 @@
                                         <span class="value">{{ record.title }}</span>
                                     </div>
                                     <div class="info-card">
-                                        <span class="label">檢驗獸醫</span>
-                                        <span class="value">{% if record.vet %}{{ record.vet.user.get_full_name|default:record.vet.user.username }}{% else %}未記錄{% endif %}</span>
+                                        <span class="label">報告類型</span>
+                                        <span class="value">{{ record.get_report_type_display }}</span>
                                     </div>
                                     <div class="info-card">
                                         <span class="label">檢驗地點</span>
-                                        <span class="value">{% if record.clinic %}{{ record.clinic.clinic_name }}{% else %}未記錄{% endif %}</span>
+                                        <span class="value">{{ record.clinic_name|default:"未記錄" }}</span>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">檢驗日期</span>
+                                        <span class="value">{{ record.report_date|date:"Y年m月d日" }}</span>
                                     </div>
                                     <div class="info-card">
                                         <span class="label">上傳日期</span>

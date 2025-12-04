@@ -78,6 +78,44 @@
     .current-image + a {
         display: none;
     }
+
+    /* 手機響應式優化 */
+    @media (max-width: 767px) {
+        body.edit-pet-page {
+            padding: 10px;
+        }
+
+        form {
+            padding: 1.5em;
+        }
+
+        input, select, textarea {
+            min-height: 48px;
+            font-size: 16px; /* 防止 iOS 自動縮放 */
+            padding: 14px;
+        }
+
+        .button-row {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .button-row button,
+        .button-row a button {
+            width: 100%;
+            min-height: 48px;
+            font-size: 16px;
+            padding: 14px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+        }
+
+        .current-image img {
+            max-height: 150px;
+        }
+    }
 </style>
 {% endblock %}
 

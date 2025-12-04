@@ -4,12 +4,13 @@ from django.db.models import Count, Q, Sum, Avg
 from django.utils import timezone
 from datetime import timedelta
 from .models import (
-    Profile, VetDoctor, VetClinic, Pet, PetTag,
+    Profile, Pet, PetTag,  # VetClinic,
     UserProfile, Follow, Post, PostMedia, Like, Comment, CommentLike,
-    VetAppointment, AppointmentSlot, VetSchedule, MedicalRecord,
-    VaccineRecord, DewormRecord, DailyRecord, AdoptionPet,
+    # VetAppointment, AppointmentSlot, VetSchedule, MedicalRecord,
+    # VaccineRecord, DewormRecord,
+    DailyRecord, AdoptionPet,
     AnimalDrug, HandoffTicket, HandoffMessage, Notification,
-    ScheduleChangeRequest, EnhancedVetSchedule
+    # ScheduleChangeRequest, EnhancedVetSchedule
 )
 
 from allauth.account.models import EmailAddress
@@ -50,62 +51,63 @@ class ProfileAdmin(admin.ModelAdmin):
         return 'Yes' if obj.user.is_staff else 'No'
     is_staff_display.short_description = '系統管理員'
 
-@admin.register(VetDoctor)
-class VetDoctorAdmin(admin.ModelAdmin):
-    list_display = (
-        'user', 'clinic', 'vet_license_number', 'license_verified_display', 
-        'moa_license_type', 'is_active'
-    )
-    list_filter = ('license_verified_with_moa', 'moa_license_type', 'is_active', 'clinic')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'vet_license_number')
+# @admin.register(VetDoctor)
+# class VetDoctorAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'user', 'clinic', 'vet_license_number', 'license_verified_display', 
+#         'moa_license_type', 'is_active'
+#     )
+#     list_filter = ('license_verified_with_moa', 'moa_license_type', 'is_active', 'clinic')
+#     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'vet_license_number')
     
-    def license_verified_display(self, obj):
-        if obj.license_verified_with_moa:
-            return "已驗證"
-        return "未驗證"
-    license_verified_display.short_description = '執照驗證狀態'
+#     def license_verified_display(self, obj):
+#         if obj.license_verified_with_moa:
+#             return "已驗證"
+#         return "未驗證"
+#     license_verified_display.short_description = '執照驗證狀態'
     
-    actions = ['verify_selected_licenses']
+#     actions = ['verify_selected_licenses']
     
-    def verify_selected_licenses(self, request, queryset):
-        """批量驗證選中的獸醫師執照"""
-        success_count = 0
+#     def verify_selected_licenses(self, request, queryset):
+#         """批量驗證選中的獸醫師執照"""
+#         success_count = 0
         
-        for vet_doctor in queryset:
-            if vet_doctor.vet_license_number:
-                success, message = vet_doctor.verify_vet_license_with_moa()
-                if success:
-                    success_count += 1
+#         for vet_doctor in queryset:
+#             if vet_doctor.vet_license_number:
+#                 success, message = vet_doctor.verify_vet_license_with_moa()
+#                 if success:
+#                     success_count += 1
         
-        self.message_user(request, f"成功驗證 {success_count} 位獸醫師執照")
+#         self.message_user(request, f"成功驗證 {success_count} 位獸醫師執照")
     
-    verify_selected_licenses.short_description = "驗證選中的獸醫師執照"
+#     verify_selected_licenses.short_description = "驗證選中的獸醫師執照"
 
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
+#     def changelist_view(self, request, extra_context=None):
+#         extra_context = extra_context or {}
 
-        extra_context['verified_count'] = VetDoctor.objects.filter(license_verified_with_moa=True).count()
-        extra_context['unverified_count'] = VetDoctor.objects.filter(license_verified_with_moa=False).count()
-        extra_context['active_count'] = VetDoctor.objects.filter(is_active=True).count()
+#         extra_context['verified_count'] = VetDoctor.objects.filter(license_verified_with_moa=True).count()
+#         extra_context['unverified_count'] = VetDoctor.objects.filter(license_verified_with_moa=False).count()
+#         extra_context['active_count'] = VetDoctor.objects.filter(is_active=True).count()
 
-        return super().changelist_view(request, extra_context=extra_context)
+#         return super().changelist_view(request, extra_context=extra_context)
 
-@admin.register(VetClinic)
-class VetClinicAdmin(admin.ModelAdmin):
-    list_display = ('clinic_name', 'license_number', 'is_verified', 'verification_date')
-    list_filter = ('is_verified', 'moa_county')
-    search_fields = ('clinic_name', 'license_number')
-    readonly_fields = ('verification_date', 'created_at', 'updated_at')
-
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        week_ago = timezone.now() - timedelta(days=7)
-
-        extra_context['verified_count'] = VetClinic.objects.filter(is_verified=True).count()
-        extra_context['unverified_count'] = VetClinic.objects.filter(is_verified=False).count()
-        extra_context['new_week'] = VetClinic.objects.filter(created_at__gte=week_ago).count()
-
-        return super().changelist_view(request, extra_context=extra_context)
+# 診所管理已註解停用 (2025-10-24)
+# @admin.register(VetClinic)
+# class VetClinicAdmin(admin.ModelAdmin):
+#     list_display = ('clinic_name', 'license_number', 'is_verified', 'verification_date')
+#     list_filter = ('is_verified', 'moa_county')
+#     search_fields = ('clinic_name', 'license_number')
+#     readonly_fields = ('verification_date', 'created_at', 'updated_at')
+#
+#     def changelist_view(self, request, extra_context=None):
+#         extra_context = extra_context or {}
+#         week_ago = timezone.now() - timedelta(days=7)
+#
+#         extra_context['verified_count'] = VetClinic.objects.filter(is_verified=True).count()
+#         extra_context['unverified_count'] = VetClinic.objects.filter(is_verified=False).count()
+#         extra_context['new_week'] = VetClinic.objects.filter(created_at__gte=week_ago).count()
+#
+#         return super().changelist_view(request, extra_context=extra_context)
 
 @admin.register(PetTag)
 class PetTagAdmin(admin.ModelAdmin):
@@ -338,161 +340,158 @@ class CommentLikeAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'comment__content')
 
 
-# ===== 預約與排班管理 =====
+# ===== 預約與排班管理（已註解停用 2025-10-24）=====
 
-@admin.register(VetAppointment)
-class VetAppointmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'pet', 'owner', 'slot_info', 'status_badge', 'reason_preview', 'is_expired_display', 'created_at')
-    list_filter = ('status', 'booking_type', 'slot__date')
-    search_fields = ('pet__name', 'owner__username', 'owner__first_name', 'reason', 'contact_phone')
-    readonly_fields = ('created_at', 'updated_at', 'is_expired_display')
-    # 移除 date_hierarchy 避免時區問題
-
-    fieldsets = (
-        ('預約資訊', {
-            'fields': ('pet', 'owner', 'slot', 'status', 'booking_type')
-        }),
-        ('預約詳情', {
-            'fields': ('reason', 'notes', 'cancel_reason')
-        }),
-        ('聯絡資訊', {
-            'fields': ('contact_phone', 'contact_email')
-        }),
-        ('通知狀態', {
-            'fields': ('clinic_notified', 'reminder_sent')
-        }),
-        ('系統資訊', {
-            'fields': ('created_at', 'updated_at', 'is_expired_display')
-        }),
-    )
-
-    def slot_info(self, obj):
-        return f"{obj.slot.date} {obj.slot.start_time}-{obj.slot.end_time}"
-    slot_info.short_description = '時段'
-
-    def status_badge(self, obj):
-        colors = {
-            'pending': '#ffc107',
-            'confirmed': '#28a745',
-            'completed': '#17a2b8',
-            'cancelled': '#dc3545',
-            'no_show': '#6c757d'
-        }
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
-            colors.get(obj.status, '#6c757d'),
-            obj.get_status_display()
-        )
-    status_badge.short_description = '狀態'
-
-    def reason_preview(self, obj):
-        return obj.reason[:30] + '...' if len(obj.reason) > 30 else obj.reason
-    reason_preview.short_description = '預約原因'
-
-    def is_expired_display(self, obj):
-        if obj.is_expired:
-            return format_html('<span style="color: red;">是</span>')
-        return format_html('<span style="color: green;">否</span>')
-    is_expired_display.short_description = '已過期'
-
-    actions = ['mark_as_confirmed', 'mark_as_cancelled', 'mark_as_completed']
-
-    def mark_as_confirmed(self, request, queryset):
-        count = queryset.filter(status='pending').update(status='confirmed')
-        self.message_user(request, f'已確認 {count} 個預約')
-    mark_as_confirmed.short_description = '標記為已確認'
-
-    def mark_as_cancelled(self, request, queryset):
-        count = queryset.exclude(status__in=['completed', 'cancelled']).update(
-            status='cancelled',
-            cancel_reason='管理員取消'
-        )
-        self.message_user(request, f'已取消 {count} 個預約')
-    mark_as_cancelled.short_description = '標記為已取消'
-
-    def mark_as_completed(self, request, queryset):
-        count = queryset.filter(status='confirmed').update(status='completed')
-        self.message_user(request, f'已完成 {count} 個預約')
-    mark_as_completed.short_description = '標記為已完成'
-
-
-@admin.register(VetSchedule)
-class VetScheduleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'doctor', 'weekday_display', 'time_range', 'is_active', 'created_at')
-    list_filter = ('is_active', 'weekday', 'created_at')
-    search_fields = ('doctor__user__username', 'notes')
-    readonly_fields = ('created_at', 'updated_at')
-
-    fieldsets = (
-        ('基本資訊', {
-            'fields': ('doctor', 'weekday')
-        }),
-        ('時間設定', {
-            'fields': ('start_time', 'end_time', 'appointment_duration')
-        }),
-        ('狀態與備註', {
-            'fields': ('is_active', 'notes', 'max_appointments_per_slot')
-        }),
-        ('系統資訊', {
-            'fields': ('created_at', 'updated_at')
-        }),
-    )
-
-    def weekday_display(self, obj):
-        days = ['一', '二', '三', '四', '五', '六', '日']
-        return f'週{days[obj.weekday]}'
-    weekday_display.short_description = '星期'
-
-    def time_range(self, obj):
-        return f"{obj.start_time}-{obj.end_time}"
-    time_range.short_description = '時間範圍'
+# @admin.register(VetAppointment)
+# class VetAppointmentAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'pet', 'owner', 'slot_info', 'status_badge', 'reason_preview', 'is_expired_display', 'created_at')
+#     list_filter = ('status', 'booking_type', 'slot__date')
+#     search_fields = ('pet__name', 'owner__username', 'owner__first_name', 'reason', 'contact_phone')
+#     readonly_fields = ('created_at', 'updated_at', 'is_expired_display')
+#
+#     fieldsets = (
+#         ('預約資訊', {
+#             'fields': ('pet', 'owner', 'slot', 'status', 'booking_type')
+#         }),
+#         ('預約詳情', {
+#             'fields': ('reason', 'notes', 'cancel_reason')
+#         }),
+#         ('聯絡資訊', {
+#             'fields': ('contact_phone', 'contact_email')
+#         }),
+#         ('通知狀態', {
+#             'fields': ('clinic_notified', 'reminder_sent')
+#         }),
+#         ('系統資訊', {
+#             'fields': ('created_at', 'updated_at', 'is_expired_display')
+#         }),
+#     )
+#
+#     def slot_info(self, obj):
+#         return f"{obj.slot.date} {obj.slot.start_time}-{obj.slot.end_time}"
+#     slot_info.short_description = '時段'
+#
+#     def status_badge(self, obj):
+#         colors = {
+#             'pending': '#ffc107',
+#             'confirmed': '#28a745',
+#             'completed': '#17a2b8',
+#             'cancelled': '#dc3545',
+#             'no_show': '#6c757d'
+#         }
+#         return format_html(
+#             '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
+#             colors.get(obj.status, '#6c757d'),
+#             obj.get_status_display()
+#         )
+#     status_badge.short_description = '狀態'
+#
+#     def reason_preview(self, obj):
+#         return obj.reason[:30] + '...' if len(obj.reason) > 30 else obj.reason
+#     reason_preview.short_description = '預約原因'
+#
+#     def is_expired_display(self, obj):
+#         if obj.is_expired:
+#             return format_html('<span style="color: red;">是</span>')
+#         return format_html('<span style="color: green;">否</span>')
+#     is_expired_display.short_description = '已過期'
+#
+#     actions = ['mark_as_confirmed', 'mark_as_cancelled', 'mark_as_completed']
+#
+#     def mark_as_confirmed(self, request, queryset):
+#         count = queryset.filter(status='pending').update(status='confirmed')
+#         self.message_user(request, f'已確認 {count} 個預約')
+#     mark_as_confirmed.short_description = '標記為已確認'
+#
+#     def mark_as_cancelled(self, request, queryset):
+#         count = queryset.exclude(status__in=['completed', 'cancelled']).update(
+#             status='cancelled',
+#             cancel_reason='管理員取消'
+#         )
+#         self.message_user(request, f'已取消 {count} 個預約')
+#     mark_as_cancelled.short_description = '標記為已取消'
+#
+#     def mark_as_completed(self, request, queryset):
+#         count = queryset.filter(status='confirmed').update(status='completed')
+#         self.message_user(request, f'已完成 {count} 個預約')
+#     mark_as_completed.short_description = '標記為已完成'
 
 
-@admin.register(MedicalRecord)
-class MedicalRecordAdmin(admin.ModelAdmin):
-    list_display = ('id', 'pet', 'attending_vet', 'visit_date', 'diagnosis_preview', 'treatment_preview')
-    list_filter = ('attending_vet',)
-    search_fields = ('pet__name', 'attending_vet__user__username', 'diagnosis', 'treatment')
-    # 移除 date_hierarchy 避免時區問題
-    readonly_fields = ('visit_date',)
+# @admin.register(VetSchedule)
+# class VetScheduleAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'doctor', 'weekday_display', 'time_range', 'is_active', 'created_at')
+#     list_filter = ('is_active', 'weekday', 'created_at')
+#     search_fields = ('doctor__user__username', 'notes')
+#     readonly_fields = ('created_at', 'updated_at')
+#
+#     fieldsets = (
+#         ('基本資訊', {
+#             'fields': ('doctor', 'weekday')
+#         }),
+#         ('時間設定', {
+#             'fields': ('start_time', 'end_time', 'appointment_duration')
+#         }),
+#         ('狀態與備註', {
+#             'fields': ('is_active', 'notes', 'max_appointments_per_slot')
+#         }),
+#         ('系統資訊', {
+#             'fields': ('created_at', 'updated_at')
+#         }),
+#     )
+#
+#     def weekday_display(self, obj):
+#         days = ['一', '二', '三', '四', '五', '六', '日']
+#         return f'週{days[obj.weekday]}'
+#     weekday_display.short_description = '星期'
+#
+#     def time_range(self, obj):
+#         return f"{obj.start_time}-{obj.end_time}"
+#     time_range.short_description = '時間範圍'
 
-    fieldsets = (
-        ('基本資訊', {
-            'fields': ('pet', 'attending_vet', 'recorded_by', 'visit_date', 'clinic_location')
-        }),
-        ('診斷與治療', {
-            'fields': ('diagnosis', 'treatment', 'prescription')
-        }),
-        ('備註', {
-            'fields': ('notes',)
-        }),
-    )
 
-    def diagnosis_preview(self, obj):
-        return obj.diagnosis[:50] + '...' if len(obj.diagnosis) > 50 else obj.diagnosis
-    diagnosis_preview.short_description = '診斷'
+# @admin.register(MedicalRecord)
+# class MedicalRecordAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'pet', 'attending_vet', 'visit_date', 'diagnosis_preview', 'treatment_preview')
+#     list_filter = ('attending_vet',)
+#     search_fields = ('pet__name', 'attending_vet__user__username', 'diagnosis', 'treatment')
+#     readonly_fields = ('visit_date',)
+#
+#     fieldsets = (
+#         ('基本資訊', {
+#             'fields': ('pet', 'attending_vet', 'recorded_by', 'visit_date', 'clinic_location')
+#         }),
+#         ('診斷與治療', {
+#             'fields': ('diagnosis', 'treatment', 'prescription')
+#         }),
+#         ('備註', {
+#             'fields': ('notes',)
+#         }),
+#     )
+#
+#     def diagnosis_preview(self, obj):
+#         return obj.diagnosis[:50] + '...' if len(obj.diagnosis) > 50 else obj.diagnosis
+#     diagnosis_preview.short_description = '診斷'
+#
+#     def treatment_preview(self, obj):
+#         return obj.treatment[:50] + '...' if len(obj.treatment) > 50 else obj.treatment
+#     treatment_preview.short_description = '治療'
 
-    def treatment_preview(self, obj):
-        return obj.treatment[:50] + '...' if len(obj.treatment) > 50 else obj.treatment
-    treatment_preview.short_description = '治療'
 
-
-@admin.register(VaccineRecord)
-class VaccineRecordAdmin(admin.ModelAdmin):
-    list_display = ('pet', 'name', 'date', 'next_due_date', 'vet', 'is_upcoming')
-    list_filter = ('vet',)
-    search_fields = ('pet__name', 'name', 'location')
-    # 移除 date_hierarchy 避免時區問題
-
-    def is_upcoming(self, obj):
-        if obj.next_due_date:
-            days_until = (obj.next_due_date - timezone.now().date()).days
-            if days_until <= 7 and days_until >= 0:
-                return format_html('<span style="color: orange;">本週到期</span>')
-            elif days_until < 0:
-                return format_html('<span style="color: red;">已逾期</span>')
-        return '正常'
-    is_upcoming.short_description = '提醒狀態'
+# @admin.register(VaccineRecord)
+# class VaccineRecordAdmin(admin.ModelAdmin):
+#     list_display = ('pet', 'name', 'date', 'next_due_date', 'vet', 'is_upcoming')
+#     list_filter = ('vet',)
+#     search_fields = ('pet__name', 'name', 'location')
+#
+#     def is_upcoming(self, obj):
+#         if obj.next_due_date:
+#             days_until = (obj.next_due_date - timezone.now().date()).days
+#             if days_until <= 7 and days_until >= 0:
+#                 return format_html('<span style="color: orange;">本週到期</span>')
+#             elif days_until < 0:
+#                 return format_html('<span style="color: red;">已逾期</span>')
+#         return '正常'
+#     is_upcoming.short_description = '提醒狀態'
 
 
 @admin.register(AdoptionPet)
@@ -581,10 +580,10 @@ class HandoffMessageInline(admin.TabularInline):
 
 @admin.register(HandoffTicket)
 class HandoffTicketAdmin(admin.ModelAdmin):
-    list_display = ('id', 'session_key', 'name', 'contact', 'channel', 'status_badge', 'message_count', 'created_at')
+    list_display = ('id', 'session_key', 'name', 'contact', 'channel', 'status_badge', 'message_count', 'idle_time_display', 'created_at')
     list_filter = ('is_open', 'channel')
     search_fields = ('session_key', 'name', 'contact')
-    readonly_fields = ('created_at', 'session_key')
+    readonly_fields = ('created_at', 'last_activity_at', 'session_key')
     inlines = [HandoffMessageInline]
     # 移除 date_hierarchy 以避免時區問題
 
@@ -627,6 +626,38 @@ class HandoffTicketAdmin(admin.ModelAdmin):
             count
         )
     message_count.short_description = '訊息數'
+
+    def idle_time_display(self, obj):
+        """顯示閒置時間"""
+        if not obj.is_open:
+            return '-'
+
+        try:
+            # 檢查 last_activity_at 是否存在
+            if not hasattr(obj, 'last_activity_at') or obj.last_activity_at is None:
+                return '未知'
+
+            idle_time = timezone.now() - obj.last_activity_at
+            minutes = int(idle_time.total_seconds() / 60)
+
+            if minutes >= 15:
+                # 超過 15 分鐘，顯示紅色警告
+                return format_html(
+                    '<span style="color: red; font-weight: bold;">⏰ {} 分鐘</span>',
+                    minutes
+                )
+            elif minutes >= 10:
+                # 10-15 分鐘，顯示橙色提醒
+                return format_html(
+                    '<span style="color: orange; font-weight: bold;">{} 分鐘</span>',
+                    minutes
+                )
+            else:
+                # 10 分鐘內，正常顯示
+                return f'{minutes} 分鐘'
+        except Exception as e:
+            return '錯誤'
+    idle_time_display.short_description = '閒置時間'
 
     actions = ['close_tickets', 'reopen_tickets']
 
@@ -713,31 +744,30 @@ class CustomUserAdmin(BaseUserAdmin):
     search_fields = ('username', 'first_name', 'last_name', 'email')
 
     def user_role_display(self, obj):
-        """顯示用戶角色"""
+        """顯示用戶角色（後台管理重點角色）"""
         roles = []
 
         # 檢查是否為超級管理員
         if obj.is_superuser:
             roles.append('🔑 超級管理員')
 
-        # 檢查是否為診所管理員
-        if hasattr(obj, 'managed_clinic') and obj.managed_clinic:
-            roles.append(f'🏥 診所管理員 ({obj.managed_clinic.clinic_name})')
+        # 檢查是否為診所管理員（已停用）
+        # if hasattr(obj, 'managed_clinic') and obj.managed_clinic:
+        #     roles.append(f'🏥 診所管理員 ({obj.managed_clinic.clinic_name})')
 
-        # 檢查是否為獸醫師
-        if hasattr(obj, 'profile'):
-            profile = obj.profile
-            if profile.account_type == 'veterinarian':
-                roles.append('👨‍⚕️ 獸醫師')
-            elif profile.account_type == 'clinic_admin' and not (hasattr(obj, 'managed_clinic') and obj.managed_clinic):
-                roles.append('🏥 診所管理員')
-            elif profile.account_type == 'owner':
-                roles.append('🐾 飼主')
+        # 檢查是否為獸醫師（已停用）
+        # if hasattr(obj, 'profile'):
+        #     profile = obj.profile
+        #     if profile.account_type == 'veterinarian':
+        #         roles.append('👨‍⚕️ 獸醫師')
+        #     elif profile.account_type == 'clinic_admin' and not (hasattr(obj, 'managed_clinic') and obj.managed_clinic):
+        #         roles.append('🏥 診所管理員')
 
         # 檢查是否為後台管理員
         if obj.is_staff and not obj.is_superuser:
             roles.append('👤 後台管理員')
 
+        # 一般用戶（包括飼主）- 後台管理員不需要特別處理飼主註冊
         if not roles:
             roles.append('👤 一般用戶')
 
@@ -755,8 +785,9 @@ class CustomUserAdmin(BaseUserAdmin):
         extra_context['staff_count'] = User.objects.filter(is_staff=True).count()
         extra_context['new_week'] = User.objects.filter(date_joined__gte=week_ago).count()
 
-        # 診所管理員統計
-        extra_context['clinic_admin_count'] = VetClinic.objects.filter(clinic_admin__isnull=False).count()
+        # 診所管理員統計（已註解停用）
+        # extra_context['clinic_admin_count'] = VetClinic.objects.filter(clinic_admin__isnull=False).count()
+        extra_context['clinic_admin_count'] = 0
 
         return super().changelist_view(request, extra_context=extra_context)
 

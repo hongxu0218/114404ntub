@@ -190,211 +190,214 @@ def get_available_time_slots(doctor, date, duration_minutes=30):
     
     return available_slots
 
-def detect_schedule_conflicts_for_clinic(clinic, week_start=None):
-    """
-    檢測診所的排班衝突
-    
-    Args:
-        clinic: VetClinic 實例
-        week_start: 週開始日期，預設為本週
-    
-    Returns:
-        list: 衝突列表
-    """
-    from .models import VetDoctor, VetSchedule, WEEKDAYS, ClinicBusinessHoursRecord
-    
-    if not week_start:
-        today = timezone.now().date()
-        week_start = today - timedelta(days=today.weekday())
-    
-    conflicts = []
-    doctors = VetDoctor.objects.filter(clinic=clinic, is_active=True)
-    
-    # 獲取診所營業時間
-    business_hours = {}
-    business_hours_records = ClinicBusinessHoursRecord.objects.filter(
-        clinic=clinic,
-        is_default=True,
-        status='open'
-    ).order_by('weekday', 'start_time')
-    
-    for record in business_hours_records:
-        if record.weekday not in business_hours:
-            business_hours[record.weekday] = []
-        business_hours[record.weekday].append({
-            'start_time': record.start_time,
-            'end_time': record.end_time
-        })
-    
-    # 檢查每個醫師的時間衝突
-    for doctor in doctors:
-        schedules = VetSchedule.objects.filter(
-            doctor=doctor,
-            is_active=True
-        ).order_by('weekday', 'start_time')
-        
-        # 按天分組
-        daily_schedules = {}
-        for schedule in schedules:
-            if schedule.weekday not in daily_schedules:
-                daily_schedules[schedule.weekday] = []
-            daily_schedules[schedule.weekday].append(schedule)
-        
-        # 檢查同一天的時間重疊
-        for day, day_schedules in daily_schedules.items():
-            for i, schedule1 in enumerate(day_schedules):
-                for schedule2 in day_schedules[i+1:]:
-                    if time_overlap(schedule1.start_time, schedule1.end_time,
-                                  schedule2.start_time, schedule2.end_time):
-                        conflicts.append({
-                            'type': 'time_overlap',
-                            'severity': 'high',
-                            'doctor': doctor,
-                            'day': day,
-                            'day_name': dict(WEEKDAYS)[day],
-                            'schedule1': schedule1,
-                            'schedule2': schedule2,
-                            'message': f'{doctor.user.get_full_name()} 在 {dict(WEEKDAYS)[day]} 有時間重疊'
-                        })
-            
-            # 檢查排班是否超出營業時間
-            if day in business_hours:
-                for schedule in day_schedules:
-                    is_within_business_hours = False
-                    for bh in business_hours[day]:
-                        if (schedule.start_time >= bh['start_time'] and 
-                            schedule.end_time <= bh['end_time']):
-                            is_within_business_hours = True
-                            break
-                    
-                    if not is_within_business_hours:
-                        conflicts.append({
-                            'type': 'outside_business_hours',
-                            'severity': 'medium',
-                            'doctor': doctor,
-                            'day': day,
-                            'day_name': dict(WEEKDAYS)[day],
-                            'schedule': schedule,
-                            'message': f'{doctor.user.get_full_name()} 在 {dict(WEEKDAYS)[day]} 的排班超出營業時間'
-                        })
-    
-    # 檢查診所覆蓋率（只檢查有營業時間的日子）
-    for day in range(7):
-        if day in business_hours:  # 只檢查有營業的日子
-            day_schedules = VetSchedule.objects.filter(
-                doctor__clinic=clinic,
-                doctor__is_active=True,
-                weekday=day,
-                is_active=True
-            )
-            
-            if not day_schedules.exists():
-                conflicts.append({
-                    'type': 'no_coverage',
-                    'severity': 'medium',
-                    'day': day,
-                    'day_name': dict(WEEKDAYS)[day],
-                    'message': f'{dict(WEEKDAYS)[day]} 沒有醫師值班（但診所營業中）'
-                })
-            elif day_schedules.count() == 1:
-                # 只有一個醫師值班，可能需要備援
-                conflicts.append({
-                    'type': 'low_coverage',
-                    'severity': 'low',
-                    'day': day,
-                    'day_name': dict(WEEKDAYS)[day],
-                    'message': f'{dict(WEEKDAYS)[day]} 只有一位醫師值班'
-                })
-    
-    return conflicts
+# 診所排班衝突檢測功能 - 已停用（診所功能已停用）
+# def detect_schedule_conflicts_for_clinic(clinic, week_start=None):
+#     """
+#     檢測診所的排班衝突
+#
+#     Args:
+#         clinic: VetClinic 實例
+#         week_start: 週開始日期，預設為本週
+#
+#     Returns:
+#         list: 衝突列表
+#     """
+#     from .models import VetDoctor, VetSchedule, WEEKDAYS, ClinicBusinessHoursRecord
+#
+#     if not week_start:
+#         today = timezone.now().date()
+#         week_start = today - timedelta(days=today.weekday())
+#
+#     conflicts = []
+#     doctors = VetDoctor.objects.filter(clinic=clinic, is_active=True)
+#
+#     # 獲取診所營業時間
+#     business_hours = {}
+#     business_hours_records = ClinicBusinessHoursRecord.objects.filter(
+#         clinic=clinic,
+#         is_default=True,
+#         status='open'
+#     ).order_by('weekday', 'start_time')
+#
+#     for record in business_hours_records:
+#         if record.weekday not in business_hours:
+#             business_hours[record.weekday] = []
+#         business_hours[record.weekday].append({
+#             'start_time': record.start_time,
+#             'end_time': record.end_time
+#         })
+#
+#     # 檢查每個醫師的時間衝突
+#     for doctor in doctors:
+#         schedules = VetSchedule.objects.filter(
+#             doctor=doctor,
+#             is_active=True
+#         ).order_by('weekday', 'start_time')
+#
+#         # 按天分組
+#         daily_schedules = {}
+#         for schedule in schedules:
+#             if schedule.weekday not in daily_schedules:
+#                 daily_schedules[schedule.weekday] = []
+#             daily_schedules[schedule.weekday].append(schedule)
+#
+#         # 檢查同一天的時間重疊
+#         for day, day_schedules in daily_schedules.items():
+#             for i, schedule1 in enumerate(day_schedules):
+#                 for schedule2 in day_schedules[i+1:]:
+#                     if time_overlap(schedule1.start_time, schedule1.end_time,
+#                                   schedule2.start_time, schedule2.end_time):
+#                         conflicts.append({
+#                             'type': 'time_overlap',
+#                             'severity': 'high',
+#                             'doctor': doctor,
+#                             'day': day,
+#                             'day_name': dict(WEEKDAYS)[day],
+#                             'schedule1': schedule1,
+#                             'schedule2': schedule2,
+#                             'message': f'{doctor.user.get_full_name()} 在 {dict(WEEKDAYS)[day]} 有時間重疊'
+#                         })
+#
+#             # 檢查排班是否超出營業時間
+#             if day in business_hours:
+#                 for schedule in day_schedules:
+#                     is_within_business_hours = False
+#                     for bh in business_hours[day]:
+#                         if (schedule.start_time >= bh['start_time'] and
+#                             schedule.end_time <= bh['end_time']):
+#                             is_within_business_hours = True
+#                             break
+#
+#                     if not is_within_business_hours:
+#                         conflicts.append({
+#                             'type': 'outside_business_hours',
+#                             'severity': 'medium',
+#                             'doctor': doctor,
+#                             'day': day,
+#                             'day_name': dict(WEEKDAYS)[day],
+#                             'schedule': schedule,
+#                             'message': f'{doctor.user.get_full_name()} 在 {dict(WEEKDAYS)[day]} 的排班超出營業時間'
+#                         })
+#
+#     # 檢查診所覆蓋率（只檢查有營業時間的日子）
+#     for day in range(7):
+#         if day in business_hours:  # 只檢查有營業的日子
+#             day_schedules = VetSchedule.objects.filter(
+#                 doctor__clinic=clinic,
+#                 doctor__is_active=True,
+#                 weekday=day,
+#                 is_active=True
+#             )
+#
+#             if not day_schedules.exists():
+#                 conflicts.append({
+#                     'type': 'no_coverage',
+#                     'severity': 'medium',
+#                     'day': day,
+#                     'day_name': dict(WEEKDAYS)[day],
+#                     'message': f'{dict(WEEKDAYS)[day]} 沒有醫師值班（但診所營業中）'
+#                 })
+#             elif day_schedules.count() == 1:
+#                 # 只有一個醫師值班，可能需要備援
+#                 conflicts.append({
+#                     'type': 'low_coverage',
+#                     'severity': 'low',
+#                     'day': day,
+#                     'day_name': dict(WEEKDAYS)[day],
+#                     'message': f'{dict(WEEKDAYS)[day]} 只有一位醫師值班'
+#                 })
+#
+#     return conflicts
 
-def optimize_schedule_suggestions(clinic):
-    """
-    基於現有排班提供優化建議
-    
-    Args:
-        clinic: VetClinic 實例
-    
-    Returns:
-        list: 優化建議列表
-    """
-    suggestions = []
-    
-    # 分析工作量分配
-    doctors = VetDoctor.objects.filter(clinic=clinic, is_active=True)
-    doctor_workloads = {}
-    
-    for doctor in doctors:
-        schedules = VetSchedule.objects.filter(doctor=doctor, is_active=True)
-        total_hours = sum(schedule.duration_hours for schedule in schedules)
-        doctor_workloads[doctor] = total_hours
-    
-    if len(doctor_workloads) > 1:
-        avg_workload = sum(doctor_workloads.values()) / len(doctor_workloads)
-        
-        for doctor, workload in doctor_workloads.items():
-            if workload > avg_workload * 1.5:
-                suggestions.append({
-                    'type': 'workload_balance',
-                    'priority': 'medium',
-                    'doctor': doctor,
-                    'message': f'{doctor.user.get_full_name()} 工作量過重（{workload:.1f}小時），建議重新分配'
-                })
-            elif workload < avg_workload * 0.5:
-                suggestions.append({
-                    'type': 'workload_balance',
-                    'priority': 'low',
-                    'doctor': doctor,
-                    'message': f'{doctor.user.get_full_name()} 工作量偏低（{workload:.1f}小時），可增加排班'
-                })
-    
-    return suggestions
+# 診所排班優化建議功能 - 已停用（診所功能已停用）
+# def optimize_schedule_suggestions(clinic):
+#     """
+#     基於現有排班提供優化建議
+#
+#     Args:
+#         clinic: VetClinic 實例
+#
+#     Returns:
+#         list: 優化建議列表
+#     """
+#     suggestions = []
+#
+#     # 分析工作量分配
+#     doctors = VetDoctor.objects.filter(clinic=clinic, is_active=True)
+#     doctor_workloads = {}
+#
+#     for doctor in doctors:
+#         schedules = VetSchedule.objects.filter(doctor=doctor, is_active=True)
+#         total_hours = sum(schedule.duration_hours for schedule in schedules)
+#         doctor_workloads[doctor] = total_hours
+#
+#     if len(doctor_workloads) > 1:
+#         avg_workload = sum(doctor_workloads.values()) / len(doctor_workloads)
+#
+#         for doctor, workload in doctor_workloads.items():
+#             if workload > avg_workload * 1.5:
+#                 suggestions.append({
+#                     'type': 'workload_balance',
+#                     'priority': 'medium',
+#                     'doctor': doctor,
+#                     'message': f'{doctor.user.get_full_name()} 工作量過重（{workload:.1f}小時），建議重新分配'
+#                 })
+#             elif workload < avg_workload * 0.5:
+#                 suggestions.append({
+#                     'type': 'workload_balance',
+#                     'priority': 'low',
+#                     'doctor': doctor,
+#                     'message': f'{doctor.user.get_full_name()} 工作量偏低（{workload:.1f}小時），可增加排班'
+#                 })
+#
+#     return suggestions
 
-def export_schedule_data(clinic, start_date, end_date, format='json'):
-    """
-    匯出排班資料
-    
-    Args:
-        clinic: VetClinic 實例
-        start_date: 開始日期
-        end_date: 結束日期
-        format: 匯出格式 ('json', 'csv', 'excel')
-    
-    Returns:
-        dict: 匯出的資料
-    """
-    from .models import VetSchedule, VetDoctor
-    
-    schedules = VetSchedule.objects.filter(
-        doctor__clinic=clinic,
-        is_active=True
-    ).select_related('doctor__user').order_by('weekday', 'start_time')
-    
-    export_data = {
-        'clinic_name': clinic.clinic_name,
-        'export_date': timezone.now().isoformat(),
-        'period': {
-            'start_date': start_date.isoformat() if start_date else None,
-            'end_date': end_date.isoformat() if end_date else None
-        },
-        'schedules': []
-    }
-    
-    for schedule in schedules:
-        export_data['schedules'].append({
-            'doctor_name': schedule.doctor.user.get_full_name(),
-            'doctor_email': schedule.doctor.user.email,
-            'weekday': schedule.weekday,
-            'weekday_name': schedule.get_weekday_display(),
-            'start_time': schedule.start_time.strftime('%H:%M'),
-            'end_time': schedule.end_time.strftime('%H:%M'),
-            'duration_hours': schedule.duration_hours,
-            'appointment_duration': schedule.appointment_duration,
-            'notes': schedule.notes,
-            'schedule_type': schedule.schedule_type,
-        })
-    
-    return export_data
+# 診所排班匯出功能 - 已停用（診所功能已停用）
+# def export_schedule_data(clinic, start_date, end_date, format='json'):
+#     """
+#     匯出排班資料
+#
+#     Args:
+#         clinic: VetClinic 實例
+#         start_date: 開始日期
+#         end_date: 結束日期
+#         format: 匯出格式 ('json', 'csv', 'excel')
+#
+#     Returns:
+#         dict: 匯出的資料
+#     """
+#     from .models import VetSchedule, VetDoctor
+#
+#     schedules = VetSchedule.objects.filter(
+#         doctor__clinic=clinic,
+#         is_active=True
+#     ).select_related('doctor__user').order_by('weekday', 'start_time')
+#
+#     export_data = {
+#         'clinic_name': clinic.clinic_name,
+#         'export_date': timezone.now().isoformat(),
+#         'period': {
+#             'start_date': start_date.isoformat() if start_date else None,
+#             'end_date': end_date.isoformat() if end_date else None
+#         },
+#         'schedules': []
+#     }
+#
+#     for schedule in schedules:
+#         export_data['schedules'].append({
+#             'doctor_name': schedule.doctor.user.get_full_name(),
+#             'doctor_email': schedule.doctor.user.email,
+#             'weekday': schedule.weekday,
+#             'weekday_name': schedule.get_weekday_display(),
+#             'start_time': schedule.start_time.strftime('%H:%M'),
+#             'end_time': schedule.end_time.strftime('%H:%M'),
+#             'duration_hours': schedule.duration_hours,
+#             'appointment_duration': schedule.appointment_duration,
+#             'notes': schedule.notes,
+#             'schedule_type': schedule.schedule_type,
+#         })
+#
+#     return export_data
 
 # ============ 預約過期處理功能 ============
 

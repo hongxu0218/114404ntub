@@ -40,10 +40,17 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     
     def get_login_redirect_url(self, request, sociallogin):
         """決定登入後的重定向 URL"""
+        user = sociallogin.user
         needs_profile = request.session.get('google_needs_profile', False)
         logger.info(f"get_login_redirect_url called - needs_profile: {needs_profile}")
         logger.info(f"sociallogin.is_existing: {sociallogin.is_existing}")
-        logger.info(f"Session contents: {dict(request.session)}")
+        logger.info(f"User is_staff: {user.is_staff}, is_superuser: {user.is_superuser}")
+
+        # 超級管理員和後台管理員直接導向後台或首頁，不需要補充資料
+        if user.is_staff or user.is_superuser:
+            logger.info("User is staff/superuser, skipping extra signup page")
+            request.session.pop('google_needs_profile', None)  # 清除標記
+            return '/login-redirect/'
 
         # 如果需要補充個人資料，重定向到補充資料頁
         if needs_profile:
@@ -58,6 +65,23 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         """保存用戶後的處理"""
         logger.info(f"save_user called for {sociallogin.user.email}")
         user = super().save_user(request, sociallogin, form)
+
+        # 超級管理員和後台管理員直接創建 Profile，不需要補充資料
+        if user.is_staff or user.is_superuser:
+            logger.info("User is staff/superuser, creating basic profile immediately")
+            from .models import Profile
+            profile, created = Profile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'account_type': 'owner',
+                    'phone_number': ''
+                }
+            )
+            if created:
+                logger.info(f"Created basic profile for staff/superuser: {user.email}")
+            # 清除補充資料標記
+            request.session.pop('google_needs_profile', None)
+            return user
 
         # 如果需要補充資料，暫時不創建 Profile（在補充資料頁面處理）
         needs_profile = request.session.get('google_needs_profile', False)
@@ -87,7 +111,13 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         needs_profile = request.session.get('google_needs_profile', False)
         logger.info(f"get_signup_redirect_url called for {user.email}")
         logger.info(f"google_needs_profile: {needs_profile}")
-        logger.info(f"Session contents: {dict(request.session)}")
+        logger.info(f"User is_staff: {user.is_staff}, is_superuser: {user.is_superuser}")
+
+        # 超級管理員和後台管理員直接導向後台或首頁，不需要補充資料
+        if user.is_staff or user.is_superuser:
+            logger.info("User is staff/superuser, skipping extra signup page")
+            request.session.pop('google_needs_profile', None)  # 清除標記
+            return '/login-redirect/'
 
         # 如果需要補充個人資料，重定向到補充資料頁
         if needs_profile:

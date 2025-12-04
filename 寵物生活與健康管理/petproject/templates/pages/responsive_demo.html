@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}響應式設計示例{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">📱 響應式設計示例</h1>
+
+    <!-- 1. 響應式按鈕 -->
+    <section class="mb-5">
+        <h2>1. 觸控友好按鈕</h2>
+        <p class="text-muted">最小 44x44px，適合觸控操作</p>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-primary">主要按鈕</button>
+            <button class="btn btn-secondary">次要按鈕</button>
+            <button class="btn btn-success">成功</button>
+            <button class="btn btn-danger">刪除</button>
+            <button class="btn btn-warning">警告</button>
+            <button class="btn btn-info">資訊</button>
+        </div>
+    </section>
+
+    <!-- 2. 響應式網格 -->
+    <section class="mb-5">
+        <h2>2. 響應式網格佈局</h2>
+        <p class="text-muted">桌面：3列，平板：2列，手機：1列</p>
+        <div class="row">
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">卡片 1</h5>
+                        <p class="card-text">這是響應式卡片內容</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">卡片 2</h5>
+                        <p class="card-text">會根據螢幕寬度自動調整</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">卡片 3</h5>
+                        <p class="card-text">手機上會堆疊成單列</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. 響應式表單 -->
+    <section class="mb-5">
+        <h2>3. 響應式表單</h2>
+        <p class="text-muted">輸入框最小 44px 高度，字體 16px（防止 iOS 縮放）</p>
+        <form>
+            <div class="row">
+                <div class="col-12 col-md-6 mb-3">
+                    <label for="name" class="form-label">姓名</label>
+                    <input type="text" class="form-control" id="name" placeholder="請輸入姓名">
+                </div>
+                <div class="col-12 col-md-6 mb-3">
+                    <label for="email" class="form-label">電子郵件</label>
+                    <input type="email" class="form-control" id="email" placeholder="請輸入電子郵件">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="message" class="form-label">訊息</label>
+                <textarea class="form-control" id="message" rows="4" placeholder="請輸入訊息"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">送出</button>
+        </form>
+    </section>
+
+    <!-- 4. 響應式表格 -->
+    <section class="mb-5">
+        <h2>4. 響應式表格</h2>
+        <p class="text-muted">手機上會堆疊顯示</p>
+
+        <h5 class="mt-4">方法一：堆疊式表格（推薦）</h5>
+        <table class="table table-stack">
+            <thead>
+                <tr>
+                    <th>寵物名稱</th>
+                    <th>品種</th>
+                    <th>年齡</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td data-label="寵物名稱">小白</td>
+                    <td data-label="品種">貴賓犬</td>
+                    <td data-label="年齡">3歲</td>
+                    <td data-label="狀態"><span class="badge bg-success">健康</span></td>
+                </tr>
+                <tr>
+                    <td data-label="寵物名稱">小黑</td>
+                    <td data-label="品種">柴犬</td>
+                    <td data-label="年齡">5歲</td>
+                    <td data-label="狀態"><span class="badge bg-warning">待檢查</span></td>
+                </tr>
+                <tr>
+                    <td data-label="寵物名稱">喵喵</td>
+                    <td data-label="品種">英國短毛貓</td>
+                    <td data-label="年齡">2歲</td>
+                    <td data-label="狀態"><span class="badge bg-success">健康</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-5">方法二：水平滾動</h5>
+        <div class="table-responsive-mobile">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>寵物名稱</th>
+                        <th>品種</th>
+                        <th>年齡</th>
+                        <th>體重</th>
+                        <th>最後檢查</th>
+                        <th>下次預約</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>小白</td>
+                        <td>貴賓犬</td>
+                        <td>3歲</td>
+                        <td>5.2 kg</td>
+                        <td>2025-01-10</td>
+                        <td>2025-02-10</td>
+                        <td><span class="badge bg-success">健康</span></td>
+                    </tr>
+                    <tr>
+                        <td>小黑</td>
+                        <td>柴犬</td>
+                        <td>5歲</td>
+                        <td>10.5 kg</td>
+                        <td>2025-01-08</td>
+                        <td>2025-02-15</td>
+                        <td><span class="badge bg-warning">待檢查</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 5. 顯示/隱藏 -->
+    <section class="mb-5">
+        <h2>5. 裝置專用內容</h2>
+
+        <div class="mobile-only">
+            <div class="alert alert-info">
+                <i class="bi bi-phone"></i> 這段內容只在手機上顯示（螢幕寬度 ≤ 767px）
+            </div>
+        </div>
+
+        <div class="desktop-only">
+            <div class="alert alert-success">
+                <i class="bi bi-laptop"></i> 這段內容只在桌面上顯示（螢幕寬度 > 767px）
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. 響應式圖片 -->
+    <section class="mb-5">
+        <h2>6. 響應式圖片</h2>
+        <p class="text-muted">圖片會自動縮放以適應容器</p>
+        <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+                <img src="{% static 'images/placeholder-pet.jpg' %}" alt="寵物圖片" class="img-fluid rounded">
+            </div>
+            <div class="col-12 col-md-4 mb-3">
+                <img src="{% static 'images/placeholder-pet.jpg' %}" alt="寵物圖片" class="img-fluid rounded">
+            </div>
+            <div class="col-12 col-md-4 mb-3">
+                <img src="{% static 'images/placeholder-pet.jpg' %}" alt="寵物圖片" class="img-fluid rounded">
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. 響應式模態框 -->
+    <section class="mb-5">
+        <h2>7. 響應式模態框</h2>
+        <p class="text-muted">手機上會全螢幕顯示</p>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#demoModal">
+            開啟模態框
+        </button>
+
+        <div class="modal fade" id="demoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">響應式模態框</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>這個模態框在手機上會佔據更多空間，按鈕會堆疊顯示。</p>
+                        <form>
+                            <div class="mb-3">
+                                <label for="modalInput" class="form-label">輸入框</label>
+                                <input type="text" class="form-control" id="modalInput">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary">確認</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. 測試資訊 -->
+    <section class="mb-5">
+        <h2>8. 測試資訊</h2>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">如何測試響應式設計</h5>
+                <ul>
+                    <li><strong>Chrome/Edge:</strong> 按 F12 → 點擊「Toggle device toolbar」(Ctrl+Shift+M)</li>
+                    <li><strong>Firefox:</strong> 按 F12 → 點擊「Responsive Design Mode」(Ctrl+Shift+M)</li>
+                    <li><strong>Safari:</strong> 開啟「開發」選單 → 進入「響應式設計模式」</li>
+                </ul>
+
+                <h6 class="mt-3">測試清單：</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test1">
+                    <label class="form-check-label" for="test1">
+                        所有按鈕可以輕易點擊（最小 44x44px）
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test2">
+                    <label class="form-check-label" for="test2">
+                        表單輸入框高度足夠（最小 44px）
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test3">
+                    <label class="form-check-label" for="test3">
+                        表格在手機上可以正常瀏覽
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test4">
+                    <label class="form-check-label" for="test4">
+                        圖片正確縮放，不會超出螢幕
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test5">
+                    <label class="form-check-label" for="test5">
+                        沒有水平滾動條
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test6">
+                    <label class="form-check-label" for="test6">
+                        文字大小適中，易於閱讀
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

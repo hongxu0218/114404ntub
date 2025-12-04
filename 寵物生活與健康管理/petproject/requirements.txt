@@ -8,6 +8,9 @@ ollama==0.5.4
 chromadb==1.1.0
 sentence-transformers==5.1.1
 
+# 語音辨識
+faster-whisper==1.1.0
+
 # 資料處理
 pandas==2.3.0
 numpy==2.3.3
@@ -49,3 +52,8 @@ tqdm==4.67.1
 
 # 定時任務
 django-apscheduler==0.6.2
+
+# Google Calendar API
+google-api-python-client==2.152.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1

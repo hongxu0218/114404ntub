@@ -55,9 +55,17 @@ class VisitTrackingMiddleware(MiddlewareMixin):
                 return None
 
             # 標記此 IP 今天已訪問（到今天結束前有效）
-            seconds_until_midnight = (
-                datetime.combine(today + timedelta(days=1), datetime.min.time()) - now
-            ).total_seconds()
+            # 計算到今天午夜 23:59:59 的秒數（台北時區）
+            from datetime import time
+            import pytz
+            taipei_tz = pytz.timezone('Asia/Taipei')
+
+            # 建立今天午夜的 timezone-aware datetime
+            midnight = taipei_tz.localize(
+                datetime.combine(today + timedelta(days=1), time.min)
+            )
+
+            seconds_until_midnight = (midnight - now).total_seconds()
             cache.set(today_ip_key, True, int(seconds_until_midnight))
 
             # 記錄今日訪問的 IP 集合（用於統計獨立訪客數）

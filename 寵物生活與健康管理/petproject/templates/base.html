@@ -4,9 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}毛孩幸福生活{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <meta name="description" content="{% block meta_description %}毛日好 Paw&Day - 為毛小孩與飼主打造的健康管理平台{% endblock %}">
   <meta name="csrf-token" content="{{ csrf_token }}">
+
+  <!-- 手機友好設置 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="毛日好">
+  <meta name="format-detection" content="telephone=yes">
+  <meta name="theme-color" content="#667eea">
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
@@ -16,7 +23,10 @@
   
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-  
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   
@@ -24,6 +34,9 @@
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
   <!-- <link rel="stylesheet" href="{% static 'css/medical-theme.css' %}"> <!-- 暫時停用醫療主題 -->
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+  <!-- 手機響應式樣式（最後載入以覆蓋其他樣式）-->
+  <link rel="stylesheet" href="{% static 'css/mobile-responsive.css' %}">
   
   {% block extra_css %}
   <!-- 子模板可以插入額外的 CSS -->
@@ -31,6 +44,47 @@
 
   <!-- AI 客服泡泡樣式 v3.0 - 最終版本：清潔代碼，修復頭像和背景 -->
   <style>
+  /* 語音建檔懸浮按鈕 */
+  #voice-button{
+    position: fixed;
+    right: 20px;
+    bottom: 156px;
+    width: 56px; height: 56px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+    cursor: pointer;
+    z-index: 9998;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+  }
+
+  #voice-button:hover{
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(239, 68, 68, 0.5);
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  }
+
+  #voice-button:active{
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  @keyframes voice-pulse {
+    0%, 100% {
+      box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+    }
+    50% {
+      box-shadow: 0 10px 40px rgba(239, 68, 68, 0.6), 0 0 0 8px rgba(239, 68, 68, 0.2);
+    }
+  }
+
+  #voice-button.pulse {
+    animation: voice-pulse 2s infinite;
+  }
+
   #chatbot-button{
     position: fixed;
     right: 20px;
@@ -705,6 +759,7 @@
   }
 
   @media (max-width: 768px) {
+    #voice-button{ bottom: 164px; right: 14px; }
     #chatbot-button{ bottom: 96px; right: 14px; }
     #chatbot-box{
       width: calc(100vw - 24px);
@@ -775,7 +830,7 @@
   
   <!-- Meta 資訊 -->
   <meta name="author" content="毛日好 Paw&Day">
-  <meta name="keywords" content="寵物,健康管理,獸醫,預約,寵物醫院">
+  <meta name="keywords" content="寵物,健康管理">
   
   <!-- Open Graph 資訊 -->
   <meta property="og:title" content="{% block og_title %}{{ block.super }}毛孩幸福生活{% endblock %}">
@@ -792,11 +847,11 @@
 <body>
 
   <!-- 用戶資訊 (隱藏，供 JavaScript 使用) -->
-  <div class="d-none" 
+  <div class="d-none"
        data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
        {% if user.profile %}data-user-type="{{ user.profile.account_type }}"{% endif %}
-       {% if user.vet_profile %}data-user-profile="veterinarian"{% endif %}
-       {% if user.profile.account_type == 'clinic_admin' %}data-user-profile="clinic_admin"{% endif %}
+       {% comment %} {% if user.vet_profile %}data-user-profile="veterinarian"{% endif %} {% endcomment %}
+       {% comment %} {% if user.profile.account_type == 'clinic_admin' %}data-user-profile="clinic_admin"{% endif %} {% endcomment %}
        {% if user.profile.account_type == 'pet_owner' %}data-user-profile="pet_owner"{% endif %}>
   </div>
 
@@ -879,7 +934,8 @@
             </ul>
           </li>
 
-        <!-- 診所管理員菜單 -->
+        {% comment %}
+        <!-- 診所管理員菜單 - 已停用 -->
         {% elif user.profile.account_type == 'clinic_admin' %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -901,8 +957,9 @@
               </a></li>
             </ul>
           </li>
+        {% endcomment %}
           
-          <!-- 診所管理員同時是獸醫師時，統一使用下拉菜單 -->
+          {% comment %} <!-- 診所管理員同時是獸醫師時，統一使用下拉菜單 -->
           {% if user.vet_profile %}
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -928,9 +985,10 @@
                 <!-- 移除建立記錄，改由預約流程進入 -->
               </ul>
             </li>
-          {% endif %}
+          {% endif %} {% endcomment %}
 
-        <!-- 純獸醫師菜單 - 統一改為下拉菜單格式 -->
+        {% comment %}
+        <!-- 純獸醫師菜單 - 已停用 -->
         {% elif user.profile.account_type == 'vet' or user.vet_profile %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -963,6 +1021,7 @@
               </a></li>
             </ul>
           </li>
+        {% endcomment %}
 
         <!-- 飼主菜單 -->
         {% elif user.profile.account_type == 'owner' %}
@@ -976,6 +1035,8 @@
               <li><a class="dropdown-item" href="{% url 'pet_list' %}">
                 <i class="bi bi-heart-fill me-2"></i>毛孩總覽
               </a></li>
+              {% comment %}
+              <!-- 預約管理 - 已停用 -->
               <li><hr class="dropdown-divider"></li>
               <li><h6 class="dropdown-header">📅 預約管理</h6></li>
               <li><a class="dropdown-item" href="{% url 'my_appointments' %}">
@@ -984,6 +1045,7 @@
               <li><a class="dropdown-item" href="{% url 'pet_list' %}">
                 <i class="bi bi-plus-circle me-2"></i>新增預約
               </a></li>
+              {% endcomment %}
             </ul>
           </li>
           
@@ -1012,6 +1074,9 @@
               </a></li>
               <li><hr class="dropdown-divider"></li>
               <li><h6 class="dropdown-header">生活記錄</h6></li>
+              <li><a class="dropdown-item" href="{% url 'voice_input' %}">
+                <i class="bi bi-mic-fill me-2 text-danger"></i>語音建檔
+              </a></li>
               <li><a class="dropdown-item" href="{% url 'health_rec' %}?tab=daily">
                 <i class="bi bi-journal-text me-2"></i>日常紀錄
               </a></li>
@@ -1053,6 +1118,12 @@
               </a></li>
               <li><a class="dropdown-item" href="{% url 'my_adoption' %}">
                 <i class="bi bi-list-ul me-2"></i>我的送養
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'owner_adoption_applications' %}">
+                <i class="bi bi-inbox me-2"></i>收到的申請
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'my_adoption_applications' %}">
+                <i class="bi bi-file-text me-2"></i>我的申請
               </a></li>
               <li><a class="dropdown-item" href="{% url 'my_adoption_transfers' %}">
                 <i class="bi bi-arrow-left-right me-2"></i>轉交請求
@@ -1134,11 +1205,11 @@
             <i class="bi bi-person-plus me-1" aria-hidden="true"></i>註冊
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'clinic_registration' %}" aria-label="診所註冊">
+        {% comment %} <li class="nav-item">
+          <a class="nav-link" href="#" aria-label="診所註冊">
             <i class="bi bi-hospital me-1" aria-hidden="true"></i>診所註冊
           </a>
-        </li>
+        </li> {% endcomment %}
       {% endif %}
     </ul>
   </div>
@@ -1368,8 +1439,15 @@
   <!-- 在生產環境中插入 Google Analytics 代碼 -->
   {% endif %}
 
-  <!-- AI 客服浮動泡泡 (獸醫端不顯示) -->
-  {% if not user.vet_profile and user.profile.account_type != 'vet' %}
+  <!-- 語音建檔懸浮按鈕 -->
+  {% if user.is_authenticated and user.profile.account_type == 'owner' %}
+  <a href="{% url 'voice_input' %}" id="voice-button" class="pulse" title="語音建檔">
+    <i class="fas fa-microphone"></i>
+  </a>
+  {% endif %}
+
+  <!-- AI 客服浮動泡泡 -->
+  {% if user.is_authenticated and user.profile.account_type == 'owner' %}
   <div id="chatbot-button" title="AI 客服">💬</div>
 
   <!-- AI 客服對話框 -->
@@ -1565,8 +1643,10 @@
             saveConversationHistory();
         });
 
-        // 發送訊息
-        chatbotSend.addEventListener('click', sendMessage);
+        // 發送訊息 - 使用包裝函數以支持動態更新 sendMessage
+        chatbotSend.addEventListener('click', function() {
+            sendMessage();
+        });
         chatbotText.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();

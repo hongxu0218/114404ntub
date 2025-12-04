@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}確認取消申請{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> 確認取消申請</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <strong><i class="fas fa-info-circle"></i> 注意：</strong>
+                        <p class="mb-0 mt-2">取消申請後，將無法恢復。如果您仍想領養此寵物，需要重新提交申請。</p>
+                    </div>
+
+                    <h5 class="mt-4">申請資訊</h5>
+                    <hr>
+
+                    <div class="row mb-3">
+                        <div class="col-4">
+                            {% if application.pet.adopt_picture1 %}
+                            <img src="{{ application.pet.adopt_picture1.url }}" alt="{{ application.pet.name }}" class="img-fluid rounded">
+                            {% endif %}
+                        </div>
+                        <div class="col-8">
+                            <p><strong>寵物：</strong>{{ application.pet.name }}</p>
+                            <p><strong>品種：</strong>{{ application.pet.breed }}</p>
+                            <p><strong>原飼主：</strong>{{ application.owner.username }}</p>
+                        </div>
+                    </div>
+
+                    <p><strong>申請時間：</strong>{{ application.created_at|date:"Y-m-d H:i" }}</p>
+                    <p><strong>目前狀態：</strong>
+                        <span class="badge {% if application.status == 'pending' %}bg-warning text-dark{% elif application.status == 'reviewing' %}bg-info{% endif %}">
+                            {{ application.get_status_display }}
+                        </span>
+                    </p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-times"></i> 確認取消申請
+                            </button>
+                            <a href="{% url 'adoption_application_detail' application.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

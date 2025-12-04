@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}新增看診記錄 - {{ pet.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medical-theme.css' %}">
+<style>
+:root {
+    --primary-color: #2563eb;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.medical-form-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.pet-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.pet-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+}
+
+.form-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.form-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.form-field {
+    margin-bottom: 16px;
+}
+
+.form-field label {
+    display: block;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-field textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+.checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.checkbox-field input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 24px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid;
+}
+
+.alert-success {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.alert-error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .form-grid,
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .medical-form-container {
+        padding: 16px;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="medical-form-container">
+    <!-- 表單標題 -->
+    <div class="form-header">
+        <div class="pet-info">
+            <div class="pet-avatar">
+                🏥
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 1.8rem; color: var(--gray-900);">新增看診記錄</h1>
+                <p style="margin: 4px 0 0 0; color: var(--gray-600);">
+                    為 <strong>{{ pet.name }}</strong> 建立看診記錄
+                </p>
+            </div>
+        </div>
+        <div style="background: var(--gray-50); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: var(--gray-600);">
+            <strong>寵物資訊：</strong>{{ pet.species }} • {{ pet.breed }} • {{ pet.age }}歲 •
+            飼主：{{ pet.owner.get_full_name|default:pet.owner.username }}
+        </div>
+    </div>
+
+    <!-- 看診記錄表單 -->
+    <div class="form-card">
+        <div class="form-title">
+            <i class="fas fa-notes-medical" style="color: var(--primary-color);"></i>
+            看診詳細記錄
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- 基本資訊 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                    基本資訊
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        {{ form.visit_date.label_tag }}
+                        {{ form.visit_date }}
+                        {% if form.visit_date.help_text %}
+                            <div class="help-text">{{ form.visit_date.help_text }}</div>
+                        {% endif %}
+                        {% if form.visit_date.errors %}
+                            <div class="alert alert-error">{{ form.visit_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        {{ form.clinic_location.label_tag }}
+                        {{ form.clinic_location }}
+                        {% if form.clinic_location.help_text %}
+                            <div class="help-text">{{ form.clinic_location.help_text }}</div>
+                        {% endif %}
+                        {% if form.clinic_location.errors %}
+                            <div class="alert alert-error">{{ form.clinic_location.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 生理數據 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-heartbeat" style="color: var(--danger-color);"></i>
+                    生理數據（選填）
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        {{ form.weight.label_tag }}
+                        {{ form.weight }}
+                        {% if form.weight.help_text %}
+                            <div class="help-text">{{ form.weight.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        {{ form.temperature.label_tag }}
+                        {{ form.temperature }}
+                        {% if form.temperature.help_text %}
+                            <div class="help-text">{{ form.temperature.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 診斷與治療 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-stethoscope" style="color: var(--success-color);"></i>
+                    診斷與治療
+                </div>
+
+                <div class="form-field">
+                    {{ form.diagnosis.label_tag }}
+                    {{ form.diagnosis }}
+                    {% if form.diagnosis.help_text %}
+                        <div class="help-text">{{ form.diagnosis.help_text }}</div>
+                    {% endif %}
+                    {% if form.diagnosis.errors %}
+                        <div class="alert alert-error">{{ form.diagnosis.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.treatment.label_tag }}
+                    {{ form.treatment }}
+                    {% if form.treatment.help_text %}
+                        <div class="help-text">{{ form.treatment.help_text }}</div>
+                    {% endif %}
+                    {% if form.treatment.errors %}
+                        <div class="alert alert-error">{{ form.treatment.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+                    {% if form.notes.help_text %}
+                        <div class="help-text">{{ form.notes.help_text }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 費用與追蹤 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-calendar-check" style="color: var(--warning-color);"></i>
+                    費用與追蹤
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        {{ form.total_cost.label_tag }}
+                        {{ form.total_cost }}
+                        {% if form.total_cost.help_text %}
+                            <div class="help-text">{{ form.total_cost.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        {{ form.follow_up_date.label_tag }}
+                        {{ form.follow_up_date }}
+                        {% if form.follow_up_date.help_text %}
+                            <div class="help-text">{{ form.follow_up_date.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="checkbox-field">
+                    {{ form.follow_up_required }}
+                    {{ form.follow_up_required.label_tag }}
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{% url 'health_rec' %}?pet_id={{ pet.id }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    取消
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    儲存看診記錄
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -6,20 +6,39 @@
 class HealthRecordsController {
     constructor() {
         this.currentTab = this.getCurrentTab();
+        this.savedPetId = null; // 保存寵物ID
         this.init();
     }
 
     init() {
         // console.log('🏥 健康紀錄系統初始化...');
-        
+
+        // 在初始化時保存按鈕中的寵物ID
+        this.savePetIdFromButton();
+
         this.setupEventListeners();
         this.updateActiveTab();
         this.setupAnimations();
-        
+
         // 顯示當前標籤的內容
         this.showTabContent(this.currentTab);
-        
+
         // console.log('✅ 健康紀錄系統已就緒');
+    }
+
+    savePetIdFromButton() {
+        // 從模板渲染的按鈕中提取寵物ID並保存
+        const addButton = document.querySelector('.health-add-btn');
+        if (addButton) {
+            const currentHref = addButton.getAttribute('href');
+            if (currentHref) {
+                const matches = currentHref.match(/\/(\d+)\//);
+                if (matches && matches[1]) {
+                    this.savedPetId = matches[1];
+                    console.log('已保存寵物ID:', this.savedPetId);
+                }
+            }
+        }
     }
 
     getCurrentTab() {
@@ -56,7 +75,7 @@ class HealthRecordsController {
     updateContentTitle(tabName) {
         const titleElement = document.querySelector('.health-content-title');
         if (!titleElement) return;
-        
+
         const titles = {
             'medical': '<i class="fas fa-stethoscope"></i> 看診紀錄',
             'vaccine': '<i class="fas fa-syringe"></i> 疫苗記錄',
@@ -64,13 +83,85 @@ class HealthRecordsController {
             'report': '<i class="fas fa-file-medical-alt"></i> 檢驗報告',
             'daily': '<i class="fas fa-calendar-day"></i> 生活記錄'
         };
-        
+
         titleElement.innerHTML = titles[tabName] || titles['medical'];
-        
-        // 控制新增按鈕顯示
+
+        // 更新新增按鈕的連結和文字
+        this.updateAddButton(tabName);
+    }
+
+    updateAddButton(tabName) {
         const addButton = document.querySelector('.health-add-btn');
-        if (addButton) {
-            addButton.style.display = tabName === 'daily' ? 'flex' : 'none';
+        if (!addButton) return;
+
+        // 優先使用保存的寵物ID
+        let petId = this.savedPetId;
+
+        // 如果沒有保存的ID，嘗試從URL參數獲取
+        if (!petId) {
+            const urlParams = new URLSearchParams(window.location.search);
+            petId = urlParams.get('pet');
+        }
+
+        // 如果還是沒有，從寵物選項中獲取第一個
+        if (!petId) {
+            const firstPetOption = document.querySelector('.pet-filter-option[onclick*="filterByPet"]');
+            if (firstPetOption) {
+                const onclick = firstPetOption.getAttribute('onclick');
+                const matches = onclick.match(/filterByPet\('(\d+)'\)/);
+                if (matches && matches[1]) {
+                    petId = matches[1];
+                    // 保存找到的ID供後續使用
+                    this.savedPetId = petId;
+                }
+            }
+        }
+
+        if (!petId) {
+            // 如果沒有寵物ID，隱藏按鈕
+            addButton.style.display = 'none';
+            return;
+        }
+
+        // 根據標籤頁更新按鈕
+        const buttonConfig = {
+            'medical': {
+                url: `/medical-record/add/${petId}/`,
+                icon: 'fa-plus',
+                text: '新增看診記錄'
+            },
+            'vaccine': {
+                url: `/vaccine/add/${petId}/`,
+                icon: 'fa-plus',
+                text: '新增疫苗記錄'
+            },
+            'deworm': {
+                url: `/deworm/add/${petId}/`,
+                icon: 'fa-plus',
+                text: '新增驅蟲記錄'
+            },
+            'report': {
+                url: `/report/add/${petId}/`,
+                icon: 'fa-plus',
+                text: '上傳檢驗報告'
+            },
+            'daily': {
+                url: `/pet/${petId}/add_daily_record/`,
+                icon: 'fa-plus',
+                text: '新增生活記錄'
+            }
+        };
+
+        const config = buttonConfig[tabName];
+        if (config) {
+            addButton.href = config.url;
+            addButton.innerHTML = `
+                <i class="fas ${config.icon}"></i>
+                <span>${config.text}</span>
+            `;
+            addButton.style.display = 'flex';
+        } else {
+            addButton.style.display = 'none';
         }
     }
 
@@ -83,9 +174,20 @@ class HealthRecordsController {
                 this.handleRecordClick(recordCard);
             }
 
-            // 處理操作按鈕點擊
+            // 處理操作按鈕點擊 - 只處理特定的操作按鈕
             const actionBtn = e.target.closest('.health-action-btn');
             if (actionBtn) {
+                // 檢查是否是編輯或刪除按鈕（這些有自己的 href 或 form）
+                const isEditBtn = actionBtn.classList.contains('btn-edit') || actionBtn.closest('a[href]');
+                const isDeleteBtn = actionBtn.classList.contains('btn-delete') || actionBtn.closest('form');
+                const isDownloadBtn = actionBtn.classList.contains('btn-download');
+
+                // 如果是編輯、刪除或下載按鈕，讓瀏覽器處理默認行為
+                if (isEditBtn || isDeleteBtn || isDownloadBtn) {
+                    return; // 不阻止默認行為，讓連結和表單正常工作
+                }
+
+                // 其他按鈕才阻止默認行為並處理
                 e.preventDefault();
                 e.stopPropagation();
                 this.handleActionClick(actionBtn);

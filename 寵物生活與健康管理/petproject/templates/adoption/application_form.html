@@ -1,0 +1,872 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}申請領養 - {{ pet.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="application-container">
+        <!-- 返回按鈕 -->
+        <div class="mb-3">
+            <a href="{% url 'adoption_petDetail' pet.id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回寵物詳情
+            </a>
+        </div>
+
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="header-icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="header-content">
+                <h1>領養申請表單</h1>
+                <p class="lead">誠摯地填寫您的申請資料，讓原飼主更了解您！</p>
+            </div>
+        </div>
+
+        <!-- 資料預填提示 -->
+        {% if profile %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+                <strong>已自動帶入您的預設資料</strong>
+                <p class="mb-0">如需修改預設資料，請前往 <a href="{% url 'applicant_profile_settings' %}" class="alert-link">申請人資料設定</a></p>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="bi bi-lightbulb-fill"></i>
+            <div>
+                <strong>小提示</strong>
+                <p class="mb-0">您可以先到 <a href="{% url 'applicant_profile_settings' %}" class="alert-link">申請人資料設定</a> 預先儲存常用資料，下次申請會自動帶入！</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 寵物資訊摘要 -->
+        <div class="pet-summary-card">
+            <div class="pet-summary-header">
+                <i class="bi bi-heart-fill"></i>
+                <h3>您正在申請領養</h3>
+            </div>
+            <div class="pet-summary-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        {% if pet.adopt_picture1 %}
+                        <img src="{{ pet.adopt_picture1.url }}" alt="{{ pet.name }}" class="pet-image">
+                        {% else %}
+                        <div class="pet-image-placeholder">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <h4 class="pet-name">{{ pet.name }}</h4>
+                        <div class="pet-info-grid">
+                            <div class="pet-info-item">
+                                <i class="bi bi-gender-ambiguous"></i>
+                                <span>{{ pet.get_gender_display }}</span>
+                            </div>
+                            <div class="pet-info-item">
+                                <i class="bi bi-calendar-event"></i>
+                                <span>{{ pet.age }}</span>
+                            </div>
+                            <div class="pet-info-item">
+                                <i class="bi bi-tag"></i>
+                                <span>{{ pet.breed }}</span>
+                            </div>
+                            <div class="pet-info-item">
+                                <i class="bi bi-rulers"></i>
+                                <span>{{ pet.weight|default:"未知" }} kg</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 申請表單 -->
+        <form method="post" class="needs-validation" novalidate id="applicationForm">
+            {% csrf_token %}
+
+            <!-- 聯絡資訊 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-telephone-fill"></i>
+                    <h3>聯絡資訊</h3>
+                    <span class="required-badge">必填</span>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="contact_phone" class="form-label">
+                                <i class="bi bi-phone"></i> 聯絡電話 <span class="text-danger">*</span>
+                            </label>
+                            <input type="tel" class="form-control" id="contact_phone" name="contact_phone"
+                                   value="{{ profile.contact_phone|default:'' }}" required pattern="[0-9]{10}">
+                            <small class="form-text text-muted">手機號碼10碼</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="contact_line" class="form-label">
+                                <i class="bi bi-line"></i> LINE ID
+                            </label>
+                            <input type="text" class="form-control" id="contact_line" name="contact_line"
+                                   value="{{ profile.contact_line|default:'' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="contact_email" class="form-label">
+                                <i class="bi bi-envelope"></i> Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="contact_email" name="contact_email"
+                                   value="{{ profile.contact_email|default:user.email }}" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 個人背景 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-person-badge-fill"></i>
+                    <h3>個人背景</h3>
+                    <span class="required-badge">必填</span>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="age" class="form-label">
+                                <i class="bi bi-calendar-event"></i> 年齡 <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="age" name="age" min="18" max="100"
+                                   value="{{ profile.age|default:'' }}" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="occupation" class="form-label">
+                                <i class="bi bi-briefcase"></i> 職業 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="occupation" name="occupation" required>
+                                <option value="">請選擇職業</option>
+                                <option value="學生" {% if profile.occupation == '學生' %}selected{% endif %}>學生</option>
+                                <option value="軍公教" {% if profile.occupation == '軍公教' %}selected{% endif %}>軍公教</option>
+                                <option value="服務業" {% if profile.occupation == '服務業' %}selected{% endif %}>服務業</option>
+                                <option value="製造業" {% if profile.occupation == '製造業' %}selected{% endif %}>製造業</option>
+                                <option value="金融業" {% if profile.occupation == '金融業' %}selected{% endif %}>金融業</option>
+                                <option value="科技業" {% if profile.occupation == '科技業' %}selected{% endif %}>科技業</option>
+                                <option value="醫療業" {% if profile.occupation == '醫療業' %}selected{% endif %}>醫療業</option>
+                                <option value="教育業" {% if profile.occupation == '教育業' %}selected{% endif %}>教育業</option>
+                                <option value="自由業" {% if profile.occupation == '自由業' %}selected{% endif %}>自由業</option>
+                                <option value="家管" {% if profile.occupation == '家管' %}selected{% endif %}>家管</option>
+                                <option value="退休" {% if profile.occupation == '退休' %}selected{% endif %}>退休</option>
+                                <option value="其他" {% if profile.occupation and profile.occupation not in '學生,軍公教,服務業,製造業,金融業,科技業,醫療業,教育業,自由業,家管,退休' %}selected{% endif %}>其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row" id="otherOccupationDiv" style="display: none;">
+                        <div class="col-md-8 offset-md-4 mb-3">
+                            <label for="occupation_other" class="form-label">
+                                <i class="bi bi-pencil"></i> 請輸入您的職業
+                            </label>
+                            <input type="text" class="form-control" id="occupation_other"
+                                   placeholder="例如：工程師、設計師等"
+                                   value="{% if profile.occupation and profile.occupation not in '學生,軍公教,服務業,製造業,金融業,科技業,醫療業,教育業,自由業,家管,退休' %}{{ profile.occupation }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 居住環境 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-house-fill"></i>
+                    <h3>居住環境</h3>
+                    <span class="required-badge">必填</span>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="residence_type" class="form-label">
+                                <i class="bi bi-building"></i> 居住類型 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="residence_type" name="residence_type" required>
+                                <option value="">請選擇</option>
+                                <option value="house" {% if profile.residence_type == 'house' %}selected{% endif %}>獨棟房屋</option>
+                                <option value="apartment" {% if profile.residence_type == 'apartment' %}selected{% endif %}>公寓大樓</option>
+                                <option value="townhouse" {% if profile.residence_type == 'townhouse' %}selected{% endif %}>透天厝</option>
+                                <option value="rental" {% if profile.residence_type == 'rental' %}selected{% endif %}>租屋</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="residence_ownership" class="form-label">
+                                <i class="bi bi-key"></i> 房屋所有權 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="residence_ownership" name="residence_ownership" required>
+                                <option value="">請選擇</option>
+                                <option value="own" {% if profile.residence_ownership == 'own' %}selected{% endif %}>自有</option>
+                                <option value="family" {% if profile.residence_ownership == 'family' %}selected{% endif %}>家人所有</option>
+                                <option value="rent" {% if profile.residence_ownership == 'rent' %}selected{% endif %}>租賃</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check form-switch custom-switch">
+                                <input class="form-check-input" type="checkbox" id="has_yard" name="has_yard"
+                                       {% if profile.has_yard %}checked{% endif %}>
+                                <label class="form-check-label" for="has_yard">
+                                    <i class="bi bi-tree"></i> 有庭院
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="yard_size" class="form-label">庭院大小（若有）</label>
+                            <input type="text" class="form-control" id="yard_size" name="yard_size"
+                                   value="{{ profile.yard_size|default:'' }}" placeholder="例如：20坪">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 家庭狀況 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-people-fill"></i>
+                    <h3>家庭狀況</h3>
+                    <span class="required-badge">必填</span>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="family_members" class="form-label">
+                                <i class="bi bi-person-plus"></i> 家庭成員人數 <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="family_members" name="family_members" min="1"
+                                   value="{{ profile.family_members|default:'' }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch custom-switch">
+                                <input class="form-check-input" type="checkbox" id="family_agree" name="family_agree"
+                                       {% if profile.family_agree %}checked{% endif %} required>
+                                <label class="form-check-label" for="family_agree">
+                                    <i class="bi bi-hand-thumbs-up"></i> 家人同意領養 <span class="text-danger">*</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch custom-switch">
+                                <input class="form-check-input" type="checkbox" id="has_children" name="has_children"
+                                       {% if profile.has_children %}checked{% endif %}>
+                                <label class="form-check-label" for="has_children">
+                                    <i class="bi bi-heart"></i> 家中有小孩
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="children_age" class="form-label">小孩年齡（若有）</label>
+                            <input type="text" class="form-control" id="children_age" name="children_age"
+                                   value="{{ profile.children_age|default:'' }}" placeholder="例如：5歲、8歲">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 飼養經驗 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-award-fill"></i>
+                    <h3>寵物飼養經驗</h3>
+                </div>
+                <div class="form-card-body">
+                    <div class="mb-3">
+                        <div class="form-check form-switch custom-switch">
+                            <input class="form-check-input" type="checkbox" id="has_pet_experience" name="has_pet_experience"
+                                   {% if profile.has_pet_experience %}checked{% endif %}>
+                            <label class="form-check-label" for="has_pet_experience">
+                                <i class="bi bi-check-circle"></i> 我有飼養寵物的經驗
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pet_experience_detail" class="form-label">飼養經驗詳情</label>
+                        <textarea class="form-control" id="pet_experience_detail" name="pet_experience_detail" rows="3"
+                                  placeholder="例如：曾飼養過什麼寵物、飼養了多久、如何照顧等">{{ profile.pet_experience_detail|default:'' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="current_pets" class="form-label">目前飼養的寵物</label>
+                            <textarea class="form-control" id="current_pets" name="current_pets" rows="2"
+                                      placeholder="若無請填「無」">{{ profile.current_pets|default:'' }}</textarea>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="pets_count" class="form-label">目前飼養寵物數量</label>
+                            <input type="number" class="form-control" id="pets_count" name="pets_count" min="0"
+                                   value="{{ profile.pets_count|default:0 }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 經濟狀況 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-wallet2"></i>
+                    <h3>經濟狀況</h3>
+                    <span class="required-badge">必填</span>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="monthly_income_range" class="form-label">
+                                <i class="bi bi-cash-stack"></i> 月收入範圍 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="monthly_income_range" name="monthly_income_range" required>
+                                <option value="">請選擇</option>
+                                <option value="below_30k" {% if profile.monthly_income_range == 'below_30k' %}selected{% endif %}>3萬以下</option>
+                                <option value="30k_50k" {% if profile.monthly_income_range == '30k_50k' %}selected{% endif %}>3-5萬</option>
+                                <option value="50k_70k" {% if profile.monthly_income_range == '50k_70k' %}selected{% endif %}>5-7萬</option>
+                                <option value="70k_100k" {% if profile.monthly_income_range == '70k_100k' %}selected{% endif %}>7-10萬</option>
+                                <option value="above_100k" {% if profile.monthly_income_range == 'above_100k' %}selected{% endif %}>10萬以上</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch custom-switch">
+                                <input class="form-check-input" type="checkbox" id="can_afford_medical" name="can_afford_medical"
+                                       {% if profile.can_afford_medical %}checked{% endif %} required>
+                                <label class="form-check-label" for="can_afford_medical">
+                                    <i class="bi bi-hospital"></i> 我有能力負擔寵物的醫療費用（包括疫苗、驅蟲、生病就醫等） <span class="text-danger">*</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 領養動機 -->
+            <div class="form-card highlight-card">
+                <div class="form-card-header">
+                    <i class="bi bi-heart-fill"></i>
+                    <h3>領養動機與承諾</h3>
+                    <span class="required-badge">必填</span>
+                </div>
+                <div class="form-card-body">
+                    <div class="mb-3">
+                        <label for="adoption_reason" class="form-label">
+                            <i class="bi bi-chat-heart"></i> 為什麼想要領養這隻寵物？ <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="adoption_reason" name="adoption_reason" rows="4" required
+                                  placeholder="請詳細說明您的領養動機，讓原飼主了解您的真誠"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="how_to_care" class="form-label">
+                            <i class="bi bi-clipboard-heart"></i> 您打算如何照顧這隻寵物？ <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="how_to_care" name="how_to_care" rows="4" required
+                                  placeholder="請說明您的照顧計畫，例如：飲食、運動、陪伴等"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="daily_time_for_pet" class="form-label">
+                            <i class="bi bi-clock"></i> 每日可陪伴寵物的時間 <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="daily_time_for_pet" name="daily_time_for_pet"
+                               value="{{ profile.daily_time_for_pet|default:'' }}" required
+                               placeholder="例如：平日3小時、假日全天">
+                    </div>
+                    <div class="mb-3">
+                        <label for="emergency_plan" class="form-label">
+                            <i class="bi bi-exclamation-triangle"></i> 緊急狀況處理計畫
+                        </label>
+                        <textarea class="form-control" id="emergency_plan" name="emergency_plan" rows="3"
+                                  placeholder="若寵物生病或發生意外，您會如何處理？">{{ profile.emergency_plan|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 其他資訊 -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <h3>其他資訊</h3>
+                </div>
+                <div class="form-card-body">
+                    <div class="mb-3">
+                        <label for="additional_message" class="form-label">
+                            <i class="bi bi-chat-dots"></i> 還有什麼想對原飼主說的話？
+                        </label>
+                        <textarea class="form-control" id="additional_message" name="additional_message" rows="3"
+                                  placeholder="可以補充任何您認為重要的資訊"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch custom-switch">
+                            <input class="form-check-input" type="checkbox" id="is_willing_home_visit" name="is_willing_home_visit"
+                                   {% if profile.is_willing_home_visit %}checked{% endif %}>
+                            <label class="form-check-label" for="is_willing_home_visit">
+                                <i class="bi bi-house-check"></i> 我願意接受家訪（讓原飼主確認居住環境）
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提醒事項 -->
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                    <strong>提醒您</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>請務必詳實填寫，以提高申請成功率</li>
+                        <li>送出申請後，原飼主會收到通知並審核您的資料</li>
+                        <li>您可以在「我的申請」中查看申請狀態</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-send-fill"></i> 送出申請
+                </button>
+                <a href="{% url 'adoption_petDetail' pet.id %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> 取消
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #ffb703;
+    --primary-dark: #f9a602;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.application-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-icon {
+    font-size: 3.5rem;
+    opacity: 0.9;
+}
+
+.header-content h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.header-content .lead {
+    font-size: 1rem;
+    margin-bottom: 0;
+    opacity: 0.95;
+}
+
+/* 寵物摘要卡片 */
+.pet-summary-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    border: 2px solid var(--primary-color);
+}
+
+.pet-summary-header {
+    background: linear-gradient(135deg, #fff8f0 0%, #ffe9cc 100%);
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pet-summary-header i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.pet-summary-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.pet-summary-body {
+    padding: 1.5rem;
+}
+
+.pet-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+.pet-image-placeholder {
+    width: 100%;
+    height: 180px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #adb5bd;
+    font-size: 3rem;
+}
+
+.pet-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 1rem;
+}
+
+.pet-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.pet-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.pet-info-item i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.pet-info-item span {
+    font-weight: 500;
+    color: #495057;
+}
+
+/* 表單卡片 */
+.form-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.highlight-card {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 4px 12px rgba(255, 183, 3, 0.2);
+}
+
+.form-card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-card-header i {
+    font-size: 1.4rem;
+    color: var(--primary-color);
+}
+
+.form-card-header h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+    color: #495057;
+    flex: 1;
+}
+
+.required-badge {
+    background: #dc3545;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.form-card-body {
+    padding: 1.5rem;
+}
+
+/* 表單元素 */
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-label i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 0.625rem 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(255, 183, 3, 0.15);
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+/* 自訂開關 */
+.custom-switch {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-switch .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    cursor: pointer;
+    float: left;
+    margin-left: 0;
+}
+
+.custom-switch .form-check-input:checked {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.custom-switch .form-check-label {
+    font-weight: 500;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* 提示訊息 */
+.alert {
+    border-radius: var(--border-radius);
+    border: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.alert i {
+    font-size: 1.5rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.alert ul {
+    padding-left: 1.25rem;
+}
+
+/* 操作按鈕 */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 1.5rem 0;
+}
+
+.form-actions .btn {
+    min-width: 180px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, #e68900 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .header-icon {
+        font-size: 3rem;
+    }
+
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .pet-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* 表單驗證樣式 */
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid {
+    border-color: #dc3545;
+}
+
+.was-validated .form-control:valid,
+.was-validated .form-select:valid {
+    border-color: #28a745;
+}
+
+/* 平滑滾動 */
+html {
+    scroll-behavior: smooth;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const occupationSelect = document.getElementById('occupation');
+    const otherOccupationDiv = document.getElementById('otherOccupationDiv');
+    const otherOccupationInput = document.getElementById('occupation_other');
+    const applicationForm = document.getElementById('applicationForm');
+
+    // 初始化：如果已選擇「其他」，顯示輸入框
+    if (occupationSelect && occupationSelect.value === '其他') {
+        otherOccupationDiv.style.display = 'block';
+    }
+
+    // 監聽職業選擇變化
+    if (occupationSelect) {
+        occupationSelect.addEventListener('change', function() {
+            if (this.value === '其他') {
+                otherOccupationDiv.style.display = 'block';
+                otherOccupationInput.required = true;
+            } else {
+                otherOccupationDiv.style.display = 'none';
+                otherOccupationInput.required = false;
+                otherOccupationInput.value = '';
+            }
+        });
+    }
+
+    // 表單提交前處理
+    if (applicationForm) {
+        applicationForm.addEventListener('submit', function(e) {
+            if (occupationSelect.value === '其他') {
+                // 將「其他」欄位的值設定到職業選單
+                if (otherOccupationInput.value.trim()) {
+                    // 創建隱藏欄位來傳遞實際職業
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'occupation';
+                    hiddenInput.value = otherOccupationInput.value.trim();
+                    this.appendChild(hiddenInput);
+
+                    // 禁用原本的 select，避免重複提交
+                    occupationSelect.disabled = true;
+                } else {
+                    e.preventDefault();
+                    alert('請輸入您的職業');
+                    otherOccupationInput.focus();
+                    return false;
+                }
+            }
+
+            // Form validation
+            if (!applicationForm.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            applicationForm.classList.add('was-validated');
+        });
+    }
+
+    // 平滑滾動到第一個錯誤欄位
+    applicationForm.addEventListener('invalid', function(e) {
+        e.preventDefault();
+        const firstInvalid = applicationForm.querySelector(':invalid');
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+    }, true);
+});
+</script>
+{% endblock %}

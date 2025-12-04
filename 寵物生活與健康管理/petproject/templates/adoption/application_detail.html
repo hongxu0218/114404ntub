@@ -1,0 +1,825 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}申請詳情 - #{{ application.id }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="detail-container">
+        <!-- 返回按鈕 -->
+        <div class="mb-3">
+            {% if is_owner %}
+            <a href="{% url 'owner_adoption_applications' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回申請列表
+            </a>
+            {% else %}
+            <a href="{% url 'my_adoption_applications' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回我的申請
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- 頁面標題 -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="d-flex align-items-center justify-content-between flex-wrap">
+                    <div>
+                        <h1>領養申請詳情</h1>
+                        <p class="lead mb-0">申請編號 #{{ application.id }}</p>
+                    </div>
+                    <div class="status-badge status-{{ application.status }}">
+                        <i class="bi bi-circle-fill"></i>
+                        {{ application.get_status_display }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 時間線 -->
+        <div class="timeline-card">
+            <div class="timeline-item">
+                <div class="timeline-icon">
+                    <i class="bi bi-calendar-plus"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-title">申請時間</div>
+                    <div class="timeline-date">{{ application.created_at|date:"Y年m月d日 H:i" }}</div>
+                </div>
+            </div>
+            {% if application.reviewed_at %}
+            <div class="timeline-item">
+                <div class="timeline-icon">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-title">審核時間</div>
+                    <div class="timeline-date">{{ application.reviewed_at|date:"Y年m月d日 H:i" }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 寵物資訊 -->
+        <div class="info-card pet-card">
+            <div class="card-header">
+                <i class="bi bi-heart-fill"></i>
+                <h3>申請的寵物</h3>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        {% if application.pet.adopt_picture1 %}
+                        <img src="{{ application.pet.adopt_picture1.url }}" alt="{{ application.pet.name }}" class="pet-image">
+                        {% else %}
+                        <div class="pet-image-placeholder">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <h4 class="pet-name">{{ application.pet.name }}</h4>
+                        <div class="pet-info-grid">
+                            <div class="info-item">
+                                <i class="bi bi-tag-fill"></i>
+                                <span>{{ application.pet.breed }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-calendar-event"></i>
+                                <span>{{ application.pet.age }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-gender-ambiguous"></i>
+                                <span>{{ application.pet.get_gender_display }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-person-fill"></i>
+                                <span>原飼主：{{ application.owner.username }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 申請者資訊 -->
+        <div class="info-card">
+            <div class="card-header">
+                <i class="bi bi-person-badge-fill"></i>
+                <h3>申請者資訊</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-person"></i> 申請人
+                        </div>
+                        <div class="info-value">{{ application.applicant.username }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-phone"></i> 聯絡電話
+                        </div>
+                        <div class="info-value">{{ application.contact_phone }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-line"></i> LINE ID
+                        </div>
+                        <div class="info-value">{{ application.contact_line|default:"未提供" }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-envelope"></i> Email
+                        </div>
+                        <div class="info-value">{{ application.contact_email }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-event"></i> 年齡
+                        </div>
+                        <div class="info-value">{{ application.age }} 歲</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-briefcase"></i> 職業
+                        </div>
+                        <div class="info-value">{{ application.occupation }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 居住環境 -->
+        <div class="info-card">
+            <div class="card-header">
+                <i class="bi bi-house-fill"></i>
+                <h3>居住環境</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-building"></i> 居住類型
+                        </div>
+                        <div class="info-value">{{ application.get_residence_type_display }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-key"></i> 房屋所有權
+                        </div>
+                        <div class="info-value">{{ application.get_residence_ownership_display }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-tree"></i> 庭院
+                        </div>
+                        <div class="info-value">
+                            {% if application.has_yard %}
+                                <span class="badge-yes">有 ({{ application.yard_size }})</span>
+                            {% else %}
+                                <span class="badge-no">無</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 家庭狀況 -->
+        <div class="info-card">
+            <div class="card-header">
+                <i class="bi bi-people-fill"></i>
+                <h3>家庭狀況</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-person-plus"></i> 家庭成員人數
+                        </div>
+                        <div class="info-value">{{ application.family_members }} 人</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-hand-thumbs-up"></i> 家人同意領養
+                        </div>
+                        <div class="info-value">
+                            {% if application.family_agree %}
+                                <span class="badge-yes"><i class="bi bi-check-circle-fill"></i> 是</span>
+                            {% else %}
+                                <span class="badge-no"><i class="bi bi-x-circle-fill"></i> 否</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-heart"></i> 家中有小孩
+                        </div>
+                        <div class="info-value">
+                            {% if application.has_children %}
+                                有 ({{ application.children_age }})
+                            {% else %}
+                                無
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 飼養經驗 -->
+        <div class="info-card">
+            <div class="card-header">
+                <i class="bi bi-award-fill"></i>
+                <h3>寵物飼養經驗</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid mb-3">
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-check-circle"></i> 有飼養經驗
+                        </div>
+                        <div class="info-value">
+                            {% if application.has_pet_experience %}
+                                <span class="badge-yes"><i class="bi bi-check-circle-fill"></i> 是</span>
+                            {% else %}
+                                <span class="badge-no"><i class="bi bi-x-circle-fill"></i> 否</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-hash"></i> 目前飼養寵物數
+                        </div>
+                        <div class="info-value">{{ application.pets_count }}</div>
+                    </div>
+                </div>
+                {% if application.pet_experience_detail %}
+                <div class="detail-box">
+                    <div class="detail-title">
+                        <i class="bi bi-chat-left-text"></i> 飼養經驗詳情
+                    </div>
+                    <div class="detail-content">{{ application.pet_experience_detail }}</div>
+                </div>
+                {% endif %}
+                {% if application.current_pets %}
+                <div class="detail-box">
+                    <div class="detail-title">
+                        <i class="bi bi-chat-left-text"></i> 目前飼養的寵物
+                    </div>
+                    <div class="detail-content">{{ application.current_pets }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 經濟狀況 -->
+        <div class="info-card">
+            <div class="card-header">
+                <i class="bi bi-wallet2"></i>
+                <h3>經濟狀況</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-cash-stack"></i> 月收入範圍
+                        </div>
+                        <div class="info-value">{{ application.get_monthly_income_range_display }}</div>
+                    </div>
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-hospital"></i> 能負擔醫療費用
+                        </div>
+                        <div class="info-value">
+                            {% if application.can_afford_medical %}
+                                <span class="badge-yes"><i class="bi bi-check-circle-fill"></i> 是</span>
+                            {% else %}
+                                <span class="badge-no"><i class="bi bi-x-circle-fill"></i> 否</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 領養動機 -->
+        <div class="info-card highlight-card">
+            <div class="card-header">
+                <i class="bi bi-heart-fill"></i>
+                <h3>領養動機與承諾</h3>
+            </div>
+            <div class="card-body">
+                <div class="detail-box">
+                    <div class="detail-title">
+                        <i class="bi bi-chat-heart"></i> 領養原因
+                    </div>
+                    <div class="detail-content">{{ application.adoption_reason }}</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-title">
+                        <i class="bi bi-clipboard-heart"></i> 照顧計畫
+                    </div>
+                    <div class="detail-content">{{ application.how_to_care }}</div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-group">
+                        <div class="info-label">
+                            <i class="bi bi-clock"></i> 每日陪伴時間
+                        </div>
+                        <div class="info-value">{{ application.daily_time_for_pet }}</div>
+                    </div>
+                </div>
+                {% if application.emergency_plan %}
+                <div class="detail-box">
+                    <div class="detail-title">
+                        <i class="bi bi-exclamation-triangle"></i> 緊急處理計畫
+                    </div>
+                    <div class="detail-content">{{ application.emergency_plan }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 其他資訊 -->
+        {% if application.additional_message or application.is_willing_home_visit %}
+        <div class="info-card">
+            <div class="card-header">
+                <i class="bi bi-info-circle-fill"></i>
+                <h3>其他資訊</h3>
+            </div>
+            <div class="card-body">
+                {% if application.additional_message %}
+                <div class="detail-box mb-3">
+                    <div class="detail-title">
+                        <i class="bi bi-chat-dots"></i> 申請者留言
+                    </div>
+                    <div class="detail-content">{{ application.additional_message }}</div>
+                </div>
+                {% endif %}
+                <div class="info-group">
+                    <div class="info-label">
+                        <i class="bi bi-house-check"></i> 願意接受家訪
+                    </div>
+                    <div class="info-value">
+                        {% if application.is_willing_home_visit %}
+                            <span class="badge-yes"><i class="bi bi-check-circle-fill"></i> 是</span>
+                        {% else %}
+                            <span class="badge-no"><i class="bi bi-x-circle-fill"></i> 否</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 拒絕原因 -->
+        {% if application.reject_reason %}
+        <div class="info-card reject-card">
+            <div class="card-header">
+                <i class="bi bi-x-circle-fill"></i>
+                <h3>拒絕原因</h3>
+            </div>
+            <div class="card-body">
+                <div class="detail-content">{{ application.reject_reason }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 操作按鈕 -->
+        {% if is_owner %}
+            {% if application.status == 'pending' or application.status == 'reviewing' %}
+            <div class="action-buttons">
+                {% if application.status == 'pending' %}
+                <a href="{% url 'mark_application_reviewing' application.id %}" class="btn btn-info">
+                    <i class="bi bi-eye-fill"></i> 標記為審核中
+                </a>
+                {% endif %}
+                <a href="{% url 'accept_adoption_application' application.id %}" class="btn btn-success btn-lg">
+                    <i class="bi bi-check-circle-fill"></i> 接受申請
+                </a>
+                <a href="{% url 'reject_adoption_application' application.id %}" class="btn btn-danger">
+                    <i class="bi bi-x-circle-fill"></i> 拒絕申請
+                </a>
+            </div>
+            {% endif %}
+        {% else %}
+            {% if application.status == 'pending' or application.status == 'reviewing' %}
+            <div class="action-buttons">
+                <a href="{% url 'cancel_adoption_application' application.id %}" class="btn btn-danger">
+                    <i class="bi bi-x-circle-fill"></i> 取消申請
+                </a>
+            </div>
+            {% endif %}
+        {% endif %}
+
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #ffb703;
+    --primary-dark: #f9a602;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --warning-color: #ffc107;
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.detail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* 頁面標題 */
+.page-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.page-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.page-header .lead {
+    font-size: 1rem;
+    opacity: 0.95;
+}
+
+/* 狀態標籤 */
+.status-badge {
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.status-pending {
+    background: var(--warning-color);
+    color: #000;
+}
+
+.status-reviewing {
+    background: var(--info-color);
+    color: white;
+}
+
+.status-accepted {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-rejected {
+    background: var(--danger-color);
+    color: white;
+}
+
+.status-cancelled {
+    background: #6c757d;
+    color: white;
+}
+
+/* 時間線 */
+.timeline-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.timeline-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.timeline-date {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* 資訊卡片 */
+.info-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.highlight-card {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 4px 12px rgba(255, 183, 3, 0.2);
+}
+
+.pet-card {
+    border: 2px solid var(--primary-color);
+}
+
+.reject-card {
+    border: 2px solid var(--danger-color);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-header i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #495057;
+}
+
+.reject-card .card-header {
+    border-bottom-color: var(--danger-color);
+}
+
+.reject-card .card-header i {
+    color: var(--danger-color);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 寵物資訊 */
+.pet-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.pet-image-placeholder {
+    width: 100%;
+    height: 200px;
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #adb5bd;
+    font-size: 3rem;
+}
+
+.pet-name {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 1rem;
+}
+
+.pet-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.info-item i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.info-item span {
+    font-weight: 500;
+    color: #495057;
+}
+
+/* 資訊網格 */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.info-group {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-label i {
+    color: var(--primary-color);
+}
+
+.info-value {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* 詳細內容框 */
+.detail-box {
+    background: #fff8f0;
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
+
+.detail-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-title i {
+    color: var(--primary-color);
+}
+
+.detail-content {
+    color: #212529;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* 徽章 */
+.badge-yes {
+    background: #d4edda;
+    color: #155724;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge-no {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.action-buttons .btn {
+    min-width: 150px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    border: none;
+    color: white;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .page-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+
+    .pet-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline-card {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+
+/* 平滑滾動 */
+html {
+    scroll-behavior: smooth;
+}
+</style>
+{% endblock %}

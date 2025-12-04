@@ -1,9 +1,21 @@
 # petapp/urls.py  # 此檔案定義 petapp 應用的 URL 路由設定
+# VERSION: 2025-10-25-16:27
+
+print("=" * 80)
+print("[LOAD] urls.py loading...")
+print("=" * 80)
 
 from django.urls import path, include  # 匯入 path，用來定義每個 URL 與對應的 view 函數
 from . import views  # 匯入目前資料夾下的 views 模組
+
+print(f"[CHECK] views.add_report function: {views.add_report}")
+print(f"[CHECK] Location: {views.add_report.__code__.co_filename}:{views.add_report.__code__.co_firstlineno}")
+print("=" * 80)
+
 from .views import clear_signup_message  # 從 views 模組中個別匯入 clear_signup_message 函數
 from . import chat_service, views_handoff, notification_views  # 匯入進階AI客服、人工客服和通知模組
+from . import views_adoption_application  # 匯入領養申請系統模組
+from . import views_voice  # 匯入語音自動化建檔模組
 from django.conf import settings  # 匯入 settings 模組，用來存取專案設定
 from django.conf.urls.static import static  # 匯入 static，用來處理開發模式下的靜態檔案（如圖片）
 from django.contrib import admin
@@ -19,55 +31,58 @@ urlpatterns = [
     # ============ 測試頁面 ============
     path('test/theme/', views.test_theme, name='test_theme'),
     
-    # ============ 診所註冊與管理系統 ============
-    path('clinic/register/', views.clinic_registration, name='clinic_registration'),
-    path('clinic/register/success/<int:clinic_id>/', views.clinic_registration_success, name='clinic_registration_success'),
-    path('clinic/verify-license/', views.verify_vet_license, name='verify_vet_license'),
-    path('clinic/dashboard/', views.clinic_dashboard, name='clinic_dashboard'),
-
-    # ============ 診所模式管理 ============
-    path('clinic/<int:clinic_id>/switch-mode/', views.switch_clinic_mode, name='switch_clinic_mode'),
-    path('clinic/mode/check/', views.check_clinic_mode, name='check_clinic_mode'),
-
-    # 營業時間 API
-    path('api/business-hours/get/', views.api_get_business_hours, name='api_get_business_hours'),
-    path('api/business-hours/save/', views.api_save_business_hours, name='api_save_business_hours'),
-    path('api/clinic/business-status/', views.get_clinic_business_status, name='api_clinic_business_status'),
+    # ============ 診所註冊（停用）============
+    # path('clinic/register/', views.clinic_registration_disabled, name='clinic_registration'),
     
+    # ============ 診所註冊與管理系統 ============
+    # path('clinic/register/', views.clinic_registration, name='clinic_registration'),
+    # path('clinic/register/success/<int:clinic_id>/', views.clinic_registration_success, name='clinic_registration_success'),
+    # path('clinic/verify-license/', views.verify_vet_license, name='verify_vet_license'),
+    # path('clinic/dashboard/', views.clinic_dashboard, name='clinic_dashboard'),
+#
+    # ============ 診所模式管理 ============
+    # path('clinic/<int:clinic_id>/switch-mode/', views.switch_clinic_mode, name='switch_clinic_mode'),
+    # path('clinic/mode/check/', views.check_clinic_mode, name='check_clinic_mode'),
+#
+    # 營業時間 API
+    # path('api/business-hours/get/', views.api_get_business_hours, name='api_get_business_hours'),
+    # path('api/business-hours/save/', views.api_save_business_hours, name='api_save_business_hours'),
+    # path('api/clinic/business-status/', views.get_clinic_business_status, name='api_clinic_business_status'),
+#
     # 醫師管理
-    path('clinic/doctors/', views.manage_doctors, name='manage_doctors'),
-    path('clinic/doctors/add/', views.add_doctor, name='add_doctor'),
-    path('clinic/doctors/<int:doctor_id>/edit/', views.edit_doctor, name='edit_doctor'),
-    path('clinic/doctors/<int:doctor_id>/update/', views.update_doctor, name='update_doctor'),
-    path('clinic/doctors/<int:doctor_id>/toggle/', views.toggle_doctor_status, name='toggle_doctor_status'),
+    # path('clinic/doctors/', views.manage_doctors, name='manage_doctors'),
+    # path('clinic/doctors/add/', views.add_doctor, name='add_doctor'),
+    # path('clinic/doctors/<int:doctor_id>/edit/', views.edit_doctor, name='edit_doctor'),
+    # path('clinic/doctors/<int:doctor_id>/update/', views.update_doctor, name='update_doctor'),
+    # path('clinic/doctors/<int:doctor_id>/toggle/', views.toggle_doctor_status, name='toggle_doctor_status'),
     
     # ============ 全新排班管理系統 ============
     # 排班總覽
-    path('vet/schedule/', views.schedule_dashboard, name='schedule_dashboard'),
-    path('vet/schedule/weekly/', views.weekly_calendar, name='weekly_calendar'),
-    path('vet/schedule/monthly/', views.monthly_calendar, name='monthly_calendar'),
-    path('vet/schedule/list/', views.schedule_list, name='schedule_list'),
-    
+    # path('vet/schedule/', views.schedule_dashboard, name='schedule_dashboard'),
+    # path('vet/schedule/weekly/', views.weekly_calendar, name='weekly_calendar'),
+    # path('vet/schedule/monthly/', views.monthly_calendar, name='monthly_calendar'),
+    # path('vet/schedule/list/', views.schedule_list, name='schedule_list'),
+#
     # 排班CRUD
-    path('vet/schedule/create/', views.schedule_create, name='schedule_create'),
-    path('vet/schedule/<int:schedule_id>/', views.schedule_detail, name='schedule_detail'),
-    path('vet/schedule/<int:schedule_id>/edit/', views.schedule_edit, name='schedule_edit'),
-    path('vet/schedule/<int:schedule_id>/<str:action>/', views.schedule_action, name='schedule_action'),
-    
+    # path('vet/schedule/create/', views.schedule_create, name='schedule_create'),
+    # path('vet/schedule/<int:schedule_id>/', views.schedule_detail, name='schedule_detail'),
+    # path('vet/schedule/<int:schedule_id>/edit/', views.schedule_edit, name='schedule_edit'),
+    # path('vet/schedule/<int:schedule_id>/<str:action>/', views.schedule_action, name='schedule_action'),
+#
     # 排班異動管理
-    path('vet/change-requests/', views.change_request_list, name='change_request_list'),
-    path('api/change-requests/<int:request_id>/review/', views.api_review_change_request, name='api_review_change_request'),
-    
+    # path('vet/change-requests/', views.change_request_list, name='change_request_list'),
+    # path('api/change-requests/<int:request_id>/review/', views.api_review_change_request, name='api_review_change_request'),
+#
     # 排班 API
-    path('api/schedule/check-conflicts/', views.api_check_schedule_conflicts, name='api_check_schedule_conflicts'),
-    path('api/schedule/<int:schedule_id>/conflicts/', views.api_schedule_conflicts, name='api_schedule_conflicts'),
-    path('api/dashboard/schedule-stats/', views.api_schedule_stats, name='api_schedule_stats'),
-    path('api/dashboard/schedules/', views.api_dashboard_schedules, name='api_dashboard_schedules'),
+    # path('api/schedule/check-conflicts/', views.api_check_schedule_conflicts, name='api_check_schedule_conflicts'),
+    # path('api/schedule/<int:schedule_id>/conflicts/', views.api_schedule_conflicts, name='api_schedule_conflicts'),
+    # path('api/dashboard/schedule-stats/', views.api_schedule_stats, name='api_schedule_stats'),
+    # path('api/dashboard/schedules/', views.api_dashboard_schedules, name='api_dashboard_schedules'),
 
     # ============ 快速設定功能 ============
-    
-    path('clinic/simple-setup/', views.simple_clinic_setup, name='simple_clinic_setup'),
-    path('clinic/business-hours/quick-set/', views.quick_set_business_hours, name='quick_set_business_hours'),
+#
+    # path('clinic/simple-setup/', views.simple_clinic_setup, name='simple_clinic_setup'),
+    # path('clinic/business-hours/quick-set/', views.quick_set_business_hours, name='quick_set_business_hours'),
 
     # ============ 舊版排班 API 和例外處理 - 已完全移除 ============
     # 所有排班相關的API、例外處理都已移除
@@ -75,73 +90,73 @@ urlpatterns = [
     # ============ 所有排班相關API已移除 ============
     
     # =========診所模式 API ============
-    path('api/clinic/mode/', views.api_get_clinic_mode,  name='api_get_clinic_mode'),
-    path('api/clinic/can-switch-mode/', views.api_can_switch_mode, name='api_can_switch_mode'),
-    path('api/doctors/status/', views.api_doctors_status, name='api_doctors_status'),
+    # path('api/clinic/mode/', views.api_get_clinic_mode,  name='api_get_clinic_mode'),
+    # path('api/clinic/can-switch-mode/', views.api_can_switch_mode, name='api_can_switch_mode'),
+    # path('api/doctors/status/', views.api_doctors_status, name='api_doctors_status'),
     
     # ============ 預約管理系統 ============
-    path('clinic/appointments/', views.clinic_appointments, name='clinic_appointments'),
-    path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),
-    path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),
-    path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),
+    # path('clinic/appointments/', views.clinic_appointments, name='clinic_appointments'),
+    # path('clinic/appointments/<int:appointment_id>/', views.view_appointment_detail, name='view_appointment_detail'),
+    # path('clinic/appointments/<int:appointment_id>/confirm/', views.confirm_appointment, name='confirm_appointment'),
+    # path('clinic/appointments/<int:appointment_id>/cancel/', views.clinic_cancel_appointment, name='clinic_cancel_appointment'),
     # path('clinic/appointments/<int:appointment_id>/complete/', views.complete_appointment, name='complete_appointment'),  # Removed: appointments auto-complete when medical record is created
 
     # ============ 獸醫師工作台系統 ============
-    path('vet/home/', views.vet_home, name='vet_home'),
-    path('vet/patients/', views.my_patients_enhanced, name='my_patients'),
-    path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
-    path('clinic/appointments/create-walkin/', views.create_walkin_appointment, name='create_walkin_appointment'),
-    path('vet/appointments/<int:appointment_id>/cancel/', views.vet_cancel_appointment, name='vet_cancel_appointment'),
-    path('api/vet/appointments/batch-operation/', views.vet_batch_appointment_operation, name='vet_batch_appointment_operation'),
-    path('vet/pets/<int:pet_id>/', views.pet_detail, name='pet_detail'),
-    path('vet/profile/edit/', views.edit_vet_profile, name='edit_vet_profile'),
+    # path('vet/home/', views.vet_home, name='vet_home'),
+    # path('vet/patients/', views.my_patients_enhanced, name='my_patients'),
+    # path('vet/appointments/', views.vet_appointments, name='vet_appointments'),
+    # path('clinic/appointments/create-walkin/', views.create_walkin_appointment, name='create_walkin_appointment'),
+    # path('vet/appointments/<int:appointment_id>/cancel/', views.vet_cancel_appointment, name='vet_cancel_appointment'),
+    # path('api/vet/appointments/batch-operation/', views.vet_batch_appointment_operation, name='vet_batch_appointment_operation'),
+    # path('vet/pets/<int:pet_id>/', views.pet_detail, name='pet_detail'),
+    # path('vet/profile/edit/', views.edit_vet_profile, name='edit_vet_profile'),
     
     # 醫療記錄管理
-    path('vet/records/create/<int:pet_id>/', views.create_medical_record, name='create_medical_record_for_pet'),
-    path('vet/records/history/', views.vet_medical_history, name='vet_medical_history'),
-    path('vet/records/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
-    path('vet/records/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
+    # path('vet/records/create/<int:pet_id>/', views.create_medical_record, name='create_medical_record_for_pet'),
+    # path('vet/records/history/', views.vet_medical_history, name='vet_medical_history'),
+    # path('vet/records/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
+    # path('vet/records/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
 
     # 獸醫師疫苗和驅蟲記錄管理
-    path('vet/vaccine/add/<int:pet_id>/', views.vet_add_vaccine, name='vet_add_vaccine'),
-    path('vet/deworm/add/<int:pet_id>/', views.vet_add_deworm, name='vet_add_deworm'),
+    # path('vet/vaccine/add/<int:pet_id>/', views.vet_add_vaccine, name='vet_add_vaccine'),
+    # path('vet/deworm/add/<int:pet_id>/', views.vet_add_deworm, name='vet_add_deworm'),
 
     # 獸醫師報告管理
-    path('vet/report/upload/<int:pet_id>/', views.upload_report, name='upload_report'),
-    path('vet/report/delete/<int:report_id>/', views.delete_vet_report, name='delete_vet_report'),
+    # path('vet/report/upload/<int:pet_id>/', views.upload_report, name='upload_report'),
+    # path('vet/report/delete/<int:report_id>/', views.delete_vet_report, name='delete_vet_report'),
 
     # ============ Dashboard API（統一整理）============
-    path('api/dashboard/stats/', views.api_dashboard_stats, name='api_dashboard_stats'),
-    path('api/clinic/status/', views.api_clinic_status, name='api_clinic_status'),
-    path('api/appointments/list/', views.api_appointments_list, name='api_appointments_list'),
-    path('api/clinic/settings/', views.api_clinic_settings, name='api_clinic_settings'),
-    path('api/clinic/business-hours/', views.api_clinic_business_hours, name='api_clinic_business_hours'),
+    # path('api/dashboard/stats/', views.api_dashboard_stats, name='api_dashboard_stats'),
+    # path('api/clinic/status/', views.api_clinic_status, name='api_clinic_status'),
+    # path('api/appointments/list/', views.api_appointments_list, name='api_appointments_list'),
+    # path('api/clinic/settings/', views.api_clinic_settings, name='api_clinic_settings'),
+    # path('api/clinic/business-hours/', views.api_clinic_business_hours, name='api_clinic_business_hours'),
     
     # ============ 獸醫師專用 API ============
-    path('api/vet/patients-overview/', views.api_vet_patients_overview, name='api_vet_patients_overview'),
-    path('api/vet/today-schedule/', views.api_vet_today_schedule, name='api_vet_today_schedule'),
+    # path('api/vet/patients-overview/', views.api_vet_patients_overview, name='api_vet_patients_overview'),
+    # path('api/vet/today-schedule/', views.api_vet_today_schedule, name='api_vet_today_schedule'),
     
     # ============ 其他 API ============
-    path('api/doctors/', views.api_load_doctors, name='api_load_doctors'),
-    path('api/time-slots/', views.api_load_time_slots, name='api_load_time_slots'),
-    path('api/doctor-time-slots/', views.api_doctor_time_slots, name='api_doctor_time_slots'),
-    path('api/clinics/search/', views.api_search_clinics, name='api_search_clinics'),
-    path('api/business-hours/get/', views.api_get_business_hours, name='api_get_business_hours'),
-    path('api/business-hours/save/', views.api_save_business_hours, name='api_save_business_hours'),
+    # path('api/doctors/', views.api_load_doctors, name='api_load_doctors'),
+    # path('api/time-slots/', views.api_load_time_slots, name='api_load_time_slots'),
+    # path('api/doctor-time-slots/', views.api_doctor_time_slots, name='api_doctor_time_slots'),
+    # path('api/clinics/search/', views.api_search_clinics, name='api_search_clinics'),
+    # path('api/business-hours/get/', views.api_get_business_hours, name='api_get_business_hours'),
+    # path('api/business-hours/save/', views.api_save_business_hours, name='api_save_business_hours'),
     path('api/notifications/count/', views.get_notification_count, name='get_notification_count'),
-    path('api/appointments/process-expired/', views.api_process_expired_appointments, name='api_process_expired_appointments'),
+    # path('api/appointments/process-expired/', views.api_process_expired_appointments, name='api_process_expired_appointments'),
     
     # ============ 動物用藥資料庫 API ============
     path('api/drugs/search/', views.drug_search_api, name='drug_search_api'),
     
     # ============ 飼主預約系統 ============
-    path('appointments/create/<int:pet_id>/', views.create_appointment, name='create_appointment'),
-    path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
-    path('appointments/my/', views.my_appointments, name='my_appointments'),
+    # path('appointments/create/<int:pet_id>/', views.create_appointment, name='create_appointment'),
+    # path('appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
+    # path('appointments/my/', views.my_appointments, name='my_appointments'),
     
     # AJAX路由
-    path('api/search-clinics/', views.search_clinics, name='search_clinics'),
-    path('api/load-doctors/', views.load_doctors, name='load_doctors'),
+    # path('api/search-clinics/', views.search_clinics, name='search_clinics'),
+    # path('api/load-doctors/', views.load_doctors, name='load_doctors'),
     
     # ============ 通知系統 API ============
     path('api/notifications/', views.get_notifications_api, name='get_notifications_api'),
@@ -152,6 +167,8 @@ urlpatterns = [
     # ============ 註冊與帳號管理 ============
     path('select-account-type/', views.select_account_type, name='select_account_type'),
     path('account/edit/', views.edit_profile, name='edit_profile'),
+    path('account/debug/', views.debug_profile, name='debug_profile'),
+    path('test/report-url/', views.test_report_url, name='test_report_url'),
     path('accounts/mark-signup/', views.mark_from_signup_and_redirect, name='mark_from_signup_and_redirect'),
     path('accounts/clear-signup-message/', clear_signup_message, name='clear_signup_message'),
 
@@ -186,8 +203,14 @@ urlpatterns = [
     path('deworm/edit/<int:pet_id>/<int:deworm_id>/', views.edit_deworm, name='edit_deworm'),
     path('deworm/delete/<int:deworm_id>/', views.delete_deworm, name='delete_deworm'),
 
+    # ============ 看診記錄管理 ============
+    path('medical-record/add/<int:pet_id>/', views.add_medical_record, name='add_medical_record'),
+    path('medical-record/edit/<int:pet_id>/<int:record_id>/', views.edit_medical_record, name='edit_medical_record'),
+    path('medical-record/delete/<int:record_id>/', views.delete_medical_record, name='delete_medical_record'),
+
     # ============ 報告管理 ============
     path('report/add/<int:pet_id>/', views.add_report, name='add_report'),
+    path('report/edit/<int:pet_id>/<int:report_id>/', views.edit_report, name='edit_report'),
     path('report/delete/<int:report_id>/', views.delete_report, name='delete_report'),
 
     # ============ 領養專區 ============
@@ -206,7 +229,27 @@ urlpatterns = [
     path('adoption/send_for_adoption/<int:pet_id>/', views.send_for_adoption, name='send_for_adoption'),
     path('adoption/delete_image/<int:adoption_id>/<str:picture_field>/', views.delete_adoption_image, name='delete_adoption_image'),
     path('adoption/delete_file/<int:adoption_id>/<str:field_name>/', views.delete_file, name='delete_adoption_file'),
-    
+
+    # ============ 領養申請系統 ============
+    # 申請人資料設定
+    path('adoption/profile/settings/', views_adoption_application.applicant_profile_settings, name='applicant_profile_settings'),
+
+    # B飼主功能
+    path('adoption/<int:pet_id>/apply/', views_adoption_application.apply_for_adoption, name='apply_for_adoption'),
+    path('adoption/applications/my/', views_adoption_application.my_adoption_applications, name='my_adoption_applications'),
+    path('adoption/applications/<int:application_id>/cancel/', views_adoption_application.cancel_adoption_application, name='cancel_adoption_application'),
+
+    # A飼主功能
+    path('adoption/applications/received/', views_adoption_application.owner_adoption_applications, name='owner_adoption_applications'),
+    path('adoption/applications/received/<int:pet_id>/', views_adoption_application.owner_adoption_applications, name='owner_adoption_applications_for_pet'),
+    path('adoption/applications/<int:application_id>/accept/', views_adoption_application.accept_adoption_application, name='accept_adoption_application'),
+    path('adoption/applications/<int:application_id>/reject/', views_adoption_application.reject_adoption_application, name='reject_adoption_application'),
+    path('adoption/applications/<int:application_id>/reviewing/', views_adoption_application.mark_application_reviewing, name='mark_application_reviewing'),
+
+    # 共用功能
+    path('adoption/applications/<int:application_id>/', views_adoption_application.adoption_application_detail, name='adoption_application_detail'),
+    path('adoption/applications/<int:application_id>/message/', views_adoption_application.send_application_message, name='send_application_message'),
+
     # ============ 寵物轉讓 ============
     path('transfer/change_owner/<int:pet_id>/', views.change_owner, name='change_owner'),
     path('transfer/confirm/<int:transfer_id>/', views.transfer_confirm, name='transfer_confirm'),
@@ -256,6 +299,16 @@ urlpatterns = [
         path('<int:ticket_id>/accept/', views_handoff.handoff_agent_accept, name='handoff_agent_accept'),
         path('<int:ticket_id>/poll/', views_handoff.handoff_staff_poll, name='handoff_staff_poll'),
     ])),
+
+    # ============ 語音自動化建檔系統 ============
+    path('voice/', views_voice.voice_input_page, name='voice_input'),
+    path('voice/create/', views_voice.voice_create_handler, name='voice_create_handler'),
+
+    # ============ Google Calendar 整合 ============
+    path('calendar/authorize/', views.google_calendar_authorize, name='google_calendar_authorize'),
+    path('calendar/oauth2callback/', views.google_calendar_oauth2callback, name='google_calendar_oauth2callback'),
+    path('calendar/disconnect/', views.google_calendar_disconnect, name='google_calendar_disconnect'),
+    path('calendar/settings/', views.google_calendar_settings, name='google_calendar_settings'),
 ]
 
 # 靜態檔案處理

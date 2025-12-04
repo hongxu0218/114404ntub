@@ -6,10 +6,12 @@ from django.contrib.auth import login
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from .models import (
-    VetClinic, VetDoctor, Profile, Pet, Species, SterilizationStatus, 
-    Gender, DailyRecord, VaccineRecord, DewormRecord, Report, 
-    MedicalRecord, VetSchedule, AppointmentSlot, VetAppointment, VetScheduleException,
-    AdoptionPet, TransferRequest, REGION_CHOICES, WEEKDAYS
+    # VetClinic, VetDoctor,
+    Profile, Pet, Species, SterilizationStatus,
+    Gender, DailyRecord, VaccineRecord, DewormRecord,
+    Report, MedicalRecord,
+    # VetSchedule, AppointmentSlot, VetAppointment, VetScheduleException,
+    AdoptionPet, TransferRequest, REGION_CHOICES, # WEEKDAYS
 )
 from .choices import (
     SPECIES_CHOICES, DOG_CHOICES, CAT_CHOICES, OTHER_CHOICES,
@@ -36,737 +38,743 @@ CITY_CHOICES = [
 
 
 # ===== 獸醫院註冊表單 =====
-class VetClinicRegistrationForm(forms.ModelForm):
-    """診所註冊表單"""
+# VetClinicRegistrationForm 已註解停用 (2025-10-24)
+# class VetClinicRegistrationForm(forms.ModelForm):
+#     """診所註冊表單"""
     
     # 診所基本資訊
-    clinic_name = forms.CharField(
-        max_length=100,
-        label='診所名稱',
-        help_text='請填寫與農委會登記完全相同的診所名稱',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：台北市愛心動物醫院'
-        })
-    )
+#     clinic_name = forms.CharField(
+#         max_length=100,
+#         label='診所名稱',
+#         help_text='請填寫與農委會登記完全相同的診所名稱',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：台北市愛心動物醫院'
+#         })
+#     )
     
-    license_number = forms.CharField(
-        max_length=50,
-        label='開業執照字號',
-        help_text='請填寫與農委會登記完全相同的執照字號',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：北市動字第1234567號'
-        })
-    )
+#     license_number = forms.CharField(
+#         max_length=50,
+#         label='開業執照字號',
+#         help_text='請填寫與農委會登記完全相同的執照字號',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：北市動字第1234567號'
+#         })
+#     )
     
-    clinic_phone = forms.CharField(
-        max_length=20,
-        label='診所電話',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：02-12345678'
-        })
-    )
+#     clinic_phone = forms.CharField(
+#         max_length=20,
+#         label='診所電話',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：02-12345678'
+#         })
+#     )
     
-    clinic_email = forms.EmailField(
-        label='診所信箱',
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：clinic@example.com'
-        })
-    )
+#     clinic_email = forms.EmailField(
+#         label='診所信箱',
+#         widget=forms.EmailInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：clinic@example.com'
+#         })
+#     )
     
-    clinic_address = forms.CharField(
-        max_length=255,
-        label='診所地址',
-        help_text='請填寫與農委會登記完全相同的診所地址',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：台北市中正區重慶南路一段122號'
-        })
-    )
+#     clinic_address = forms.CharField(
+#         max_length=255,
+#         label='診所地址',
+#         help_text='請填寫與農委會登記完全相同的診所地址',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：台北市中正區重慶南路一段122號'
+#         })
+#     )
     
     # 管理員帳號資訊
-    admin_username = forms.CharField(
-        max_length=30,
-        label='管理員帳號',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '英文、數字或底線，3-30個字元'
-        })
-    )
+#     admin_username = forms.CharField(
+#         max_length=30,
+#         label='管理員帳號',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '英文、數字或底線，3-30個字元'
+#         })
+#     )
     
-    admin_email = forms.EmailField(
-        label='管理員信箱',
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：admin@example.com'
-        })
-    )
+#     admin_email = forms.EmailField(
+#         label='管理員信箱',
+#         widget=forms.EmailInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：admin@example.com'
+#         })
+#     )
     
-    admin_password = forms.CharField(
-        min_length=8,
-        label='管理員密碼',
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': '至少8個字元，建議包含大小寫字母、數字'
-        })
-    )
+#     admin_password = forms.CharField(
+#         min_length=8,
+#         label='管理員密碼',
+#         widget=forms.PasswordInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '至少8個字元，建議包含大小寫字母、數字'
+#         })
+#     )
     
-    admin_password_confirm = forms.CharField(
-        label='確認密碼',
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': '請再次輸入密碼'
-        })
-    )
+#     admin_password_confirm = forms.CharField(
+#         label='確認密碼',
+#         widget=forms.PasswordInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '請再次輸入密碼'
+#         })
+#     )
     
-    admin_real_name = forms.CharField(
-        max_length=20,
-        label='管理員真實姓名',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：王小明'
-        })
-    )
+#     admin_real_name = forms.CharField(
+#         max_length=20,
+#         label='管理員真實姓名',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：王小明'
+#         })
+#     )
     
-    admin_phone = forms.CharField(
-        max_length=15,
-        label='管理員電話',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：0912345678'
-        })
-    )
+#     admin_phone = forms.CharField(
+#         max_length=15,
+#         label='管理員電話',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：0912345678'
+#         })
+#     )
     
     # 驗證確認
-    verification_confirmed = forms.BooleanField(
-        label='確認接受農委會驗證',
-        required=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        })
-    )
+#     verification_confirmed = forms.BooleanField(
+#         label='確認接受農委會驗證',
+#         required=True,
+#         widget=forms.CheckboxInput(attrs={
+#             'class': 'form-check-input'
+#         })
+#     )
     
-    class Meta:
-        model = VetClinic
-        fields = [
-            'clinic_name', 'license_number', 'clinic_phone',
-            'clinic_address', 'clinic_email', 'clinic_mode',
-        ]
-        widgets = {
-           'clinic_mode': forms.RadioSelect(choices=VetClinic.CLINIC_MODE_CHOICES),
-        }
+#     class Meta:
+#         model = VetClinic
+#         fields = [
+#             'clinic_name', 'license_number', 'clinic_phone',
+#             'clinic_address', 'clinic_email', 'clinic_mode',
+#         ]
+#         widgets = {
+#            'clinic_mode': forms.RadioSelect(choices=VetClinic.CLINIC_MODE_CHOICES),
+#         }
     
-    def clean_admin_username(self):
-        """驗證管理員帳號"""
-        username = self.cleaned_data['admin_username']
+#     def clean_admin_username(self):
+#         """驗證管理員帳號"""
+#         username = self.cleaned_data['admin_username']
         
         # 檢查是否已存在
-        if User.objects.filter(username=username).exists():
-            raise forms.ValidationError('此使用者名稱已被使用')
+#         if User.objects.filter(username=username).exists():
+#             raise forms.ValidationError('此使用者名稱已被使用')
         
         # 檢查格式
-        if not re.match(r'^[a-zA-Z0-9_]+$', username):
-            raise forms.ValidationError('帳號只能包含英文、數字和底線')
+#         if not re.match(r'^[a-zA-Z0-9_]+$', username):
+#             raise forms.ValidationError('帳號只能包含英文、數字和底線')
         
-        return username
+#         return username
     
-    def clean_admin_email(self):
-        """驗證管理員信箱"""
-        email = self.cleaned_data['admin_email']
+#     def clean_admin_email(self):
+#         """驗證管理員信箱"""
+#         email = self.cleaned_data['admin_email']
         
         # 檢查是否已存在
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('此電子郵件已被使用')
+#         if User.objects.filter(email=email).exists():
+#             raise forms.ValidationError('此電子郵件已被使用')
         
-        return email
+#         return email
     
-    def clean_license_number(self):
-        """驗證執照字號"""
-        license_number = self.cleaned_data['license_number']
+#     def clean_license_number(self):
+#         """驗證執照字號"""
+#         license_number = self.cleaned_data['license_number']
         
         # 檢查是否已存在
-        if VetClinic.objects.filter(license_number=license_number).exists():
-            raise forms.ValidationError('此執照字號已被註冊')
+#         if VetClinic.objects.filter(license_number=license_number).exists():
+#             raise forms.ValidationError('此執照字號已被註冊')
         
-        return license_number
+#         return license_number
     
-    def clean(self):
-        """全表單驗證"""
-        cleaned_data = super().clean()
+#     def clean(self):
+#         """全表單驗證"""
+#         cleaned_data = super().clean()
         
         # 驗證密碼確認
-        password = cleaned_data.get('admin_password')
-        password_confirm = cleaned_data.get('admin_password_confirm')
+#         password = cleaned_data.get('admin_password')
+#         password_confirm = cleaned_data.get('admin_password_confirm')
         
-        if password and password_confirm:
-            if password != password_confirm:
-                raise forms.ValidationError('密碼確認不符')
+#         if password and password_confirm:
+#             if password != password_confirm:
+#                 raise forms.ValidationError('密碼確認不符')
         
-        return cleaned_data
+#         return cleaned_data
     
-    def verify_with_moa_api(self, clinic_name, license_number):
-        """即時驗證農委會API"""
-        try:
-            api_url = "https://data.moa.gov.tw/Service/OpenData/DataFileService.aspx?UnitId=078"
-            print(f"INFO 開始驗證: {clinic_name} - {license_number}")
+#     def verify_with_moa_api(self, clinic_name, license_number):
+#         """即時驗證農委會API"""
+#         try:
+#             api_url = "https://data.moa.gov.tw/Service/OpenData/DataFileService.aspx?UnitId=078"
+#             print(f"INFO 開始驗證: {clinic_name} - {license_number}")
             
-            response = requests.get(api_url, timeout=30)
+#             response = requests.get(api_url, timeout=30)
             
-            if response.status_code == 200:
-                data = response.json()
-                print(f"INFO API回應資料筆數: {len(data)}")
+#             if response.status_code == 200:
+#                 data = response.json()
+#                 print(f"INFO API回應資料筆數: {len(data)}")
                 
-                for clinic_data in data:
+#                 for clinic_data in data:
                     # 精確比對診所名稱和執照字號
-                    api_license = clinic_data.get('字號', '').strip()
-                    api_name = clinic_data.get('機構名稱', '').strip()
+#                     api_license = clinic_data.get('字號', '').strip()
+#                     api_name = clinic_data.get('機構名稱', '').strip()
                     
-                    if api_license == license_number and api_name == clinic_name:
-                        print(f"SUCCESS 找到匹配的診所: {clinic_data}")
+#                     if api_license == license_number and api_name == clinic_name:
+#                         print(f"SUCCESS 找到匹配的診所: {clinic_data}")
                         
                         # 檢查開業狀態
-                        status = clinic_data.get('狀態', '').strip()
-                        if status != '開業':
-                            return False, f"診所狀態為「{status}」，無法註冊"
+#                         status = clinic_data.get('狀態', '').strip()
+#                         if status != '開業':
+#                             return False, f"診所狀態為「{status}」，無法註冊"
                         
                         # 儲存驗證資料到表單實例
-                        self.moa_data = clinic_data
-                        return True, "農委會資料驗證成功"
+#                         self.moa_data = clinic_data
+#                         return True, "農委會資料驗證成功"
                 
-                return False, "農委會資料庫中找不到對應的診所資訊，請確認診所名稱和執照字號是否與農委會登記完全相同"
-            else:
-                return False, f"無法連接農委會API (HTTP {response.status_code})"
+#                 return False, "農委會資料庫中找不到對應的診所資訊，請確認診所名稱和執照字號是否與農委會登記完全相同"
+#             else:
+#                 return False, f"無法連接農委會API (HTTP {response.status_code})"
                 
-        except Exception as e:
-            print(f"ERROR 驗證過程發生錯誤: {e}")
-            import traceback
-            traceback.print_exc()
-            return False, f"驗證過程發生錯誤：{str(e)}"
+#         except Exception as e:
+#             print(f"ERROR 驗證過程發生錯誤: {e}")
+#             import traceback
+#             traceback.print_exc()
+#             return False, f"驗證過程發生錯誤：{str(e)}"
 
-    def save(self, commit=True):
-        """保存診所和管理員資料"""
-        from django.contrib.auth.models import User
-        from django.db import transaction
-        from .models import VetClinic, VetDoctor, Profile
-        from django.utils import timezone
-        from datetime import datetime
+#     def save(self, commit=True):
+#         """保存診所和管理員資料"""
+#         from django.contrib.auth.models import User
+#         from django.db import transaction
+#         from .models import VetClinic, VetDoctor, Profile
+#         from django.utils import timezone
+#         from datetime import datetime
         
-        cleaned_data = self.cleaned_data
+#         cleaned_data = self.cleaned_data
         
         # 先進行農委會驗證
-        clinic_name = cleaned_data['clinic_name']
-        license_number = cleaned_data['license_number']
+#         clinic_name = cleaned_data['clinic_name']
+#         license_number = cleaned_data['license_number']
         
-        success, message = self.verify_with_moa_api(clinic_name, license_number)
-        if not success:
-            raise forms.ValidationError(f'農委會驗證失敗：{message}')
+#         success, message = self.verify_with_moa_api(clinic_name, license_number)
+#         if not success:
+#             raise forms.ValidationError(f'農委會驗證失敗：{message}')
         
-        with transaction.atomic():
+#         with transaction.atomic():
             # 建立診所實例
-            clinic = VetClinic(
-                clinic_name=cleaned_data['clinic_name'],
-                license_number=cleaned_data['license_number'],
-                clinic_phone=cleaned_data['clinic_phone'],
-                clinic_email=cleaned_data['clinic_email'],
-                clinic_address=cleaned_data['clinic_address'],
-                clinic_mode=cleaned_data['clinic_mode'],
-            )
+#             clinic = VetClinic(
+#                 clinic_name=cleaned_data['clinic_name'],
+#                 license_number=cleaned_data['license_number'],
+#                 clinic_phone=cleaned_data['clinic_phone'],
+#                 clinic_email=cleaned_data['clinic_email'],
+#                 clinic_address=cleaned_data['clinic_address'],
+#                 clinic_mode=cleaned_data['clinic_mode'],
+#             )
             
             # 填入農委會驗證資料
-            if hasattr(self, 'moa_data'):
-                moa_data = self.moa_data
-                clinic.moa_county = moa_data.get('縣市', '')
-                clinic.moa_status = moa_data.get('狀態', '')
-                clinic.moa_responsible_vet = moa_data.get('負責獸醫', '')
+#             if hasattr(self, 'moa_data'):
+#                 moa_data = self.moa_data
+#                 clinic.moa_county = moa_data.get('縣市', '')
+#                 clinic.moa_status = moa_data.get('狀態', '')
+#                 clinic.moa_responsible_vet = moa_data.get('負責獸醫', '')
                 
                 # 轉換發照日期
-                issue_date_str = moa_data.get('發照日期', '')
-                if issue_date_str and len(issue_date_str) == 8:
-                    try:
-                        clinic.moa_issue_date = datetime.strptime(issue_date_str, '%Y%m%d').date()
-                    except ValueError:
-                        pass
+#                 issue_date_str = moa_data.get('發照日期', '')
+#                 if issue_date_str and len(issue_date_str) == 8:
+#                     try:
+#                         clinic.moa_issue_date = datetime.strptime(issue_date_str, '%Y%m%d').date()
+#                     except ValueError:
+#                         pass
                 
-                clinic.is_verified = True
-                clinic.verification_date = timezone.now()
+#                 clinic.is_verified = True
+#                 clinic.verification_date = timezone.now()
             
-            clinic.save()
+#             clinic.save()
             
             # 建立管理員使用者
-            admin_user = User.objects.create_user(
-                username=cleaned_data['admin_username'],
-                email=cleaned_data['admin_email'],
-                password=cleaned_data['admin_password'],
-                first_name=cleaned_data['admin_real_name']
-            )
+#             admin_user = User.objects.create_user(
+#                 username=cleaned_data['admin_username'],
+#                 email=cleaned_data['admin_email'],
+#                 password=cleaned_data['admin_password'],
+#                 first_name=cleaned_data['admin_real_name']
+#             )
             
             # 建立使用者檔案
-            profile = Profile.objects.create(
-                user=admin_user,
-                account_type='clinic_admin',
-                phone_number=cleaned_data['admin_phone']
-            )
+#             profile = Profile.objects.create(
+#                 user=admin_user,
+#                 account_type='clinic_admin',
+#                 phone_number=cleaned_data['admin_phone']
+#             )
 
-            clinic.clinic_admin = admin_user   
-            if commit:
-                clinic.save()
+#             clinic.clinic_admin = admin_user   
+#             if commit:
+#                 clinic.save()
             
             # 建立獸醫師檔案（診所管理員）
-            vet_doctor = VetDoctor.objects.create(
-                user=admin_user,
-                clinic=clinic,
-                vet_license_number='',  
-                is_active=True,
-                is_clinic_admin=True, 
-                is_active_veterinarian=False 
-            )
+#             vet_doctor = VetDoctor.objects.create(
+#                 user=admin_user,
+#                 clinic=clinic,
+#                 vet_license_number='',  
+#                 is_active=True,
+#                 is_clinic_admin=True, 
+#                 is_active_veterinarian=False 
+#             )
 
             
-            return clinic
+#             return clinic
 
 
 # ===== 診所模式切換 =====
-class ClinicModeSwitchForm(forms.ModelForm):
-    class Meta:
-        model = VetClinic
-        fields = ['clinic_mode']
+# ClinicModeSwitchForm 已註解停用 (2025-10-24)
+# class ClinicModeSwitchForm(forms.ModelForm):
+#     class Meta:
+#         model = VetClinic
+#         fields = ['clinic_mode']
 
-    def clean_clinic_mode(self):
-        mode = self.cleaned_data['clinic_mode']
-        if mode not in ['single', 'multi']:
-            raise forms.ValidationError("模式只能是 單一醫師 或 多醫師")
-        return mode
+#     def clean_clinic_mode(self):
+#         mode = self.cleaned_data['clinic_mode']
+#         if mode not in ['single', 'multi']:
+#             raise forms.ValidationError("模式只能是 單一醫師 或 多醫師")
+#         return mode
 
 # ===== 獸醫師表單（已廢棄，由診所管理員統一管理） =====
-class VetProfileEditForm(forms.ModelForm):
-    """獸醫師檔案編輯表單 - 已廢棄，保留僅供相容性"""
+# VetProfileEditForm 已註解停用 (2025-10-24)
+# class VetProfileEditForm(forms.ModelForm):
+#     """獸醫師檔案編輯表單 - 已廢棄，保留僅供相容性"""
     
-    class Meta:
-        model = VetDoctor
-        fields = []
+#     class Meta:
+#         model = VetDoctor
+#         fields = []
     
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('user', None)  # 移除不需要的參數
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         kwargs.pop('user', None)  # 移除不需要的參數
+#         super().__init__(*args, **kwargs)
     
-    def save(self, commit=True):
+#     def save(self, commit=True):
         # 不執行任何操作，直接返回實例
-        return self.instance
+#         return self.instance
 
 
-class VetDoctorForm(forms.ModelForm):
-    """獸醫師新增表單"""
+# VetDoctorForm 已註解停用 (2025-10-24)
+# class VetDoctorForm(forms.ModelForm):
+#     """獸醫師新增表單"""
     
-    username = forms.CharField(
-        max_length=150, 
-        label='使用者帳號',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '英文、數字或底線，3-30個字元'
-        }),
-        help_text='英文、數字或底線，3-30個字元'
-    )
-    email = forms.EmailField(
-        label='電子信箱',
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：doctor@example.com'
-        }),
-        help_text='將作為登入帳號和通知信箱'
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': '至少8個字元'
-        }), 
-        label='密碼',
-        min_length=8,
-        help_text='至少8個字元，建議包含大小寫字母、數字'
-    )
-    first_name = forms.CharField(
-        max_length=30, 
-        label='真實姓名',
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例：王小明'
-        }),
-        help_text='醫師的真實姓名'
-    )
-    phone_number = forms.CharField(
-        max_length=20, 
-        label='聯絡電話',
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control', 
-            'placeholder': '09xxxxxxxx'
-        }),
-        help_text='台灣手機號碼格式'
-    )
+#     username = forms.CharField(
+#         max_length=150, 
+#         label='使用者帳號',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '英文、數字或底線，3-30個字元'
+#         }),
+#         help_text='英文、數字或底線，3-30個字元'
+#     )
+#     email = forms.EmailField(
+#         label='電子信箱',
+#         widget=forms.EmailInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：doctor@example.com'
+#         }),
+#         help_text='將作為登入帳號和通知信箱'
+#     )
+#     password = forms.CharField(
+#         widget=forms.PasswordInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '至少8個字元'
+#         }), 
+#         label='密碼',
+#         min_length=8,
+#         help_text='至少8個字元，建議包含大小寫字母、數字'
+#     )
+#     first_name = forms.CharField(
+#         max_length=30, 
+#         label='真實姓名',
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例：王小明'
+#         }),
+#         help_text='醫師的真實姓名'
+#     )
+#     phone_number = forms.CharField(
+#         max_length=20, 
+#         label='聯絡電話',
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control', 
+#             'placeholder': '09xxxxxxxx'
+#         }),
+#         help_text='台灣手機號碼格式'
+#     )
     
-    class Meta:
-        model = VetDoctor
-        fields = [
-            'vet_license_number', 'specialization', 'years_of_experience', 'bio',
-            'is_active_veterinarian', 'is_clinic_admin'
-        ]
-        labels = {
-            'vet_license_number': '獸醫師執照號碼',
-            'specialization': '專科領域',
-            'years_of_experience': '執業年資',
-            'bio': '個人簡介',
-            'is_active_veterinarian': '獸醫師功能',
-            'is_clinic_admin': '診所管理員權限',
-        }
-        widgets = {
-            'vet_license_number': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '例：94府農畜字第13273號'
-            }),
-            'specialization': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '例：小動物內科、外科、皮膚科'
-            }),
-            'years_of_experience': forms.NumberInput(attrs={
-                'class': 'form-control', 
-                'min': 0, 
-                'max': 50,
-                'placeholder': '0'
-            }),
-            'bio': forms.Textarea(attrs={
-                'class': 'form-control', 
-                'rows': 3,
-                'placeholder': '可包含專業背景、治療理念、特殊專長等資訊'
-            }),
-        }
-        help_texts = {
-            'vet_license_number': '可稍後填寫，需通過農委會驗證後才能填寫醫療記錄',
-            'specialization': '例如：小動物內科、外科、皮膚科等',
-            'years_of_experience': '以年為單位',
-            'bio': '可包含專業背景、治療理念、特殊專長等',
-        }
+#     class Meta:
+#         model = VetDoctor
+#         fields = [
+#             'vet_license_number', 'specialization', 'years_of_experience', 'bio',
+#             'is_active_veterinarian', 'is_clinic_admin'
+#         ]
+#         labels = {
+#             'vet_license_number': '獸醫師執照號碼',
+#             'specialization': '專科領域',
+#             'years_of_experience': '執業年資',
+#             'bio': '個人簡介',
+#             'is_active_veterinarian': '獸醫師功能',
+#             'is_clinic_admin': '診所管理員權限',
+#         }
+#         widgets = {
+#             'vet_license_number': forms.TextInput(attrs={
+#                 'class': 'form-control',
+#                 'placeholder': '例：94府農畜字第13273號'
+#             }),
+#             'specialization': forms.TextInput(attrs={
+#                 'class': 'form-control',
+#                 'placeholder': '例：小動物內科、外科、皮膚科'
+#             }),
+#             'years_of_experience': forms.NumberInput(attrs={
+#                 'class': 'form-control', 
+#                 'min': 0, 
+#                 'max': 50,
+#                 'placeholder': '0'
+#             }),
+#             'bio': forms.Textarea(attrs={
+#                 'class': 'form-control', 
+#                 'rows': 3,
+#                 'placeholder': '可包含專業背景、治療理念、特殊專長等資訊'
+#             }),
+#         }
+#         help_texts = {
+#             'vet_license_number': '可稍後填寫，需通過農委會驗證後才能填寫醫療記錄',
+#             'specialization': '例如：小動物內科、外科、皮膚科等',
+#             'years_of_experience': '以年為單位',
+#             'bio': '可包含專業背景、治療理念、特殊專長等',
+#         }
     
-    def __init__(self, *args, **kwargs):
-        self.clinic = kwargs.pop('clinic', None)
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         self.clinic = kwargs.pop('clinic', None)
+#         super().__init__(*args, **kwargs)
         
         # 設定預設值
-        if not self.instance.pk:
-            self.fields['years_of_experience'].initial = 0
+#         if not self.instance.pk:
+#             self.fields['years_of_experience'].initial = 0
     
-    def clean_username(self):
-        username = self.cleaned_data['username']
+#     def clean_username(self):
+#         username = self.cleaned_data['username']
         
         # 檢查格式
-        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
-            raise forms.ValidationError('帳號只能包含英文、數字和底線，長度3-30個字元')
+#         if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+#             raise forms.ValidationError('帳號只能包含英文、數字和底線，長度3-30個字元')
         
         # 檢查是否已存在
-        if User.objects.filter(username=username).exists():
-            raise forms.ValidationError('此使用者名稱已被使用')
+#         if User.objects.filter(username=username).exists():
+#             raise forms.ValidationError('此使用者名稱已被使用')
         
-        return username
+#         return username
     
-    def clean_email(self):
-        email = self.cleaned_data['email']
+#     def clean_email(self):
+#         email = self.cleaned_data['email']
         
         # 檢查是否已存在
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('此信箱已被註冊')
+#         if User.objects.filter(email=email).exists():
+#             raise forms.ValidationError('此信箱已被註冊')
         
-        return email
+#         return email
     
-    def clean_phone_number(self):
-        phone = self.cleaned_data.get('phone_number')
-        if phone and not re.match(r'^09\d{8}$', phone):
-            raise forms.ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
+#     def clean_phone_number(self):
+#         phone = self.cleaned_data.get('phone_number')
+#         if phone and not re.match(r'^09\d{8}$', phone):
+#             raise forms.ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
 
         # 檢查電話號碼是否已被其他用戶使用
-        if phone:
-            existing_profile = Profile.objects.filter(phone_number=phone).first()
-            if existing_profile:
-                raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
+#         if phone:
+#             existing_profile = Profile.objects.filter(phone_number=phone).first()
+#             if existing_profile:
+#                 raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
 
-        return phone
+#         return phone
     
-    def clean_years_of_experience(self):
-        years = self.cleaned_data.get('years_of_experience')
-        if years is not None and (years < 0 or years > 50):
-            raise forms.ValidationError('執業年資應在0-50年之間')
-        return years
+#     def clean_years_of_experience(self):
+#         years = self.cleaned_data.get('years_of_experience')
+#         if years is not None and (years < 0 or years > 50):
+#             raise forms.ValidationError('執業年資應在0-50年之間')
+#         return years
     
-    def clean_password(self):
-        password = self.cleaned_data.get('password')
+#     def clean_password(self):
+#         password = self.cleaned_data.get('password')
         
-        if len(password) < 8:
-            raise forms.ValidationError('密碼至少需要8個字元')
+#         if len(password) < 8:
+#             raise forms.ValidationError('密碼至少需要8個字元')
         
-        return password
+#         return password
 
 # ===== 獸醫師執照驗證表單 =====
-class LicenseVerificationForm(forms.Form):
-    """
-    執照驗證表單 - 獨立處理執照驗證邏輯
-    """
-    vet_license_number = forms.CharField(
-        label='獸醫師執照號碼',
-        max_length=50,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '請輸入完整執照號碼，例如：94府農畜字第13273號'
-        })
-    )
+# LicenseVerificationForm 已註解停用 (2025-10-24)
+# class LicenseVerificationForm(forms.Form):
+#     """
+#     執照驗證表單 - 獨立處理執照驗證邏輯
+#     """
+#     vet_license_number = forms.CharField(
+#         label='獸醫師執照號碼',
+#         max_length=50,
+#         required=True,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '請輸入完整執照號碼，例如：94府農畜字第13273號'
+#         })
+#     )
     
-    def __init__(self, *args, **kwargs):
-        self.doctor = kwargs.pop('doctor', None)
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         self.doctor = kwargs.pop('doctor', None)
+#         super().__init__(*args, **kwargs)
         
-        if self.doctor and self.doctor.vet_license_number:
-            self.fields['vet_license_number'].initial = self.doctor.vet_license_number
+#         if self.doctor and self.doctor.vet_license_number:
+#             self.fields['vet_license_number'].initial = self.doctor.vet_license_number
     
-    def clean_vet_license_number(self):
-        """驗證執照號碼"""
-        license_number = self.cleaned_data.get('vet_license_number')
+#     def clean_vet_license_number(self):
+#         """驗證執照號碼"""
+#         license_number = self.cleaned_data.get('vet_license_number')
         
-        if not license_number:
-            raise forms.ValidationError('請輸入執照號碼')
+#         if not license_number:
+#             raise forms.ValidationError('請輸入執照號碼')
         
         # 檢查是否已被其他醫師驗證使用
-        existing_doctor = VetDoctor.objects.filter(
-            vet_license_number=license_number,
-            license_verified_with_moa=True
-        )
+#         existing_doctor = VetDoctor.objects.filter(
+#             vet_license_number=license_number,
+#             license_verified_with_moa=True
+#         )
         
-        if self.doctor:
-            existing_doctor = existing_doctor.exclude(pk=self.doctor.pk)
+#         if self.doctor:
+#             existing_doctor = existing_doctor.exclude(pk=self.doctor.pk)
         
-        if existing_doctor.exists():
-            doctor = existing_doctor.first()
-            raise forms.ValidationError(
-                f'此執照號碼已被 {doctor.user.get_full_name()} 驗證使用'
-            )
+#         if existing_doctor.exists():
+#             doctor = existing_doctor.first()
+#             raise forms.ValidationError(
+#                 f'此執照號碼已被 {doctor.user.get_full_name()} 驗證使用'
+#             )
         
-        return license_number
+#         return license_number
 
 
 # ===== 編輯醫師表單 =====
-class EditDoctorForm(forms.ModelForm):
-    """
-    編輯醫師表單 - 簡化版本，專注核心功能
-    分離關注點：基本資料 vs 權限管理
-    """
+# EditDoctorForm 已註解停用 (2025-10-24)
+# class EditDoctorForm(forms.ModelForm):
+#     """
+#     編輯醫師表單 - 簡化版本，專注核心功能
+#     分離關注點：基本資料 vs 權限管理
+#     """
     
     # 基本個人資料
-    first_name = forms.CharField(
-        label='醫師姓名',
-        max_length=30,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '請輸入醫師真實姓名'
-        })
-    )
+#     first_name = forms.CharField(
+#         label='醫師姓名',
+#         max_length=30,
+#         required=True,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '請輸入醫師真實姓名'
+#         })
+#     )
     
-    email = forms.EmailField(
-        label='電子郵件',
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': '用於登入和接收通知'
-        })
-    )
+#     email = forms.EmailField(
+#         label='電子郵件',
+#         required=True,
+#         widget=forms.EmailInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '用於登入和接收通知'
+#         })
+#     )
     
-    phone_number = forms.CharField(
-        label='聯絡電話',
-        max_length=20,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '09xxxxxxxx'
-        })
-    )
+#     phone_number = forms.CharField(
+#         label='聯絡電話',
+#         max_length=20,
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '09xxxxxxxx'
+#         })
+#     )
     
     # 專業資訊
-    specialization = forms.CharField(
-        label='專科領域',
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '例如：小動物內科、外科、皮膚科'
-        })
-    )
+#     specialization = forms.CharField(
+#         label='專科領域',
+#         max_length=100,
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '例如：小動物內科、外科、皮膚科'
+#         })
+#     )
     
-    years_of_experience = forms.IntegerField(
-        label='執業年資',
-        min_value=0,
-        max_value=50,
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': '0'
-        })
-    )
+#     years_of_experience = forms.IntegerField(
+#         label='執業年資',
+#         min_value=0,
+#         max_value=50,
+#         required=False,
+#         widget=forms.NumberInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '0'
+#         })
+#     )
     
-    bio = forms.CharField(
-        label='個人簡介',
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 4,
-            'maxlength': 500,
-            'placeholder': '醫師的專業背景和治療理念介紹'
-        })
-    )
+#     bio = forms.CharField(
+#         label='個人簡介',
+#         required=False,
+#         widget=forms.Textarea(attrs={
+#             'class': 'form-control',
+#             'rows': 4,
+#             'maxlength': 500,
+#             'placeholder': '醫師的專業背景和治療理念介紹'
+#         })
+#     )
     
     # 權限設定 - 簡化為核心權限
-    can_manage_appointments = forms.BooleanField(
-        label='預約管理權限',
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        })
-    )
+#     can_manage_appointments = forms.BooleanField(
+#         label='預約管理權限',
+#         required=False,
+#         initial=True,
+#         widget=forms.CheckboxInput(attrs={
+#             'class': 'form-check-input'
+#         })
+#     )
     
-    is_clinic_admin = forms.BooleanField(
-        label='診所管理員權限',
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        })
-    )
+#     is_clinic_admin = forms.BooleanField(
+#         label='診所管理員權限',
+#         required=False,
+#         widget=forms.CheckboxInput(attrs={
+#             'class': 'form-check-input'
+#         })
+#     )
     
     # 帳號狀態
-    is_active = forms.BooleanField(
-        label='帳號啟用',
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input'
-        })
-    )
+#     is_active = forms.BooleanField(
+#         label='帳號啟用',
+#         required=False,
+#         widget=forms.CheckboxInput(attrs={
+#             'class': 'form-check-input'
+#         })
+#     )
 
-    class Meta:
-        model = VetDoctor
-        fields = [
-            'specialization', 'years_of_experience', 'bio',
-            'can_manage_appointments', 'is_clinic_admin', 'is_active'
-        ]
+#     class Meta:
+#         model = VetDoctor
+#         fields = [
+#             'specialization', 'years_of_experience', 'bio',
+#             'can_manage_appointments', 'is_clinic_admin', 'is_active'
+#         ]
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)  # 當前操作用戶
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         self.user = kwargs.pop('user', None)  # 當前操作用戶
+#         super().__init__(*args, **kwargs)
         
         # 如果有實例，填充用戶相關欄位
-        if self.instance and self.instance.pk:
-            self.fields['first_name'].initial = self.instance.user.first_name
-            self.fields['email'].initial = self.instance.user.email
+#         if self.instance and self.instance.pk:
+#             self.fields['first_name'].initial = self.instance.user.first_name
+#             self.fields['email'].initial = self.instance.user.email
             
             # 從 Profile 獲取電話
-            try:
-                profile = self.instance.user.profile
-                self.fields['phone_number'].initial = profile.phone_number
-            except:
-                pass
+#             try:
+#                 profile = self.instance.user.profile
+#                 self.fields['phone_number'].initial = profile.phone_number
+#             except:
+#                 pass
     
-    def clean_email(self):
-        """驗證 email 唯一性"""
-        email = self.cleaned_data.get('email')
-        if not email:
-            return email
+#     def clean_email(self):
+#         """驗證 email 唯一性"""
+#         email = self.cleaned_data.get('email')
+#         if not email:
+#             return email
             
         # 檢查是否被其他用戶使用（排除當前用戶）
-        existing_user = User.objects.filter(email=email).first()
-        if existing_user and existing_user != self.instance.user:
-            raise forms.ValidationError('此信箱已被其他用戶使用')
+#         existing_user = User.objects.filter(email=email).first()
+#         if existing_user and existing_user != self.instance.user:
+#             raise forms.ValidationError('此信箱已被其他用戶使用')
         
-        return email
+#         return email
     
-    def clean_phone_number(self):
-        """驗證手機號碼格式"""
-        phone = self.cleaned_data.get('phone_number')
-        if phone and not re.match(r'^09\d{8}$', phone):
-            raise forms.ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
+#     def clean_phone_number(self):
+#         """驗證手機號碼格式"""
+#         phone = self.cleaned_data.get('phone_number')
+#         if phone and not re.match(r'^09\d{8}$', phone):
+#             raise forms.ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
 
         # 檢查電話號碼是否已被其他用戶使用（排除當前用戶）
-        if phone and self.instance and self.instance.user:
-            existing_profile = Profile.objects.filter(phone_number=phone).exclude(user=self.instance.user).first()
-            if existing_profile:
-                raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
+#         if phone and self.instance and self.instance.user:
+#             existing_profile = Profile.objects.filter(phone_number=phone).exclude(user=self.instance.user).first()
+#             if existing_profile:
+#                 raise forms.ValidationError("這支電話號碼已被使用，請使用其他號碼")
 
-        return phone
+#         return phone
     
-    def clean_years_of_experience(self):
-        """驗證執業年資"""
-        years = self.cleaned_data.get('years_of_experience')
-        if years is not None and (years < 0 or years > 50):
-            raise forms.ValidationError('執業年資應在0-50年之間')
-        return years
+#     def clean_years_of_experience(self):
+#         """驗證執業年資"""
+#         years = self.cleaned_data.get('years_of_experience')
+#         if years is not None and (years < 0 or years > 50):
+#             raise forms.ValidationError('執業年資應在0-50年之間')
+#         return years
     
-    def clean_is_clinic_admin(self):
-        """管理員權限驗證"""
-        is_admin = self.cleaned_data.get('is_clinic_admin', False)
+#     def clean_is_clinic_admin(self):
+#         """管理員權限驗證"""
+#         is_admin = self.cleaned_data.get('is_clinic_admin', False)
         
         # 檢查當前用戶是否有權限設置管理員
-        if is_admin and self.user:
-            if not (self.user.vet_profile.is_clinic_admin or self.user.is_superuser):
-                raise forms.ValidationError('只有管理員可以設置其他管理員')
+#         if is_admin and self.user:
+#             if not (self.user.vet_profile.is_clinic_admin or self.user.is_superuser):
+#                 raise forms.ValidationError('只有管理員可以設置其他管理員')
         
-        return is_admin
+#         return is_admin
     
-    def clean(self):
-        """整體表單驗證"""
-        cleaned_data = super().clean()
+#     def clean(self):
+#         """整體表單驗證"""
+#         cleaned_data = super().clean()
         
         # 確保至少有一個管理員
-        if not cleaned_data.get('is_clinic_admin', False):
+#         if not cleaned_data.get('is_clinic_admin', False):
             # 檢查診所是否還有其他管理員
-            clinic = self.instance.clinic
-            other_admins = VetDoctor.objects.filter(
-                clinic=clinic,
-                is_clinic_admin=True,
-                is_active=True
-            ).exclude(pk=self.instance.pk)
+#             clinic = self.instance.clinic
+#             other_admins = VetDoctor.objects.filter(
+#                 clinic=clinic,
+#                 is_clinic_admin=True,
+#                 is_active=True
+#             ).exclude(pk=self.instance.pk)
             
-            if not other_admins.exists():
+#             if not other_admins.exists():
                 # 如果這是最後一個管理員，不能取消管理員權限
-                if self.instance.is_clinic_admin:
-                    self.add_error('is_clinic_admin', '診所必須至少有一位管理員')
+#                 if self.instance.is_clinic_admin:
+#                     self.add_error('is_clinic_admin', '診所必須至少有一位管理員')
         
-        return cleaned_data
+#         return cleaned_data
     
-    def save(self, commit=True):
-        """保存表單數據"""
+#     def save(self, commit=True):
+#         """保存表單數據"""
         # 保存 VetDoctor 實例
-        doctor = super().save(commit=False)
+#         doctor = super().save(commit=False)
         
-        if commit:
+#         if commit:
             # 更新用戶基本資料
-            user = doctor.user
-            user.first_name = self.cleaned_data['first_name']
-            user.email = self.cleaned_data['email']
-            user.save()
+#             user = doctor.user
+#             user.first_name = self.cleaned_data['first_name']
+#             user.email = self.cleaned_data['email']
+#             user.save()
             
             # 更新或創建 Profile
-            profile, created = Profile.objects.get_or_create(user=user)
-            phone_number = self.cleaned_data.get('phone_number', '')
-            if phone_number:
-                profile, created = Profile.objects.get_or_create(
-                    user=doctor.user,
-                    defaults={'account_type': 'vet'}
-                )
-                profile.phone_number = phone_number
-                profile.save()
+#             profile, created = Profile.objects.get_or_create(user=user)
+#             phone_number = self.cleaned_data.get('phone_number', '')
+#             if phone_number:
+#                 profile, created = Profile.objects.get_or_create(
+#                     user=doctor.user,
+#                     defaults={'account_type': 'vet'}
+#                 )
+#                 profile.phone_number = phone_number
+#                 profile.save()
 
-            profile.save()
+#             profile.save()
             
             # 保存醫師資料
-            doctor.save()
+#             doctor.save()
         
-        return doctor
+#         return doctor
 
 class PasswordResetForm(forms.Form):
     """
@@ -789,272 +797,274 @@ class PasswordResetForm(forms.Form):
 
 
 # ===== 獸醫師排班表單 =====
-class VetScheduleForm(forms.ModelForm):
-    """獸醫師排班表單"""
+# VetScheduleForm 已註解停用 (2025-10-24)
+# class VetScheduleForm(forms.ModelForm):
+#     """獸醫師排班表單"""
     
-    class Meta:
-        model = VetSchedule
-        fields = [
-            'weekday', 'start_time', 'end_time', 
-            'appointment_duration', 'max_appointments_per_slot', 'notes'
-        ]
-        labels = {
-            'weekday': '星期',
-            'start_time': '開始時間',
-            'end_time': '結束時間',
-            'appointment_duration': '預約時長（分鐘）',
-            'max_appointments_per_slot': '每時段最大預約數',
-            'notes': '備註'
-        }
-        widgets = {
-            'weekday': forms.Select(choices=WEEKDAYS, attrs={'class': 'form-control'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'appointment_duration': forms.Select(choices=[
-                (15, '15分鐘'), (20, '20分鐘'), (30, '30分鐘'), 
-                (45, '45分鐘'), (60, '60分鐘')
-            ], attrs={'class': 'form-control'}),
-            'max_appointments_per_slot': forms.NumberInput(attrs={
-                'class': 'form-control', 'min': 1, 'max': 5
-            }),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
-        }
+#     class Meta:
+#         model = VetSchedule
+#         fields = [
+#             'weekday', 'start_time', 'end_time', 
+#             'appointment_duration', 'max_appointments_per_slot', 'notes'
+#         ]
+#         labels = {
+#             'weekday': '星期',
+#             'start_time': '開始時間',
+#             'end_time': '結束時間',
+#             'appointment_duration': '預約時長（分鐘）',
+#             'max_appointments_per_slot': '每時段最大預約數',
+#             'notes': '備註'
+#         }
+#         widgets = {
+#             'weekday': forms.Select(choices=WEEKDAYS, attrs={'class': 'form-control'}),
+#             'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+#             'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+#             'appointment_duration': forms.Select(choices=[
+#                 (15, '15分鐘'), (20, '20分鐘'), (30, '30分鐘'), 
+#                 (45, '45分鐘'), (60, '60分鐘')
+#             ], attrs={'class': 'form-control'}),
+#             'max_appointments_per_slot': forms.NumberInput(attrs={
+#                 'class': 'form-control', 'min': 1, 'max': 5
+#             }),
+#             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+#         }
     
-    def __init__(self, *args, **kwargs):
-        self.doctor = kwargs.pop('doctor', None)
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         self.doctor = kwargs.pop('doctor', None)
+#         super().__init__(*args, **kwargs)
         
         # 確保weekday字段有正確的choices
-        self.fields['weekday'].choices = WEEKDAYS
+#         self.fields['weekday'].choices = WEEKDAYS
         
         # 設定預設值
-        if not self.instance.pk:
-            self.fields['appointment_duration'].initial = 30
-            self.fields['max_appointments_per_slot'].initial = 1
+#         if not self.instance.pk:
+#             self.fields['appointment_duration'].initial = 30
+#             self.fields['max_appointments_per_slot'].initial = 1
     
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-        weekday = cleaned_data.get('weekday')
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         start_time = cleaned_data.get('start_time')
+#         end_time = cleaned_data.get('end_time')
+#         weekday = cleaned_data.get('weekday')
         
-        if start_time and end_time:
-            if start_time >= end_time:
-                raise forms.ValidationError('結束時間必須晚於開始時間')
+#         if start_time and end_time:
+#             if start_time >= end_time:
+#                 raise forms.ValidationError('結束時間必須晚於開始時間')
             
             # 檢查時間重疊
-            if self.doctor:
-                overlapping = VetSchedule.objects.filter(
-                    doctor=self.doctor,
-                    weekday=weekday,
-                    is_active=True
-                ).exclude(pk=self.instance.pk if self.instance else None)
+#             if self.doctor:
+#                 overlapping = VetSchedule.objects.filter(
+#                     doctor=self.doctor,
+#                     weekday=weekday,
+#                     is_active=True
+#                 ).exclude(pk=self.instance.pk if self.instance else None)
                 
-                for schedule in overlapping:
-                    if (start_time < schedule.end_time and end_time > schedule.start_time):
-                        raise forms.ValidationError(
-                            f'與現有排班時間重疊：{schedule.start_time.strftime("%H:%M")}-{schedule.end_time.strftime("%H:%M")}'
-                        )
+#                 for schedule in overlapping:
+#                     if (start_time < schedule.end_time and end_time > schedule.start_time):
+#                         raise forms.ValidationError(
+#                             f'與現有排班時間重疊：{schedule.start_time.strftime("%H:%M")}-{schedule.end_time.strftime("%H:%M")}'
+#                         )
         
-        return cleaned_data
+#         return cleaned_data
 
 
 # ===== 飼主預約表單 =====
-class AppointmentBookingForm(forms.Form):
-    """飼主預約表單 - 診所→醫師→時段流程"""
+# AppointmentBookingForm 已註解停用 (2025-10-24)
+# class AppointmentBookingForm(forms.Form):
+#     """飼主預約表單 - 診所→醫師→時段流程"""
     
     # 診所搜索
-    search_clinic = forms.CharField(
-        label='搜索診所',
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '輸入診所名稱或地址搜索...',
-            'id': 'clinic-search'
-        })
-    )
+#     search_clinic = forms.CharField(
+#         label='搜索診所',
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '輸入診所名稱或地址搜索...',
+#             'id': 'clinic-search'
+#         })
+#     )
     
-    clinic = forms.ModelChoiceField(
-        queryset=VetClinic.objects.filter(is_verified=True).order_by('clinic_name'),
-        label='選擇診所',
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'onchange': 'loadDoctors(this.value)'
-        }),
-        empty_label='請選擇診所'
-    )
+#     clinic = forms.ModelChoiceField(
+#         queryset=VetClinic.objects.filter(is_verified=True).order_by('clinic_name'),
+#         label='選擇診所',
+#         widget=forms.Select(attrs={
+#             'class': 'form-control',
+#             'onchange': 'loadDoctors(this.value)'
+#         }),
+#         empty_label='請選擇診所'
+#     )
     
-    doctor = forms.ModelChoiceField(
-        queryset=VetDoctor.objects.none(),
-        label='選擇醫師',
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'onchange': 'loadAvailableSlots()'
-        }),
-        empty_label='任何醫師'
-    )
+#     doctor = forms.ModelChoiceField(
+#         queryset=VetDoctor.objects.none(),
+#         label='選擇醫師',
+#         required=False,
+#         widget=forms.Select(attrs={
+#             'class': 'form-control',
+#             'onchange': 'loadAvailableSlots()'
+#         }),
+#         empty_label='任何醫師'
+#     )
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
         # 更新診所的widget屬性，添加搜索功能
-        self.fields['clinic'].widget.attrs.update({
-            'class': 'form-control searchable-select',
-            'data-live-search': 'true',
-            'data-size': '8'
-        })
+#         self.fields['clinic'].widget.attrs.update({
+#             'class': 'form-control searchable-select',
+#             'data-live-search': 'true',
+#             'data-size': '8'
+#         })
         # 預設顯示前30個診所，格式為 "名稱 (地址)"
-        clinics = VetClinic.objects.filter(is_verified=True).order_by('clinic_name')[:30]
-        self.fields['clinic'].queryset = clinics
+#         clinics = VetClinic.objects.filter(is_verified=True).order_by('clinic_name')[:30]
+#         self.fields['clinic'].queryset = clinics
         # 自定義選項顯示
-        self.fields['clinic'].choices = [('', '請選擇診所')] + [
-            (clinic.id, f"{clinic.clinic_name} ({clinic.clinic_address})")
-            for clinic in clinics
-        ]
+#         self.fields['clinic'].choices = [('', '請選擇診所')] + [
+#             (clinic.id, f"{clinic.clinic_name} ({clinic.clinic_address})")
+#             for clinic in clinics
+#         ]
     
-    appointment_date = forms.DateField(
-        label='預約日期',
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control',
-            'min': (date.today() + timedelta(days=1)).isoformat(),
-            'onchange': 'loadAvailableSlots()'
-        })
-    )
+#     appointment_date = forms.DateField(
+#         label='預約日期',
+#         widget=forms.DateInput(attrs={
+#             'type': 'date',
+#             'class': 'form-control',
+#             'min': (date.today() + timedelta(days=1)).isoformat(),
+#             'onchange': 'loadAvailableSlots()'
+#         })
+#     )
     
-    time_slot = forms.ModelChoiceField(
-        queryset=AppointmentSlot.objects.none(),
-        label='預約時段',
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        empty_label='請先選擇日期'
-    )
+#     time_slot = forms.ModelChoiceField(
+#         queryset=AppointmentSlot.objects.none(),
+#         label='預約時段',
+#         widget=forms.Select(attrs={'class': 'form-control'}),
+#         empty_label='請先選擇日期'
+#     )
     
-    reason = forms.CharField(
-        label='預約原因',
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': '請簡述預約原因，如：定期健檢、疫苗接種、身體不適等'
-        }),
-        max_length=500,
-        required=False
-    )
+#     reason = forms.CharField(
+#         label='預約原因',
+#         widget=forms.Textarea(attrs={
+#             'class': 'form-control',
+#             'rows': 3,
+#             'placeholder': '請簡述預約原因，如：定期健檢、疫苗接種、身體不適等'
+#         }),
+#         max_length=500,
+#         required=False
+#     )
     
-    notes = forms.CharField(
-        label='備註',
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 2,
-            'placeholder': '其他需要診所知道的資訊'
-        }),
-        max_length=300,
-        required=False
-    )
+#     notes = forms.CharField(
+#         label='備註',
+#         widget=forms.Textarea(attrs={
+#             'class': 'form-control',
+#             'rows': 2,
+#             'placeholder': '其他需要診所知道的資訊'
+#         }),
+#         max_length=300,
+#         required=False
+#     )
     
     # 聯絡資訊
-    contact_phone = forms.CharField(
-        label='聯絡電話',
-        max_length=20,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '09xxxxxxxx'
-        }),
-        help_text='如需變更預約時的聯絡電話'
-    )
+#     contact_phone = forms.CharField(
+#         label='聯絡電話',
+#         max_length=20,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '09xxxxxxxx'
+#         }),
+#         help_text='如需變更預約時的聯絡電話'
+#     )
     
-    def __init__(self, *args, **kwargs):
+#     def __init__(self, *args, **kwargs):
         # 處理自定義參數
-        self.pet = kwargs.pop('pet', None)
-        self.user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
+#         self.pet = kwargs.pop('pet', None)
+#         self.user = kwargs.pop('user', None)
+#         super().__init__(*args, **kwargs)
         
         # 設定預設聯絡電話
-        if self.user and hasattr(self.user, 'profile') and self.user.profile.phone_number:
-            self.fields['contact_phone'].initial = self.user.profile.phone_number
+#         if self.user and hasattr(self.user, 'profile') and self.user.profile.phone_number:
+#             self.fields['contact_phone'].initial = self.user.profile.phone_number
         
         # 動態載入醫師選項
-        if 'clinic' in self.data:
-            try:
-                clinic_id = int(self.data.get('clinic'))
-                self.fields['doctor'].queryset = VetDoctor.objects.filter(
-                    clinic_id=clinic_id, is_active=True
-                ).order_by('user__first_name')
-            except (ValueError, TypeError):
-                pass
+#         if 'clinic' in self.data:
+#             try:
+#                 clinic_id = int(self.data.get('clinic'))
+#                 self.fields['doctor'].queryset = VetDoctor.objects.filter(
+#                     clinic_id=clinic_id, is_active=True
+#                 ).order_by('user__first_name')
+#             except (ValueError, TypeError):
+#                 pass
         
         # 動態載入時段選項
-        if all(k in self.data for k in ['clinic', 'appointment_date']):
-            try:
-                clinic_id = int(self.data.get('clinic'))
-                appointment_date = datetime.strptime(self.data.get('appointment_date'), '%Y-%m-%d').date()
-                doctor_id = self.data.get('doctor')
+#         if all(k in self.data for k in ['clinic', 'appointment_date']):
+#             try:
+#                 clinic_id = int(self.data.get('clinic'))
+#                 appointment_date = datetime.strptime(self.data.get('appointment_date'), '%Y-%m-%d').date()
+#                 doctor_id = self.data.get('doctor')
                 
-                slots_query = AppointmentSlot.objects.filter(
-                    clinic_id=clinic_id,
-                    date=appointment_date,
-                    is_available=True
-                ).filter(current_bookings__lt=models.F('max_bookings'))
+#                 slots_query = AppointmentSlot.objects.filter(
+#                     clinic_id=clinic_id,
+#                     date=appointment_date,
+#                     is_available=True
+#                 ).filter(current_bookings__lt=models.F('max_bookings'))
                 
-                if doctor_id:
-                    slots_query = slots_query.filter(doctor_id=doctor_id)
+#                 if doctor_id:
+#                     slots_query = slots_query.filter(doctor_id=doctor_id)
                 
-                self.fields['time_slot'].queryset = slots_query.order_by('start_time')
+#                 self.fields['time_slot'].queryset = slots_query.order_by('start_time')
                 
-            except (ValueError, TypeError):
-                pass
+#             except (ValueError, TypeError):
+#                 pass
     
-    def clean_contact_phone(self):
-        phone = self.cleaned_data.get('contact_phone')
-        if phone and not re.match(r'^09\d{8}$', phone):
-            raise ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
-        return phone
+#     def clean_contact_phone(self):
+#         phone = self.cleaned_data.get('contact_phone')
+#         if phone and not re.match(r'^09\d{8}$', phone):
+#             raise ValidationError('請輸入有效的台灣手機號碼（格式：09xxxxxxxx）')
+#         return phone
     
-    def clean_appointment_date(self):
-        appointment_date = self.cleaned_data['appointment_date']
+#     def clean_appointment_date(self):
+#         appointment_date = self.cleaned_data['appointment_date']
         
         # 不能預約今天或過去的日期
-        if appointment_date <= date.today():
-            raise ValidationError('預約日期必須是明天以後')
+#         if appointment_date <= date.today():
+#             raise ValidationError('預約日期必須是明天以後')
         
         # 不能預約太遠的未來（例如60天後）
-        max_future_date = date.today() + timedelta(days=60)
-        if appointment_date > max_future_date:
-            raise ValidationError('預約日期不能超過60天後')
+#         max_future_date = date.today() + timedelta(days=60)
+#         if appointment_date > max_future_date:
+#             raise ValidationError('預約日期不能超過60天後')
         
-        return appointment_date
+#         return appointment_date
     
-    def clean(self):
-        cleaned_data = super().clean()
-        clinic = cleaned_data.get('clinic')
-        doctor = cleaned_data.get('doctor')
-        appointment_date = cleaned_data.get('appointment_date')
-        time_slot = cleaned_data.get('time_slot')
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         clinic = cleaned_data.get('clinic')
+#         doctor = cleaned_data.get('doctor')
+#         appointment_date = cleaned_data.get('appointment_date')
+#         time_slot = cleaned_data.get('time_slot')
         
-        if time_slot:
+#         if time_slot:
             # 驗證時段是否仍可預約
-            if not time_slot.can_book():
-                raise ValidationError('此時段已被預約，請重新選擇')
+#             if not time_slot.can_book():
+#                 raise ValidationError('此時段已被預約，請重新選擇')
             
             # 如果指定了醫師，確認時段屬於該醫師
-            if doctor and time_slot.doctor != doctor:
-                raise ValidationError('所選時段不屬於指定醫師')
+#             if doctor and time_slot.doctor != doctor:
+#                 raise ValidationError('所選時段不屬於指定醫師')
             
             # 驗證時段日期
-            if time_slot.date != appointment_date:
-                raise ValidationError('時段日期不符')
+#             if time_slot.date != appointment_date:
+#                 raise ValidationError('時段日期不符')
             
             # 檢查該用戶在同一時段是否已有預約
-            if self.user:
-                existing_appointment = VetAppointment.objects.filter(
-                    owner=self.user,
-                    slot=time_slot,
-                    status__in=['pending', 'confirmed']
-                ).exists()
+#             if self.user:
+#                 existing_appointment = VetAppointment.objects.filter(
+#                     owner=self.user,
+#                     slot=time_slot,
+#                     status__in=['pending', 'confirmed']
+#                 ).exists()
                 
-                if existing_appointment:
-                    raise ValidationError('您在此時段已有預約')
+#                 if existing_appointment:
+#                     raise ValidationError('您在此時段已有預約')
         
-        return cleaned_data
+#         return cleaned_data
 
 # ===== 飼主註冊表單 =====
 class CustomSignupForm(SignupForm):
@@ -1306,7 +1316,7 @@ class PetForm(forms.ModelForm):
         }
         widgets = {
             'name': forms.TextInput(attrs={'maxlength': 50}),
-            'chip': forms.TextInput(attrs={'class': 'form-control'}),
+            'chip': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '15', 'placeholder': '請輸入15位數晶片號碼'}),
             'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'weight': forms.NumberInput(attrs={'class': 'form-control'}),
             'feature': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -1354,8 +1364,57 @@ class PetForm(forms.ModelForm):
     
     def set_breed_choices(self, species):
         """根據種類設置品種選項"""
-        self.fields['breed'].choices = self.get_breed_choices_for_species(species)
+        choices = list(self.get_breed_choices_for_species(species))
 
+        # 動態加入提交值（避免「不是可用的選項」）
+        try:
+            submitted_breed = (self.data.get('breed') or '').strip() if self.data else ''
+            if submitted_breed and submitted_breed not in [v for v, _ in choices]:
+                choices.append((submitted_breed, submitted_breed))
+        except Exception:
+            pass
+
+        # 編輯舊資料：舊值不在選單時，預設選到「其他」，並把舊值帶入 breed_other
+        try:
+            if getattr(self, 'instance', None) and getattr(self.instance, 'pk', None):
+                current_breed = getattr(self.instance, 'breed', '')
+                values = [v for v, _ in choices]
+                if current_breed and current_breed not in values:
+                    if '其他' not in values:
+                        choices.append(('其他', '其他'))
+                    self.fields['breed'].initial = '其他'
+                    if not (self.data and self.data.get('breed_other')):
+                        self.fields['breed_other'].initial = current_breed
+        except Exception:
+            pass
+
+        self.fields['breed'].choices = choices
+
+        # 動態兼容舊資料/自訂品種：重新設定 choices 與 initial
+        try:
+            choices = list(self.get_breed_choices_for_species(species))
+        except Exception:
+            choices = []
+        try:
+            submitted_breed = (self.data.get('breed') or '').strip() if self.data else ''
+            if submitted_breed and submitted_breed not in [v for v, _ in choices]:
+                choices.append((submitted_breed, submitted_breed))
+        except Exception:
+            pass
+        try:
+            if getattr(self, 'instance', None) and getattr(self.instance, 'pk', None):
+                current_breed = getattr(self.instance, 'breed', '')
+                values = [v for v, _ in choices]
+                if current_breed and current_breed not in values:
+                    if '其他' not in values:
+                        choices.append(('其他', '其他'))
+                    self.fields['breed'].initial = '其他'
+                    if not (self.data and self.data.get('breed_other')):
+                        self.fields['breed_other'].initial = current_breed
+        except Exception:
+            pass
+        if choices:
+            self.fields['breed'].choices = choices
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')
         if weight is None or weight <= 0 or weight > 1000:
@@ -1542,7 +1601,7 @@ class WeightEditForm(forms.Form):
             raise forms.ValidationError("日期不能超過今天")
         return selected_date
 
-# ===== 疫苗表單 =====
+# ===== 疫苗表單 - 飼主輸入版本 =====
 class VaccineRecordForm(forms.ModelForm):
     class Meta:
         model = VaccineRecord
@@ -1555,6 +1614,8 @@ class VaccineRecordForm(forms.ModelForm):
             'next_due_date': '下次接種日期'
         }
         widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '例：狂犬病疫苗'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '例：XX動物醫院'}),
             'date': forms.DateInput(attrs={'type': 'date','class': 'form-control',
                                            'max': date.today().isoformat(),
                                            'value': date.today().isoformat()
@@ -1562,14 +1623,14 @@ class VaccineRecordForm(forms.ModelForm):
             'next_due_date': forms.DateInput(attrs={'type': 'date','class': 'form-control'}, format='%Y-%m-%d'),
             'protection_period_months': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '120', 'placeholder': '例：12'})
         }
-    
+
     def clean_date(self):
         vaccination_date = self.cleaned_data['date']
         if vaccination_date > date.today():
             raise forms.ValidationError("疫苗接種日期不能是未來")
         return vaccination_date
 
-# ===== 驅蟲表單 =====
+# ===== 驅蟲表單 - 飼主輸入版本 =====
 class DewormRecordForm(forms.ModelForm):
     class Meta:
         model = DewormRecord
@@ -1582,6 +1643,8 @@ class DewormRecordForm(forms.ModelForm):
             'next_due_date': '下次施打日期'
         }
         widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '例：心絲蟲藥'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '例：XX動物醫院'}),
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control',
                                            'max': date.today().isoformat(),
                                            'value': date.today().isoformat()
@@ -1589,7 +1652,7 @@ class DewormRecordForm(forms.ModelForm):
             'next_due_date': forms.DateInput(attrs={'type': 'date','class': 'form-control'}, format='%Y-%m-%d'),
             'protection_period_months': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '120', 'placeholder': '例：3'})
         }
-    
+
     def clean_date(self):
         deworm_date = self.cleaned_data['date']
         if deworm_date > date.today():
@@ -1598,12 +1661,39 @@ class DewormRecordForm(forms.ModelForm):
 
 # ===== 報告表單 =====
 class ReportForm(forms.ModelForm):
+    """寵物檢驗報告表單 - 飼主專用"""
+
     class Meta:
         model = Report
-        fields = ['title', 'pdf']
-        labels = {'title':'標題', 'pdf':'pdf檔案'}
+        fields = ['title', 'report_type', 'report_date', 'clinic_name', 'pdf']
+        labels = {
+            'title': '報告標題',
+            'report_type': '報告類型',
+            'report_date': '檢驗日期',
+            'clinic_name': '醫院/診所名稱',
+            'pdf': 'PDF檔案'
+        }
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '請輸入報告標題'}),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '例如：2025年血液檢查報告'
+            }),
+            'report_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'report_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'max': date.today().isoformat()
+            }, format='%Y-%m-%d'),
+            'clinic_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '例如：XX動物醫院'
+            }),
+            'pdf': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'application/pdf'
+            }),
         }
 
     def clean_pdf(self):
@@ -1612,158 +1702,194 @@ class ReportForm(forms.ModelForm):
             # 檢查副檔名
             if not pdf_file.name.lower().endswith('.pdf'):
                 raise forms.ValidationError('請上傳 PDF 格式的檔案。')
-            # 檢查 MIME 類型（可選）
-            if pdf_file.content_type != 'application/pdf':
-                raise forms.ValidationError('檔案格式無效，請確認為 PDF。')
-            # 檢查檔案大小（上限：5MB）
-            max_size = 5 * 1024 * 1024  # 5MB in bytes
+            # 檢查 MIME 類型（支援多種 PDF MIME 類型）
+            allowed_types = ['application/pdf', 'application/x-pdf', 'application/acrobat',
+                           'applications/vnd.pdf', 'text/pdf', 'text/x-pdf']
+            if pdf_file.content_type and pdf_file.content_type not in allowed_types:
+                raise forms.ValidationError(f'檔案格式無效，請確認為 PDF 檔案。（偵測到的類型：{pdf_file.content_type}）')
+            # 檢查檔案大小（上限：10MB）
+            max_size = 10 * 1024 * 1024  # 10MB
             if pdf_file.size > max_size:
-                raise forms.ValidationError('檔案太大，請上傳小於 5MB 的 PDF 檔案。')
+                raise forms.ValidationError('檔案太大，請上傳小於 10MB 的 PDF 檔案。')
         return pdf_file
 
-# ===== 獸醫填寫診斷與治療資訊 =====   
+# ===== 看診記錄表單 - 飼主輸入版本 =====
 class MedicalRecordForm(forms.ModelForm):
     class Meta:
         model = MedicalRecord
         fields = [
-            'pet', 'clinic_location', 'weight', 'temperature', 'heart_rate', 'respiratory_rate',
-            'chief_complaint', 'physical_examination', 'diagnosis', 'diagnosis_confidence',
-            'treatment_plan', 'follow_up_required', 'follow_up_date', 'total_cost', 'notes'
+            'visit_date', 'clinic_location', 'diagnosis', 'treatment',
+            'notes', 'total_cost', 'follow_up_required', 'follow_up_date'
         ]
+        labels = {
+            'visit_date': '看診日期',
+            'clinic_location': '看診地點',
+            'diagnosis': '診斷結果',
+            'treatment': '治療內容',
+            'notes': '備註',
+            'total_cost': '費用',
+            'follow_up_required': '需要追蹤',
+            'follow_up_date': '追蹤日期'
+        }
         widgets = {
-            'pet': forms.HiddenInput(),
-            'clinic_location': forms.TextInput(attrs={'placeholder': '預設會自動填入'}),
-            'weight': forms.NumberInput(attrs={'step': '0.1', 'placeholder': 'kg'}),
-            'temperature': forms.NumberInput(attrs={'step': '0.1', 'placeholder': '°C'}),
-            'heart_rate': forms.NumberInput(attrs={'placeholder': 'bpm'}),
-            'respiratory_rate': forms.NumberInput(attrs={'placeholder': 'per min'}),
-            'chief_complaint': forms.Textarea(attrs={'rows': 3}),
-            'physical_examination': forms.Textarea(attrs={'rows': 3}),
-            'diagnosis': forms.Textarea(attrs={'rows': 3}),
-            'treatment_plan': forms.Textarea(attrs={'rows': 3}),
-            'notes': forms.Textarea(attrs={'rows': 2}),
-            'total_cost': forms.NumberInput(attrs={'step': '0.01'}),
-            'follow_up_date': forms.DateInput(attrs={'type': 'date'}),
+            'visit_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'max': date.today().isoformat(),
+                'value': date.today().isoformat()
+            }, format='%Y-%m-%d'),
+            'clinic_location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '例：XX動物醫院'
+            }),
+            'diagnosis': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': '請輸入獸醫師的診斷結果'
+            }),
+            'treatment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': '請輸入治療內容或處方藥物'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': '其他備註或醫囑'
+            }),
+            'total_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '1',
+                'placeholder': '例：1500'
+            }),
+            'follow_up_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }, format='%Y-%m-%d'),
         }
 
 # ===== 獸醫預約管理表單 =====
-class VetAppointmentForm(forms.ModelForm):
-    """獸醫師建立預約表單"""
+# VetAppointmentForm 已註解停用 (2025-10-24)
+# class VetAppointmentForm(forms.ModelForm):
+#     """獸醫師建立預約表單"""
     
-    class Meta:
-        model = VetAppointment
-        fields = ['pet', 'slot', 'reason', 'notes', 'contact_phone', 'status']
-        labels = {
-            'pet': '寵物',
-            'slot': '時段',
-            'reason': '預約原因',
-            'notes': '備註',
-            'contact_phone': '聯絡電話',
-            'status': '狀態'
-        }
-        widgets = {
-            'pet': forms.Select(attrs={'class': 'form-control'}),
-            'slot': forms.Select(attrs={'class': 'form-control'}),
-            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'contact_phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-        }
+#     class Meta:
+#         model = VetAppointment
+#         fields = ['pet', 'slot', 'reason', 'notes', 'contact_phone', 'status']
+#         labels = {
+#             'pet': '寵物',
+#             'slot': '時段',
+#             'reason': '預約原因',
+#             'notes': '備註',
+#             'contact_phone': '聯絡電話',
+#             'status': '狀態'
+#         }
+#         widgets = {
+#             'pet': forms.Select(attrs={'class': 'form-control'}),
+#             'slot': forms.Select(attrs={'class': 'form-control'}),
+#             'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+#             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+#             'contact_phone': forms.TextInput(attrs={'class': 'form-control'}),
+#             'status': forms.Select(attrs={'class': 'form-control'}),
+#         }
 
 # ===== 獸醫可看診時間表單 =====
-class VetAvailableTimeForm(forms.ModelForm):
-    """獸醫師可看診時間設定表單"""
+# VetAvailableTimeForm 已註解停用 (2025-10-24)
+# class VetAvailableTimeForm(forms.ModelForm):
+#     """獸醫師可看診時間設定表單"""
     
-    class Meta:
-        model = VetSchedule  # 使用 VetSchedule 模型
-        fields = ['weekday', 'start_time', 'end_time', 'appointment_duration', 'notes']
-        labels = {
-            'weekday': '星期',
-            'start_time': '開始時間',
-            'end_time': '結束時間',
-            'appointment_duration': '預約時長（分鐘）',
-            'notes': '備註'
-        }
-        widgets = {
-            'weekday': forms.Select(choices=WEEKDAYS, attrs={'class': 'form-control'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'appointment_duration': forms.Select(choices=[
-                (15, '15分鐘'), (20, '20分鐘'), (30, '30分鐘'),
-                (45, '45分鐘'), (60, '60分鐘')
-            ], attrs={'class': 'form-control'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        }
+#     class Meta:
+#         model = VetSchedule  # 使用 VetSchedule 模型
+#         fields = ['weekday', 'start_time', 'end_time', 'appointment_duration', 'notes']
+#         labels = {
+#             'weekday': '星期',
+#             'start_time': '開始時間',
+#             'end_time': '結束時間',
+#             'appointment_duration': '預約時長（分鐘）',
+#             'notes': '備註'
+#         }
+#         widgets = {
+#             'weekday': forms.Select(choices=WEEKDAYS, attrs={'class': 'form-control'}),
+#             'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+#             'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+#             'appointment_duration': forms.Select(choices=[
+#                 (15, '15分鐘'), (20, '20分鐘'), (30, '30分鐘'),
+#                 (45, '45分鐘'), (60, '60分鐘')
+#             ], attrs={'class': 'form-control'}),
+#             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+#         }
 
 # ===== 診所設定表單 =====
-class ClinicSettingsForm(forms.ModelForm):
-    """診所基本設定表單"""
+# ClinicSettingsForm 已註解停用 (2025-10-24)
+# class ClinicSettingsForm(forms.ModelForm):
+#     """診所基本設定表單"""
     
-    class Meta:
-        model = VetClinic
-        fields = [
-            'clinic_name', 'clinic_phone', 'clinic_email', 'clinic_address',
-            'default_appointment_duration', 'advance_booking_days'
-        ]
-        labels = {
-            'clinic_name': '診所名稱',
-            'clinic_phone': '診所電話',
-            'clinic_email': '診所信箱',
-            'clinic_address': '診所地址',
-            'default_appointment_duration': '預設預約時長（分鐘）',
-            'advance_booking_days': '可提前預約天數'
-        }
-        widgets = {
-            'clinic_name': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
-            'clinic_phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'clinic_email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'clinic_address': forms.TextInput(attrs={'class': 'form-control'}),
-            'default_appointment_duration': forms.Select(choices=[
-                (15, '15分鐘'), (20, '20分鐘'), (30, '30分鐘'),
-                (45, '45分鐘'), (60, '60分鐘')
-            ], attrs={'class': 'form-control'}),
-            'advance_booking_days': forms.NumberInput(attrs={
-                'class': 'form-control', 'min': 1, 'max': 90
-            }),
-        }
+#     class Meta:
+#         model = VetClinic
+#         fields = [
+#             'clinic_name', 'clinic_phone', 'clinic_email', 'clinic_address',
+#             'default_appointment_duration', 'advance_booking_days'
+#         ]
+#         labels = {
+#             'clinic_name': '診所名稱',
+#             'clinic_phone': '診所電話',
+#             'clinic_email': '診所信箱',
+#             'clinic_address': '診所地址',
+#             'default_appointment_duration': '預設預約時長（分鐘）',
+#             'advance_booking_days': '可提前預約天數'
+#         }
+#         widgets = {
+#             'clinic_name': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
+#             'clinic_phone': forms.TextInput(attrs={'class': 'form-control'}),
+#             'clinic_email': forms.EmailInput(attrs={'class': 'form-control'}),
+#             'clinic_address': forms.TextInput(attrs={'class': 'form-control'}),
+#             'default_appointment_duration': forms.Select(choices=[
+#                 (15, '15分鐘'), (20, '20分鐘'), (30, '30分鐘'),
+#                 (45, '45分鐘'), (60, '60分鐘')
+#             ], attrs={'class': 'form-control'}),
+#             'advance_booking_days': forms.NumberInput(attrs={
+#                 'class': 'form-control', 'min': 1, 'max': 90
+#             }),
+#         }
 
 # ===== 診所搜尋表單 =====
-class ClinicSearchForm(forms.Form):
-    """診所搜尋表單"""
+# ClinicSearchForm 已註解停用 (2025-10-24)
+# class ClinicSearchForm(forms.Form):
+#     """診所搜尋表單"""
     
-    search_query = forms.CharField(
-        label='搜尋關鍵字',
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '輸入診所名稱或地址...'
-        })
-    )
+#     search_query = forms.CharField(
+#         label='搜尋關鍵字',
+#         max_length=100,
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': '輸入診所名稱或地址...'
+#         })
+#     )
     
-    city = forms.ChoiceField(
-        label='縣市',
-        choices=[('', '全部')] + CITY_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
+#     city = forms.ChoiceField(
+#         label='縣市',
+#         choices=[('', '全部')] + CITY_CHOICES,
+#         required=False,
+#         widget=forms.Select(attrs={'class': 'form-control'})
+#     )
     
-    service_type = forms.ChoiceField(
-        label='服務類型',
-        choices=[
-            ('', '全部'),
-            ('general', '一般診療'),
-            ('emergency', '急診'),
-            ('surgery', '手術'),
-            ('dental', '牙科'),
-            ('grooming', '美容'),
-        ],
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
+#     service_type = forms.ChoiceField(
+#         label='服務類型',
+#         choices=[
+#             ('', '全部'),
+#             ('general', '一般診療'),
+#             ('emergency', '急診'),
+#             ('surgery', '手術'),
+#             ('dental', '牙科'),
+#             ('grooming', '美容'),
+#         ],
+#         required=False,
+#         widget=forms.Select(attrs={'class': 'form-control'})
+#     )
 
 # ================ 領養專區表單 ================
-import json
+# import json
 
 def safe_json_loads(value, default=None):
     """安全地解析JSON，如果失敗返回預設值"""
@@ -1912,6 +2038,14 @@ class AdoptionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.owner = kwargs.pop('owner', None)
         super().__init__(*args, **kwargs)
+
+        # 如果是新增模式且有 owner，預設填入電話號碼
+        if not self.instance.pk and self.owner:
+            try:
+                if hasattr(self.owner, 'profile') and self.owner.profile.phone_number:
+                    self.fields['phone'].initial = self.owner.profile.phone_number
+            except:
+                pass
 
         # 設定 hidden input 的初始值
         self.fields['species'].widget = forms.HiddenInput()
@@ -2067,57 +2201,58 @@ class TransferRequestForm(forms.ModelForm):
         return phone
 
 # ===== 特殊排班例外表單 =====
-class VetScheduleExceptionForm(forms.ModelForm):
-    """獸醫師特殊排班例外表單"""
+# VetScheduleExceptionForm 已註解停用 (2025-10-24)
+# class VetScheduleExceptionForm(forms.ModelForm):
+#     """獸醫師特殊排班例外表單"""
     
-    class Meta:
-        model = VetScheduleException
-        fields = [
-            'exception_type', 'start_date', 'end_date', 
-            'start_time', 'end_time', 'alternative_start_time', 
-            'alternative_end_time', 'reason'
-        ]
-        labels = {
-            'exception_type': '例外類型',
-            'start_date': '開始日期',
-            'end_date': '結束日期',
-            'start_time': '開始時間',
-            'end_time': '結束時間',
-            'alternative_start_time': '替代開始時間',
-            'alternative_end_time': '替代結束時間',
-            'reason': '原因說明',
-        }
-        widgets = {
-            'exception_type': forms.Select(attrs={'class': 'form-control'}),
-            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'alternative_start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'alternative_end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
+#     class Meta:
+#         model = VetScheduleException
+#         fields = [
+#             'exception_type', 'start_date', 'end_date', 
+#             'start_time', 'end_time', 'alternative_start_time', 
+#             'alternative_end_time', 'reason'
+#         ]
+#         labels = {
+#             'exception_type': '例外類型',
+#             'start_date': '開始日期',
+#             'end_date': '結束日期',
+#             'start_time': '開始時間',
+#             'end_time': '結束時間',
+#             'alternative_start_time': '替代開始時間',
+#             'alternative_end_time': '替代結束時間',
+#             'reason': '原因說明',
+#         }
+#         widgets = {
+#             'exception_type': forms.Select(attrs={'class': 'form-control'}),
+#             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+#             'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+#             'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+#             'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+#             'alternative_start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+#             'alternative_end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+#             'reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+#         }
     
-    def clean(self):
-        cleaned_data = super().clean()
-        start_date = cleaned_data.get('start_date')
-        end_date = cleaned_data.get('end_date')
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-        alt_start_time = cleaned_data.get('alternative_start_time')
-        alt_end_time = cleaned_data.get('alternative_end_time')
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         start_date = cleaned_data.get('start_date')
+#         end_date = cleaned_data.get('end_date')
+#         start_time = cleaned_data.get('start_time')
+#         end_time = cleaned_data.get('end_time')
+#         alt_start_time = cleaned_data.get('alternative_start_time')
+#         alt_end_time = cleaned_data.get('alternative_end_time')
         
         # 日期驗證
-        if start_date and end_date and start_date > end_date:
-            raise forms.ValidationError('結束日期不能早於開始日期')
+#         if start_date and end_date and start_date > end_date:
+#             raise forms.ValidationError('結束日期不能早於開始日期')
         
         # 時間驗證
-        if start_time and end_time and start_time >= end_time:
-            raise forms.ValidationError('結束時間必須晚於開始時間')
+#         if start_time and end_time and start_time >= end_time:
+#             raise forms.ValidationError('結束時間必須晚於開始時間')
             
         # 替代時間驗證
-        if alt_start_time and alt_end_time and alt_start_time >= alt_end_time:
-            raise forms.ValidationError('替代結束時間必須晚於替代開始時間')
+#         if alt_start_time and alt_end_time and alt_start_time >= alt_end_time:
+#             raise forms.ValidationError('替代結束時間必須晚於替代開始時間')
         
-        return cleaned_data
+#         return cleaned_data
 

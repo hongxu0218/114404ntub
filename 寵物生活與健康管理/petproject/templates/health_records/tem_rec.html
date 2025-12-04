@@ -43,6 +43,35 @@
         margin: 20px 0;
     }
 
+    /* 手機響應式優化 */
+    @media (max-width: 767px) {
+        main {
+            padding: 1rem;
+        }
+
+        .btn {
+            min-height: 44px;
+            min-width: 44px;
+            padding: 12px 20px;
+            font-size: 16px;
+        }
+
+        .month-nav button {
+            min-width: 50px;
+            min-height: 50px;
+            padding: 14px;
+            font-size: 18px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+        }
+
+        #temperatureChart {
+            max-height: 250px;
+        }
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
@@ -99,7 +128,7 @@
 <canvas id="temperatureChart" height="100" style="margin-top: 30px;"></canvas>
 
 <h3>詳細資料</h3>
-<table>
+<table class="table-stack">
     <thead>
         <tr>
             <th>紀錄時間</th>
@@ -110,9 +139,9 @@
     <tbody>
         {% for record in records %}
         <tr class="record-row">
-            <td>{{record.recorded_date}} {{ record.submitted_at }}</td>
-            <td>{{ record.raw_content }}°C</td>
-            <td>
+            <td data-label="紀錄時間">{{record.recorded_date}} {{ record.submitted_at }}</td>
+            <td data-label="體溫">{{ record.raw_content }}°C</td>
+            <td data-label="操作">
                 <div class="actions">
                     <a href="{% url 'edit_tem' pet_id=pet.id record_id=record.id %}" class="btn">修改</a>
                     <a href="{% url 'delete_tem' pet_id=pet.id record_id=record.id %}" class="btn" onclick="return confirm('確定要刪除這筆體溫資料嗎？')">刪除</a>
