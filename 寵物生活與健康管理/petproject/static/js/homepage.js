@@ -74,6 +74,8 @@ window.PawDayHomepage = {
    */
   onReady: function() {
     this.setupNewsScroll();
+    // Ensure homepage quick actions look balanced
+    this.ensureQuickActionsLayout();
     this.setupCategoryCards();
     this.setupParallaxEffect();
     this.setupAnimations();
@@ -743,6 +745,50 @@ const submitHandoff = async () => {
         card.setAttribute('tabindex', '0');
       }
     });
+  },
+
+  /**
+   * Ensure quick actions show 3 tiles by adding Adoption when only 2 exist.
+   */
+  ensureQuickActionsLayout: function() {
+    try {
+      const grid = document.querySelector('.row.g-4.justify-content-center');
+      if (!grid) return;
+
+      const cardCount = grid.querySelectorAll('.category-card').length;
+      if (cardCount !== 2) return; // Only adjust when exactly two
+
+      const col = document.createElement('div');
+      col.className = 'col-12 col-sm-6 col-lg-4';
+
+      const a = document.createElement('a');
+      a.className = 'category-card';
+      a.href = '/adoption/';
+      a.setAttribute('aria-label', '寵物領養');
+
+      const img = document.createElement('img');
+      img.className = 'category-icon';
+      img.src = '/static/images/icon-adoption.png';
+      img.alt = '寵物領養';
+
+      const text = document.createElement('div');
+      text.className = 'category-text';
+      text.textContent = '寵物領養';
+
+      a.appendChild(img);
+      a.appendChild(text);
+      col.appendChild(a);
+
+      // Insert before any empty placeholder columns if present; else append
+      const placeholders = Array.from(grid.children).filter(el => el.matches('[class*="col-"]:empty'));
+      if (placeholders.length > 0) {
+        grid.insertBefore(col, placeholders[0]);
+      } else {
+        grid.appendChild(col);
+      }
+    } catch (_) {
+      // no-op on failure
+    }
   },
 
   /**
