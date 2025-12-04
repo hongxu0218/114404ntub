@@ -1117,7 +1117,27 @@ def health_rec(request):
         vaccine_records.extend(pet.vaccine_records.order_by('-date'))
         deworm_records.extend(pet.deworm_records.order_by('-date'))
         if hasattr(pet, 'reports'):
-            report_records.extend(pet.reports.order_by('-date_uploaded'))
+            pet_reports = list(pet.reports.order_by('-date_uploaded'))
+            for rec in pet_reports:
+                # Safely annotate PDF existence and size to avoid FileNotFoundError
+                try:
+                    rec.pdf_exists = bool(rec.pdf and rec.pdf.name and rec.pdf.storage.exists(rec.pdf.name))
+                except Exception:
+                    rec.pdf_exists = False
+                # If file is missing, make template treat it as absent
+                if not rec.pdf_exists:
+                    try:
+                        rec.pdf = None
+                    except Exception:
+                        pass
+                if rec.pdf_exists:
+                    try:
+                        rec.pdf_size = rec.pdf.size
+                    except Exception:
+                        rec.pdf_size = None
+                else:
+                    rec.pdf_size = None
+            report_records.extend(pet_reports)
         # 獲取生活記錄 (通過 DailyRecord 的 pet 外鍵反向查詢)
         daily_records.extend(pet.dailyrecord_set.all())
     
