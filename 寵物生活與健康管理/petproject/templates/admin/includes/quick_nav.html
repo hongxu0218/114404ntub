@@ -1,4 +1,4 @@
-<!-- 快速導航欄 - 可重用組件 -->
+<!-- Admin Quick Navigation -->
 <style>
 .quick-nav {
     background: white;
@@ -48,36 +48,32 @@
 }
 
 @media (max-width: 768px) {
-    .quick-nav {
-        padding: 15px;
-    }
-
-    .quick-nav-link {
-        flex: 1 1 calc(50% - 5px);
-        justify-content: center;
-        font-size: 13px;
-    }
+    .quick-nav { padding: 15px; }
+    .quick-nav-link { flex: 1 1 calc(50% - 5px); justify-content: center; font-size: 13px; }
 }
 </style>
 
 <div class="quick-nav">
-    <span class="quick-nav-label">🚀 快速導航：</span>
-    <a href="{% url 'admin:index' %}" class="quick-nav-link {% if active_page == 'dashboard' %}active{% endif %}">
-        <span>🏠</span> 儀表板
-    </a>
-    <a href="{% url 'admin:auth_user_changelist' %}" class="quick-nav-link {% if active_page == 'user' %}active{% endif %}">
-        <span>👥</span> 用戶管理
-    </a>
-    <a href="{% url 'admin:petapp_vetclinic_changelist' %}" class="quick-nav-link {% if active_page == 'clinic' %}active{% endif %}">
-        <span>🏥</span> 診所管理
-    </a>
-    <a href="{% url 'admin:petapp_vetdoctor_changelist' %}" class="quick-nav-link {% if active_page == 'doctor' %}active{% endif %}">
-        <span>👨‍⚕️</span> 獸醫師管理
-    </a>
-    <a href="{% url 'admin:petapp_post_changelist' %}" class="quick-nav-link {% if active_page == 'post' %}active{% endif %}">
-        <span>📝</span> 內容審核
-    </a>
-    <a href="{% url 'admin:petapp_handoffticket_changelist' %}" class="quick-nav-link {% if active_page == 'ticket' %}active{% endif %}">
-        <span>🎫</span> 客服工單
-    </a>
+    <span class="quick-nav-label">快捷功能</span>
+    <a href="{% url 'admin:index' %}" class="quick-nav-link {% if active_page == 'dashboard' %}active{% endif %}">🏠 後台儀表板</a>
+    <a href="{% url 'admin:auth_user_changelist' %}" class="quick-nav-link {% if active_page == 'user' %}active{% endif %}">👤 使用者管理</a>
+
+    {# Optional modules: only render if URL exists to avoid NoReverseMatch #}
+    {% url 'admin:petapp_vetclinic_changelist' as vetclinic_url %}
+    {% if vetclinic_url %}
+    <a href="{{ vetclinic_url }}" class="quick-nav-link {% if active_page == 'clinic' %}active{% endif %}">🏥 診所管理</a>
+    {% endif %}
+
+    {% url 'admin:petapp_vetdoctor_changelist' as vetdoctor_url %}
+    {% if vetdoctor_url %}
+    <a href="{{ vetdoctor_url }}" class="quick-nav-link {% if active_page == 'doctor' %}active{% endif %}">🧑‍⚕️ 獸醫師管理</a>
+    {% endif %}
+
+    <a href="{% url 'admin:petapp_post_changelist' %}" class="quick-nav-link {% if active_page == 'post' %}active{% endif %}">📝 貼文審核</a>
+
+    {% url 'admin:petapp_handoffticket_changelist' as ticket_url %}
+    {% if ticket_url %}
+    <a href="{{ ticket_url }}" class="quick-nav-link {% if active_page == 'ticket' %}active{% endif %}">🎫 客服工單</a>
+    {% endif %}
 </div>
+
